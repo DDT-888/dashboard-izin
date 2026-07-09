@@ -3191,7 +3191,37 @@
         let isInitialLoad = true;
 
         // ============================================================
-        // FUNGSI UTILITY
+        // FUNGSI UTILITY - BERDASARKAN EMAIL
+        // ============================================================
+
+        function getUserByEmail(email) {
+            const formattedEmail = formatEmail(email);
+            return listUsers.find(u => u.email === formattedEmail);
+        }
+
+        function getUserNameByEmail(email) {
+            const user = getUserByEmail(email);
+            return user ? user.name : null;
+        }
+
+        function getCurrentUserEmail() {
+            return currentUser ? formatEmail(currentUser.email) : '';
+        }
+
+        function getCurrentUserNameFromDB() {
+            const email = getCurrentUserEmail();
+            const user = getUserByEmail(email);
+            return user ? formatName(user.name) : '';
+        }
+
+        function isUserCurrent(nama) {
+            const currentEmail = getCurrentUserEmail();
+            const user = listUsers.find(u => u.name === formatName(nama));
+            return user ? currentEmail === user.email : false;
+        }
+
+        // ============================================================
+        // FUNGSI UTILITY - ORIGINAL (DIPERBAIKI)
         // ============================================================
         function formatName(name) {
             return name ? name.toUpperCase() : '';
@@ -3202,6 +3232,12 @@
         }
 
         function getCurrentUserName() {
+            const email = getCurrentUserEmail();
+            const user = getUserByEmail(email);
+            if (user) {
+                return formatName(user.name);
+            }
+            // Fallback
             if (currentUser) {
                 return formatName(currentUser.user_metadata?.full_name || currentUser.email);
             }
@@ -3414,35 +3450,31 @@
             if (kasirEl) kasirEl.textContent = counts.kasir;
         }
 
-     function getCurrentIzinCounts() {
-    const counts = { cs: 0, kapten: 0, kasir: 0 };
-    daftarAnggota.forEach(nama => {
-        const data = dataIzin[nama];
-        if (data && data.status === 'izin') {
-            const role = getRoleForUser(nama);
-            console.log(`🔍 Found active izin: ${nama}, role=${role}`); // Debug
-            if (role === 'cs') counts.cs++;
-            else if (role === 'kapten') counts.kapten++;
-            else if (role === 'kasir') counts.kasir++;
+        function getCurrentIzinCounts() {
+            const counts = { cs: 0, kapten: 0, kasir: 0 };
+            daftarAnggota.forEach(nama => {
+                const data = dataIzin[nama];
+                if (data && data.status === 'izin') {
+                    const role = getRoleForUser(nama);
+                    if (role === 'cs') counts.cs++;
+                    else if (role === 'kapten') counts.kapten++;
+                    else if (role === 'kasir') counts.kasir++;
+                }
+            });
+            return counts;
         }
-    });
-    return counts;
-}
 
         function canUserIzinLive(nama) {
-    const role = getRoleForUser(nama);
-    const counts = getCurrentIzinCounts();
-    const limit = limits[role] || 99;
+            const role = getRoleForUser(nama);
+            const counts = getCurrentIzinCounts();
+            const limit = limits[role] || 99;
 
-    // 🔥 PERBAIKAN: Tambahkan log untuk debug
-    console.log(`🔍 canUserIzinLive: ${nama}, role=${role}, counts.${role}=${counts[role] || 0}, limit=${limit}`);
-
-    if (role === 'leader' || role === 'csline' || role === 'admin') return true;
-    if (role === 'cs' && counts.cs >= limit) return false;
-    if (role === 'kapten' && counts.kapten >= limit) return false;
-    if (role === 'kasir' && counts.kasir >= limit) return false;
-    return true;
-}
+            if (role === 'leader' || role === 'csline' || role === 'admin') return true;
+            if (role === 'cs' && counts.cs >= limit) return false;
+            if (role === 'kapten' && counts.kapten >= limit) return false;
+            if (role === 'kasir' && counts.kasir >= limit) return false;
+            return true;
+        }
 
         function showLimitPopup(nama) {
             const role = getRoleForUser(nama);
@@ -3578,51 +3610,49 @@
                 }
 
                 // 3. Load izin aktif
-try {
-    const { data: izinData, error: izinError } = await supabaseDashboard
-        .from('izin_anggota')
-        .select('*');
+                try {
+                    const { data: izinData, error: izinError } = await supabaseDashboard
+                        .from('izin_anggota')
+                        .select('*');
 
-    if (!izinError && izinData) {
-        console.log(`📋 Found ${izinData.length} izin records in database`);
-        
-        daftarAnggota.forEach(nama => {
-            if (dataIzin[nama]) {
-                dataIzin[nama].status = 'none';
-                dataIzin[nama].mulai = null;
-                dataIzin[nama].tanggal = null;
-                dataIzin[nama].selesai = null;
-            }
-        });
-        
-        let aktifCount = 0;
-        izinData.forEach(item => {
-            if (dataIzin[item.nama]) {
-                dataIzin[item.nama].status = item.status || 'none';
-                // 🔥 PERBAIKAN: Simpan sebagai ISO string dengan Z (UTC)
-                if (item.mulai) {
-                    // Jika sudah dalam format ISO, tambahkan Z jika belum ada
-                    let mulaiStr = item.mulai;
-                    if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
-                        mulaiStr = mulaiStr + 'Z';
+                    if (!izinError && izinData) {
+                        console.log(`📋 Found ${izinData.length} izin records in database`);
+                        
+                        daftarAnggota.forEach(nama => {
+                            if (dataIzin[nama]) {
+                                dataIzin[nama].status = 'none';
+                                dataIzin[nama].mulai = null;
+                                dataIzin[nama].tanggal = null;
+                                dataIzin[nama].selesai = null;
+                            }
+                        });
+                        
+                        let aktifCount = 0;
+                        izinData.forEach(item => {
+                            if (dataIzin[item.nama]) {
+                                dataIzin[item.nama].status = item.status || 'none';
+                                if (item.mulai) {
+                                    let mulaiStr = item.mulai;
+                                    if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
+                                        mulaiStr = mulaiStr + 'Z';
+                                    }
+                                    dataIzin[item.nama].mulai = mulaiStr;
+                                } else {
+                                    dataIzin[item.nama].mulai = null;
+                                }
+                                dataIzin[item.nama].tanggal = item.tanggal;
+                                dataIzin[item.nama].selesai = item.selesai;
+                                if (item.status === 'izin' && item.mulai) {
+                                    aktifCount++;
+                                    console.log(`✅ User ${item.nama} sedang izin sejak ${item.mulai}`);
+                                }
+                            }
+                        });
+                        console.log(`✅ ${aktifCount} users sedang izin (aktif)`);
                     }
-                    dataIzin[item.nama].mulai = mulaiStr;
-                } else {
-                    dataIzin[item.nama].mulai = null;
+                } catch (err) {
+                    console.log('⚠️ Izin table error:', err.message);
                 }
-                dataIzin[item.nama].tanggal = item.tanggal;
-                dataIzin[item.nama].selesai = item.selesai;
-                if (item.status === 'izin' && item.mulai) {
-                    aktifCount++;
-                    console.log(`✅ User ${item.nama} sedang izin sejak ${item.mulai}`);
-                }
-            }
-        });
-        console.log(`✅ ${aktifCount} users sedang izin (aktif)`);
-    }
-} catch (err) {
-    console.log('⚠️ Izin table error:', err.message);
-}
 
                 // 4. Load voucher
                 try {
@@ -3752,12 +3782,10 @@ try {
         async function checkAuth() {
             console.log('🔍 checkAuth - Memulai...');
 
-            // CEK APAKAH INI REDIRECT DARI OAUTH
             const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
             const hash = window.location.hash;
 
-            // Jika ada code atau access_token di URL, ini adalah redirect dari OAuth
             if (code || (hash && hash.includes('access_token'))) {
                 console.log('🔑 Detected OAuth redirect, processing...');
                 try {
@@ -3773,11 +3801,10 @@ try {
                         console.log('✅ Session found after redirect for:', data.session.user.email);
                         currentUser = data.session.user;
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        // LANGSUNG LOAD DASHBOARD, JANGAN REDIRECT!
                         await loadDataFromDatabase();
                         renderAll();
                         startTimerUpdates();
-                        startAutoRefresh(); // Auto refresh data dari database
+                        startAutoRefresh();
                         startClock();
                         console.log('✅ Dashboard siap!');
                         return;
@@ -3835,7 +3862,6 @@ try {
                 return;
             }
 
-            // PRODUCTION MODE
             try {
                 const { data: { session }, error } = await supabaseDashboard.auth.getSession();
 
@@ -3907,7 +3933,7 @@ try {
                 const roleLabel = userPermissions.label || 'User';
                 const roleIcon = userPermissions.icon || '👤';
 
-                const userNameDisplay = formatName(currentUser.user_metadata?.full_name || currentUser.email);
+                const userNameDisplay = getCurrentUserName();
                 document.getElementById('userName').textContent = userNameDisplay;
                 document.getElementById('userEmail').textContent = formatEmail(currentUser.email);
                 document.getElementById('userRole').textContent = `${roleIcon} ${roleLabel}`;
@@ -3957,7 +3983,7 @@ try {
                 await checkIPAccess();
 
                 startTimerUpdates();
-                startAutoRefresh(); // Auto refresh data dari database
+                startAutoRefresh();
                 startClock();
 
                 console.log('✅ Dashboard siap!');
@@ -4050,23 +4076,12 @@ try {
         }
 
         // ============================================================
-        // FUNGSI IZIN - DENGAN SAVE KE DATABASE DAN ERROR HANDLING
+        // FUNGSI IZIN - DENGAN PENGECEKAN EMAIL
         // ============================================================
         window.mulaiIzin = async function(nama) {
-            const currentName = getCurrentUserName();
             const formattedNama = formatName(nama);
             const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
-            const isCurrentUser = currentName === formattedNama;
-
- console.log(`🔍 START DEBUG:
-        Nama yang diklik: ${formattedNama}
-        User saat ini: ${currentName}
-        Role user saat ini: ${currentUserRole}
-        isLeaderOrCsLine: ${isLeaderOrCsLine}
-        isCurrentUser: ${isCurrentUser}
-        Dapat START untuk orang lain: ${isLeaderOrCsLine}
-        Dapat START untuk diri sendiri: ${isCurrentUser}
-    `);
+            const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
                 showToast(`⚠️ Anda hanya bisa mengklik START untuk diri Anda sendiri!`, 'warning');
@@ -4096,14 +4111,12 @@ try {
 
             isJackpotShown[formattedNama] = false;
 
-            // Update state
             data.status = 'izin';
             data.mulai = now.toISOString();
             data.selesai = null;
             data.tanggal = today;
             dataIzin[formattedNama] = data;
 
-            // Kirim data ke database
             if (!TEST_MODE) {
                 try {
                     const payload = {
@@ -4124,7 +4137,6 @@ try {
                     if (error) {
                         console.error('❌ Error detail:', error);
                         showToast(`❌ Gagal simpan: ${error.message || 'Unknown error'}`, 'error');
-                        // Rollback state
                         data.status = 'none';
                         data.mulai = null;
                         data.tanggal = null;
@@ -4135,7 +4147,6 @@ try {
                 } catch (err) {
                     console.error('❌ Error simpan ke database:', err);
                     showToast('❌ Gagal menyimpan data izin!', 'error');
-                    // Rollback state
                     data.status = 'none';
                     data.mulai = null;
                     data.tanggal = null;
@@ -4150,11 +4161,9 @@ try {
         };
 
         window.selesaiIzin = async function(nama) {
-            const currentName = getCurrentUserName();
             const formattedNama = formatName(nama);
-
             const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
-            const isCurrentUser = currentName === formattedNama;
+            const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
                 showToast(`⚠️ Anda hanya bisa mengklik END untuk diri Anda sendiri!`, 'warning');
@@ -4282,58 +4291,57 @@ try {
         // ============================================================
         // AUTO REFRESH DATA DARI DATABASE (SETIAP 10 DETIK)
         // ============================================================
-       function startAutoRefresh() {
-    setInterval(async () => {
-        try {
-            const { data: izinData, error } = await supabaseDashboard
-                .from('izin_anggota')
-                .select('*')
-                .eq('status', 'izin');
+        function startAutoRefresh() {
+            setInterval(async () => {
+                try {
+                    const { data: izinData, error } = await supabaseDashboard
+                        .from('izin_anggota')
+                        .select('*')
+                        .eq('status', 'izin');
 
-            if (!error && izinData) {
-                let adaPerubahan = false;
-                
-                daftarAnggota.forEach(nama => {
-                    if (dataIzin[nama] && dataIzin[nama].status === 'izin') {
-                        const stillActive = izinData.some(item => item.nama === nama && item.status === 'izin');
-                        if (!stillActive) {
-                            dataIzin[nama].status = 'none';
-                            dataIzin[nama].mulai = null;
-                            dataIzin[nama].tanggal = null;
-                            adaPerubahan = true;
-                            console.log(`🔄 User ${nama} sudah selesai izin (detected from DB)`);
-                        }
-                    }
-                });
-                
-                izinData.forEach(item => {
-                    if (dataIzin[item.nama] && dataIzin[item.nama].status !== 'izin') {
-                        dataIzin[item.nama].status = 'izin';
-                        // 🔥 PERBAIKAN: Simpan sebagai ISO string dengan Z
-                        if (item.mulai) {
-                            let mulaiStr = item.mulai;
-                            if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
-                                mulaiStr = mulaiStr + 'Z';
+                    if (!error && izinData) {
+                        let adaPerubahan = false;
+                        
+                        daftarAnggota.forEach(nama => {
+                            if (dataIzin[nama] && dataIzin[nama].status === 'izin') {
+                                const stillActive = izinData.some(item => item.nama === nama && item.status === 'izin');
+                                if (!stillActive) {
+                                    dataIzin[nama].status = 'none';
+                                    dataIzin[nama].mulai = null;
+                                    dataIzin[nama].tanggal = null;
+                                    adaPerubahan = true;
+                                    console.log(`🔄 User ${nama} sudah selesai izin (detected from DB)`);
+                                }
                             }
-                            dataIzin[item.nama].mulai = mulaiStr;
+                        });
+                        
+                        izinData.forEach(item => {
+                            if (dataIzin[item.nama] && dataIzin[item.nama].status !== 'izin') {
+                                dataIzin[item.nama].status = 'izin';
+                                if (item.mulai) {
+                                    let mulaiStr = item.mulai;
+                                    if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
+                                        mulaiStr = mulaiStr + 'Z';
+                                    }
+                                    dataIzin[item.nama].mulai = mulaiStr;
+                                }
+                                dataIzin[item.nama].tanggal = item.tanggal;
+                                adaPerubahan = true;
+                                console.log(`🔄 User ${item.nama} mulai izin (detected from DB)`);
+                            }
+                        });
+                        
+                        if (adaPerubahan) {
+                            renderAll();
+                            updateCurrentCounts();
+                            console.log('🔄 Dashboard updated from database');
                         }
-                        dataIzin[item.nama].tanggal = item.tanggal;
-                        adaPerubahan = true;
-                        console.log(`🔄 User ${item.nama} mulai izin (detected from DB)`);
                     }
-                });
-                
-                if (adaPerubahan) {
-                    renderAll();
-                    updateCurrentCounts();
-                    console.log('🔄 Dashboard updated from database');
+                } catch (err) {
+                    // Silent error
                 }
-            }
-        } catch (err) {
-            // Silent error
+            }, 10000);
         }
-    }, 10000);
-}
 
         // ============================================================
         // FUNGSI USERS
@@ -5062,7 +5070,7 @@ try {
         }
 
         // ============================================================
-        // RENDER DASHBOARD TABLE - PERBAIKAN TIMER
+        // RENDER DASHBOARD TABLE - DENGAN PENGECEKAN EMAIL
         // ============================================================
         window.renderDashboardTable = function() {
             const tbody = document.getElementById('dashboardTableBody');
@@ -5114,7 +5122,6 @@ try {
                 kasir: 'Kasir'
             };
 
-            const currentName = getCurrentUserName();
             const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
 
             tbody.innerHTML = filtered.map(nama => {
@@ -5142,89 +5149,83 @@ try {
                 let progressHTML = '-';
                 let mulaiHTML = '-';
 
-                const isCurrentUser = currentName === formatName(nama);
+                // 🔥 PERBAIKAN: Pengecekan berdasarkan EMAIL
+                const isCurrentUser = isUserCurrent(nama);
                 const canStart = (isLeaderOrCsLine || isCurrentUser) &&
                     canUserIzinLive(nama) &&
                     used < maxQuota;
 
                 if (status === 'izin') {
-    rowClass = 'row-online';
-    
-    if (!data.mulai) {
-        console.warn(`⚠️ User ${nama} status izin tapi tidak ada mulai`);
-        timerHTML = '0m 0s';
-    } else {
-        // 🔥 PERBAIKAN: Parse UTC dengan benar
-        // Tambahkan 'Z' di akhir jika belum ada untuk menandakan UTC
-        let mulaiStr = data.mulai;
-        if (!mulaiStr.endsWith('Z')) {
-            mulaiStr = mulaiStr + 'Z';
-        }
-        
-        const tMulai = new Date(mulaiStr);
-        const now = new Date();
-        
-        // 🔥 PERBAIKAN: Hitung selisih dengan benar
-        // new Date() sudah dalam waktu lokal, sedangkan tMulai adalah UTC
-        // Perbedaan waktu akan otomatis dihitung oleh JavaScript
-        const diffMs = now.getTime() - tMulai.getTime();
-        const diff = Math.floor(diffMs / 1000);
-        
-        // Jika diff negatif atau NaN, set ke 0
-        const validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
-        
-        const menit = Math.floor(validDiff / 60);
-        const detik = validDiff % 60;
-        
-        const batasDetik = (jackpotLimitMinutes * 60) - 1;
-        const isOverLimit = validDiff > batasDetik;
-        const isJackpot = isOverLimit;
+                    rowClass = 'row-online';
+                    
+                    if (!data.mulai) {
+                        console.warn(`⚠️ User ${nama} status izin tapi tidak ada mulai`);
+                        timerHTML = '0m 0s';
+                    } else {
+                        let mulaiStr = data.mulai;
+                        if (!mulaiStr.endsWith('Z')) {
+                            mulaiStr = mulaiStr + 'Z';
+                        }
+                        
+                        const tMulai = new Date(mulaiStr);
+                        const now = new Date();
+                        const diffMs = now.getTime() - tMulai.getTime();
+                        const diff = Math.floor(diffMs / 1000);
+                        const validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
+                        
+                        const menit = Math.floor(validDiff / 60);
+                        const detik = validDiff % 60;
+                        
+                        const batasDetik = (jackpotLimitMinutes * 60) - 1;
+                        const isOverLimit = validDiff > batasDetik;
+                        const isJackpot = isOverLimit;
 
-        const maxProgressDetik = jackpotLimitMinutes * 60;
-        const progressPercent = Math.min((validDiff / maxProgressDetik) * 100, 100);
-        
-        let progressClass = '';
-        let textClass = '';
-        
-        if (progressPercent >= 100) {
-            progressClass = 'full';
-            textClass = 'full';
-        } else if (isJackpot) {
-            progressClass = 'jackpot';
-        } else if (isOverLimit) {
-            progressClass = 'danger';
-        } else if (progressPercent > 60) {
-            progressClass = 'warning';
-        }
-        
-        const progressFill = `<div class="progress-bar-fill ${progressClass}" style="width: ${progressPercent}%;"></div>`;
-        
-        progressHTML = `
-            <div class="progress-container">
-                <div class="progress-bar-wrap">
-                    ${progressFill}
-                </div>
-                <span class="progress-text ${textClass}">${Math.round(progressPercent)}%</span>
-            </div>
-        `;
+                        const maxProgressDetik = jackpotLimitMinutes * 60;
+                        const progressPercent = Math.min((validDiff / maxProgressDetik) * 100, 100);
+                        
+                        let progressClass = '';
+                        let textClass = '';
+                        
+                        if (progressPercent >= 100) {
+                            progressClass = 'full';
+                            textClass = 'full';
+                        } else if (isJackpot) {
+                            progressClass = 'jackpot';
+                        } else if (isOverLimit) {
+                            progressClass = 'danger';
+                        } else if (progressPercent > 60) {
+                            progressClass = 'warning';
+                        }
+                        
+                        const progressFill = `<div class="progress-bar-fill ${progressClass}" style="width: ${progressPercent}%;"></div>`;
+                        
+                        progressHTML = `
+                            <div class="progress-container">
+                                <div class="progress-bar-wrap">
+                                    ${progressFill}
+                                </div>
+                                <span class="progress-text ${textClass}">${Math.round(progressPercent)}%</span>
+                            </div>
+                        `;
 
-        const jamMulai = tMulai.toLocaleTimeString('id-ID', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        mulaiHTML = `<span class="time-mulai">${jamMulai}</span>`;
+                        const jamMulai = tMulai.toLocaleTimeString('id-ID', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        mulaiHTML = `<span class="time-mulai">${jamMulai}</span>`;
 
-        statusHTML = `<span class="status-badge online"><span class="dot"></span> Online</span>`;
-        timerHTML = `<span class="timer-display ${isOverLimit ? 'over-limit' : ''}">${menit}m ${detik}s</span>`;
-    }
-    
-    const canEnd = isLeaderOrCsLine || isCurrentUser;
-    actionHTML = `
-        <button class="btn-action end" onclick="selesaiIzin('${nama}')" ${!canEnd ? 'disabled' : ''}>
-            <span class="icon">■</span> END
-        </button>
-    `;
-} else {
+                        statusHTML =
+                            `<span class="status-badge online"><span class="dot"></span> Online</span>`;
+                        timerHTML = `<span class="timer-display ${isOverLimit ? 'over-limit' : ''}">${menit}m ${detik}s</span>`;
+                    }
+                    
+                    const canEnd = isLeaderOrCsLine || isCurrentUser;
+                    actionHTML = `
+                            <button class="btn-action end" onclick="selesaiIzin('${nama}')" ${!canEnd ? 'disabled' : ''}>
+                                <span class="icon">■</span> END
+                            </button>
+                        `;
+                } else {
                     rowClass = 'row-offline';
                     statusHTML =
                         `<span class="status-badge offline"><span class="dot"></span> Offline</span>`;
