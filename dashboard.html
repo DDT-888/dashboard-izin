@@ -3414,31 +3414,35 @@
             if (kasirEl) kasirEl.textContent = counts.kasir;
         }
 
-        function getCurrentIzinCounts() {
-            const counts = { cs: 0, kapten: 0, kasir: 0 };
-            daftarAnggota.forEach(nama => {
-                const data = dataIzin[nama];
-                if (data && data.status === 'izin') {
-                    const role = getRoleForUser(nama);
-                    if (role === 'cs') counts.cs++;
-                    else if (role === 'kapten') counts.kapten++;
-                    else if (role === 'kasir') counts.kasir++;
-                }
-            });
-            return counts;
+     function getCurrentIzinCounts() {
+    const counts = { cs: 0, kapten: 0, kasir: 0 };
+    daftarAnggota.forEach(nama => {
+        const data = dataIzin[nama];
+        if (data && data.status === 'izin') {
+            const role = getRoleForUser(nama);
+            console.log(`🔍 Found active izin: ${nama}, role=${role}`); // Debug
+            if (role === 'cs') counts.cs++;
+            else if (role === 'kapten') counts.kapten++;
+            else if (role === 'kasir') counts.kasir++;
         }
+    });
+    return counts;
+}
 
         function canUserIzinLive(nama) {
-            const role = getRoleForUser(nama);
-            const counts = getCurrentIzinCounts();
-            const limit = limits[role] || 99;
+    const role = getRoleForUser(nama);
+    const counts = getCurrentIzinCounts();
+    const limit = limits[role] || 99;
 
-            if (role === 'leader' || role === 'csline' || role === 'admin') return true;
-            if (role === 'cs' && counts.cs >= limit) return false;
-            if (role === 'kapten' && counts.kapten >= limit) return false;
-            if (role === 'kasir' && counts.kasir >= limit) return false;
-            return true;
-        }
+    // 🔥 PERBAIKAN: Tambahkan log untuk debug
+    console.log(`🔍 canUserIzinLive: ${nama}, role=${role}, counts.${role}=${counts[role] || 0}, limit=${limit}`);
+
+    if (role === 'leader' || role === 'csline' || role === 'admin') return true;
+    if (role === 'cs' && counts.cs >= limit) return false;
+    if (role === 'kapten' && counts.kapten >= limit) return false;
+    if (role === 'kasir' && counts.kasir >= limit) return false;
+    return true;
+}
 
         function showLimitPopup(nama) {
             const role = getRoleForUser(nama);
