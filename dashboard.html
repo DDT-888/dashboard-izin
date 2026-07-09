@@ -4085,7 +4085,7 @@
     data.tanggal = today;
     dataIzin[formattedNama] = data;
 
-    // 🛠️ Perbaikan: Kirim data dengan format yang benar
+    // Kirim data ke database
     if (!TEST_MODE) {
         try {
             const payload = {
@@ -4101,9 +4101,8 @@
             const { error } = await supabaseDashboard
                 .from('izin_anggota')
                 .upsert(payload, { 
-                    onConflict: 'nama',
-                    // 🛠️ Perbaikan: Tambahkan ini untuk memastikan tidak ada kolom kosong yang dikirim
-                    returning: 'minimal'
+                    onConflict: 'nama'
+                    // HAPUS returning: 'minimal' - ini penyebab error 400!
                 });
 
             if (error) {
