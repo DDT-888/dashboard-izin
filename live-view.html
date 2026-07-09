@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Izin - DDT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #0a0e1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: linear-gradient(145deg, #0d1230, #1a0a2e);
+            border-radius: 24px;
+            padding: 30px 35px 40px;
+            border: 1px solid rgba(0, 229, 255, 0.08);
+            box-shadow: 0 0 60px rgba(0, 229, 255, 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00e5ff, #00e676, #00e5ff);
+            background-size: 200% 100%;
+            animation: shimmer-line 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer-line {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-left .logo {
+            font-size: 28px;
+        }
+
+        .header-left .title {
+            color: #00e5ff;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .header-left .title small {
+            font-weight: 300;
+            font-size: 12px;
+            color: rgba(0, 229, 255, 0.3);
+            display: block;
+            letter-spacing: 0.5px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 230, 118, 0.08);
+            border: 1px solid rgba(0, 230, 118, 0.12);
+            padding: 4px 14px 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #00e676;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .live-badge .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #00e676;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+
+        .clock {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: rgba(0, 229, 255, 0.4);
+            background: rgba(0, 229, 255, 0.03);
+            padding: 4px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 229, 255, 0.04);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: rgba(0, 229, 255, 0.02);
+            border: 1px solid rgba(0, 229, 255, 0.04);
+            border-radius: 12px;
+            padding: 12px 16px;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .stat-card:hover {
+            background: rgba(0, 229, 255, 0.04);
+            border-color: rgba(0, 229, 255, 0.08);
+        }
+
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00e5ff;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-card .number.online {
+            color: #00e676;
+        }
+
+        .stat-card .label {
+            font-size: 10px;
+            color: rgba(0, 229, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .table-wrap {
+            background: rgba(0, 229, 255, 0.02);
+            border-radius: 14px;
+            border: 1px solid rgba(0, 229, 255, 0.04);
+            overflow: hidden;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(0, 229, 255, 0.3);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.04);
+        }
+
+        tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.03);
+            color: rgba(255, 255, 255, 0.7);
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover td {
+            background: rgba(0, 229, 255, 0.02);
+        }
+
+        .nama-cell {
+            font-weight: 600;
+            color: #00e5ff;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+        }
+
+        .role-tag {
+            font-size: 9px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            display: inline-block;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .role-tag.leader {
+            background: rgba(0, 229, 255, 0.12);
+            color: #00e5ff;
+        }
+        .role-tag.csline {
+            background: rgba(255, 152, 0, 0.12);
+            color: #ff9800;
+        }
+        .role-tag.cs {
+            background: rgba(33, 150, 243, 0.12);
+            color: #2196f3;
+        }
+        .role-tag.kapten {
+            background: rgba(156, 39, 176, 0.12);
+            color: #ab47bc;
+        }
+        .role-tag.kasir {
+            background: rgba(0, 188, 212, 0.12);
+            color: #00bcd4;
+        }
+
+        .timer-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: #00e676;
+        }
+
+        .timer-cell.over-limit {
+            color: #ff6b6b;
+            animation: blink 0.8s infinite;
+        }
+
+        .status-cell {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #00e676;
+        }
+
+        .status-cell .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00e676;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-weight: 400;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: rgba(0, 229, 255, 0.08);
+            letter-spacing: 0.5px;
+        }
+
+        .footer strong {
+            color: rgba(0, 229, 255, 0.15);
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 30px;
+            color: rgba(0, 229, 255, 0.2);
+        }
+
+        .loading-spinner .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(0, 229, 255, 0.05);
+            border-top: 3px solid #00e5ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(0.7);
+                opacity: 0.6;
+            }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px 16px 30px;
+            }
+            .header-left .title {
+                font-size: 15px;
+            }
+            .header-left .title small {
+                font-size: 10px;
+            }
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            .stat-card {
+                padding: 8px 10px;
+            }
+            .stat-card .number {
+                font-size: 18px;
+            }
+            table {
+                font-size: 12px;
+            }
+            thead th, tbody td {
+                padding: 8px 10px;
+            }
+            .nama-cell {
+                font-size: 11px;
+            }
+            .timer-cell {
+                font-size: 12px;
+            }
+            .live-badge {
+                font-size: 9px;
+                padding: 2px 10px 2px 8px;
+            }
+            .clock {
+                font-size: 11px;
+                padding: 2px 10px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <span class="logo">📡</span>
+                <div class="title">
+                    LIVE IZIN
+                    <small>Real-time Monitoring</small>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="live-badge">
+                    <span class="dot"></span>
+                    LIVE
+                </div>
+                <div class="clock" id="clockDisplay">--:--:--</div>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number online" id="totalOnline">0</div>
+                <div class="label">🟢 Sedang Izin</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalUsers">0</div>
+                <div class="label">👤 Total Anggota</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalVoucher">0</div>
+                <div class="label">🎫 Voucher</div>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Nama</th>
+                        <th>Role</th>
+                        <th style="text-align:right;">Durasi</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="4">
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                                <span>Memuat data...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            © 2026 <strong>DDT Team</strong> • Real-time Monitoring
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SUPABASE CLIENT -->
+    <!-- ============================================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+
+    <script>
+        (function() {
+            'use strict';
+
+            console.log('🚀 Live View - Starting...');
+
+            // ============================================================
+            // KONFIGURASI SUPABASE
+            // ============================================================
+            var SUPABASE_URL = 'https://kdmxjficzigsumvcsrtn.supabase.co';
+            var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkbXhqZmljemlnc3VtdmNzcnRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTI4MDAsImV4cCI6MjA5ODg4ODgwMH0.LTh93wC11NeydKGlrkxSreaSTQFq5KiidWisQ09CqnM';
+
+            var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // ============================================================
+            // STATE
+            // ============================================================
+            var listUsers = [];
+            var izinData = {};
+            var voucherData = {};
+            var jackpotLimitMinutes = 15;
+
+            // ============================================================
+            // FORMAT UTILITY
+            // ============================================================
+            function formatName(name) {
+                return name ? name.toUpperCase() : '';
+            }
+
+            // ============================================================
+            // LOAD DATA
+            // ============================================================
+            async function loadPublicData() {
+                try {
+                    console.log('📥 Loading data...');
+
+                    var usersResult = await supabase.from('users').select('*');
+                    if (usersResult.error) {
+                        console.error('❌ Users error:', usersResult.error);
+                    } else {
+                        listUsers = usersResult.data || [];
+                        console.log('✅ ' + listUsers.length + ' users loaded');
+                    }
+
+                    var voucherResult = await supabase.from('vouchers').select('*');
+                    if (voucherResult.error) {
+                        console.error('❌ Voucher error:', voucherResult.error);
+                    } else {
+                        voucherData = {};
+                        (voucherResult.data || []).forEach(function(v) {
+                            voucherData[v.nama] = v.jumlah || 0;
+                        });
+                        console.log('✅ ' + (voucherResult.data || []).length + ' voucher loaded');
+                    }
+
+                    var izinResult = await supabase.from('izin_anggota').select('*').eq('status', 'izin');
+                    if (izinResult.error) {
+                        console.error('❌ Izin error:', izinResult.error);
+                    } else {
+                        izinData = {};
+                        (izinResult.data || []).forEach(function(item) {
+                            izinData[item.nama] = {
+                                mulai: item.mulai,
+                                role: item.role
+                            };
+                        });
+                        console.log('✅ ' + (izinResult.data || []).length + ' users sedang izin');
+                    }
+
+                    var settingsResult = await supabase.from('settings').select('*').eq('key', 'izin_settings')
+                        .maybeSingle();
+                    if (!settingsResult.error && settingsResult.data) {
+                        try {
+                            var parsed = JSON.parse(settingsResult.data.value);
+                            if (parsed.jackpotLimitMinutes) {
+                                jackpotLimitMinutes = parsed.jackpotLimitMinutes;
+                            }
+                        } catch (e) {}
+                    }
+
+                    renderTable();
+                    updateStats();
+                    console.log('✅ Data loaded!');
+
+                } catch (err) {
+                    console.error('❌ Error:', err);
+                }
+            }
+
+            // ============================================================
+            // RENDER TABLE
+            // ============================================================
+            function renderTable() {
+                var tbody = document.getElementById('tableBody');
+
+                var onlineUsers = listUsers
+                    .filter(function(user) {
+                        return izinData[user.name] && izinData[user.name].mulai;
+                    })
+                    .map(function(user) {
+                        return {
+                            ...user,
+                            mulai: izinData[user.name].mulai
+                        };
+                    })
+                    .sort(function(a, b) {
+                        return new Date(a.mulai) - new Date(b.mulai);
+                    });
+
+                if (onlineUsers.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <div class="icon">😴</div>
+                                    <h3>Belum ada yang izin</h3>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                var roleLabels = {
+                    leader: 'Leader',
+                    csline: 'CS Line',
+                    cs: 'CS',
+                    kapten: 'Kapten',
+                    kasir: 'Kasir'
+                };
+
+                var roleIcons = {
+                    leader: '👑',
+                    csline: '⭐',
+                    cs: '💬',
+                    kapten: '⚓',
+                    kasir: '💰'
+                };
+
+                var now = new Date();
+                var batasDetik = (jackpotLimitMinutes * 60) - 1;
+
+                var html = '';
+                onlineUsers.forEach(function(user, index) {
+                    var startTime = new Date(user.mulai);
+                    var diff = Math.floor((now - startTime) / 1000);
+                    var validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
+                    var menit = Math.floor(validDiff / 60);
+                    var detik = validDiff % 60;
+                    var isOverLimit = validDiff > batasDetik;
+
+                    var role = user.role || 'cs';
+                    var roleLabel = roleLabels[role] || role;
+                    var roleIcon = roleIcons[role] || '👤';
+                    var timerClass = isOverLimit ? 'over-limit' : '';
+                    var delay = index * 0.08;
+
+                    html += `
+                        <tr style="animation: fadeIn 0.3s ease ${delay}s both;">
+                            <td>
+                                <span class="status-cell">
+                                    <span class="dot"></span>
+                                    Online
+                                </span>
+                            </td>
+                            <td>
+                                <span class="nama-cell">${user.name}</span>
+                            </td>
+                            <td>
+                                <span class="role-tag ${role}">${roleIcon} ${roleLabel}</span>
+                            </td>
+                            <td style="text-align:right;">
+                                <span class="timer-cell ${timerClass}" data-nama="${user.name}">
+                                    ${menit}m ${detik}s
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+            }
+
+            // ============================================================
+            // UPDATE STATS
+            // ============================================================
+            function updateStats() {
+                var online = Object.keys(izinData).length;
+                var total = listUsers.length;
+                var voucherTotal = 0;
+                for (var key in voucherData) {
+                    voucherTotal += voucherData[key];
+                }
+
+                document.getElementById('totalOnline').textContent = online;
+                document.getElementById('totalUsers').textContent = total;
+                document.getElementById('totalVoucher').textContent = voucherTotal;
+            }
+
+            // ============================================================
+            // UPDATE TIMERS
+            // ============================================================
+            function updateTimers() {
+                var timerCells = document.querySelectorAll('.timer-cell');
+                var now = new Date();
+                var batasDetik = (jackpotLimitMinutes * 60) - 1;
+
+                timerCells.forEach(function(el) {
+                    var nama = el.getAttribute('data-nama');
+                    if (!nama) return;
+
+                    var data = izinData[nama];
+                    if (!data || !data.mulai) return;
+
+                    var startTime = new Date(data.mulai);
+                    var diff = Math.floor((now - startTime) / 1000);
+                    var validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
+                    var menit = Math.floor(validDiff / 60);
+                    var detik = validDiff % 60;
+                    var isOverLimit = validDiff > batasDetik;
+
+                    el.textContent = menit + 'm ' + detik + 's';
+                    el.className = 'timer-cell' + (isOverLimit ? ' over-limit' : '');
+                });
+            }
+
+            // ============================================================
+            // CLOCK
+            // ============================================================
+            function startClock() {
+                updateClock();
+                setInterval(updateClock, 1000);
+            }
+
+            function updateClock() {
+                var now = new Date();
+                var hours = String(now.getHours()).padStart(2, '0');
+                var minutes = String(now.getMinutes()).padStart(2, '0');
+                var seconds = String(now.getSeconds()).padStart(2, '0');
+                document.getElementById('clockDisplay').textContent = hours + ':' + minutes + ':' + seconds;
+            }
+
+            // ============================================================
+            // INIT
+            // ============================================================
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('🚀 Live View - DOM Ready');
+                loadPublicData();
+                startClock();
+                setInterval(updateTimers, 1000);
+                setInterval(loadPublicData, 30000);
+            });
+
+        })();
+    </script>
+
+</body>
+</html>
