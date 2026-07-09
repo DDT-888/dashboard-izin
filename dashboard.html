@@ -3573,48 +3573,43 @@
                     historyData = [];
                 }
 
-                // 3. Load izin aktif - PERBAIKAN UNTUK TIMER
-                try {
-                    const { data: izinData, error: izinError } = await supabaseDashboard
-                        .from('izin_anggota')
-                        .select('*');
+                // 3. Load izin aktif
+try {
+    const { data: izinData, error: izinError } = await supabaseDashboard
+        .from('izin_anggota')
+        .select('*');
 
-                    if (!izinError && izinData) {
-                        console.log(`📋 Found ${izinData.length} izin records in database`);
-                        
-                        // Reset semua status dulu
-                        daftarAnggota.forEach(nama => {
-                            if (dataIzin[nama]) {
-                                dataIzin[nama].status = 'none';
-                                dataIzin[nama].mulai = null;
-                                dataIzin[nama].tanggal = null;
-                                dataIzin[nama].selesai = null;
-                            }
-                        });
-                        
-                        // Set status dari database
-                        let aktifCount = 0;
-                        izinData.forEach(item => {
-                            if (dataIzin[item.nama]) {
-                                dataIzin[item.nama].status = item.status || 'none';
-                                // PASTIKAN mulai di-set dengan benar
-                                dataIzin[item.nama].mulai = item.mulai ? new Date(item.mulai).toISOString() : null;
-                                dataIzin[item.nama].tanggal = item.tanggal;
-                                dataIzin[item.nama].selesai = item.selesai;
-                                if (item.status === 'izin' && item.mulai) {
-                                    aktifCount++;
-                                    const localTime = new Date(item.mulai).toLocaleString('id-ID');
-                                    console.log(`✅ User ${item.nama} sedang izin sejak ${localTime} (UTC: ${item.mulai})`);
-                                }
-                            }
-                        });
-                        console.log(`✅ ${aktifCount} users sedang izin (aktif)`);
-                    } else {
-                        console.log('⚠️ No izin data found');
-                    }
-                } catch (err) {
-                    console.log('⚠️ Izin table error:', err.message);
+    if (!izinError && izinData) {
+        console.log(`📋 Found ${izinData.length} izin records in database`);
+        
+        daftarAnggota.forEach(nama => {
+            if (dataIzin[nama]) {
+                dataIzin[nama].status = 'none';
+                dataIzin[nama].mulai = null;
+                dataIzin[nama].tanggal = null;
+                dataIzin[nama].selesai = null;
+            }
+        });
+        
+        let aktifCount = 0;
+        izinData.forEach(item => {
+            if (dataIzin[item.nama]) {
+                dataIzin[item.nama].status = item.status || 'none';
+                // 🔥 PERBAIKAN: Pastikan mulai disimpan sebagai ISO string
+                dataIzin[item.nama].mulai = item.mulai ? new Date(item.mulai).toISOString() : null;
+                dataIzin[item.nama].tanggal = item.tanggal;
+                dataIzin[item.nama].selesai = item.selesai;
+                if (item.status === 'izin' && item.mulai) {
+                    aktifCount++;
+                    console.log(`✅ User ${item.nama} sedang izin sejak ${item.mulai}`);
                 }
+            }
+        });
+        console.log(`✅ ${aktifCount} users sedang izin (aktif)`);
+    }
+} catch (err) {
+    console.log('⚠️ Izin table error:', err.message);
+}
 
                 // 4. Load voucher
                 try {
@@ -4264,56 +4259,52 @@
         // ============================================================
         // AUTO REFRESH DATA DARI DATABASE (SETIAP 10 DETIK)
         // ============================================================
-        function startAutoRefresh() {
-            setInterval(async () => {
-                // Refresh data izin dari database tanpa reload halaman
-                try {
-                    const { data: izinData, error } = await supabaseDashboard
-                        .from('izin_anggota')
-                        .select('*')
-                        .eq('status', 'izin');
+       function startAutoRefresh() {
+    setInterval(async () => {
+        try {
+            const { data: izinData, error } = await supabaseDashboard
+                .from('izin_anggota')
+                .select('*')
+                .eq('status', 'izin');
 
-                    if (!error && izinData) {
-                        // Update status izin dari database
-                        let adaPerubahan = false;
-                        
-                        // Reset semua status izin yang tidak ada di database
-                        daftarAnggota.forEach(nama => {
-                            if (dataIzin[nama] && dataIzin[nama].status === 'izin') {
-                                // Cek apakah masih ada di database
-                                const stillActive = izinData.some(item => item.nama === nama && item.status === 'izin');
-                                if (!stillActive) {
-                                    dataIzin[nama].status = 'none';
-                                    dataIzin[nama].mulai = null;
-                                    dataIzin[nama].tanggal = null;
-                                    adaPerubahan = true;
-                                    console.log(`🔄 User ${nama} sudah selesai izin (detected from DB)`);
-                                }
-                            }
-                        });
-                        
-                        // Tambahkan izin baru dari database
-                        izinData.forEach(item => {
-                            if (dataIzin[item.nama] && dataIzin[item.nama].status !== 'izin') {
-                                dataIzin[item.nama].status = 'izin';
-                                dataIzin[item.nama].mulai = item.mulai;
-                                dataIzin[item.nama].tanggal = item.tanggal;
-                                adaPerubahan = true;
-                                console.log(`🔄 User ${item.nama} mulai izin (detected from DB)`);
-                            }
-                        });
-                        
-                        if (adaPerubahan) {
-                            renderAll();
-                            updateCurrentCounts();
-                            console.log('🔄 Dashboard updated from database');
+            if (!error && izinData) {
+                let adaPerubahan = false;
+                
+                daftarAnggota.forEach(nama => {
+                    if (dataIzin[nama] && dataIzin[nama].status === 'izin') {
+                        const stillActive = izinData.some(item => item.nama === nama && item.status === 'izin');
+                        if (!stillActive) {
+                            dataIzin[nama].status = 'none';
+                            dataIzin[nama].mulai = null;
+                            dataIzin[nama].tanggal = null;
+                            adaPerubahan = true;
+                            console.log(`🔄 User ${nama} sudah selesai izin (detected from DB)`);
                         }
                     }
-                } catch (err) {
-                    // Silent error - tidak perlu spam console
+                });
+                
+                izinData.forEach(item => {
+                    if (dataIzin[item.nama] && dataIzin[item.nama].status !== 'izin') {
+                        dataIzin[item.nama].status = 'izin';
+                        // 🔥 PERBAIKAN: Simpan sebagai ISO string
+                        dataIzin[item.nama].mulai = item.mulai ? new Date(item.mulai).toISOString() : null;
+                        dataIzin[item.nama].tanggal = item.tanggal;
+                        adaPerubahan = true;
+                        console.log(`🔄 User ${item.nama} mulai izin (detected from DB)`);
+                    }
+                });
+                
+                if (adaPerubahan) {
+                    renderAll();
+                    updateCurrentCounts();
+                    console.log('🔄 Dashboard updated from database');
                 }
-            }, 10000); // Refresh setiap 10 detik
+            }
+        } catch (err) {
+            // Silent error
         }
+    }, 10000);
+}
 
         // ============================================================
         // FUNGSI USERS
@@ -5128,73 +5119,83 @@
                     used < maxQuota;
 
                 if (status === 'izin') {
-                    rowClass = 'row-online';
-                    
-                    // PERBAIKAN TIMER - Pastikan data.mulai valid
-                    if (!data.mulai) {
-                        console.warn(`⚠️ User ${nama} status izin tapi tidak ada mulai`);
-                        timerHTML = '0m 0s';
-                    } else {
-                        const tMulai = new Date(data.mulai);
-                        const now = new Date();
-                        const diff = Math.floor((now - tMulai) / 1000);
-                        
-                        // Jika diff negatif atau NaN, set ke 0
-                        const validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
-                        
-                        const menit = Math.floor(validDiff / 60);
-                        const detik = validDiff % 60;
-                        
-                        const batasDetik = (jackpotLimitMinutes * 60) - 1;
-                        const isOverLimit = validDiff > batasDetik;
-                        const isJackpot = isOverLimit;
+    rowClass = 'row-online';
+    
+    // 🔥 PERBAIKAN: Parse waktu dengan benar
+    if (!data.mulai) {
+        console.warn(`⚠️ User ${nama} status izin tapi tidak ada mulai`);
+        timerHTML = '0m 0s';
+    } else {
+        // Parse string ISO ke Date object (otomatis mengkonversi UTC ke lokal)
+        const tMulai = new Date(data.mulai);
+        const now = new Date();
+        
+        // 🔥 PERBAIKAN: Hitung selisih dalam milidetik
+        const diffMs = now.getTime() - tMulai.getTime();
+        const diff = Math.floor(diffMs / 1000);
+        
+        // Jika diff negatif atau NaN, set ke 0
+        const validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
+        
+        const menit = Math.floor(validDiff / 60);
+        const detik = validDiff % 60;
+        
+        // Cek apakah diff terlalu besar (lebih dari 1 jam) - kemungkinan error timezone
+        if (validDiff > 3600 && menit > 60) {
+            console.warn(`⚠️ Timer ${nama}: ${menit}m ${detik}s - mungkin ada masalah timezone`);
+            // Gunakan pendekatan alternatif: hitung dari waktu sekarang - waktu mulai
+            // Tapi karena kita sudah pakai new Date(), seharusnya sudah benar
+        }
+        
+        const batasDetik = (jackpotLimitMinutes * 60) - 1;
+        const isOverLimit = validDiff > batasDetik;
+        const isJackpot = isOverLimit;
 
-                        const maxProgressDetik = jackpotLimitMinutes * 60;
-                        const progressPercent = Math.min((validDiff / maxProgressDetik) * 100, 100);
-                        
-                        let progressClass = '';
-                        let textClass = '';
-                        
-                        if (progressPercent >= 100) {
-                            progressClass = 'full';
-                            textClass = 'full';
-                        } else if (isJackpot) {
-                            progressClass = 'jackpot';
-                        } else if (isOverLimit) {
-                            progressClass = 'danger';
-                        } else if (progressPercent > 60) {
-                            progressClass = 'warning';
-                        }
-                        
-                        const progressFill = `<div class="progress-bar-fill ${progressClass}" style="width: ${progressPercent}%;"></div>`;
-                        
-                        progressHTML = `
-                            <div class="progress-container">
-                                <div class="progress-bar-wrap">
-                                    ${progressFill}
-                                </div>
-                                <span class="progress-text ${textClass}">${Math.round(progressPercent)}%</span>
-                            </div>
-                        `;
+        const maxProgressDetik = jackpotLimitMinutes * 60;
+        const progressPercent = Math.min((validDiff / maxProgressDetik) * 100, 100);
+        
+        let progressClass = '';
+        let textClass = '';
+        
+        if (progressPercent >= 100) {
+            progressClass = 'full';
+            textClass = 'full';
+        } else if (isJackpot) {
+            progressClass = 'jackpot';
+        } else if (isOverLimit) {
+            progressClass = 'danger';
+        } else if (progressPercent > 60) {
+            progressClass = 'warning';
+        }
+        
+        const progressFill = `<div class="progress-bar-fill ${progressClass}" style="width: ${progressPercent}%;"></div>`;
+        
+        progressHTML = `
+            <div class="progress-container">
+                <div class="progress-bar-wrap">
+                    ${progressFill}
+                </div>
+                <span class="progress-text ${textClass}">${Math.round(progressPercent)}%</span>
+            </div>
+        `;
 
-                        const jamMulai = tMulai.toLocaleTimeString('id-ID', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        mulaiHTML = `<span class="time-mulai">${jamMulai}</span>`;
+        const jamMulai = tMulai.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        mulaiHTML = `<span class="time-mulai">${jamMulai}</span>`;
 
-                        statusHTML =
-                            `<span class="status-badge online"><span class="dot"></span> Online</span>`;
-                        timerHTML = `<span class="timer-display ${isOverLimit ? 'over-limit' : ''}">${menit}m ${detik}s</span>`;
-                    }
-                    
-                    const canEnd = isLeaderOrCsLine || isCurrentUser;
-                    actionHTML = `
-                            <button class="btn-action end" onclick="selesaiIzin('${nama}')" ${!canEnd ? 'disabled' : ''}>
-                                <span class="icon">■</span> END
-                            </button>
-                        `;
-                } else {
+        statusHTML = `<span class="status-badge online"><span class="dot"></span> Online</span>`;
+        timerHTML = `<span class="timer-display ${isOverLimit ? 'over-limit' : ''}">${menit}m ${detik}s</span>`;
+    }
+    
+    const canEnd = isLeaderOrCsLine || isCurrentUser;
+    actionHTML = `
+        <button class="btn-action end" onclick="selesaiIzin('${nama}')" ${!canEnd ? 'disabled' : ''}>
+            <span class="icon">■</span> END
+        </button>
+    `;
+} else {
                     rowClass = 'row-offline';
                     statusHTML =
                         `<span class="status-badge offline"><span class="dot"></span> Offline</span>`;
