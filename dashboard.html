@@ -3895,237 +3895,263 @@
         }
 
         // ============================================================
-        // AUTHENTICATION
-        // ============================================================
-        async function checkAuth() {
-            console.log('🔍 checkAuth - Memulai...');
+// AUTHENTICATION - PERBAIKAN LOADING CARD
+// ============================================================
+async function checkAuth() {
+    console.log('🔍 checkAuth - Memulai...');
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const hash = window.location.hash;
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const hash = window.location.hash;
 
-            // Cek user terdaftar SEBELUM apapun
-            try {
-                const { data: { session } } = await supabaseDashboard.auth.getSession();
-                
-                if (session?.user?.email) {
-                    const isRegistered = await checkUserRegistered(session.user.email);
-                    if (!isRegistered) {
-                        console.log('❌ User tidak terdaftar, tampilkan popup...');
-                        showNotRegisteredPopup(session.user.email);
-                        return;
-                    }
-                }
-            } catch (err) {
-                console.error('❌ Error checking user registration:', err);
-                showNotRegisteredPopup('unknown@email.com');
+    // Cek user terdaftar SEBELUM apapun
+    try {
+        const { data: { session } } = await supabaseDashboard.auth.getSession();
+        
+        if (session?.user?.email) {
+            const isRegistered = await checkUserRegistered(session.user.email);
+            if (!isRegistered) {
+                console.log('❌ User tidak terdaftar, tampilkan popup...');
+                showNotRegisteredPopup(session.user.email);
                 return;
-            }
-
-            if (code || (hash && hash.includes('access_token'))) {
-                console.log('🔑 Detected OAuth redirect, processing...');
-                try {
-                    const { data, error } = await supabaseDashboard.auth.getSession();
-                    
-                    if (error) {
-                        console.error('❌ Error getting session after redirect:', error);
-                        showNotRegisteredPopup('error@email.com');
-                        return;
-                    }
-                    
-                    if (data?.session) {
-                        console.log('✅ Session found after redirect for:', data.session.user.email);
-                        currentUser = data.session.user;
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                        await loadDataFromDatabase();
-                        renderAll();
-                        startTimerUpdates();
-                        startClock();
-                        console.log('✅ Dashboard siap!');
-                        return;
-                    } else {
-                        console.log('⏳ No session yet after redirect, waiting...');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                        return;
-                    }
-                } catch (err) {
-                    console.error('❌ Error processing redirect:', err);
-                    showNotRegisteredPopup('error@email.com');
-                    return;
-                }
-            }
-
-            if (TEST_MODE) {
-                console.log('🧪 TEST MODE - Bypassing login...');
-                currentUser = {
-                    email: 'test@leader.com',
-                    user_metadata: { full_name: 'Test Leader' }
-                };
-                currentUserRole = 'leader';
-                userPermissions = ROLE_PERMISSIONS.leader;
-
-                document.getElementById('userName').textContent = formatName('Test Leader (TEST MODE)');
-                document.getElementById('userEmail').textContent = formatEmail('test@leader.com');
-                document.getElementById('userRole').textContent = '👑 Leader';
-                document.getElementById('userRole').className = 'role-badge leader';
-                document.getElementById('menuSettings').style.display = 'flex';
-                document.getElementById('menuManagement').style.display = 'flex';
-                document.getElementById('menuVoucher').style.display = 'flex';
-                document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
-                document.getElementById('profileAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
-                document.getElementById('dropdownName').textContent = formatName('Test Leader (TEST MODE)');
-                document.getElementById('dropdownEmail').textContent = formatEmail('test@leader.com');
-                document.getElementById('dropdownRole').textContent = '👑 Leader';
-
-                document.getElementById('welcomeUsername').textContent = 'Test Leader';
-                document.querySelector('.welcome-banner .badge-role').innerHTML = '<span class="icon">👑</span> Leader';
-                updateGreeting();
-
-                document.getElementById('lockedNotice').style.display = 'none';
-
-                loadSettings();
-                await loadDummyData();
-                await loadDummyUsers();
-                startTimerUpdates();
-                startClock();
-                renderTicker();
-                updateQuickStats();
-                console.log('✅ TEST MODE - Dashboard siap!');
-                return;
-            }
-
-            try {
-                const { data: { session }, error } = await supabaseDashboard.auth.getSession();
-
-                if (error) {
-                    console.error('❌ Session error:', error);
-                    showToast('❌ Error session: ' + error.message, 'error', 5000);
-                    return;
-                }
-
-                if (!session) {
-                    console.log('❌ No session found, redirecting to login...');
-                    window.location.href = '/';
-                    return;
-                }
-
-                currentUser = session.user;
-
-                if (!currentUser) {
-                    console.error('❌ No user found');
-                    window.location.href = '/';
-                    return;
-                }
-
-                console.log('✅ User authenticated:', currentUser.email);
-
-                const isRegistered = await checkUserRegistered(currentUser.email);
-                if (!isRegistered) {
-                    return;
-                }
-
-                const { data: userData, error: userError } = await supabaseDashboard
-                    .from('users')
-                    .select('*')
-                    .eq('email', currentUser.email)
-                    .maybeSingle();
-
-                if (userError || !userData) {
-                    console.log('📝 Creating user in database...');
-                    const userName = formatName(currentUser.user_metadata?.full_name || currentUser.email);
-                    await supabaseDashboard.from('users').upsert({
-                        email: formatEmail(currentUser.email),
-                        name: userName,
-                        role: 'cs',
-                        picture: currentUser.user_metadata?.avatar_url || null
-                    }, { onConflict: 'email' });
-                    currentUserRole = 'cs';
-                    
-                    const { data: newUserData } = await supabaseDashboard
-                        .from('users')
-                        .select('*')
-                        .eq('email', currentUser.email)
-                        .maybeSingle();
-                    
-                    if (newUserData) {
-                        currentUserRole = newUserData.role || 'cs';
-                        if (newUserData.picture) {
-                            document.getElementById('profileAvatar').src = newUserData.picture;
-                        }
-                    }
-                } else {
-                    currentUserRole = userData.role || 'cs';
-                    currentUser = { ...currentUser, ...userData };
-                    if (userData.picture) {
-                        document.getElementById('profileAvatar').src = userData.picture;
-                    }
-                }
-
-                userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
-                const roleLabel = userPermissions.label || 'User';
-                const roleIcon = userPermissions.icon || '👤';
-
-                const userNameDisplay = getCurrentUserName();
-                document.getElementById('userName').textContent = userNameDisplay;
-                document.getElementById('userEmail').textContent = formatEmail(currentUser.email);
-                document.getElementById('userRole').textContent = `${roleIcon} ${roleLabel}`;
-                document.getElementById('userRole').className = `role-badge ${currentUserRole}`;
-                document.getElementById('userAvatar').src = currentUser.user_metadata?.avatar_url ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay)}`;
-                document.getElementById('profileAvatar').src = currentUser.user_metadata?.avatar_url ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay)}`;
-                document.getElementById('dropdownName').textContent = userNameDisplay;
-                document.getElementById('dropdownEmail').textContent = formatEmail(currentUser.email);
-                document.getElementById('dropdownRole').textContent = `${roleIcon} ${roleLabel}`;
-
-                document.getElementById('welcomeUsername').textContent = userNameDisplay;
-                document.querySelector('.welcome-banner .badge-role').innerHTML = `<span class="icon">${roleIcon}</span> ${roleLabel}`;
-                updateGreeting();
-
-                document.getElementById('menuManagement').style.display = 'flex';
-                document.getElementById('menuSettings').style.display = userPermissions.canViewSettings ? 'flex' : 'none';
-                document.getElementById('menuVoucher').style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
-
-                const canEdit = userPermissions.canEditSettings;
-                document.querySelectorAll('.view-only-indicator').forEach(el => {
-                    el.style.display = canEdit ? 'none' : 'inline-flex';
-                });
-
-                const settingsInputs = document.querySelectorAll('.settings-card input, .settings-card textarea');
-                settingsInputs.forEach(input => {
-                    if (!canEdit) {
-                        input.disabled = true;
-                        input.style.cursor = 'not-allowed';
-                        input.style.opacity = '0.6';
-                    }
-                });
-
-                const settingsButtons = document.querySelectorAll('.settings-card .btn-settings');
-                settingsButtons.forEach(btn => {
-                    if (!canEdit) {
-                        btn.disabled = true;
-                        btn.style.cursor = 'not-allowed';
-                        btn.style.opacity = '0.5';
-                    }
-                });
-
-                document.getElementById('lockedNotice').style.display = 'none';
-
-                await loadDataFromDatabase();
-                await checkIPAccess();
-
-                startTimerUpdates();
-                startClock();
-
-                console.log('✅ Dashboard siap!');
-
-            } catch (err) {
-                console.error('❌ Error checkAuth:', err);
-                showToast('❌ Error: ' + err.message, 'error', 5000);
             }
         }
+    } catch (err) {
+        console.error('❌ Error checking user registration:', err);
+        showNotRegisteredPopup('unknown@email.com');
+        return;
+    }
+
+    if (code || (hash && hash.includes('access_token'))) {
+        console.log('🔑 Detected OAuth redirect, processing...');
+        try {
+            const { data, error } = await supabaseDashboard.auth.getSession();
+            
+            if (error) {
+                console.error('❌ Error getting session after redirect:', error);
+                showNotRegisteredPopup('error@email.com');
+                return;
+            }
+            
+            if (data?.session) {
+                console.log('✅ Session found after redirect for:', data.session.user.email);
+                currentUser = data.session.user;
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                // 🔥 PERBAIKAN: Load data dulu, baru update UI
+                await loadDataFromDatabase();
+                await checkIPAccess();
+                
+                // 🔥 PERBAIKAN: Update UI setelah data siap
+                updateUserUI();
+                
+                renderAll();
+                startTimerUpdates();
+                startClock();
+                console.log('✅ Dashboard siap!');
+                return;
+            } else {
+                console.log('⏳ No session yet after redirect, waiting...');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+                return;
+            }
+        } catch (err) {
+            console.error('❌ Error processing redirect:', err);
+            showNotRegisteredPopup('error@email.com');
+            return;
+        }
+    }
+
+    if (TEST_MODE) {
+        console.log('🧪 TEST MODE - Bypassing login...');
+        currentUser = {
+            email: 'test@leader.com',
+            user_metadata: { full_name: 'Test Leader' }
+        };
+        currentUserRole = 'leader';
+        userPermissions = ROLE_PERMISSIONS.leader;
+
+        document.getElementById('userName').textContent = formatName('Test Leader (TEST MODE)');
+        document.getElementById('userEmail').textContent = formatEmail('test@leader.com');
+        document.getElementById('userRole').textContent = '👑 Leader';
+        document.getElementById('userRole').className = 'role-badge leader';
+        document.getElementById('menuSettings').style.display = 'flex';
+        document.getElementById('menuManagement').style.display = 'flex';
+        document.getElementById('menuVoucher').style.display = 'flex';
+        document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
+        document.getElementById('profileAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
+        document.getElementById('dropdownName').textContent = formatName('Test Leader (TEST MODE)');
+        document.getElementById('dropdownEmail').textContent = formatEmail('test@leader.com');
+        document.getElementById('dropdownRole').textContent = '👑 Leader';
+
+        document.getElementById('welcomeUsername').textContent = 'Test Leader';
+        document.querySelector('.welcome-banner .badge-role').innerHTML = '<span class="icon">👑</span> Leader';
+        updateGreeting();
+
+        document.getElementById('lockedNotice').style.display = 'none';
+
+        loadSettings();
+        await loadDummyData();
+        await loadDummyUsers();
+        startTimerUpdates();
+        startClock();
+        renderTicker();
+        updateQuickStats();
+        console.log('✅ TEST MODE - Dashboard siap!');
+        return;
+    }
+
+    try {
+        const { data: { session }, error } = await supabaseDashboard.auth.getSession();
+
+        if (error) {
+            console.error('❌ Session error:', error);
+            showToast('❌ Error session: ' + error.message, 'error', 5000);
+            return;
+        }
+
+        if (!session) {
+            console.log('❌ No session found, redirecting to login...');
+            window.location.href = '/';
+            return;
+        }
+
+        currentUser = session.user;
+
+        if (!currentUser) {
+            console.error('❌ No user found');
+            window.location.href = '/';
+            return;
+        }
+
+        console.log('✅ User authenticated:', currentUser.email);
+
+        const isRegistered = await checkUserRegistered(currentUser.email);
+        if (!isRegistered) {
+            return;
+        }
+
+        const { data: userData, error: userError } = await supabaseDashboard
+            .from('users')
+            .select('*')
+            .eq('email', currentUser.email)
+            .maybeSingle();
+
+        if (userError || !userData) {
+            console.log('📝 Creating user in database...');
+            const userName = formatName(currentUser.user_metadata?.full_name || currentUser.email);
+            await supabaseDashboard.from('users').upsert({
+                email: formatEmail(currentUser.email),
+                name: userName,
+                role: 'cs',
+                picture: currentUser.user_metadata?.avatar_url || null
+            }, { onConflict: 'email' });
+            currentUserRole = 'cs';
+            
+            const { data: newUserData } = await supabaseDashboard
+                .from('users')
+                .select('*')
+                .eq('email', currentUser.email)
+                .maybeSingle();
+            
+            if (newUserData) {
+                currentUserRole = newUserData.role || 'cs';
+                if (newUserData.picture) {
+                    document.getElementById('profileAvatar').src = newUserData.picture;
+                }
+            }
+        } else {
+            currentUserRole = userData.role || 'cs';
+            currentUser = { ...currentUser, ...userData };
+            if (userData.picture) {
+                document.getElementById('profileAvatar').src = userData.picture;
+            }
+        }
+
+        userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
+
+        // 🔥 PERBAIKAN: Load data dari database TERLEBIH DAHULU
+        await loadDataFromDatabase();
+        await checkIPAccess();
+
+        // 🔥 PERBAIKAN: Update UI setelah data siap
+        updateUserUI();
+
+        startTimerUpdates();
+        startClock();
+
+        console.log('✅ Dashboard siap!');
+
+    } catch (err) {
+        console.error('❌ Error checkAuth:', err);
+        showToast('❌ Error: ' + err.message, 'error', 5000);
+    }
+}
+
+// ============================================================
+// UPDATE USER UI - FUNGSI TERPISAH
+// ============================================================
+function updateUserUI() {
+    const roleLabel = userPermissions.label || 'User';
+    const roleIcon = userPermissions.icon || '👤';
+    const userNameDisplay = getCurrentUserName();
+    const userEmail = formatEmail(currentUser?.email || '');
+
+    // Update sidebar
+    document.getElementById('userName').textContent = userNameDisplay || 'User';
+    document.getElementById('userEmail').textContent = userEmail;
+    document.getElementById('userRole').textContent = `${roleIcon} ${roleLabel}`;
+    document.getElementById('userRole').className = `role-badge ${currentUserRole}`;
+    
+    // Update avatar
+    const avatarUrl = currentUser?.user_metadata?.avatar_url || 
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay || 'User')}`;
+    document.getElementById('userAvatar').src = avatarUrl;
+    document.getElementById('profileAvatar').src = avatarUrl;
+    
+    // Update dropdown
+    document.getElementById('dropdownName').textContent = userNameDisplay || 'User';
+    document.getElementById('dropdownEmail').textContent = userEmail;
+    document.getElementById('dropdownRole').textContent = `${roleIcon} ${roleLabel}`;
+
+    // Update welcome banner
+    document.getElementById('welcomeUsername').textContent = userNameDisplay || 'User';
+    document.querySelector('.welcome-banner .badge-role').innerHTML = `<span class="icon">${roleIcon}</span> ${roleLabel}`;
+    updateGreeting();
+
+    // Menu visibility
+    document.getElementById('menuManagement').style.display = 'flex';
+    document.getElementById('menuSettings').style.display = userPermissions.canViewSettings ? 'flex' : 'none';
+    document.getElementById('menuVoucher').style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
+
+    // Settings view only
+    const canEdit = userPermissions.canEditSettings;
+    document.querySelectorAll('.view-only-indicator').forEach(el => {
+        el.style.display = canEdit ? 'none' : 'inline-flex';
+    });
+
+    const settingsInputs = document.querySelectorAll('.settings-card input, .settings-card textarea');
+    settingsInputs.forEach(input => {
+        if (!canEdit) {
+            input.disabled = true;
+            input.style.cursor = 'not-allowed';
+            input.style.opacity = '0.6';
+        }
+    });
+
+    const settingsButtons = document.querySelectorAll('.settings-card .btn-settings');
+    settingsButtons.forEach(btn => {
+        if (!canEdit) {
+            btn.disabled = true;
+            btn.style.cursor = 'not-allowed';
+            btn.style.opacity = '0.5';
+        }
+    });
+
+    document.getElementById('lockedNotice').style.display = 'none';
+}
 
         // ============================================================
         // DUMMY DATA - HANYA UNTUK TEST MODE
