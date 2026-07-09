@@ -3520,7 +3520,7 @@
         }
 
         // ============================================================
-        // REALTIME SUBSCRIPTION - UPDATE DASHBOARD SECARA REAL-TIME
+        // REALTIME SUBSCRIPTION - PERBAIKAN FORMAT WAKTU
         // ============================================================
         function subscribeToIzinChanges() {
             if (realtimeChannel) {
@@ -3548,11 +3548,22 @@
                             const nama = newRecord.nama;
                             if (dataIzin[nama]) {
                                 dataIzin[nama].status = newRecord.status || 'none';
-                                dataIzin[nama].mulai = newRecord.mulai;
+                                
+                                // 🔥 PERBAIKAN: Pastikan format waktu UTC dengan Z
+                                if (newRecord.mulai) {
+                                    let mulaiStr = newRecord.mulai;
+                                    if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
+                                        mulaiStr = mulaiStr + 'Z';
+                                    }
+                                    dataIzin[nama].mulai = mulaiStr;
+                                } else {
+                                    dataIzin[nama].mulai = null;
+                                }
+                                
                                 dataIzin[nama].tanggal = newRecord.tanggal;
                                 dataIzin[nama].selesai = newRecord.selesai;
                                 
-                                console.log(`✅ Updated ${nama}: status=${newRecord.status}`);
+                                console.log(`✅ Updated ${nama}: status=${newRecord.status}, mulai=${dataIzin[nama].mulai}`);
                             }
                         } else if (eventType === 'DELETE') {
                             const nama = oldRecord.nama;
@@ -4452,7 +4463,7 @@
         }
 
         // ============================================================
-        // RENDER DASHBOARD TABLE
+        // RENDER DASHBOARD TABLE - PERBAIKAN TIMER
         // ============================================================
         window.renderDashboardTable = function() {
             const tbody = document.getElementById('dashboardTableBody');
@@ -4543,6 +4554,7 @@
                         console.warn(`⚠️ User ${nama} status izin tapi tidak ada mulai`);
                         timerHTML = '0m 0s';
                     } else {
+                        // 🔥 PERBAIKAN: Pastikan format UTC dengan Z
                         let mulaiStr = data.mulai;
                         if (!mulaiStr.endsWith('Z')) {
                             mulaiStr = mulaiStr + 'Z';
@@ -4552,7 +4564,12 @@
                         const now = new Date();
                         const diffMs = now.getTime() - tMulai.getTime();
                         const diff = Math.floor(diffMs / 1000);
+                        
+                        // 🔥 PERBAIKAN: Jika diff negatif atau NaN, set ke 0
                         const validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
+                        
+                        // 🔥 PERBAIKAN: Log untuk debug
+                        console.log(`🕐 ${nama}: mulai=${data.mulai}, parsed=${tMulai.toISOString()}, diff=${validDiff}s`);
                         
                         const menit = Math.floor(validDiff / 60);
                         const detik = validDiff % 60;
