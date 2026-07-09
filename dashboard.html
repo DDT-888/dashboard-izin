@@ -253,50 +253,6 @@
             box-shadow: 0 0 10px rgba(0, 230, 118, 0.15);
         }
 
-        .btn-logout {
-            width: 100%;
-            padding: 8px;
-            margin-top: 10px;
-            background: rgba(0, 229, 255, 0.02);
-            color: rgba(0, 229, 255, 0.3);
-            border: 1px solid rgba(0, 229, 255, 0.04);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 11px;
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-logout::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(244, 67, 54, 0.03), transparent);
-            transition: 0.5s;
-        }
-
-        .btn-logout:hover {
-            background: rgba(244, 67, 54, 0.04);
-            border-color: rgba(244, 67, 54, 0.08);
-            color: #f44336;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.03);
-        }
-
-        .btn-logout:hover::before {
-            left: 100%;
-        }
-
-        .btn-logout:active {
-            transform: scale(0.98);
-        }
-
         /* ========== MAIN CONTENT ========== */
         .main-content {
             margin-left: 240px;
@@ -2306,90 +2262,194 @@
             margin-bottom: 6px;
         }
 
+        /* ========== NOT REGISTERED POPUP - PREMIUM THEME ========== */
         .not-registered-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 10000;
             display: flex;
             justify-content: center;
             align-items: center;
-            animation: fadeInOverlay 0.3s ease;
+            animation: fadeInModal 0.5s ease;
         }
+
+        @keyframes fadeInModal {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes premiumBounce {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) rotate(-2deg);
+            }
+            60% {
+                transform: scale(1.02) rotate(0.5deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        @keyframes jackpotSpin {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.05); }
+            75% { transform: rotate(-5deg) scale(1.05); }
+        }
+
         .not-registered-popup {
-            background: #fff5f5;
-            border-radius: 16px;
-            padding: 32px 38px;
-            max-width: 420px;
+            background: linear-gradient(145deg, #0a0e1a, #0d1230, #1a0a2e);
+            border-radius: 24px;
+            padding: 40px 45px;
+            max-width: 440px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(198, 40, 40, 0.12);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 60px rgba(0, 229, 255, 0.08), 0 0 120px rgba(0, 229, 255, 0.03);
+            border: 1px solid rgba(0, 229, 255, 0.12);
             position: relative;
-            border: 2px solid #ffcdd2;
+            animation: premiumBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
         }
+
+        .not-registered-popup::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
         .not-registered-popup .icon {
             font-size: 56px;
             margin-bottom: 8px;
+            display: inline-block;
+            animation: jackpotSpin 3s ease-in-out infinite;
         }
+
         .not-registered-popup h2 {
-            color: #c62828;
-            font-size: 22px;
-            margin-bottom: 6px;
+            color: #00e5ff;
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+            letter-spacing: 1px;
         }
+
         .not-registered-popup p {
-            color: #555;
+            color: rgba(255, 255, 255, 0.7);
             font-size: 14px;
             line-height: 1.6;
             margin-bottom: 8px;
         }
+
+        .not-registered-popup p strong {
+            color: #ffd54f;
+        }
+
         .not-registered-popup .info-box {
-            background: #ffebee;
-            border-left: 4px solid #c62828;
-            padding: 10px 14px;
-            border-radius: 6px;
-            margin: 12px 0;
+            background: rgba(0, 229, 255, 0.05);
+            border-left: 3px solid #00e5ff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 16px 0;
             text-align: left;
         }
+
         .not-registered-popup .info-box p {
-            color: #b71c1c;
+            color: rgba(255, 255, 255, 0.5);
             font-size: 13px;
             margin-bottom: 0;
         }
-        .not-registered-popup .btn-close-popup {
-            background: #1a2a4a;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 24px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 12px;
-            transition: 0.3s;
+
+        .not-registered-popup .info-box p strong {
+            color: #00e5ff;
         }
-        .not-registered-popup .btn-close-popup:hover {
-            background: #0f1a30;
-        }
+
         .not-registered-popup .btn-logout-popup {
-            background: #c62828;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 24px;
-            font-weight: 600;
+            background: transparent;
+            color: #ff6b6b;
+            border: 2px solid rgba(255, 107, 107, 0.25);
+            padding: 12px 35px;
+            border-radius: 30px;
+            font-weight: 700;
             font-size: 14px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin-top: 8px;
-            transition: 0.3s;
             display: block;
             width: 100%;
         }
+
         .not-registered-popup .btn-logout-popup:hover {
-            background: #b71c1c;
+            background: rgba(255, 107, 107, 0.1);
+            border-color: rgba(255, 107, 107, 0.5);
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .not-registered-popup .corner-deco {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: rgba(0, 229, 255, 0.08);
+            border-style: solid;
+            border-width: 0;
+        }
+
+        .not-registered-popup .corner-deco.tl {
+            top: 16px;
+            left: 16px;
+            border-top-width: 2px;
+            border-left-width: 2px;
+            border-radius: 4px 0 0 0;
+        }
+
+        .not-registered-popup .corner-deco.tr {
+            top: 16px;
+            right: 16px;
+            border-top-width: 2px;
+            border-right-width: 2px;
+            border-radius: 0 4px 0 0;
+        }
+
+        .not-registered-popup .corner-deco.bl {
+            bottom: 16px;
+            left: 16px;
+            border-bottom-width: 2px;
+            border-left-width: 2px;
+            border-radius: 0 0 0 4px;
+        }
+
+        .not-registered-popup .corner-deco.br {
+            bottom: 16px;
+            right: 16px;
+            border-bottom-width: 2px;
+            border-right-width: 2px;
+            border-radius: 0 0 4px 0;
         }
 
         .table-dashboard-wrap th:first-child,
@@ -2632,7 +2692,7 @@
         </nav>
 
         <!-- SIDEBAR FOOTER -->
-          <div class="sidebar-footer">
+        <div class="sidebar-footer">
             <!-- User Card -->
             <div class="user-info">
                 <img id="userAvatar" src="https://ui-avatars.com/api/?name=Test" alt="Avatar" />
@@ -3497,31 +3557,41 @@
             }
         }
 
+        // ============================================================
+        // SHOW NOT REGISTERED POPUP - DASHBOARD VERSION (PREMIUM)
+        // ============================================================
         function showNotRegisteredPopup(email) {
+            // Hapus overlay lama jika ada
+            const oldOverlay = document.getElementById('notRegisteredOverlay');
+            if (oldOverlay) oldOverlay.remove();
+
             const overlay = document.createElement('div');
             overlay.className = 'not-registered-overlay';
             overlay.id = 'notRegisteredOverlay';
 
             overlay.innerHTML = `
-                    <div class="not-registered-popup">
-                        <div class="icon">🚫</div>
-                        <h2>Akses Ditolak!</h2>
-                        <p>
-                            Email <strong style="color:#b71c1c;">${formatEmail(email)}</strong> tidak terdaftar di sistem.
-                        </p>
-                        <div class="info-box">
-                            <p>💡 <strong>PS:</strong> Silakan hubungi <strong style="color:#1a2a4a;">CS LINE</strong> untuk pendaftaran akun.</p>
-                        </div>
-                        <button class="btn-close-popup" onclick="this.closest('.not-registered-overlay').remove(); window.location.href='/';">Mengerti</button>
-                        <button class="btn-logout-popup" onclick="logout(); this.closest('.not-registered-overlay').remove();">🚪 Logout</button>
+                <div class="not-registered-popup">
+                    <span class="corner-deco tl"></span>
+                    <span class="corner-deco tr"></span>
+                    <span class="corner-deco bl"></span>
+                    <span class="corner-deco br"></span>
+                    <div class="icon">🚫</div>
+                    <h2>⚠️ Akses Ditolak</h2>
+                    <p>
+                        Email <strong>${formatEmail(email)}</strong> tidak terdaftar di sistem.
+                    </p>
+                    <div class="info-box">
+                        <p>💡 <strong>PS:</strong> Silakan hubungi <strong>CS LINE</strong> untuk pendaftaran akun.</p>
                     </div>
-                `;
+                    <button class="btn-logout-popup" onclick="logout(); this.closest('.not-registered-overlay').remove();">🚪 Logout</button>
+                </div>
+            `;
 
             document.body.appendChild(overlay);
         }
 
         // ============================================================
-        // REALTIME SUBSCRIPTION - PERBAIKAN FORMAT WAKTU
+        // REALTIME SUBSCRIPTION
         // ============================================================
         function subscribeToIzinChanges() {
             if (realtimeChannel) {
@@ -3550,7 +3620,6 @@
                             if (dataIzin[nama]) {
                                 dataIzin[nama].status = newRecord.status || 'none';
                                 
-                                // 🔥 PERBAIKAN: Pastikan format waktu UTC dengan Z
                                 if (newRecord.mulai) {
                                     let mulaiStr = newRecord.mulai;
                                     if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
@@ -3826,244 +3895,237 @@
         }
 
         // ============================================================
-	// AUTHENTICATION
-	// ============================================================
-	async function checkAuth() {
-    console.log('🔍 checkAuth - Memulai...');
+        // AUTHENTICATION
+        // ============================================================
+        async function checkAuth() {
+            console.log('🔍 checkAuth - Memulai...');
 
-    // CEK APAKAH INI REDIRECT DARI OAUTH
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const hash = window.location.hash;
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const hash = window.location.hash;
 
-    // 🔥 PERBAIKAN: Cek user terdaftar SEBELUM apapun
-    try {
-        const { data: { session } } = await supabaseDashboard.auth.getSession();
-        
-        if (session?.user?.email) {
-            // Cek user terdaftar
-            const isRegistered = await checkUserRegistered(session.user.email);
-            if (!isRegistered) {
-                console.log('❌ User tidak terdaftar, redirect ke login...');
-                await supabaseDashboard.auth.signOut();
-                window.location.href = '/';
-                return; // 🔥 PENTING: Stop eksekusi!
-            }
-        }
-    } catch (err) {
-        console.error('❌ Error checking user registration:', err);
-        window.location.href = '/';
-        return; // 🔥 PENTING: Stop eksekusi!
-    }
-
-    // 🔥 PERBAIKAN: Jika ada redirect OAuth, proses terlebih dahulu
-    if (code || (hash && hash.includes('access_token'))) {
-        console.log('🔑 Detected OAuth redirect, processing...');
-        try {
-            const { data, error } = await supabaseDashboard.auth.getSession();
-            
-            if (error) {
-                console.error('❌ Error getting session after redirect:', error);
-                window.location.href = '/';
+            // Cek user terdaftar SEBELUM apapun
+            try {
+                const { data: { session } } = await supabaseDashboard.auth.getSession();
+                
+                if (session?.user?.email) {
+                    const isRegistered = await checkUserRegistered(session.user.email);
+                    if (!isRegistered) {
+                        console.log('❌ User tidak terdaftar, tampilkan popup...');
+                        showNotRegisteredPopup(session.user.email);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.error('❌ Error checking user registration:', err);
+                showNotRegisteredPopup('unknown@email.com');
                 return;
             }
-            
-            if (data?.session) {
-                console.log('✅ Session found after redirect for:', data.session.user.email);
-                currentUser = data.session.user;
-                window.history.replaceState({}, document.title, window.location.pathname);
-                await loadDataFromDatabase();
-                renderAll();
-                startTimerUpdates();
-                startClock();
-                console.log('✅ Dashboard siap!');
-                return;
-            } else {
-                console.log('⏳ No session yet after redirect, waiting...');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-                return;
-            }
-        } catch (err) {
-            console.error('❌ Error processing redirect:', err);
-            window.location.href = '/';
-            return;
-        }
-    }
 
-    // TEST MODE
-    if (TEST_MODE) {
-        console.log('🧪 TEST MODE - Bypassing login...');
-        currentUser = {
-            email: 'test@leader.com',
-            user_metadata: { full_name: 'Test Leader' }
-        };
-        currentUserRole = 'leader';
-        userPermissions = ROLE_PERMISSIONS.leader;
-
-        document.getElementById('userName').textContent = formatName('Test Leader (TEST MODE)');
-        document.getElementById('userEmail').textContent = formatEmail('test@leader.com');
-        document.getElementById('userRole').textContent = '👑 Leader';
-        document.getElementById('userRole').className = 'role-badge leader';
-        document.getElementById('menuSettings').style.display = 'flex';
-        document.getElementById('menuManagement').style.display = 'flex';
-        document.getElementById('menuVoucher').style.display = 'flex';
-        document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
-        document.getElementById('profileAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
-        document.getElementById('dropdownName').textContent = formatName('Test Leader (TEST MODE)');
-        document.getElementById('dropdownEmail').textContent = formatEmail('test@leader.com');
-        document.getElementById('dropdownRole').textContent = '👑 Leader';
-
-        document.getElementById('welcomeUsername').textContent = 'Test Leader';
-        document.querySelector('.welcome-banner .badge-role').innerHTML = '<span class="icon">👑</span> Leader';
-        updateGreeting();
-
-        document.getElementById('lockedNotice').style.display = 'none';
-
-        loadSettings();
-        await loadDummyData();
-        await loadDummyUsers();
-        startTimerUpdates();
-        startClock();
-        renderTicker();
-        updateQuickStats();
-        console.log('✅ TEST MODE - Dashboard siap!');
-        return;
-    }
-
-    // PRODUCTION MODE
-    try {
-        const { data: { session }, error } = await supabaseDashboard.auth.getSession();
-
-        if (error) {
-            console.error('❌ Session error:', error);
-            showToast('❌ Error session: ' + error.message, 'error', 5000);
-            return;
-        }
-
-        if (!session) {
-            console.log('❌ No session found, redirecting to login...');
-            window.location.href = '/';
-            return;
-        }
-
-        currentUser = session.user;
-
-        if (!currentUser) {
-            console.error('❌ No user found');
-            window.location.href = '/';
-            return;
-        }
-
-        console.log('✅ User authenticated:', currentUser.email);
-
-        // 🔥 PERBAIKAN: Cek user terdaftar (sudah di cek di awal, tapi untuk jaga-jaga)
-        const isRegistered = await checkUserRegistered(currentUser.email);
-        if (!isRegistered) {
-            return;
-        }
-
-        const { data: userData, error: userError } = await supabaseDashboard
-            .from('users')
-            .select('*')
-            .eq('email', currentUser.email)
-            .maybeSingle();
-
-        if (userError || !userData) {
-            console.log('📝 Creating user in database...');
-            const userName = formatName(currentUser.user_metadata?.full_name || currentUser.email);
-            await supabaseDashboard.from('users').upsert({
-                email: formatEmail(currentUser.email),
-                name: userName,
-                role: 'cs',
-                picture: currentUser.user_metadata?.avatar_url || null
-            }, { onConflict: 'email' });
-            currentUserRole = 'cs';
-            
-            const { data: newUserData } = await supabaseDashboard
-                .from('users')
-                .select('*')
-                .eq('email', currentUser.email)
-                .maybeSingle();
-            
-            if (newUserData) {
-                currentUserRole = newUserData.role || 'cs';
-                if (newUserData.picture) {
-                    document.getElementById('profileAvatar').src = newUserData.picture;
+            if (code || (hash && hash.includes('access_token'))) {
+                console.log('🔑 Detected OAuth redirect, processing...');
+                try {
+                    const { data, error } = await supabaseDashboard.auth.getSession();
+                    
+                    if (error) {
+                        console.error('❌ Error getting session after redirect:', error);
+                        showNotRegisteredPopup('error@email.com');
+                        return;
+                    }
+                    
+                    if (data?.session) {
+                        console.log('✅ Session found after redirect for:', data.session.user.email);
+                        currentUser = data.session.user;
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        await loadDataFromDatabase();
+                        renderAll();
+                        startTimerUpdates();
+                        startClock();
+                        console.log('✅ Dashboard siap!');
+                        return;
+                    } else {
+                        console.log('⏳ No session yet after redirect, waiting...');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('❌ Error processing redirect:', err);
+                    showNotRegisteredPopup('error@email.com');
+                    return;
                 }
             }
-        } else {
-            currentUserRole = userData.role || 'cs';
-            currentUser = { ...currentUser, ...userData };
-            if (userData.picture) {
-                document.getElementById('profileAvatar').src = userData.picture;
+
+            if (TEST_MODE) {
+                console.log('🧪 TEST MODE - Bypassing login...');
+                currentUser = {
+                    email: 'test@leader.com',
+                    user_metadata: { full_name: 'Test Leader' }
+                };
+                currentUserRole = 'leader';
+                userPermissions = ROLE_PERMISSIONS.leader;
+
+                document.getElementById('userName').textContent = formatName('Test Leader (TEST MODE)');
+                document.getElementById('userEmail').textContent = formatEmail('test@leader.com');
+                document.getElementById('userRole').textContent = '👑 Leader';
+                document.getElementById('userRole').className = 'role-badge leader';
+                document.getElementById('menuSettings').style.display = 'flex';
+                document.getElementById('menuManagement').style.display = 'flex';
+                document.getElementById('menuVoucher').style.display = 'flex';
+                document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
+                document.getElementById('profileAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
+                document.getElementById('dropdownName').textContent = formatName('Test Leader (TEST MODE)');
+                document.getElementById('dropdownEmail').textContent = formatEmail('test@leader.com');
+                document.getElementById('dropdownRole').textContent = '👑 Leader';
+
+                document.getElementById('welcomeUsername').textContent = 'Test Leader';
+                document.querySelector('.welcome-banner .badge-role').innerHTML = '<span class="icon">👑</span> Leader';
+                updateGreeting();
+
+                document.getElementById('lockedNotice').style.display = 'none';
+
+                loadSettings();
+                await loadDummyData();
+                await loadDummyUsers();
+                startTimerUpdates();
+                startClock();
+                renderTicker();
+                updateQuickStats();
+                console.log('✅ TEST MODE - Dashboard siap!');
+                return;
+            }
+
+            try {
+                const { data: { session }, error } = await supabaseDashboard.auth.getSession();
+
+                if (error) {
+                    console.error('❌ Session error:', error);
+                    showToast('❌ Error session: ' + error.message, 'error', 5000);
+                    return;
+                }
+
+                if (!session) {
+                    console.log('❌ No session found, redirecting to login...');
+                    window.location.href = '/';
+                    return;
+                }
+
+                currentUser = session.user;
+
+                if (!currentUser) {
+                    console.error('❌ No user found');
+                    window.location.href = '/';
+                    return;
+                }
+
+                console.log('✅ User authenticated:', currentUser.email);
+
+                const isRegistered = await checkUserRegistered(currentUser.email);
+                if (!isRegistered) {
+                    return;
+                }
+
+                const { data: userData, error: userError } = await supabaseDashboard
+                    .from('users')
+                    .select('*')
+                    .eq('email', currentUser.email)
+                    .maybeSingle();
+
+                if (userError || !userData) {
+                    console.log('📝 Creating user in database...');
+                    const userName = formatName(currentUser.user_metadata?.full_name || currentUser.email);
+                    await supabaseDashboard.from('users').upsert({
+                        email: formatEmail(currentUser.email),
+                        name: userName,
+                        role: 'cs',
+                        picture: currentUser.user_metadata?.avatar_url || null
+                    }, { onConflict: 'email' });
+                    currentUserRole = 'cs';
+                    
+                    const { data: newUserData } = await supabaseDashboard
+                        .from('users')
+                        .select('*')
+                        .eq('email', currentUser.email)
+                        .maybeSingle();
+                    
+                    if (newUserData) {
+                        currentUserRole = newUserData.role || 'cs';
+                        if (newUserData.picture) {
+                            document.getElementById('profileAvatar').src = newUserData.picture;
+                        }
+                    }
+                } else {
+                    currentUserRole = userData.role || 'cs';
+                    currentUser = { ...currentUser, ...userData };
+                    if (userData.picture) {
+                        document.getElementById('profileAvatar').src = userData.picture;
+                    }
+                }
+
+                userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
+                const roleLabel = userPermissions.label || 'User';
+                const roleIcon = userPermissions.icon || '👤';
+
+                const userNameDisplay = getCurrentUserName();
+                document.getElementById('userName').textContent = userNameDisplay;
+                document.getElementById('userEmail').textContent = formatEmail(currentUser.email);
+                document.getElementById('userRole').textContent = `${roleIcon} ${roleLabel}`;
+                document.getElementById('userRole').className = `role-badge ${currentUserRole}`;
+                document.getElementById('userAvatar').src = currentUser.user_metadata?.avatar_url ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay)}`;
+                document.getElementById('profileAvatar').src = currentUser.user_metadata?.avatar_url ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay)}`;
+                document.getElementById('dropdownName').textContent = userNameDisplay;
+                document.getElementById('dropdownEmail').textContent = formatEmail(currentUser.email);
+                document.getElementById('dropdownRole').textContent = `${roleIcon} ${roleLabel}`;
+
+                document.getElementById('welcomeUsername').textContent = userNameDisplay;
+                document.querySelector('.welcome-banner .badge-role').innerHTML = `<span class="icon">${roleIcon}</span> ${roleLabel}`;
+                updateGreeting();
+
+                document.getElementById('menuManagement').style.display = 'flex';
+                document.getElementById('menuSettings').style.display = userPermissions.canViewSettings ? 'flex' : 'none';
+                document.getElementById('menuVoucher').style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
+
+                const canEdit = userPermissions.canEditSettings;
+                document.querySelectorAll('.view-only-indicator').forEach(el => {
+                    el.style.display = canEdit ? 'none' : 'inline-flex';
+                });
+
+                const settingsInputs = document.querySelectorAll('.settings-card input, .settings-card textarea');
+                settingsInputs.forEach(input => {
+                    if (!canEdit) {
+                        input.disabled = true;
+                        input.style.cursor = 'not-allowed';
+                        input.style.opacity = '0.6';
+                    }
+                });
+
+                const settingsButtons = document.querySelectorAll('.settings-card .btn-settings');
+                settingsButtons.forEach(btn => {
+                    if (!canEdit) {
+                        btn.disabled = true;
+                        btn.style.cursor = 'not-allowed';
+                        btn.style.opacity = '0.5';
+                    }
+                });
+
+                document.getElementById('lockedNotice').style.display = 'none';
+
+                await loadDataFromDatabase();
+                await checkIPAccess();
+
+                startTimerUpdates();
+                startClock();
+
+                console.log('✅ Dashboard siap!');
+
+            } catch (err) {
+                console.error('❌ Error checkAuth:', err);
+                showToast('❌ Error: ' + err.message, 'error', 5000);
             }
         }
-
-        userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
-        const roleLabel = userPermissions.label || 'User';
-        const roleIcon = userPermissions.icon || '👤';
-
-        const userNameDisplay = getCurrentUserName();
-        document.getElementById('userName').textContent = userNameDisplay;
-        document.getElementById('userEmail').textContent = formatEmail(currentUser.email);
-        document.getElementById('userRole').textContent = `${roleIcon} ${roleLabel}`;
-        document.getElementById('userRole').className = `role-badge ${currentUserRole}`;
-        document.getElementById('userAvatar').src = currentUser.user_metadata?.avatar_url ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay)}`;
-        document.getElementById('profileAvatar').src = currentUser.user_metadata?.avatar_url ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay)}`;
-        document.getElementById('dropdownName').textContent = userNameDisplay;
-        document.getElementById('dropdownEmail').textContent = formatEmail(currentUser.email);
-        document.getElementById('dropdownRole').textContent = `${roleIcon} ${roleLabel}`;
-
-        document.getElementById('welcomeUsername').textContent = userNameDisplay;
-        document.querySelector('.welcome-banner .badge-role').innerHTML = `<span class="icon">${roleIcon}</span> ${roleLabel}`;
-        updateGreeting();
-
-        document.getElementById('menuManagement').style.display = 'flex';
-        document.getElementById('menuSettings').style.display = userPermissions.canViewSettings ? 'flex' : 'none';
-        document.getElementById('menuVoucher').style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
-
-        const canEdit = userPermissions.canEditSettings;
-        document.querySelectorAll('.view-only-indicator').forEach(el => {
-            el.style.display = canEdit ? 'none' : 'inline-flex';
-        });
-
-        const settingsInputs = document.querySelectorAll('.settings-card input, .settings-card textarea');
-        settingsInputs.forEach(input => {
-            if (!canEdit) {
-                input.disabled = true;
-                input.style.cursor = 'not-allowed';
-                input.style.opacity = '0.6';
-            }
-        });
-
-        const settingsButtons = document.querySelectorAll('.settings-card .btn-settings');
-        settingsButtons.forEach(btn => {
-            if (!canEdit) {
-                btn.disabled = true;
-                btn.style.cursor = 'not-allowed';
-                btn.style.opacity = '0.5';
-            }
-        });
-
-        document.getElementById('lockedNotice').style.display = 'none';
-
-        await loadDataFromDatabase();
-        await checkIPAccess();
-
-        startTimerUpdates();
-        startClock();
-
-        console.log('✅ Dashboard siap!');
-
-    } catch (err) {
-        console.error('❌ Error checkAuth:', err);
-        showToast('❌ Error: ' + err.message, 'error', 5000);
-    }
-}
 
         // ============================================================
         // DUMMY DATA - HANYA UNTUK TEST MODE
@@ -4489,7 +4551,7 @@
         }
 
         // ============================================================
-        // RENDER DASHBOARD TABLE - PERBAIKAN TIMER
+        // RENDER DASHBOARD TABLE
         // ============================================================
         window.renderDashboardTable = function() {
             const tbody = document.getElementById('dashboardTableBody');
@@ -4580,7 +4642,6 @@
                         console.warn(`⚠️ User ${nama} status izin tapi tidak ada mulai`);
                         timerHTML = '0m 0s';
                     } else {
-                        // 🔥 PERBAIKAN: Pastikan format UTC dengan Z
                         let mulaiStr = data.mulai;
                         if (!mulaiStr.endsWith('Z')) {
                             mulaiStr = mulaiStr + 'Z';
@@ -4590,12 +4651,7 @@
                         const now = new Date();
                         const diffMs = now.getTime() - tMulai.getTime();
                         const diff = Math.floor(diffMs / 1000);
-                        
-                        // 🔥 PERBAIKAN: Jika diff negatif atau NaN, set ke 0
                         const validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
-                        
-                        // 🔥 PERBAIKAN: Log untuk debug
-                        console.log(`🕐 ${nama}: mulai=${data.mulai}, parsed=${tMulai.toISOString()}, diff=${validDiff}s`);
                         
                         const menit = Math.floor(validDiff / 60);
                         const detik = validDiff % 60;
@@ -4968,7 +5024,6 @@
             const filterRole = document.getElementById('filterRole');
             const filterBulan = document.getElementById('filterBulan');
 
-            // Set default tanggal hari ini jika kosong
             if (filterTanggal && !filterTanggal.value) {
                 const today = new Date();
                 const year = today.getFullYear();
@@ -5006,7 +5061,6 @@
                 });
             }
 
-            // Sort berdasarkan waktu mulai terbaru di atas
             filtered.sort((a, b) => new Date(b.mulai) - new Date(a.mulai));
 
             const historyCount = document.getElementById('historyCount');
@@ -5959,7 +6013,6 @@
             else if (tab === 'voucher') renderVoucherPage();
             else if (tab === 'history') {
                 renderHistory();
-                // Set default tanggal hari ini saat tab history dibuka
                 const filterTanggal = document.getElementById('filterTanggal');
                 if (filterTanggal && !filterTanggal.value) {
                     const today = new Date();
