@@ -480,11 +480,12 @@
         console.log('🚀 Public View - Starting...');
 
         // ============================================================
-        // KONFIGURASI SUPABASE
+        // KONFIGURASI SUPABASE (HANYA 1 KALI)
         // ============================================================
         const SUPABASE_URL = 'https://kdmxjficzigsumvcsrtn.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkbXhqZmljemlnc3VtdmNzcnRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTI4MDAsImV4cCI6MjA5ODg4ODgwMH0.LTh93wC11NeydKGlrkxSreaSTQFq5KiidWisQ09CqnM';
 
+        // HANYA 1 DEKLARASI supabase
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================================
@@ -494,7 +495,6 @@
         let izinData = {};
         let voucherData = {};
         let jackpotLimitMinutes = 15;
-        let isFirstLoad = true;
 
         // ============================================================
         // FORMAT UTILITY
@@ -597,7 +597,6 @@
         function renderTable() {
             const tbody = document.getElementById('tableBody');
 
-            // Filter user yang sedang izin
             const onlineUsers = listUsers
                 .filter(user => izinData[user.name] && izinData[user.name].mulai)
                 .map(user => ({
@@ -651,8 +650,6 @@
                 const roleLabel = roleLabels[role] || role;
                 const roleIcon = roleIcons[role] || '👤';
                 const timerClass = isOverLimit ? 'over-limit' : '';
-
-                // Animasi delay untuk entry
                 const delay = index * 0.08;
 
                 return `
@@ -792,23 +789,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Public View - DOM Ready');
 
-            // Load data pertama kali
             loadPublicData();
-
-            // Start clock
             startClock();
 
-            // Update timer setiap 1 detik
             setInterval(updateTimers, 1000);
-
-            // Refresh data setiap 30 detik
             setInterval(loadPublicData, 30000);
-
-            // Subscribe realtime
             subscribeRealtime();
         });
 
-        // Error handling untuk Supabase
         console.log('✅ Public View initialized');
     </script>
 
