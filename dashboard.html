@@ -4045,89 +4045,94 @@
         // FUNGSI IZIN - DENGAN SAVE KE DATABASE DAN ERROR HANDLING
         // ============================================================
         window.mulaiIzin = async function(nama) {
-            const currentName = getCurrentUserName();
-            const formattedNama = formatName(nama);
+    const currentName = getCurrentUserName();
+    const formattedNama = formatName(nama);
+    const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+    const isCurrentUser = currentName === formattedNama;
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
-            const isCurrentUser = currentName === formattedNama;
+    if (!isLeaderOrCsLine && !isCurrentUser) {
+        showToast(`⚠️ Anda hanya bisa mengklik START untuk diri Anda sendiri!`, 'warning');
+        return;
+    }
 
-            if (!isLeaderOrCsLine && !isCurrentUser) {
-                showToast(`⚠️ Anda hanya bisa mengklik START untuk diri Anda sendiri!`, 'warning');
+    if (!canIzinByDailyLimit(formattedNama)) {
+        const used = getUsedIzinToday(formattedNama);
+        const maxQuota = getMaxQuota(formattedNama);
+        showToast(`⚠️ ${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`, 'error');
+        return;
+    }
+
+    const now = new Date();
+    const data = dataIzin[formattedNama];
+    const today = now.toDateString();
+
+    if (data.status === 'izin') {
+        showToast('⚠️ User sedang dalam izin! Klik END terlebih dahulu.', 'warning');
+        return;
+    }
+
+    if (!canUserIzinLive(formattedNama)) {
+        showLimitPopup(formattedNama);
+        return;
+    }
+
+    isJackpotShown[formattedNama] = false;
+
+    // Update state
+    data.status = 'izin';
+    data.mulai = now.toISOString();
+    data.selesai = null;
+    data.tanggal = today;
+    dataIzin[formattedNama] = data;
+
+    // 🛠️ Perbaikan: Kirim data dengan format yang benar
+    if (!TEST_MODE) {
+        try {
+            const payload = {
+                nama: formattedNama,
+                status: 'izin',
+                mulai: data.mulai,
+                selesai: null,
+                tanggal: data.tanggal,
+                role: getRoleForUser(formattedNama)
+            };
+            console.log('📤 Mengirim payload:', payload);
+
+            const { error } = await supabaseDashboard
+                .from('izin_anggota')
+                .upsert(payload, { 
+                    onConflict: 'nama',
+                    // 🛠️ Perbaikan: Tambahkan ini untuk memastikan tidak ada kolom kosong yang dikirim
+                    returning: 'minimal'
+                });
+
+            if (error) {
+                console.error('❌ Error detail:', error);
+                showToast(`❌ Gagal simpan: ${error.message || 'Unknown error'}`, 'error');
+                // Rollback state
+                data.status = 'none';
+                data.mulai = null;
+                data.tanggal = null;
+                dataIzin[formattedNama] = data;
                 return;
             }
-
-            if (!canIzinByDailyLimit(formattedNama)) {
-                const used = getUsedIzinToday(formattedNama);
-                const maxQuota = getMaxQuota(formattedNama);
-                showToast(`⚠️ ${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`, 'error');
-                return;
-            }
-
-            const now = new Date();
-            const data = dataIzin[formattedNama];
-            const today = now.toDateString();
-
-            if (data.status === 'izin') {
-                showToast('⚠️ User sedang dalam izin! Klik END terlebih dahulu.', 'warning');
-                return;
-            }
-
-            if (!canUserIzinLive(formattedNama)) {
-                showLimitPopup(formattedNama);
-                return;
-            }
-
-            isJackpotShown[formattedNama] = false;
-
-            // Update state
-            data.status = 'izin';
-            data.mulai = now.toISOString();
-            data.selesai = null;
-            data.tanggal = today;
-
+            console.log(`✅ Data izin ${formattedNama} berhasil disimpan ke database`);
+        } catch (err) {
+            console.error('❌ Error simpan ke database:', err);
+            showToast('❌ Gagal menyimpan data izin!', 'error');
+            // Rollback state
+            data.status = 'none';
+            data.mulai = null;
+            data.tanggal = null;
             dataIzin[formattedNama] = data;
+            return;
+        }
+    }
 
-            // SIMPAN KE DATABASE - PASTIKAN BERHASIL!
-            if (!TEST_MODE) {
-                try {
-                    const { error } = await supabaseDashboard
-                        .from('izin_anggota')
-                        .upsert({
-                            nama: formattedNama,
-                            status: 'izin',
-                            mulai: data.mulai,
-                            selesai: null,
-                            tanggal: data.tanggal,
-                            role: getRoleForUser(formattedNama)
-                        }, { onConflict: 'nama' });
-                    
-                    if (error) {
-                        console.error('❌ Error simpan ke database:', error);
-                        showToast('❌ Gagal menyimpan data izin ke database!', 'error');
-                        // Rollback state
-                        data.status = 'none';
-                        data.mulai = null;
-                        data.tanggal = null;
-                        dataIzin[formattedNama] = data;
-                        return;
-                    }
-                    console.log(`✅ Data izin ${formattedNama} berhasil disimpan ke database`);
-                } catch (err) {
-                    console.error('❌ Error simpan ke database:', err);
-                    showToast('❌ Gagal menyimpan data izin!', 'error');
-                    // Rollback state
-                    data.status = 'none';
-                    data.mulai = null;
-                    data.tanggal = null;
-                    dataIzin[formattedNama] = data;
-                    return;
-                }
-            }
-
-            renderAll();
-            updateCurrentCounts();
-            showToast(`▶️ ${formattedNama} mulai izin!`, 'info');
-        };
+    renderAll();
+    updateCurrentCounts();
+    showToast(`▶️ ${formattedNama} mulai izin!`, 'info');
+};
 
         window.selesaiIzin = async function(nama) {
             const currentName = getCurrentUserName();
