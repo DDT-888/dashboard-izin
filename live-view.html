@@ -66,8 +66,11 @@
             gap: 10px;
         }
 
-        .header-left .logo {
-            font-size: 24px;
+        .header-left .logo-img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: 6px;
         }
 
         .header-left .title {
@@ -403,8 +406,9 @@
                 padding: 14px 12px 20px;
                 border-radius: 16px;
             }
-            .header-left .logo {
-                font-size: 20px;
+            .header-left .logo-img {
+                width: 26px;
+                height: 26px;
             }
             .header-left .title {
                 font-size: 14px;
@@ -479,6 +483,10 @@
                 width: 6px;
                 height: 6px;
             }
+            .header-left .logo-img {
+                width: 22px;
+                height: 22px;
+            }
         }
 
         .col-status { width: 15%; }
@@ -493,7 +501,7 @@
         <!-- HEADER -->
         <div class="header">
             <div class="header-left">
-                <span class="logo">📡</span>
+                <img src="https://cdn.areabermain.club/assets/cdn/az1/2026/07/08/20260708/8a08b19ab55c1f8c92bb0404eb934a1f/image-photoroom.png" alt="DDT" class="logo-img" />
                 <div class="title">
                     LIVE IZIN
                     <small>Real-time Monitoring</small>
@@ -676,13 +684,11 @@
                         };
                     })
                     .sort(function(a, b) {
-                        // 🔥 SORT berdasarkan ROLE ORDER
                         var orderA = ROLE_ORDER[a.role] !== undefined ? ROLE_ORDER[a.role] : 99;
                         var orderB = ROLE_ORDER[b.role] !== undefined ? ROLE_ORDER[b.role] : 99;
                         if (orderA !== orderB) {
                             return orderA - orderB;
                         }
-                        // Jika role sama, sort berdasarkan nama
                         return a.name.localeCompare(b.name);
                     });
 
@@ -721,9 +727,14 @@
 
                 var html = '';
                 onlineUsers.forEach(function(user, index) {
+                    // 🔥 PERBAIKAN BUG DURASI - Gunakan Date.parse untuk konsistensi
                     var startTime = new Date(user.mulai);
                     
-                    // 🔥 PERBAIKAN BUG DURASI
+                    // Jika startTime invalid, gunakan sekarang
+                    if (isNaN(startTime.getTime())) {
+                        startTime = new Date();
+                    }
+                    
                     // Hitung selisih dalam detik
                     var diffMs = now.getTime() - startTime.getTime();
                     var diff = Math.floor(diffMs / 1000);
@@ -776,7 +787,6 @@
                 var online = Object.keys(izinData).length;
                 document.getElementById('totalOnline').textContent = online;
 
-                // 🔥 Generate 8 dots (maksimal 8 orang)
                 var dotsContainer = document.getElementById('statusDots');
                 var dotsHtml = '';
                 var maxDots = 8;
@@ -805,9 +815,15 @@
                     var data = izinData[nama];
                     if (!data || !data.mulai) return;
 
+                    // 🔥 PERBAIKAN: Gunakan Date.parse untuk konsistensi
                     var startTime = new Date(data.mulai);
                     
-                    // 🔥 PERBAIKAN: Hitung selisih dengan benar
+                    // Jika startTime invalid, skip
+                    if (isNaN(startTime.getTime())) {
+                        return;
+                    }
+                    
+                    // Hitung selisih dalam detik
                     var diffMs = now.getTime() - startTime.getTime();
                     var diff = Math.floor(diffMs / 1000);
                     
