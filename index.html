@@ -1008,29 +1008,41 @@
         }
 
         // ============================================================
-        // CEK SESSION
-        // ============================================================
-        async function checkSession() {
-            try {
-                console.log('🔍 Checking session...');
-                const { data: { session } } = await supabaseClient.auth.getSession();
+// CEK SESSION
+// ============================================================
+async function checkSession() {
+    try {
+        console.log('🔍 Checking session...');
+        const { data: { session } } = await supabaseClient.auth.getSession();
 
-                if (session) {
-                    console.log('✅ Session found, redirecting to dashboard...');
-                    statusMsg.textContent = '✅ Login berhasil! Mengalihkan ke dashboard...';
-                    statusMsg.classList.add('show');
-                    setTimeout(() => {
-                        window.location.href = '/dashboard.html';
-                    }, 500);
-                    return true;
-                }
-                console.log('❌ No session found');
-                return false;
-            } catch (err) {
-                console.error('❌ Error check session:', err);
+        if (session) {
+            console.log('✅ Session found, checking user registration...');
+            statusMsg.textContent = '⏳ Memeriksa akun...';
+            statusMsg.classList.add('show');
+            
+            // 🔥 PERBAIKAN: Cek user terdaftar SEBELUM redirect
+            const isRegistered = await checkUserRegistered(session.user.email);
+            if (!isRegistered) {
+                statusMsg.classList.remove('show');
+                // User tidak terdaftar, popup sudah muncul dari checkUserRegistered
                 return false;
             }
+            
+            console.log('✅ User registered, redirecting to dashboard...');
+            statusMsg.textContent = '✅ Login berhasil! Mengalihkan ke dashboard...';
+            statusMsg.classList.add('show');
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 500);
+            return true;
         }
+        console.log('❌ No session found');
+        return false;
+    } catch (err) {
+        console.error('❌ Error check session:', err);
+        return false;
+    }
+}
 
         // ============================================================
         // CHECK USER REGISTERED
@@ -1166,59 +1178,61 @@
         }
 
         // ============================================================
-        // HANDLE REDIRECT DARI GOOGLE
-        // ============================================================
-        async function handleRedirect() {
-            console.log('🔍 Checking for OAuth redirect...');
+// HANDLE REDIRECT DARI GOOGLE
+// ============================================================
+async function handleRedirect() {
+    console.log('🔍 Checking for OAuth redirect...');
 
-            const hash = window.location.hash;
-            const params = new URLSearchParams(window.location.search);
-            const code = params.get('code');
+    const hash = window.location.hash;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
 
-            if (hash && hash.includes('access_token')) {
-                console.log('🔑 Detected OAuth redirect with token hash');
-                statusMsg.textContent = '✅ Login berhasil! Menunggu redirect...';
-                statusMsg.classList.add('show');
+    if (hash && hash.includes('access_token')) {
+        console.log('🔑 Detected OAuth redirect with token hash');
+        statusMsg.textContent = '⏳ Memproses login...';
+        statusMsg.classList.add('show');
 
-                // Cek apakah user terdaftar
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session?.user?.email) {
-                    const isRegistered = await checkUserRegistered(session.user.email);
-                    if (!isRegistered) {
-                        statusMsg.classList.remove('show');
-                        return;
-                    }
-                }
-
-                setTimeout(() => {
-                    window.location.href = '/dashboard.html';
-                }, 1000);
-                return true;
+        // 🔥 PERBAIKAN: Cek user terdaftar SEBELUM redirect
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user?.email) {
+            const isRegistered = await checkUserRegistered(session.user.email);
+            if (!isRegistered) {
+                statusMsg.classList.remove('show');
+                return;
             }
-
-            if (code) {
-                console.log('🔑 Detected OAuth redirect with code');
-                statusMsg.textContent = '✅ Login berhasil! Menunggu redirect...';
-                statusMsg.classList.add('show');
-
-                // Cek apakah user terdaftar
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session?.user?.email) {
-                    const isRegistered = await checkUserRegistered(session.user.email);
-                    if (!isRegistered) {
-                        statusMsg.classList.remove('show');
-                        return;
-                    }
-                }
-
-                setTimeout(() => {
-                    window.location.href = '/dashboard.html';
-                }, 1000);
-                return true;
-            }
-
-            return false;
         }
+
+        statusMsg.textContent = '✅ Login berhasil! Mengalihkan ke dashboard...';
+        setTimeout(() => {
+            window.location.href = '/dashboard.html';
+        }, 1000);
+        return true;
+    }
+
+    if (code) {
+        console.log('🔑 Detected OAuth redirect with code');
+        statusMsg.textContent = '⏳ Memproses login...';
+        statusMsg.classList.add('show');
+
+        // 🔥 PERBAIKAN: Cek user terdaftar SEBELUM redirect
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user?.email) {
+            const isRegistered = await checkUserRegistered(session.user.email);
+            if (!isRegistered) {
+                statusMsg.classList.remove('show');
+                return;
+            }
+        }
+
+        statusMsg.textContent = '✅ Login berhasil! Mengalihkan ke dashboard...';
+        setTimeout(() => {
+            window.location.href = '/dashboard.html';
+        }, 1000);
+        return true;
+    }
+
+    return false;
+}
 
         // ============================================================
         // EVENT LISTENER
