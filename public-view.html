@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Live Izin - DDT</title>
     <style>
-        /* ========== RESET & BASE ========== */
         * {
             margin: 0;
             padding: 0;
@@ -22,7 +21,6 @@
             padding: 20px;
         }
 
-        /* ========== CONTAINER ========== */
         .container {
             max-width: 800px;
             width: 100%;
@@ -30,7 +28,7 @@
             border-radius: 24px;
             padding: 30px 35px 40px;
             border: 1px solid rgba(0, 229, 255, 0.08);
-            box-shadow: 0 0 60px rgba(0, 229, 255, 0.03), 0 0 120px rgba(0, 229, 255, 0.02);
+            box-shadow: 0 0 60px rgba(0, 229, 255, 0.03);
             position: relative;
             overflow: hidden;
         }
@@ -52,7 +50,6 @@
             100% { background-position: 200% 0; }
         }
 
-        /* ========== HEADER ========== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -113,7 +110,6 @@
             border-radius: 50%;
             background: #00e676;
             animation: pulse-dot 1.5s ease-in-out infinite;
-            box-shadow: 0 0 12px rgba(0, 230, 118, 0.2);
         }
 
         .clock {
@@ -126,7 +122,6 @@
             border: 1px solid rgba(0, 229, 255, 0.04);
         }
 
-        /* ========== STATS ========== */
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -155,6 +150,10 @@
             font-family: 'Courier New', monospace;
         }
 
+        .stat-card .number.online {
+            color: #00e676;
+        }
+
         .stat-card .label {
             font-size: 10px;
             color: rgba(0, 229, 255, 0.3);
@@ -163,11 +162,6 @@
             margin-top: 2px;
         }
 
-        .stat-card .number.online {
-            color: #00e676;
-        }
-
-        /* ========== TABLE ========== */
         .table-wrap {
             background: rgba(0, 229, 255, 0.02);
             border-radius: 14px;
@@ -294,7 +288,6 @@
             color: rgba(255, 255, 255, 0.15);
         }
 
-        /* ========== FOOTER ========== */
         .footer {
             margin-top: 20px;
             text-align: center;
@@ -307,7 +300,27 @@
             color: rgba(0, 229, 255, 0.15);
         }
 
-        /* ========== ANIMATIONS ========== */
+        .loading-spinner {
+            text-align: center;
+            padding: 30px;
+            color: rgba(0, 229, 255, 0.2);
+        }
+
+        .loading-spinner .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(0, 229, 255, 0.05);
+            border-top: 3px solid #00e5ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @keyframes pulse-dot {
             0%, 100% {
                 transform: scale(1);
@@ -324,7 +337,15 @@
             50% { opacity: 0.3; }
         }
 
-        /* ========== RESPONSIVE ========== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 20px 16px 30px;
@@ -384,7 +405,7 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="container" id="app">
         <!-- HEADER -->
         <div class="header">
             <div class="header-left">
@@ -433,9 +454,9 @@
                 <tbody id="tableBody">
                     <tr>
                         <td colspan="4">
-                            <div class="empty-state">
-                                <div class="icon">⏳</div>
-                                <h3>Memuat data...</h3>
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                                <span>Memuat data...</span>
                             </div>
                         </td>
                     </tr>
@@ -456,6 +477,8 @@
     </script>
 
     <script>
+        console.log('🚀 Public View - Starting...');
+
         // ============================================================
         // KONFIGURASI SUPABASE
         // ============================================================
@@ -471,6 +494,7 @@
         let izinData = {};
         let voucherData = {};
         let jackpotLimitMinutes = 15;
+        let isFirstLoad = true;
 
         // ============================================================
         // FORMAT UTILITY
@@ -501,7 +525,9 @@
                     .from('users')
                     .select('*');
 
-                if (!usersError && users) {
+                if (usersError) {
+                    console.error('❌ Users error:', usersError);
+                } else if (users) {
                     listUsers = users;
                     console.log(`✅ ${users.length} users loaded`);
                 }
@@ -511,7 +537,9 @@
                     .from('vouchers')
                     .select('*');
 
-                if (!voucherError && vouchers) {
+                if (voucherError) {
+                    console.error('❌ Voucher error:', voucherError);
+                } else if (vouchers) {
                     voucherData = {};
                     vouchers.forEach(v => {
                         voucherData[v.nama] = v.jumlah || 0;
@@ -525,7 +553,9 @@
                     .select('*')
                     .eq('status', 'izin');
 
-                if (!izinError && izin) {
+                if (izinError) {
+                    console.error('❌ Izin error:', izinError);
+                } else if (izin) {
                     izinData = {};
                     izin.forEach(item => {
                         izinData[item.nama] = {
@@ -623,7 +653,7 @@
                 const timerClass = isOverLimit ? 'over-limit' : '';
 
                 // Animasi delay untuk entry
-                const delay = index * 0.1;
+                const delay = index * 0.08;
 
                 return `
                     <tr style="animation: fadeIn 0.3s ease ${delay}s both;">
@@ -640,23 +670,13 @@
                             <span class="role-tag ${role}">${roleIcon} ${roleLabel}</span>
                         </td>
                         <td style="text-align:right;">
-                            <span class="timer-cell ${timerClass}">
+                            <span class="timer-cell ${timerClass}" data-nama="${user.name}">
                                 ${menit}m ${detik}s
                             </span>
                         </td>
                     </tr>
                 `;
             }).join('');
-
-            // Tambahkan CSS animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(8px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `;
-            document.head.appendChild(style);
         }
 
         // ============================================================
@@ -681,13 +701,9 @@
             const batasDetik = (jackpotLimitMinutes * 60) - 1;
 
             timerCells.forEach((el) => {
-                const row = el.closest('tr');
-                if (!row) return;
+                const nama = el.dataset.nama;
+                if (!nama) return;
 
-                const namaCell = row.querySelector('.nama-cell');
-                if (!namaCell) return;
-
-                const nama = namaCell.textContent;
                 const data = izinData[nama];
                 if (!data || !data.mulai) return;
 
@@ -735,7 +751,7 @@
                         table: 'izin_anggota'
                     },
                     () => {
-                        console.log('🔄 Real-time update received');
+                        console.log('🔄 Real-time izin update received');
                         loadPublicData();
                     }
                 )
@@ -751,6 +767,18 @@
                         loadPublicData();
                     }
                 )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'vouchers'
+                    },
+                    () => {
+                        console.log('🔄 Voucher update received');
+                        loadPublicData();
+                    }
+                )
                 .subscribe((status) => {
                     console.log('📡 Subscription status:', status);
                 });
@@ -762,8 +790,12 @@
         // INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Public View - Starting...');
+            console.log('🚀 Public View - DOM Ready');
+
+            // Load data pertama kali
             loadPublicData();
+
+            // Start clock
             startClock();
 
             // Update timer setiap 1 detik
@@ -775,6 +807,9 @@
             // Subscribe realtime
             subscribeRealtime();
         });
+
+        // Error handling untuk Supabase
+        console.log('✅ Public View initialized');
     </script>
 
 </body>
