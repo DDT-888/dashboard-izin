@@ -67,10 +67,10 @@
         }
 
         .header-left .logo-img {
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             object-fit: contain;
-            border-radius: 6px;
+            border-radius: 8px;
         }
 
         .header-left .title {
@@ -407,8 +407,8 @@
                 border-radius: 16px;
             }
             .header-left .logo-img {
-                width: 26px;
-                height: 26px;
+                width: 34px;
+                height: 34px;
             }
             .header-left .title {
                 font-size: 14px;
@@ -484,8 +484,8 @@
                 height: 6px;
             }
             .header-left .logo-img {
-                width: 22px;
-                height: 22px;
+                width: 28px;
+                height: 28px;
             }
         }
 
@@ -608,6 +608,23 @@
             }
 
             // ============================================================
+            // FUNGSI KONVERSI UTC KE WIB
+            // ============================================================
+            function parseToWIB(dateString) {
+                // Parse string ke Date (anggap UTC)
+                var date = new Date(dateString);
+                
+                // Jika invalid, return null
+                if (isNaN(date.getTime())) {
+                    return null;
+                }
+                
+                // Tambahkan 7 jam untuk konversi UTC ke WIB
+                var wibTime = new Date(date.getTime() + (7 * 60 * 60 * 1000));
+                return wibTime;
+            }
+
+            // ============================================================
             // LOAD DATA
             // ============================================================
             async function loadPublicData() {
@@ -639,8 +656,11 @@
                     } else {
                         izinData = {};
                         (izinResult.data || []).forEach(function(item) {
+                            // 🔥 Konversi UTC ke WIB
+                            var wibMulai = parseToWIB(item.mulai);
                             izinData[item.nama] = {
                                 mulai: item.mulai,
+                                mulaiWIB: wibMulai,
                                 role: item.role
                             };
                         });
@@ -680,7 +700,8 @@
                     .map(function(user) {
                         return {
                             ...user,
-                            mulai: izinData[user.name].mulai
+                            mulai: izinData[user.name].mulai,
+                            mulaiWIB: izinData[user.name].mulaiWIB
                         };
                     })
                     .sort(function(a, b) {
@@ -727,12 +748,15 @@
 
                 var html = '';
                 onlineUsers.forEach(function(user, index) {
-                    // 🔥 PERBAIKAN BUG DURASI - Gunakan Date.parse untuk konsistensi
-                    var startTime = new Date(user.mulai);
+                    // 🔥 PERBAIKAN: Gunakan waktu WIB untuk menghitung durasi
+                    var startTime = user.mulaiWIB;
                     
-                    // Jika startTime invalid, gunakan sekarang
-                    if (isNaN(startTime.getTime())) {
-                        startTime = new Date();
+                    // Fallback: jika WIB null, coba parse langsung
+                    if (!startTime) {
+                        startTime = parseToWIB(user.mulai);
+                        if (!startTime) {
+                            startTime = new Date();
+                        }
                     }
                     
                     // Hitung selisih dalam detik
@@ -800,7 +824,7 @@
             }
 
             // ============================================================
-            // UPDATE TIMERS - PERBAIKAN BUG DURASI
+            // UPDATE TIMERS - PERBAIKAN DENGAN KONVERSI WIB
             // ============================================================
             function updateTimers() {
                 var timerCells = document.querySelectorAll('.timer-cell');
@@ -815,12 +839,15 @@
                     var data = izinData[nama];
                     if (!data || !data.mulai) return;
 
-                    // 🔥 PERBAIKAN: Gunakan Date.parse untuk konsistensi
-                    var startTime = new Date(data.mulai);
+                    // 🔥 PERBAIKAN: Gunakan waktu WIB
+                    var startTime = data.mulaiWIB;
                     
-                    // Jika startTime invalid, skip
-                    if (isNaN(startTime.getTime())) {
-                        return;
+                    // Fallback: jika WIB null, coba parse langsung
+                    if (!startTime) {
+                        startTime = parseToWIB(data.mulai);
+                        if (!startTime) {
+                            return;
+                        }
                     }
                     
                     // Hitung selisih dalam detik
