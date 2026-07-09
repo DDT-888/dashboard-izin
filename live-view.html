@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Live Izin - DDT</title>
     <style>
         * {
@@ -17,18 +17,19 @@
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 20px;
+            align-items: flex-start;
+            padding: 12px;
+            padding-top: 20px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 480px;
             width: 100%;
             background: linear-gradient(145deg, #0d1230, #1a0a2e);
-            border-radius: 24px;
-            padding: 30px 35px 40px;
-            border: 1px solid rgba(0, 229, 255, 0.08);
-            box-shadow: 0 0 60px rgba(0, 229, 255, 0.03);
+            border-radius: 20px;
+            padding: 20px 18px 30px;
+            border: 1px solid rgba(0, 229, 255, 0.06);
+            box-shadow: 0 0 60px rgba(0, 229, 255, 0.02);
             position: relative;
             overflow: hidden;
         }
@@ -39,7 +40,7 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
+            height: 2px;
             background: linear-gradient(90deg, #00e5ff, #00e676, #00e5ff);
             background-size: 200% 100%;
             animation: shimmer-line 3s ease-in-out infinite;
@@ -50,63 +51,63 @@
             100% { background-position: 200% 0; }
         }
 
+        /* ========== HEADER ========== */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 12px;
+            margin-bottom: 16px;
+            gap: 10px;
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .header-left .logo {
-            font-size: 28px;
+            font-size: 24px;
         }
 
         .header-left .title {
             color: #00e5ff;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         .header-left .title small {
             font-weight: 300;
-            font-size: 12px;
-            color: rgba(0, 229, 255, 0.3);
+            font-size: 10px;
+            color: rgba(0, 229, 255, 0.25);
             display: block;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
         }
 
         .live-badge {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             background: rgba(0, 230, 118, 0.08);
             border: 1px solid rgba(0, 230, 118, 0.12);
-            padding: 4px 14px 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
+            padding: 3px 12px 3px 8px;
+            border-radius: 16px;
+            font-size: 9px;
             color: #00e676;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .live-badge .dot {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: #00e676;
             animation: pulse-dot 1.5s ease-in-out infinite;
@@ -114,83 +115,133 @@
 
         .clock {
             font-family: 'Courier New', monospace;
-            font-size: 13px;
-            color: rgba(0, 229, 255, 0.4);
+            font-size: 12px;
+            color: rgba(0, 229, 255, 0.3);
             background: rgba(0, 229, 255, 0.03);
-            padding: 4px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 229, 255, 0.04);
+            padding: 3px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 229, 255, 0.03);
+            white-space: nowrap;
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: rgba(0, 229, 255, 0.02);
-            border: 1px solid rgba(0, 229, 255, 0.04);
-            border-radius: 12px;
-            padding: 12px 16px;
+        /* ========== ONLINE COUNT - PREMIUM ========== */
+        .online-count {
             text-align: center;
+            padding: 20px 16px 18px;
+            margin-bottom: 16px;
+            background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.04) 0%, transparent 70%);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 229, 255, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .online-count::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(0, 229, 255, 0.03) 0%, transparent 60%);
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        .online-count .number-wrap {
+            position: relative;
+            z-index: 1;
+        }
+
+        .online-count .number {
+            font-size: 48px;
+            font-weight: 800;
+            color: #00e676;
+            font-family: 'Courier New', monospace;
+            line-height: 1;
+            text-shadow: 0 0 40px rgba(0, 230, 118, 0.15);
+        }
+
+        .online-count .number .unit {
+            font-size: 20px;
+            font-weight: 400;
+            color: rgba(0, 230, 118, 0.4);
+            margin-left: 2px;
+        }
+
+        .online-count .label {
+            font-size: 12px;
+            color: rgba(0, 229, 255, 0.25);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .online-count .label .highlight {
+            color: rgba(0, 229, 255, 0.4);
+            font-weight: 600;
+        }
+
+        .online-count .status-dots {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .online-count .status-dots .dot-item {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.05);
             transition: 0.3s;
         }
 
-        .stat-card:hover {
-            background: rgba(0, 229, 255, 0.04);
-            border-color: rgba(0, 229, 255, 0.08);
+        .online-count .status-dots .dot-item.active {
+            background: #00e676;
+            box-shadow: 0 0 16px rgba(0, 230, 118, 0.2);
+            border-color: rgba(0, 230, 118, 0.3);
+            animation: pulse-dot 1.5s ease-in-out infinite;
         }
 
-        .stat-card .number {
-            font-size: 24px;
-            font-weight: 700;
-            color: #00e5ff;
-            font-family: 'Courier New', monospace;
-        }
-
-        .stat-card .number.online {
-            color: #00e676;
-        }
-
-        .stat-card .label {
-            font-size: 10px;
-            color: rgba(0, 229, 255, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
-        }
-
+        /* ========== TABLE ========== */
         .table-wrap {
-            background: rgba(0, 229, 255, 0.02);
-            border-radius: 14px;
-            border: 1px solid rgba(0, 229, 255, 0.04);
+            background: rgba(0, 229, 255, 0.01);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 229, 255, 0.03);
             overflow: hidden;
-            overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         thead th {
-            padding: 12px 16px;
+            padding: 10px 12px;
             text-align: left;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: rgba(0, 229, 255, 0.3);
-            border-bottom: 1px solid rgba(0, 229, 255, 0.04);
+            color: rgba(0, 229, 255, 0.15);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.03);
         }
 
         tbody td {
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.03);
-            color: rgba(255, 255, 255, 0.7);
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.02);
+            color: rgba(255, 255, 255, 0.6);
             vertical-align: middle;
         }
 
@@ -198,22 +249,18 @@
             border-bottom: none;
         }
 
-        tbody tr:hover td {
-            background: rgba(0, 229, 255, 0.02);
-        }
-
         .nama-cell {
             font-weight: 600;
             color: #00e5ff;
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 11px;
             letter-spacing: 0.3px;
         }
 
         .role-tag {
-            font-size: 9px;
+            font-size: 8px;
             padding: 2px 10px;
-            border-radius: 10px;
+            border-radius: 8px;
             display: inline-block;
             font-weight: 600;
             letter-spacing: 0.3px;
@@ -221,31 +268,33 @@
         }
 
         .role-tag.leader {
-            background: rgba(0, 229, 255, 0.12);
+            background: rgba(0, 229, 255, 0.10);
             color: #00e5ff;
         }
         .role-tag.csline {
-            background: rgba(255, 152, 0, 0.12);
+            background: rgba(255, 152, 0, 0.10);
             color: #ff9800;
         }
         .role-tag.cs {
-            background: rgba(33, 150, 243, 0.12);
+            background: rgba(33, 150, 243, 0.10);
             color: #2196f3;
         }
         .role-tag.kapten {
-            background: rgba(156, 39, 176, 0.12);
+            background: rgba(156, 39, 176, 0.10);
             color: #ab47bc;
         }
         .role-tag.kasir {
-            background: rgba(0, 188, 212, 0.12);
+            background: rgba(0, 188, 212, 0.10);
             color: #00bcd4;
         }
 
         .timer-cell {
             font-family: 'Courier New', monospace;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #00e676;
+            text-align: right;
+            display: block;
         }
 
         .timer-cell.over-limit {
@@ -256,15 +305,15 @@
         .status-cell {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            font-size: 11px;
+            gap: 5px;
+            font-size: 10px;
             font-weight: 500;
             color: #00e676;
         }
 
         .status-cell .dot {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
             background: #00e676;
             animation: pulse-dot 1.5s ease-in-out infinite;
@@ -272,48 +321,49 @@
 
         .empty-state {
             text-align: center;
-            padding: 40px 20px;
-            color: rgba(255, 255, 255, 0.2);
+            padding: 30px 20px;
+            color: rgba(255, 255, 255, 0.1);
         }
 
         .empty-state .icon {
-            font-size: 48px;
-            margin-bottom: 8px;
+            font-size: 36px;
+            margin-bottom: 6px;
             opacity: 0.3;
         }
 
         .empty-state h3 {
             font-weight: 400;
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.15);
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.08);
         }
 
+        /* ========== FOOTER ========== */
         .footer {
-            margin-top: 20px;
+            margin-top: 16px;
             text-align: center;
-            font-size: 11px;
-            color: rgba(0, 229, 255, 0.08);
+            font-size: 9px;
+            color: rgba(0, 229, 255, 0.05);
             letter-spacing: 0.5px;
         }
 
         .footer strong {
-            color: rgba(0, 229, 255, 0.15);
+            color: rgba(0, 229, 255, 0.08);
         }
 
         .loading-spinner {
             text-align: center;
-            padding: 30px;
-            color: rgba(0, 229, 255, 0.2);
+            padding: 20px;
+            color: rgba(0, 229, 255, 0.1);
         }
 
         .loading-spinner .spinner {
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(0, 229, 255, 0.05);
-            border-top: 3px solid #00e5ff;
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(0, 229, 255, 0.05);
+            border-top: 2px solid #00e5ff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
         }
 
         @keyframes spin {
@@ -338,65 +388,99 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        @media (max-width: 600px) {
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 400px) {
+            body {
+                padding: 8px;
+                padding-top: 14px;
+            }
             .container {
-                padding: 20px 16px 30px;
+                padding: 14px 12px 20px;
+                border-radius: 16px;
+            }
+            .header-left .logo {
+                font-size: 20px;
             }
             .header-left .title {
-                font-size: 15px;
+                font-size: 14px;
             }
             .header-left .title small {
-                font-size: 10px;
+                font-size: 9px;
             }
-            .stats {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 8px;
+            .online-count .number {
+                font-size: 38px;
             }
-            .stat-card {
-                padding: 8px 10px;
+            .online-count .number .unit {
+                font-size: 16px;
             }
-            .stat-card .number {
-                font-size: 18px;
+            .online-count {
+                padding: 14px 12px 12px;
             }
             table {
-                font-size: 12px;
+                font-size: 11px;
             }
             thead th, tbody td {
                 padding: 8px 10px;
             }
             .nama-cell {
-                font-size: 11px;
+                font-size: 10px;
             }
             .timer-cell {
-                font-size: 12px;
-            }
-            .live-badge {
-                font-size: 9px;
-                padding: 2px 10px 2px 8px;
+                font-size: 11px;
             }
             .clock {
-                font-size: 11px;
-                padding: 2px 10px;
+                font-size: 10px;
+                padding: 2px 8px;
+            }
+            .live-badge {
+                font-size: 8px;
+                padding: 2px 10px 2px 6px;
+            }
+            .online-count .status-dots .dot-item {
+                width: 6px;
+                height: 6px;
             }
         }
 
-        @media (max-width: 400px) {
-            .stats {
-                grid-template-columns: 1fr;
+        @media (max-width: 350px) {
+            .container {
+                padding: 10px 8px 16px;
+                border-radius: 12px;
             }
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
+            .header-left .title {
+                font-size: 12px;
             }
-            .header-right {
-                width: 100%;
-                justify-content: space-between;
+            .online-count .number {
+                font-size: 32px;
+            }
+            .online-count .number .unit {
+                font-size: 14px;
+            }
+            thead th, tbody td {
+                padding: 6px 8px;
+                font-size: 10px;
+            }
+            .nama-cell {
+                font-size: 9px;
+            }
+            .timer-cell {
+                font-size: 10px;
+            }
+            .role-tag {
+                font-size: 7px;
+                padding: 1px 6px;
             }
         }
+
+        /* Tabel lebih kompak */
+        .col-status { width: 18%; }
+        .col-nama { width: 35%; }
+        .col-role { width: 25%; }
+        .col-durasi { width: 22%; text-align: right; }
     </style>
 </head>
 <body>
@@ -412,27 +496,26 @@
                 </div>
             </div>
             <div class="header-right">
+                <div class="clock" id="clockDisplay">--:--:--</div>
                 <div class="live-badge">
                     <span class="dot"></span>
                     LIVE
                 </div>
-                <div class="clock" id="clockDisplay">--:--:--</div>
             </div>
         </div>
 
-        <!-- STATS -->
-        <div class="stats">
-            <div class="stat-card">
-                <div class="number online" id="totalOnline">0</div>
-                <div class="label">🟢 Sedang Izin</div>
+        <!-- ONLINE COUNT - PREMIUM -->
+        <div class="online-count" id="onlineCount">
+            <div class="number-wrap">
+                <div class="number">
+                    <span id="totalOnline">0</span><span class="unit"> org</span>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="number" id="totalUsers">0</div>
-                <div class="label">👤 Total Anggota</div>
+            <div class="label">
+                <span class="highlight">●</span> Sedang Izin
             </div>
-            <div class="stat-card">
-                <div class="number" id="totalVoucher">0</div>
-                <div class="label">🎫 Voucher</div>
+            <div class="status-dots" id="statusDots">
+                <!-- Dots akan di-generate oleh JS -->
             </div>
         </div>
 
@@ -441,10 +524,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Status</th>
-                        <th>Nama</th>
-                        <th>Role</th>
-                        <th style="text-align:right;">Durasi</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-nama">Nama</th>
+                        <th class="col-role">Role</th>
+                        <th class="col-durasi">Durasi</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -462,7 +545,7 @@
 
         <!-- FOOTER -->
         <div class="footer">
-            © 2026 <strong>DDT Team</strong> • Real-time Monitoring
+            © 2026 <strong>DDT Team</strong> • Real-time
         </div>
     </div>
 
@@ -553,7 +636,7 @@
                     }
 
                     renderTable();
-                    updateStats();
+                    updateOnlineCount();
                     console.log('✅ Data loaded!');
 
                 } catch (err) {
@@ -618,6 +701,8 @@
                 onlineUsers.forEach(function(user, index) {
                     var startTime = new Date(user.mulai);
                     var diff = Math.floor((now - startTime) / 1000);
+                    
+                    // 🔥 PERBAIKAN: Fix bug durasi 424 menit
                     var validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
                     var menit = Math.floor(validDiff / 60);
                     var detik = validDiff % 60;
@@ -627,23 +712,22 @@
                     var roleLabel = roleLabels[role] || role;
                     var roleIcon = roleIcons[role] || '👤';
                     var timerClass = isOverLimit ? 'over-limit' : '';
-                    var delay = index * 0.08;
+                    var delay = index * 0.06;
 
                     html += `
-                        <tr style="animation: fadeIn 0.3s ease ${delay}s both;">
-                            <td>
+                        <tr style="animation: fadeIn 0.25s ease ${delay}s both;">
+                            <td class="col-status">
                                 <span class="status-cell">
                                     <span class="dot"></span>
-                                    Online
                                 </span>
                             </td>
-                            <td>
+                            <td class="col-nama">
                                 <span class="nama-cell">${user.name}</span>
                             </td>
-                            <td>
+                            <td class="col-role">
                                 <span class="role-tag ${role}">${roleIcon} ${roleLabel}</span>
                             </td>
-                            <td style="text-align:right;">
+                            <td class="col-durasi">
                                 <span class="timer-cell ${timerClass}" data-nama="${user.name}">
                                     ${menit}m ${detik}s
                                 </span>
@@ -656,19 +740,23 @@
             }
 
             // ============================================================
-            // UPDATE STATS
+            // UPDATE ONLINE COUNT - PREMIUM
             // ============================================================
-            function updateStats() {
+            function updateOnlineCount() {
                 var online = Object.keys(izinData).length;
-                var total = listUsers.length;
-                var voucherTotal = 0;
-                for (var key in voucherData) {
-                    voucherTotal += voucherData[key];
-                }
-
                 document.getElementById('totalOnline').textContent = online;
-                document.getElementById('totalUsers').textContent = total;
-                document.getElementById('totalVoucher').textContent = voucherTotal;
+
+                // Generate dots
+                var dotsContainer = document.getElementById('statusDots');
+                var dotsHtml = '';
+                var maxDots = 20;
+                var activeDots = Math.min(online, maxDots);
+
+                for (var i = 0; i < maxDots; i++) {
+                    var isActive = i < activeDots;
+                    dotsHtml += `<span class="dot-item ${isActive ? 'active' : ''}"></span>`;
+                }
+                dotsContainer.innerHTML = dotsHtml;
             }
 
             // ============================================================
@@ -688,6 +776,8 @@
 
                     var startTime = new Date(data.mulai);
                     var diff = Math.floor((now - startTime) / 1000);
+                    
+                    // 🔥 PERBAIKAN: Fix bug durasi 424 menit
                     var validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
                     var menit = Math.floor(validDiff / 60);
                     var detik = validDiff % 60;
