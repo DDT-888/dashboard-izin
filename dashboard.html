@@ -3895,7 +3895,7 @@
         }
 
         // ============================================================
-// AUTHENTICATION - PERBAIKAN LOADING CARD
+// AUTHENTICATION - PERBAIKAN LOADING CARD + ROLE
 // ============================================================
 async function checkAuth() {
     console.log('🔍 checkAuth - Memulai...');
@@ -3941,6 +3941,9 @@ async function checkAuth() {
                 // 🔥 PERBAIKAN: Load data dulu, baru update UI
                 await loadDataFromDatabase();
                 await checkIPAccess();
+                
+                // 🔥 PERBAIKAN: Ambil role dari database setelah loadDataFromDatabase()
+                await syncUserRoleFromDatabase();
                 
                 // 🔥 PERBAIKAN: Update UI setelah data siap
                 updateUserUI();
@@ -4033,48 +4036,12 @@ async function checkAuth() {
             return;
         }
 
-        const { data: userData, error: userError } = await supabaseDashboard
-            .from('users')
-            .select('*')
-            .eq('email', currentUser.email)
-            .maybeSingle();
-
-        if (userError || !userData) {
-            console.log('📝 Creating user in database...');
-            const userName = formatName(currentUser.user_metadata?.full_name || currentUser.email);
-            await supabaseDashboard.from('users').upsert({
-                email: formatEmail(currentUser.email),
-                name: userName,
-                role: 'cs',
-                picture: currentUser.user_metadata?.avatar_url || null
-            }, { onConflict: 'email' });
-            currentUserRole = 'cs';
-            
-            const { data: newUserData } = await supabaseDashboard
-                .from('users')
-                .select('*')
-                .eq('email', currentUser.email)
-                .maybeSingle();
-            
-            if (newUserData) {
-                currentUserRole = newUserData.role || 'cs';
-                if (newUserData.picture) {
-                    document.getElementById('profileAvatar').src = newUserData.picture;
-                }
-            }
-        } else {
-            currentUserRole = userData.role || 'cs';
-            currentUser = { ...currentUser, ...userData };
-            if (userData.picture) {
-                document.getElementById('profileAvatar').src = userData.picture;
-            }
-        }
-
-        userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
-
         // 🔥 PERBAIKAN: Load data dari database TERLEBIH DAHULU
         await loadDataFromDatabase();
         await checkIPAccess();
+
+        // 🔥 PERBAIKAN: Ambil role dari database setelah loadDataFromDatabase()
+        await syncUserRoleFromDatabase();
 
         // 🔥 PERBAIKAN: Update UI setelah data siap
         updateUserUI();
@@ -4091,13 +4058,85 @@ async function checkAuth() {
 }
 
 // ============================================================
-// UPDATE USER UI - FUNGSI TERPISAH
+// SYNC USER ROLE - FUNGSI BARU
+// ============================================================
+async function syncUserRoleFromDatabase() {
+    if (!currentUser || !currentUser.email) {
+        console.warn('⚠️ Tidak ada user untuk sync role');
+        return;
+    }
+
+    try {
+        const formattedEmail = formatEmail(currentUser.email);
+        console.log(`🔍 Mencari role untuk email: ${formattedEmail}`);
+
+        // Cari user di listUsers yang sudah di-load dari database
+        const userFromDB = listUsers.find(u => u.email === formattedEmail);
+
+        if (userFromDB && userFromDB.role) {
+            currentUserRole = userFromDB.role;
+            userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
+            console.log(`✅ Role ditemukan di database: ${currentUserRole}`);
+            
+            // Update currentUser dengan data dari database
+            currentUser = { ...currentUser, ...userFromDB };
+        } else {
+            // Fallback: coba query langsung ke database
+            console.log('⚠️ User tidak ditemukan di listUsers, mencoba query langsung...');
+            const { data: userData, error: userError } = await supabaseDashboard
+                .from('users')
+                .select('*')
+                .eq('email', formattedEmail)
+                .maybeSingle();
+
+            if (userError) {
+                console.error('❌ Error query user:', userError);
+                currentUserRole = 'cs';
+                userPermissions = ROLE_PERMISSIONS.cs;
+                return;
+            }
+
+            if (userData) {
+                currentUserRole = userData.role || 'cs';
+                userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
+                currentUser = { ...currentUser, ...userData };
+                console.log(`✅ Role ditemukan via query langsung: ${currentUserRole}`);
+                
+                // Tambahkan ke listUsers jika belum ada
+                if (!listUsers.some(u => u.email === formattedEmail)) {
+                    listUsers.push(userData);
+                    daftarAnggota.push(userData.name);
+                    dataIzin[userData.name] = {
+                        status: 'none',
+                        mulai: null,
+                        selesai: null,
+                        tanggal: null,
+                        role: userData.role
+                    };
+                }
+            } else {
+                console.warn('⚠️ User tidak ditemukan di database, set default cs');
+                currentUserRole = 'cs';
+                userPermissions = ROLE_PERMISSIONS.cs;
+            }
+        }
+    } catch (err) {
+        console.error('❌ Error sync role:', err);
+        currentUserRole = 'cs';
+        userPermissions = ROLE_PERMISSIONS.cs;
+    }
+}
+
+// ============================================================
+// UPDATE USER UI - PERBAIKAN
 // ============================================================
 function updateUserUI() {
     const roleLabel = userPermissions.label || 'User';
     const roleIcon = userPermissions.icon || '👤';
     const userNameDisplay = getCurrentUserName();
     const userEmail = formatEmail(currentUser?.email || '');
+
+    console.log(`🔄 Update UI: Role = ${currentUserRole}, Label = ${roleLabel}`);
 
     // Update sidebar
     document.getElementById('userName').textContent = userNameDisplay || 'User';
