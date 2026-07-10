@@ -292,13 +292,15 @@
             color: #00bcd4;
         }
 
+        /* 🔥 PERBAIKAN: Timer lebih besar dan jelas */
         .timer-cell {
             font-family: 'Courier New', monospace;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 700;
             color: #00e676;
             text-align: right;
             display: block;
+            letter-spacing: 0.5px;
         }
 
         .timer-cell.over-limit {
@@ -396,6 +398,14 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ============================================================
+           🔥 PERBAIKAN: LEBAR KOLOM - DURASI DIPERBESAR
+           ============================================================ */
+        .col-status { width: 12%; }
+        .col-nama { width: 32%; }
+        .col-role { width: 26%; }
+        .col-durasi { width: 30%; text-align: right; }
+
         /* ========== RESPONSIVE ========== */
         @media (max-width: 400px) {
             body {
@@ -434,8 +444,9 @@
             .nama-cell {
                 font-size: 10px;
             }
+            /* 🔥 Timer tetap besar di mobile */
             .timer-cell {
-                font-size: 11px;
+                font-size: 14px;
             }
             .clock {
                 font-size: 10px;
@@ -449,6 +460,11 @@
                 width: 8px;
                 height: 8px;
             }
+            /* 🔥 Lebar kolom di mobile */
+            .col-status { width: 10%; }
+            .col-nama { width: 30%; }
+            .col-role { width: 25%; }
+            .col-durasi { width: 35%; }
         }
 
         @media (max-width: 350px) {
@@ -473,7 +489,7 @@
                 font-size: 9px;
             }
             .timer-cell {
-                font-size: 10px;
+                font-size: 13px;
             }
             .role-tag {
                 font-size: 7px;
@@ -487,12 +503,11 @@
                 width: 50px;
                 height: 50px;
             }
+            .col-status { width: 8%; }
+            .col-nama { width: 28%; }
+            .col-role { width: 24%; }
+            .col-durasi { width: 40%; }
         }
-
-        .col-status { width: 15%; }
-        .col-nama { width: 38%; }
-        .col-role { width: 27%; }
-        .col-durasi { width: 20%; text-align: right; }
     </style>
 </head>
 <body>
@@ -611,15 +626,10 @@
             // FUNGSI KONVERSI UTC KE WIB
             // ============================================================
             function parseToWIB(dateString) {
-                // Parse string ke Date (anggap UTC)
                 var date = new Date(dateString);
-                
-                // Jika invalid, return null
                 if (isNaN(date.getTime())) {
                     return null;
                 }
-                
-                // Tambahkan 7 jam untuk konversi UTC ke WIB
                 var wibTime = new Date(date.getTime() + (7 * 60 * 60 * 1000));
                 return wibTime;
             }
@@ -656,7 +666,6 @@
                     } else {
                         izinData = {};
                         (izinResult.data || []).forEach(function(item) {
-                            // 🔥 Konversi UTC ke WIB
                             var wibMulai = parseToWIB(item.mulai);
                             izinData[item.nama] = {
                                 mulai: item.mulai,
@@ -748,29 +757,20 @@
 
                 var html = '';
                 onlineUsers.forEach(function(user, index) {
-                    // 🔥 PERBAIKAN: Gunakan waktu WIB untuk menghitung durasi
                     var startTime = user.mulaiWIB;
-                    
-                    // Fallback: jika WIB null, coba parse langsung
                     if (!startTime) {
                         startTime = parseToWIB(user.mulai);
                         if (!startTime) {
                             startTime = new Date();
                         }
                     }
-                    
-                    // Hitung selisih dalam detik
+
                     var diffMs = now.getTime() - startTime.getTime();
                     var diff = Math.floor(diffMs / 1000);
-                    
-                    // Validasi: jika diff negatif atau NaN, set ke 0
                     var validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
-                    
-                    // Konversi ke menit dan detik
+
                     var menit = Math.floor(validDiff / 60);
                     var detik = validDiff % 60;
-                    
-                    // Cek apakah melewati batas
                     var isOverLimit = validDiff > batasDetik;
 
                     var role = user.role || 'cs';
@@ -824,7 +824,7 @@
             }
 
             // ============================================================
-            // UPDATE TIMERS - PERBAIKAN DENGAN KONVERSI WIB
+            // UPDATE TIMERS
             // ============================================================
             function updateTimers() {
                 var timerCells = document.querySelectorAll('.timer-cell');
@@ -839,24 +839,18 @@
                     var data = izinData[nama];
                     if (!data || !data.mulai) return;
 
-                    // 🔥 PERBAIKAN: Gunakan waktu WIB
                     var startTime = data.mulaiWIB;
-                    
-                    // Fallback: jika WIB null, coba parse langsung
                     if (!startTime) {
                         startTime = parseToWIB(data.mulai);
                         if (!startTime) {
                             return;
                         }
                     }
-                    
-                    // Hitung selisih dalam detik
+
                     var diffMs = now.getTime() - startTime.getTime();
                     var diff = Math.floor(diffMs / 1000);
-                    
-                    // Validasi: jika diff negatif atau NaN, set ke 0
                     var validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
-                    
+
                     var menit = Math.floor(validDiff / 60);
                     var detik = validDiff % 60;
                     var isOverLimit = validDiff > batasDetik;
