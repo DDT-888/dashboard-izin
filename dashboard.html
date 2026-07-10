@@ -5122,57 +5122,57 @@
         // UPDATE PROFILE DROPDOWN - FULL
         // ============================================================
         function updateProfileDropdown() {
-            const userVoucher = getCurrentUserName() ? getVoucherCount(getCurrentUserName()) : 0;
-            const userName = getCurrentUserName() || 'User';
-            const userEmail = currentUser?.email || 'user@email.com';
-            const avatarUrl = currentUser?.user_metadata?.avatar_url || 
-                             `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=52`;
+    const userVoucher = getCurrentUserName() ? getVoucherCount(getCurrentUserName()) : 0;
+    const userName = getCurrentUserName() || 'User';
+    const userEmail = currentUser?.email || 'user@email.com';
+    const avatarUrl = currentUser?.user_metadata?.avatar_url || 
+                     `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=52`;
 
-            // Update voucher
-            const voucherEl = document.getElementById('dropdownVoucher');
-            if (voucherEl) voucherEl.textContent = userVoucher;
+    // Update voucher
+    const voucherEl = document.getElementById('dropdownVoucher');
+    if (voucherEl) voucherEl.textContent = userVoucher;
 
-            // Update nama
-            const nameEl = document.getElementById('dropdownName');
-            if (nameEl) nameEl.textContent = userName;
+    // Update nama
+    const nameEl = document.getElementById('dropdownName');
+    if (nameEl) nameEl.textContent = userName;
 
-            // Update avatar di dropdown
-            const avatarEl = document.getElementById('dropdownAvatar');
-            if (avatarEl) avatarEl.src = avatarUrl;
+    // Update avatar di dropdown
+    const avatarEl = document.getElementById('dropdownAvatar');
+    if (avatarEl) avatarEl.src = avatarUrl;
 
-            // Update email
-            const emailEl = document.getElementById('dropdownEmail');
-            if (emailEl) emailEl.textContent = userEmail;
+    // Update email
+    const emailEl = document.getElementById('dropdownEmail');
+    if (emailEl) emailEl.textContent = userEmail;
 
-            // Update role badge
-            const roleBadge = document.getElementById('dropdownRoleBadge');
-            if (roleBadge) {
-                const roleLabels = {
-                    leader: '👑 Leader',
-                    csline: '⭐ CS Line',
-                    cs: '💬 CS',
-                    kapten: '⚓ Kapten',
-                    kasir: '💰 Kasir'
-                };
-                roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
-            }
+    // Update role badge
+    const roleBadge = document.getElementById('dropdownRoleBadge');
+    if (roleBadge) {
+        const roleLabels = {
+            leader: '👑 Leader',
+            csline: '⭐ CS Line',
+            cs: '💬 CS',
+            kapten: '⚓ Kapten',
+            kasir: '💰 Kasir'
+        };
+        roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+    }
 
-            // Update role text (old style - fallback)
-            const roleEl = document.getElementById('dropdownRole');
-            if (roleEl) {
-                const roleLabels = {
-                    leader: '👑 Leader',
-                    csline: '⭐ CS Line',
-                    cs: '💬 CS',
-                    kapten: '⚓ Kapten',
-                    kasir: '💰 Kasir'
-                };
-                roleEl.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
-            }
+    // Update role text (old style - fallback)
+    const roleEl = document.getElementById('dropdownRole');
+    if (roleEl) {
+        const roleLabels = {
+            leader: '👑 Leader',
+            csline: '⭐ CS Line',
+            cs: '💬 CS',
+            kapten: '⚓ Kapten',
+            kasir: '💰 Kasir'
+        };
+        roleEl.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+    }
 
-            // Update quick stats
-            updateQuickStats();
-        }
+    // Update quick stats
+    updateQuickStats();
+}
 
         // ============================================================
         // ENABLE / DISABLE START BUTTONS
@@ -5296,59 +5296,74 @@
             }
 
             if (TEST_MODE) {
-                console.log('🧪 TEST MODE - Bypassing login...');
-                currentUser = {
-                    email: 'test@leader.com',
-                    user_metadata: { full_name: 'Test Leader' }
-                };
-                currentUserRole = 'leader';
-                userPermissions = ROLE_PERMISSIONS.leader;
+    console.log('🧪 TEST MODE - Bypassing login...');
+    currentUser = {
+        email: 'test@leader.com',
+        user_metadata: { full_name: 'Test Leader' }
+    };
+    currentUserRole = 'leader';
+    userPermissions = ROLE_PERMISSIONS.leader;
 
-                document.getElementById('userName').textContent = formatName('Test Leader (TEST MODE)');
-                document.getElementById('userEmail').textContent = formatEmail('test@leader.com');
-                document.getElementById('userRole').textContent = '💰 Kasir';
-                document.getElementById('userRole').className = 'role-badge kasir';
-                document.getElementById('menuSettings').style.display = 'flex';
-                document.getElementById('menuManagement').style.display = 'flex';
-                document.getElementById('menuVoucher').style.display = 'flex';
-                document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
-                document.getElementById('profileAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
-                document.getElementById('dropdownName').textContent = formatName('Test Leader (TEST MODE)');
-                document.getElementById('dropdownRole').textContent = '👑 Leader';
+    const userNameEl = document.getElementById('userName');
+    const userEmailEl = document.getElementById('userEmail');
+    const userRoleEl = document.getElementById('userRole');
+    const menuSettings = document.getElementById('menuSettings');
+    const menuManagement = document.getElementById('menuManagement');
+    const menuVoucher = document.getElementById('menuVoucher');
+    const userAvatar = document.getElementById('userAvatar');
+    const profileAvatar = document.getElementById('profileAvatar');
+    const dropdownName = document.getElementById('dropdownName');
+    const dropdownRole = document.getElementById('dropdownRole');
+    const welcomeUsername = document.getElementById('welcomeUsername');
+    const badgeRole = document.querySelector('.welcome-banner .badge-role');
+    const lockedNotice = document.getElementById('lockedNotice');
 
-                // Elemen baru di dropdown
-                const dropdownAvatar = document.getElementById('dropdownAvatar');
-                if (dropdownAvatar) {
-                    dropdownAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader&size=52';
-                }
+    if (userNameEl) userNameEl.textContent = formatName('Test Leader (TEST MODE)');
+    if (userEmailEl) userEmailEl.textContent = formatEmail('test@leader.com');
+    if (userRoleEl) {
+        userRoleEl.textContent = '💰 Kasir';
+        userRoleEl.className = 'role-badge kasir';
+    }
+    if (menuSettings) menuSettings.style.display = 'flex';
+    if (menuManagement) menuManagement.style.display = 'flex';
+    if (menuVoucher) menuVoucher.style.display = 'flex';
+    if (userAvatar) userAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader';
+    if (profileAvatar) profileAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader';
+    if (dropdownName) dropdownName.textContent = formatName('Test Leader (TEST MODE)');
+    if (dropdownRole) dropdownRole.textContent = '👑 Leader';
 
-                const dropdownEmail = document.getElementById('dropdownEmail');
-                if (dropdownEmail) {
-                    dropdownEmail.textContent = formatEmail('test@leader.com');
-                }
+    // Elemen baru di dropdown
+    const dropdownAvatar = document.getElementById('dropdownAvatar');
+    if (dropdownAvatar) {
+        dropdownAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader&size=52';
+    }
 
-                const roleBadge = document.getElementById('dropdownRoleBadge');
-                if (roleBadge) {
-                    roleBadge.textContent = '👑 Leader';
-                }
+    const dropdownEmail = document.getElementById('dropdownEmail');
+    if (dropdownEmail) {
+        dropdownEmail.textContent = formatEmail('test@leader.com');
+    }
 
-                document.getElementById('welcomeUsername').textContent = 'Test Leader';
-                document.querySelector('.welcome-banner .badge-role').innerHTML =
-                    '<span class="icon">👑</span> Leader';
-                updateGreeting();
+    const roleBadge = document.getElementById('dropdownRoleBadge');
+    if (roleBadge) {
+        roleBadge.textContent = '👑 Leader';
+    }
 
-                document.getElementById('lockedNotice').style.display = 'none';
+    if (welcomeUsername) welcomeUsername.textContent = 'Test Leader';
+    if (badgeRole) badgeRole.innerHTML = '<span class="icon">👑</span> Leader';
+    if (lockedNotice) lockedNotice.style.display = 'none';
 
-                loadSettings();
-                await loadDummyData();
-                await loadDummyUsers();
-                startTimerUpdates();
-                startClock();
-                renderTicker();
-                updateQuickStats();
-                console.log('✅ TEST MODE - Dashboard siap!');
-                return;
-            }
+    updateGreeting();
+
+    loadSettings();
+    await loadDummyData();
+    await loadDummyUsers();
+    startTimerUpdates();
+    startClock();
+    renderTicker();
+    updateQuickStats();
+    console.log('✅ TEST MODE - Dashboard siap!');
+    return;
+}
 
             try {
                 const { data: { session }, error } = await supabaseDashboard.auth.getSession();
@@ -5466,111 +5481,125 @@
         // UPDATE USER UI - FULL
         // ============================================================
         function updateUserUI() {
-            // 🔥 Sembunyikan flash saat update
-            const flashElements = document.querySelectorAll(
-                '.sidebar-footer .user-info .name, .sidebar-footer .user-info .email, .sidebar-footer .user-info .role-badge, .welcome-banner .welcome-left .text .username, .welcome-banner .welcome-right .badge-role'
-                );
-            flashElements.forEach(el => el.classList.add('loading-flash'));
+    // 🔥 Sembunyikan flash saat update
+    const flashElements = document.querySelectorAll(
+        '.sidebar-footer .user-info .name, .sidebar-footer .user-info .email, .sidebar-footer .user-info .role-badge, .welcome-banner .welcome-left .text .username, .welcome-banner .welcome-right .badge-role'
+        );
+    flashElements.forEach(el => el.classList.add('loading-flash'));
 
-            const roleLabel = userPermissions.label || 'User';
-            const roleIcon = userPermissions.icon || '👤';
-            const userNameDisplay = getCurrentUserName();
-            const userEmail = formatEmail(currentUser?.email || '');
+    const roleLabel = userPermissions.label || 'User';
+    const roleIcon = userPermissions.icon || '👤';
+    const userNameDisplay = getCurrentUserName();
+    const userEmail = formatEmail(currentUser?.email || '');
 
-            console.log(`🔄 Update UI: Role = ${currentUserRole}, Label = ${roleLabel}`);
+    console.log(`🔄 Update UI: Role = ${currentUserRole}, Label = ${roleLabel}`);
 
-            // Update sidebar
-            document.getElementById('userName').textContent = userNameDisplay || 'User';
-            document.getElementById('userEmail').textContent = userEmail;
-            document.getElementById('userRole').textContent = `${roleIcon} ${roleLabel}`;
-            document.getElementById('userRole').className = `role-badge ${currentUserRole}`;
+    // Update sidebar
+    const userNameEl = document.getElementById('userName');
+    const userEmailEl = document.getElementById('userEmail');
+    const userRoleEl = document.getElementById('userRole');
+    if (userNameEl) userNameEl.textContent = userNameDisplay || 'User';
+    if (userEmailEl) userEmailEl.textContent = userEmail;
+    if (userRoleEl) {
+        userRoleEl.textContent = `${roleIcon} ${roleLabel}`;
+        userRoleEl.className = `role-badge ${currentUserRole}`;
+    }
 
-            // Update avatar
-            const avatarUrl = currentUser?.user_metadata?.avatar_url ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay || 'User')}`;
-            document.getElementById('userAvatar').src = avatarUrl;
-            document.getElementById('profileAvatar').src = avatarUrl;
+    // Update avatar
+    const avatarUrl = currentUser?.user_metadata?.avatar_url ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay || 'User')}`;
+    const userAvatar = document.getElementById('userAvatar');
+    const profileAvatar = document.getElementById('profileAvatar');
+    if (userAvatar) userAvatar.src = avatarUrl;
+    if (profileAvatar) profileAvatar.src = avatarUrl;
 
-            // Update dropdown
-            document.getElementById('dropdownName').textContent = userNameDisplay || 'User';
-            document.getElementById('dropdownRole').textContent = `${roleIcon} ${roleLabel}`;
+    // Update dropdown - dengan pengecekan null
+    const dropdownName = document.getElementById('dropdownName');
+    const dropdownRole = document.getElementById('dropdownRole');
+    if (dropdownName) dropdownName.textContent = userNameDisplay || 'User';
+    if (dropdownRole) dropdownRole.textContent = `${roleIcon} ${roleLabel}`;
 
-            // 🔥 UPDATE DROPDOWN AVATAR
-            const dropdownAvatar = document.getElementById('dropdownAvatar');
-            if (dropdownAvatar) {
-                dropdownAvatar.src = avatarUrl;
-            }
+    // 🔥 UPDATE DROPDOWN AVATAR
+    const dropdownAvatar = document.getElementById('dropdownAvatar');
+    if (dropdownAvatar) {
+        dropdownAvatar.src = avatarUrl;
+    }
 
-            // 🔥 UPDATE DROPDOWN ROLE BADGE
-            const roleBadge = document.getElementById('dropdownRoleBadge');
-            if (roleBadge) {
-                const roleLabels = {
-                    leader: '👑 Leader',
-                    csline: '⭐ CS Line',
-                    cs: '💬 CS',
-                    kapten: '⚓ Kapten',
-                    kasir: '💰 Kasir'
-                };
-                roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
-            }
+    // 🔥 UPDATE DROPDOWN ROLE BADGE
+    const roleBadge = document.getElementById('dropdownRoleBadge');
+    if (roleBadge) {
+        const roleLabels = {
+            leader: '👑 Leader',
+            csline: '⭐ CS Line',
+            cs: '💬 CS',
+            kapten: '⚓ Kapten',
+            kasir: '💰 Kasir'
+        };
+        roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+    }
 
-            // 🔥 UPDATE DROPDOWN EMAIL
-            const dropdownEmail = document.getElementById('dropdownEmail');
-            if (dropdownEmail) {
-                dropdownEmail.textContent = currentUser?.email || 'user@email.com';
-            }
+    // 🔥 UPDATE DROPDOWN EMAIL - dengan pengecekan null
+    const dropdownEmail = document.getElementById('dropdownEmail');
+    if (dropdownEmail) {
+        dropdownEmail.textContent = currentUser?.email || 'user@email.com';
+    }
 
-            // Update welcome banner
-            document.getElementById('welcomeUsername').textContent = userNameDisplay || 'User';
-            document.querySelector('.welcome-banner .badge-role').innerHTML =
-                `<span class="icon">${roleIcon}</span> ${roleLabel}`;
-            updateGreeting();
+    // Update welcome banner
+    const welcomeUsername = document.getElementById('welcomeUsername');
+    const badgeRole = document.querySelector('.welcome-banner .badge-role');
+    if (welcomeUsername) welcomeUsername.textContent = userNameDisplay || 'User';
+    if (badgeRole) badgeRole.innerHTML = `<span class="icon">${roleIcon}</span> ${roleLabel}`;
+    updateGreeting();
 
-            // Menu visibility
-            document.getElementById('menuManagement').style.display = 'flex';
-            document.getElementById('menuSettings').style.display = userPermissions.canViewSettings ? 'flex' : 'none';
-            document.getElementById('menuVoucher').style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
+    // Menu visibility
+    const menuManagement = document.getElementById('menuManagement');
+    const menuSettings = document.getElementById('menuSettings');
+    const menuVoucher = document.getElementById('menuVoucher');
+    if (menuManagement) menuManagement.style.display = 'flex';
+    if (menuSettings) menuSettings.style.display = userPermissions.canViewSettings ? 'flex' : 'none';
+    if (menuVoucher) menuVoucher.style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
 
-            // Settings view only
-            const canEdit = userPermissions.canEditSettings;
-            document.querySelectorAll('.view-only-indicator').forEach(el => {
-                el.style.display = canEdit ? 'none' : 'inline-flex';
-            });
+    // Settings view only
+    const canEdit = userPermissions.canEditSettings;
+    document.querySelectorAll('.view-only-indicator').forEach(el => {
+        el.style.display = canEdit ? 'none' : 'inline-flex';
+    });
 
-            const settingsInputs = document.querySelectorAll('.settings-card input, .settings-card textarea');
-            settingsInputs.forEach(input => {
-                if (!canEdit) {
-                    input.disabled = true;
-                    input.style.cursor = 'not-allowed';
-                    input.style.opacity = '0.6';
-                }
-            });
-
-            const settingsButtons = document.querySelectorAll('.settings-card .btn-settings');
-            settingsButtons.forEach(btn => {
-                if (!canEdit) {
-                    btn.disabled = true;
-                    btn.style.cursor = 'not-allowed';
-                    btn.style.opacity = '0.5';
-                }
-            });
-
-            document.getElementById('lockedNotice').style.display = 'none';
-
-            // 🔥 Tampilkan setelah update selesai
-            setTimeout(() => {
-                flashElements.forEach(el => {
-                    el.classList.remove('loading-flash');
-                    el.classList.add('loading-flash-show');
-                });
-            }, 50);
-
-            // 🔥 Aktifkan tombol setelah UI siap
-            enableStartButtons();
-
-            // 🔥 Update voucher di dropdown
-            updateProfileDropdown();
+    const settingsInputs = document.querySelectorAll('.settings-card input, .settings-card textarea');
+    settingsInputs.forEach(input => {
+        if (!canEdit) {
+            input.disabled = true;
+            input.style.cursor = 'not-allowed';
+            input.style.opacity = '0.6';
         }
+    });
+
+    const settingsButtons = document.querySelectorAll('.settings-card .btn-settings');
+    settingsButtons.forEach(btn => {
+        if (!canEdit) {
+            btn.disabled = true;
+            btn.style.cursor = 'not-allowed';
+            btn.style.opacity = '0.5';
+        }
+    });
+
+    const lockedNotice = document.getElementById('lockedNotice');
+    if (lockedNotice) lockedNotice.style.display = 'none';
+
+    // 🔥 Tampilkan setelah update selesai
+    setTimeout(() => {
+        flashElements.forEach(el => {
+            el.classList.remove('loading-flash');
+            el.classList.add('loading-flash-show');
+        });
+    }, 50);
+
+    // 🔥 Aktifkan tombol setelah UI siap
+    enableStartButtons();
+
+    // 🔥 Update voucher di dropdown
+    updateProfileDropdown();
+}
 
         // ============================================================
         // DUMMY DATA - HANYA UNTUK TEST MODE
