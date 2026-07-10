@@ -587,549 +587,491 @@
         }
 
         /* ============================================================
-   PROFILE DROPDOWN - PREMIUM PROFILE CARD
-   ============================================================ */
-.profile-container {
-    position: relative;
-    cursor: pointer;
-}
-
-.profile-container .profile-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--border-color);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.profile-container .profile-avatar:hover {
-    border-color: var(--sidebar-text);
-    box-shadow: 0 4px 16px rgba(0, 229, 255, 0.15);
-    transform: scale(1.02);
-}
-
-/* ============================================================
-   DROPDOWN WRAPPER - Premium Profile Card
-   ============================================================ */
-.profile-dropdown {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: 42px;
-    min-width: 290px;
-    padding: 0;
-    z-index: 1000;
-    animation: slideDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    border-radius: 18px;
-    overflow: hidden;
-}
-
-/* LIGHT MODE - Clean White Card + Soft Blue Tint */
-.profile-dropdown {
-    background: rgba(255, 255, 255, 0.97);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(200, 220, 240, 0.2);
-    box-shadow: 
-        0 16px 48px rgba(0, 20, 40, 0.08),
-        0 8px 24px rgba(0, 20, 40, 0.04);
-}
-
-/* DARK MODE */
-[data-theme="dark"] .profile-dropdown {
-    background: rgba(13, 18, 48, 0.97);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(0, 229, 255, 0.04);
-    box-shadow: 
-        0 16px 48px rgba(0, 0, 0, 0.5),
-        0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-/* 🔥 GLOW LINE DI ATAS - Tipis & Elegan */
-.profile-dropdown::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-    opacity: 0.15;
-}
-
-/* 🔥 ARROW SEGITIGA - Posisi pas di bawah avatar */
-.profile-dropdown::after {
-    content: '';
-    position: absolute;
-    top: -8px;
-    right: 12px;
-    width: 14px;
-    height: 14px;
-    background: rgba(255, 255, 255, 0.97);
-    border-top: 1px solid rgba(200, 220, 240, 0.15);
-    border-left: 1px solid rgba(200, 220, 240, 0.15);
-    transform: rotate(45deg);
-    border-radius: 4px 0 0 0;
-    backdrop-filter: blur(24px);
-}
-
-[data-theme="dark"] .profile-dropdown::after {
-    background: rgba(13, 18, 48, 0.97);
-    border-top: 1px solid rgba(0, 229, 255, 0.03);
-    border-left: 1px solid rgba(0, 229, 255, 0.03);
-}
-
-.profile-dropdown.show {
-    display: block;
-}
-
-@keyframes slideDown {
-    0% {
-        opacity: 0;
-        transform: translateY(-12px) scale(0.96);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-/* ============================================================
-   DROPDOWN HEADER - Layout: Avatar | Info | Status
-   ============================================================ */
-.profile-dropdown .dropdown-header {
-    padding: 16px 18px 14px 18px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: linear-gradient(135deg, rgba(0, 229, 255, 0.015), rgba(0, 100, 200, 0.015));
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-header {
-    border-bottom: 1px solid rgba(0, 229, 255, 0.05);
-    background: linear-gradient(135deg, rgba(0, 229, 255, 0.02), rgba(0, 100, 200, 0.02));
-}
-
-/* 🔥 AVATAR - Ukuran sedang */
-.profile-dropdown .dropdown-header .header-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(0, 229, 255, 0.12);
-    flex-shrink: 0;
-    box-shadow: 0 2px 12px rgba(0, 229, 255, 0.06);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-header .header-avatar {
-    border-color: rgba(0, 229, 255, 0.08);
-}
-
-/* 🔥 HEADER INFO - Tengah */
-.profile-dropdown .dropdown-header .header-info {
-    flex: 1;
-    min-width: 0;
-}
-
-/* NAMA - Bold & Jelas */
-.profile-dropdown .dropdown-header .header-name {
-    color: #1a2a4a;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.3px;
-    line-height: 1.3;
-    display: block;
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-header .header-name {
-    color: #00e5ff;
-}
-
-/* 🔥 ROLE BADGE - Di bawah nama */
-.profile-dropdown .dropdown-header .header-role-badge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 1px 10px;
-    border-radius: 12px;
-    background: rgba(0, 229, 255, 0.08);
-    color: #00bcd4;
-    border: 1px solid rgba(0, 229, 255, 0.06);
-    letter-spacing: 0.3px;
-    display: inline-block;
-    margin-top: 1px;
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-header .header-role-badge {
-    background: rgba(0, 229, 255, 0.06);
-    color: #00e5ff;
-    border-color: rgba(0, 229, 255, 0.04);
-}
-
-/* 🔥 EMAIL - Lebih terbaca */
-.profile-dropdown .dropdown-header .header-email {
-    font-size: 10px;
-    color: rgba(26, 42, 74, 0.45);
-    font-weight: 400;
-    letter-spacing: 0.2px;
-    display: block;
-    margin-top: 1px;
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-header .header-email {
-    color: rgba(255, 255, 255, 0.3);
-}
-
-/* 🔥 STATUS ONLINE - Di pojok kanan dengan denyut (font 9px) */
-.profile-dropdown .dropdown-header .header-status {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 9px;
-    font-weight: 500;
-    color: #2e7d32;
-    flex-shrink: 0;
-    align-self: flex-start;
-    margin-top: 2px;
-    padding: 2px 8px;
-    background: rgba(46, 125, 50, 0.04);
-    border-radius: 12px;
-    border: 1px solid rgba(46, 125, 50, 0.06);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-header .header-status {
-    color: #4caf50;
-    background: rgba(76, 175, 80, 0.04);
-    border-color: rgba(76, 175, 80, 0.06);
-}
-
-/* 🔥 DOT BERDENYUT */
-.profile-dropdown .dropdown-header .header-status .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #4caf50;
-    animation: pulse-dot 2s ease-in-out infinite;
-    display: inline-block;
-    flex-shrink: 0;
-    box-shadow: 0 0 8px rgba(76, 175, 80, 0.15);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-header .header-status .dot {
-    box-shadow: 0 0 8px rgba(76, 175, 80, 0.2);
-}
-
-@keyframes pulse-dot {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(0.75);
-        opacity: 0.6;
-    }
-}
-
-/* ============================================================
-   DROPDOWN DIVIDER - Lebih jelas
-   ============================================================ */
-.profile-dropdown .dropdown-divider {
-    height: 1px;
-    margin: 4px 14px;
-    background: rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-divider {
-    background: rgba(255, 255, 255, 0.04);
-}
-
-/* ============================================================
-   DROPDOWN ITEMS - Jelas & Tidak Pucat
-   ============================================================ */
-.profile-dropdown .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    margin: 2px 10px;
-    border-radius: 10px;
-    color: rgba(26, 42, 74, 0.5);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: transparent;
-    position: relative;
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item {
-    color: rgba(255, 255, 255, 0.35);
-}
-
-/* 🔥 HOVER - Background jelas */
-.profile-dropdown .dropdown-item:hover {
-    background: rgba(0, 229, 255, 0.06);
-    color: #1a2a4a;
-    transform: translateX(2px);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item:hover {
-    background: rgba(0, 229, 255, 0.05);
-    color: #00e5ff;
-}
-
-/* 🔥 ICON - Jelas (tidak pucat) */
-.profile-dropdown .dropdown-item .icon {
-    font-size: 15px;
-    width: 22px;
-    text-align: center;
-    opacity: 0.6;
-    flex-shrink: 0;
-}
-
-.profile-dropdown .dropdown-item:hover .icon {
-    opacity: 1;
-}
-
-/* 🔥 LABEL - Jelas terbaca */
-.profile-dropdown .dropdown-item .label {
-    flex: 1;
-    font-weight: 500;
-    color: rgba(26, 42, 74, 0.55);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item .label {
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.profile-dropdown .dropdown-item:hover .label {
-    color: rgba(26, 42, 74, 0.9);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item:hover .label {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-/* 🔥 CHEVRON - Muncul saat hover */
-.profile-dropdown .dropdown-item .chevron {
-    font-size: 14px;
-    color: rgba(26, 42, 74, 0.1);
-    opacity: 0;
-    transition: all 0.3s ease;
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item .chevron {
-    color: rgba(255, 255, 255, 0.05);
-}
-
-.profile-dropdown .dropdown-item:hover .chevron {
-    opacity: 1;
-    color: rgba(0, 229, 255, 0.3);
-    transform: translateX(2px);
-}
-
-/* 🔥 VALUE BADGE - Premium */
-.profile-dropdown .dropdown-item .value {
-    color: #1a2a4a;
-    font-weight: 600;
-    font-size: 12px;
-    font-family: 'Courier New', monospace;
-    background: rgba(0, 229, 255, 0.06);
-    padding: 1px 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 229, 255, 0.04);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item .value {
-    color: #00e5ff;
-    background: rgba(0, 229, 255, 0.06);
-    border-color: rgba(0, 229, 255, 0.04);
-}
-
-.profile-dropdown .dropdown-item .value.voucher {
-    color: #e65100;
-    background: rgba(255, 215, 0, 0.08);
-    border-color: rgba(255, 215, 0, 0.06);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item .value.voucher {
-    color: #ffd700;
-    background: rgba(255, 215, 0, 0.06);
-    border-color: rgba(255, 215, 0, 0.04);
-}
-
-/* ============================================================
-   LOGOUT - Soft & Tidak Dominan
-   ============================================================ */
-.profile-dropdown .dropdown-item.logout {
-    margin: 4px 10px 6px 10px;
-    padding: 10px 16px;
-    border-top: 1px solid rgba(200, 40, 40, 0.06);
-    border-radius: 10px;
-    background: transparent;
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item.logout {
-    border-top: 1px solid rgba(255, 107, 107, 0.04);
-}
-
-/* 🔥 LOGOUT - Warna soft */
-.profile-dropdown .dropdown-item.logout .label {
-    color: rgba(200, 40, 40, 0.4);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item.logout .label {
-    color: rgba(255, 107, 107, 0.3);
-}
-
-.profile-dropdown .dropdown-item.logout .icon {
-    opacity: 0.35;
-}
-
-.profile-dropdown .dropdown-item.logout .chevron {
-    color: rgba(200, 40, 40, 0.08);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item.logout .chevron {
-    color: rgba(255, 107, 107, 0.05);
-}
-
-/* 🔥 HOVER LOGOUT - Soft */
-.profile-dropdown .dropdown-item.logout:hover {
-    background: rgba(200, 40, 40, 0.05);
-    color: #c62828;
-    transform: translateX(2px);
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item.logout:hover {
-    background: rgba(255, 107, 107, 0.04);
-    color: #ff6b6b;
-}
-
-.profile-dropdown .dropdown-item.logout:hover .label {
-    color: #c62828;
-}
-
-[data-theme="dark"] .profile-dropdown .dropdown-item.logout:hover .label {
-    color: #ff6b6b;
-}
-
-.profile-dropdown .dropdown-item.logout:hover .icon {
-    opacity: 0.7;
-}
-
-.profile-dropdown .dropdown-item.logout:hover .chevron {
-    opacity: 1;
-    color: rgba(200, 40, 40, 0.2);
-    transform: translateX(2px);
-}
-
-/* ============================================================
-   BADGE VOUCHER - Disembunyikan
-   ============================================================ */
-.profile-dropdown .dropdown-item .badge-voucher {
-    display: none;
-}
-
-.profile-container .upload-avatar {
-    display: none;
-}
-
-/* ============================================================
-   LIGHT MODE
-   ============================================================ */
-[data-theme="light"] .profile-dropdown {
-    background: rgba(255, 255, 255, 0.97);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(200, 220, 240, 0.2);
-    box-shadow: 
-        0 16px 48px rgba(0, 20, 40, 0.08),
-        0 8px 24px rgba(0, 20, 40, 0.04);
-}
-
-[data-theme="light"] .profile-dropdown::after {
-    background: rgba(255, 255, 255, 0.97);
-    border-top: 1px solid rgba(200, 220, 240, 0.15);
-    border-left: 1px solid rgba(200, 220, 240, 0.15);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-header .header-name {
-    color: #1a2a4a;
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-header .header-role-badge {
-    background: rgba(0, 229, 255, 0.08);
-    color: #00bcd4;
-    border-color: rgba(0, 229, 255, 0.06);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-header .header-email {
-    color: rgba(26, 42, 74, 0.45);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-header .header-status {
-    color: #2e7d32;
-    background: rgba(46, 125, 50, 0.04);
-    border-color: rgba(46, 125, 50, 0.06);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item {
-    color: rgba(26, 42, 74, 0.5);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item .label {
-    color: rgba(26, 42, 74, 0.55);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item:hover {
-    background: rgba(0, 229, 255, 0.06);
-    color: #1a2a4a;
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item:hover .label {
-    color: rgba(26, 42, 74, 0.9);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item .value {
-    color: #1a2a4a;
-    background: rgba(0, 229, 255, 0.06);
-    border-color: rgba(0, 229, 255, 0.04);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item .value.voucher {
-    color: #e65100;
-    background: rgba(255, 215, 0, 0.08);
-    border-color: rgba(255, 215, 0, 0.06);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item .chevron {
-    color: rgba(26, 42, 74, 0.1);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item.logout .label {
-    color: rgba(200, 40, 40, 0.4);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item.logout:hover {
-    background: rgba(200, 40, 40, 0.05);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-item.logout:hover .label {
-    color: #c62828;
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-divider {
-    background: rgba(0, 0, 0, 0.06);
-}
-
-[data-theme="light"] .profile-dropdown .dropdown-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
+           PROFILE DROPDOWN - PREMIUM PROFILE CARD
+           ============================================================ */
+        .profile-container {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .profile-container .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .profile-container .profile-avatar:hover {
+            border-color: var(--sidebar-text);
+            box-shadow: 0 4px 16px rgba(0, 229, 255, 0.15);
+            transform: scale(1.02);
+        }
+
+        .profile-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 42px;
+            min-width: 270px;
+            padding: 0;
+            z-index: 1000;
+            animation: slideDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        /* LIGHT MODE - Clean White Card + Soft Blue Tint */
+        .profile-dropdown {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(200, 220, 240, 0.3);
+            box-shadow: 
+                0 24px 80px rgba(0, 20, 40, 0.12),
+                0 12px 40px rgba(0, 20, 40, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        /* DARK MODE */
+        [data-theme="dark"] .profile-dropdown {
+            background: rgba(13, 18, 48, 0.95);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(0, 229, 255, 0.06);
+            box-shadow: 
+                0 24px 80px rgba(0, 0, 0, 0.6),
+                0 12px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+
+        .profile-dropdown::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+            opacity: 0.3;
+        }
+
+        [data-theme="dark"] .profile-dropdown::before {
+            opacity: 0.2;
+        }
+
+        .profile-dropdown::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 20px;
+            width: 14px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.92);
+            border-top: 1px solid rgba(200, 220, 240, 0.2);
+            border-left: 1px solid rgba(200, 220, 240, 0.2);
+            transform: rotate(45deg);
+            border-radius: 4px 0 0 0;
+            backdrop-filter: blur(24px);
+        }
+
+        [data-theme="dark"] .profile-dropdown::after {
+            background: rgba(13, 18, 48, 0.95);
+            border-top: 1px solid rgba(0, 229, 255, 0.03);
+            border-left: 1px solid rgba(0, 229, 255, 0.03);
+        }
+
+        .profile-dropdown.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-16px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .profile-dropdown .dropdown-header {
+            padding: 20px 20px 16px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.02), rgba(0, 100, 200, 0.02));
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header {
+            border-bottom: 1px solid rgba(0, 229, 255, 0.04);
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.02), rgba(0, 100, 200, 0.02));
+        }
+
+        .profile-dropdown .dropdown-header .header-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(0, 229, 255, 0.15);
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(0, 229, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-avatar {
+            border-color: rgba(0, 229, 255, 0.1);
+        }
+
+        .profile-dropdown .dropdown-header .header-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-dropdown .dropdown-header .header-name {
+            color: #1a2a4a;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-name {
+            color: #00e5ff;
+        }
+
+        .profile-dropdown .dropdown-header .header-role-badge {
+            font-size: 8px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: rgba(0, 229, 255, 0.08);
+            color: #00bcd4;
+            border: 1px solid rgba(0, 229, 255, 0.06);
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-role-badge {
+            background: rgba(0, 229, 255, 0.06);
+            color: #00e5ff;
+            border-color: rgba(0, 229, 255, 0.04);
+        }
+
+        .profile-dropdown .dropdown-header .header-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: #2e7d32;
+            margin-top: 2px;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-status {
+            color: #4caf50;
+        }
+
+        .profile-dropdown .dropdown-header .header-status .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        .profile-dropdown .dropdown-header .header-email {
+            font-size: 10px;
+            color: rgba(26, 42, 74, 0.3);
+            margin-top: 1px;
+            font-weight: 400;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-email {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .profile-dropdown .dropdown-divider {
+            height: 1px;
+            margin: 4px 16px;
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-divider {
+            background: rgba(0, 229, 255, 0.02);
+        }
+
+        .profile-dropdown .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            margin: 2px 10px;
+            border-radius: 10px;
+            color: rgba(26, 42, 74, 0.3);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: transparent;
+            position: relative;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item {
+            color: rgba(0, 229, 255, 0.2);
+        }
+
+        .profile-dropdown .dropdown-item:hover {
+            background: rgba(0, 229, 255, 0.05);
+            color: #1a2a4a;
+            transform: translateX(2px);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item:hover {
+            background: rgba(0, 229, 255, 0.04);
+            color: #00e5ff;
+        }
+
+        .profile-dropdown .dropdown-item .icon {
+            font-size: 15px;
+            width: 22px;
+            text-align: center;
+            opacity: 0.4;
+            flex-shrink: 0;
+        }
+
+        .profile-dropdown .dropdown-item:hover .icon {
+            opacity: 0.8;
+        }
+
+        .profile-dropdown .dropdown-item .label {
+            flex: 1;
+            font-weight: 500;
+            color: rgba(26, 42, 74, 0.4);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item .label {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .profile-dropdown .dropdown-item:hover .label {
+            color: rgba(26, 42, 74, 0.8);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item:hover .label {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .profile-dropdown .dropdown-item .chevron {
+            font-size: 14px;
+            color: rgba(26, 42, 74, 0.1);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item .chevron {
+            color: rgba(255, 255, 255, 0.05);
+        }
+
+        .profile-dropdown .dropdown-item:hover .chevron {
+            opacity: 1;
+            color: rgba(0, 229, 255, 0.3);
+            transform: translateX(2px);
+        }
+
+        .profile-dropdown .dropdown-item .value {
+            color: #1a2a4a;
+            font-weight: 600;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 229, 255, 0.06);
+            padding: 1px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 229, 255, 0.04);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item .value {
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.06);
+            border-color: rgba(0, 229, 255, 0.04);
+        }
+
+        .profile-dropdown .dropdown-item .value.voucher {
+            color: #e65100;
+            background: rgba(255, 215, 0, 0.08);
+            border-color: rgba(255, 215, 0, 0.06);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item .value.voucher {
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.06);
+            border-color: rgba(255, 215, 0, 0.04);
+        }
+
+        .profile-dropdown .dropdown-item.logout {
+            margin: 6px 10px 4px 10px;
+            padding: 10px 16px;
+            border-top: 1px solid rgba(200, 40, 40, 0.06);
+            border-radius: 10px;
+            background: transparent;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout {
+            border-top: 1px solid rgba(255, 107, 107, 0.04);
+        }
+
+        .profile-dropdown .dropdown-item.logout .label {
+            color: rgba(200, 40, 40, 0.3);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout .label {
+            color: rgba(255, 107, 107, 0.3);
+        }
+
+        .profile-dropdown .dropdown-item.logout .icon {
+            opacity: 0.3;
+        }
+
+        .profile-dropdown .dropdown-item.logout .chevron {
+            color: rgba(200, 40, 40, 0.1);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout .chevron {
+            color: rgba(255, 107, 107, 0.05);
+        }
+
+        .profile-dropdown .dropdown-item.logout:hover {
+            background: rgba(200, 40, 40, 0.06);
+            color: #c62828;
+            transform: translateX(2px);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout:hover {
+            background: rgba(255, 107, 107, 0.06);
+            color: #ff6b6b;
+        }
+
+        .profile-dropdown .dropdown-item.logout:hover .label {
+            color: #c62828;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout:hover .label {
+            color: #ff6b6b;
+        }
+
+        .profile-dropdown .dropdown-item.logout:hover .icon {
+            opacity: 0.8;
+        }
+
+        .profile-dropdown .dropdown-item.logout:hover .chevron {
+            opacity: 1;
+            color: rgba(200, 40, 40, 0.3);
+            transform: translateX(2px);
+        }
+
+        .profile-dropdown .dropdown-item .badge-voucher {
+            display: none;
+        }
+
+        .profile-container .upload-avatar {
+            display: none;
+        }
+
+        [data-theme="light"] .profile-dropdown {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(200, 220, 240, 0.3);
+            box-shadow: 
+                0 24px 80px rgba(0, 20, 40, 0.12),
+                0 12px 40px rgba(0, 20, 40, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        [data-theme="light"] .profile-dropdown::after {
+            background: rgba(255, 255, 255, 0.92);
+            border-top: 1px solid rgba(200, 220, 240, 0.2);
+            border-left: 1px solid rgba(200, 220, 240, 0.2);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header .header-name {
+            color: #1a2a4a;
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header .header-role-badge {
+            background: rgba(0, 229, 255, 0.08);
+            color: #00bcd4;
+            border-color: rgba(0, 229, 255, 0.06);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header .header-email {
+            color: rgba(26, 42, 74, 0.3);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header .header-status {
+            color: #2e7d32;
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item {
+            color: rgba(26, 42, 74, 0.3);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item .label {
+            color: rgba(26, 42, 74, 0.4);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item:hover {
+            background: rgba(0, 229, 255, 0.05);
+            color: #1a2a4a;
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item:hover .label {
+            color: rgba(26, 42, 74, 0.8);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item .value {
+            color: #1a2a4a;
+            background: rgba(0, 229, 255, 0.06);
+            border-color: rgba(0, 229, 255, 0.04);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item .value.voucher {
+            color: #e65100;
+            background: rgba(255, 215, 0, 0.08);
+            border-color: rgba(255, 215, 0, 0.06);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item .chevron {
+            color: rgba(26, 42, 74, 0.1);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item.logout .label {
+            color: rgba(200, 40, 40, 0.3);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item.logout:hover {
+            background: rgba(200, 40, 40, 0.06);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item.logout:hover .label {
+            color: #c62828;
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-divider {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
 
         .hamburger {
             display: none;
@@ -3974,46 +3916,50 @@
                     <input type="file" class="upload-avatar" id="uploadAvatar" accept="image/*" onchange="uploadProfileImage(event)" />
                     
                     <div class="profile-dropdown" id="profileDropdown">
-    <!-- HEADER - Layout: Avatar | Info | Status -->
-    <div class="dropdown-header">
-        <img class="header-avatar" id="dropdownAvatar" src="https://ui-avatars.com/api/?name=User&size=52" alt="Avatar" />
-        <div class="header-info">
-            <div class="header-name" id="dropdownName">User</div>
-            <div class="header-role-badge" id="dropdownRoleBadge">Kasir</div>
-            <div class="header-email" id="dropdownEmail">user@email.com</div>
+                        <!-- HEADER - Profile Card Premium -->
+                        <div class="dropdown-header">
+                            <img class="header-avatar" id="dropdownAvatar" src="https://ui-avatars.com/api/?name=User&size=52" alt="Avatar" />
+                            <div class="header-info">
+                                <div class="header-name">
+                                    <span id="dropdownName">User</span>
+                                    <span class="header-role-badge" id="dropdownRoleBadge">Kasir</span>
+                                </div>
+                                <div class="header-status">
+                                    <span class="dot"></span>
+                                    <span>Online</span>
+                                </div>
+                                <div class="header-email" id="dropdownEmail">user@email.com</div>
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                        
+                        <div class="dropdown-item" onclick="document.getElementById('uploadAvatar').click()">
+                            <span class="icon">📸</span>
+                            <span class="label">Upload Foto</span>
+                            <span class="chevron">›</span>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                        
+                        <div class="dropdown-item" style="cursor:default;">
+                            <span class="icon">🎫</span>
+                            <span class="label">Voucher</span>
+                            <span class="value voucher" id="dropdownVoucher">0</span>
+                            <span class="chevron">›</span>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                        
+                        <div class="dropdown-item logout" onclick="logout()">
+                            <span class="icon">🚪</span>
+                            <span class="label">Logout</span>
+                            <span class="chevron">›</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="header-status">
-            <span class="dot"></span>
-            <span>Online</span>
-        </div>
-    </div>
-    
-    <div class="dropdown-divider"></div>
-    
-    <!-- Menu Items -->
-    <div class="dropdown-item" onclick="document.getElementById('uploadAvatar').click()">
-        <span class="icon">📸</span>
-        <span class="label">Upload Foto</span>
-        <span class="chevron">›</span>
-    </div>
-    
-    <div class="dropdown-divider"></div>
-    
-    <div class="dropdown-item" style="cursor:default;">
-        <span class="icon">🎫</span>
-        <span class="label">Voucher</span>
-        <span class="value voucher" id="dropdownVoucher">0</span>
-        <span class="chevron">›</span>
-    </div>
-    
-    <div class="dropdown-divider"></div>
-    
-    <div class="dropdown-item logout" onclick="logout()">
-        <span class="icon">🚪</span>
-        <span class="label">Logout</span>
-        <span class="chevron">›</span>
-    </div>
-</div>
 
         <!-- WELCOME BANNER -->
         <div class="welcome-banner" id="welcomeBanner">
