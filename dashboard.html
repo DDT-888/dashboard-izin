@@ -1,11 +1,144 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard Izin - Real-time</title>
     <style>
-        /* ========== RESET & BASE ========== */
+        /* ============================================================
+           CSS VARIABLES - LIGHT & DARK MODE PREMIUM
+           ============================================================ */
+        :root {
+            /* Light Mode (default) */
+            --bg-primary: #f0f4f8;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-hover: #f8f9fc;
+            --bg-input: #ffffff;
+            --bg-table-header: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
+            
+            --text-primary: #1a2a4a;
+            --text-secondary: #555;
+            --text-muted: #888;
+            --text-white: #ffffff;
+            
+            --border-color: #e8ecf1;
+            --border-light: #f0f2f5;
+            --border-input: #ddd;
+            
+            --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 4px 16px rgba(26, 42, 74, 0.05);
+            --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.15);
+            
+            --sidebar-bg: linear-gradient(180deg, #0a0e1a 0%, #0d1230 40%, #1a0a2e 100%);
+            --sidebar-text: #00e5ff;
+            --sidebar-border: rgba(0, 229, 255, 0.06);
+            
+            --ticker-bg: linear-gradient(135deg, #1a2a4a, #2a3a5a);
+            --ticker-text: rgba(255, 255, 255, 0.9);
+            
+            --welcome-bg: linear-gradient(135deg, #1a2a4a, #2a3a5a);
+            --welcome-text: #00e5ff;
+            
+            --footer-bg: linear-gradient(135deg, #1a2a4a, #2a3a5a);
+            
+            --online-bg: linear-gradient(90deg, #e8f5e9 0%, #f1f8f2 100%);
+            --online-hover: linear-gradient(90deg, #d4edda 0%, #e8f5e9 100%);
+            
+            --scrollbar-track: transparent;
+            --scrollbar-thumb: rgba(0, 229, 255, 0.05);
+            
+            --transition-speed: 0.3s;
+            
+            /* Warna status tetap */
+            --success: #2e7d32;
+            --success-bg: #e8f5e9;
+            --danger: #c62828;
+            --danger-bg: #ffebee;
+            --warning: #e65100;
+            --warning-bg: #fff3e0;
+            --info: #1a2a4a;
+            --info-bg: #e3f2fd;
+            
+            /* Role colors tetap */
+            --role-leader: linear-gradient(135deg, #1a6e4a, #0d4a2e);
+            --role-csline: linear-gradient(135deg, #e65100, #bf360c);
+            --role-cs: linear-gradient(135deg, #1565c0, #0d47a1);
+            --role-kapten: linear-gradient(135deg, #6a1b9a, #4a148c);
+            --role-kasir: linear-gradient(135deg, #00838f, #006064);
+            --role-admin: linear-gradient(135deg, #c62828, #b71c1c);
+        }
+
+        /* ============================================================
+           DARK MODE
+           ============================================================ */
+        [data-theme="dark"] {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2333;
+            --bg-hover: #1f2937;
+            --bg-input: #1c2333;
+            --bg-table-header: linear-gradient(135deg, #0d1117 0%, #1c2333 100%);
+            
+            --text-primary: #e6edf3;
+            --text-secondary: #b0b8c4;
+            --text-muted: #6e7681;
+            --text-white: #e6edf3;
+            
+            --border-color: #30363d;
+            --border-light: #21262d;
+            --border-input: #30363d;
+            
+            --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+            
+            --ticker-bg: linear-gradient(135deg, #0d1117, #161b22);
+            --welcome-bg: linear-gradient(135deg, #0d1117, #161b22);
+            --footer-bg: linear-gradient(135deg, #0d1117, #161b22);
+            
+            --online-bg: linear-gradient(90deg, #0d2818 0%, #162b1e 100%);
+            --online-hover: linear-gradient(90deg, #1a3a24 0%, #0d2818 100%);
+            
+            --scrollbar-track: transparent;
+            --scrollbar-thumb: rgba(0, 229, 255, 0.08);
+            
+            --success: #4caf50;
+            --success-bg: #1b3a1b;
+            --danger: #ef5350;
+            --danger-bg: #3a1a1a;
+            --warning: #ffa726;
+            --warning-bg: #3a2a1a;
+            --info: #42a5f5;
+            --info-bg: #1a2a3a;
+            
+            /* Role colors di dark mode */
+            --role-leader: linear-gradient(135deg, #2e7d32, #1b5e20);
+            --role-csline: linear-gradient(135deg, #e65100, #bf360c);
+            --role-cs: linear-gradient(135deg, #1565c0, #0d47a1);
+            --role-kapten: linear-gradient(135deg, #6a1b9a, #4a148c);
+            --role-kasir: linear-gradient(135deg, #00838f, #006064);
+            --role-admin: linear-gradient(135deg, #c62828, #b71c1c);
+        }
+
+        /* ============================================================
+           SMOOTH TRANSITIONS
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            transition: background-color var(--transition-speed) ease,
+                color var(--transition-speed) ease,
+                border-color var(--transition-speed) ease,
+                box-shadow var(--transition-speed) ease,
+                background var(--transition-speed) ease;
+        }
+
+        /* ============================================================
+           RESET & BASE
+           ============================================================ */
         * {
             margin: 0;
             padding: 0;
@@ -14,16 +147,37 @@
         }
 
         body {
-            background: #f0f4f8;
+            background: var(--bg-primary);
             display: flex;
             min-height: 100vh;
+            color: var(--text-primary);
         }
 
-        /* ========== SIDEBAR ========== */
+        /* ============================================================
+           SCROLLBAR PREMIUM
+           ============================================================ */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 229, 255, 0.15);
+        }
+
+        /* ============================================================
+           SIDEBAR (tetap premium di kedua mode)
+           ============================================================ */
         .sidebar {
             width: 240px;
-            background: linear-gradient(180deg, #0a0e1a 0%, #0d1230 40%, #1a0a2e 100%);
-            color: #00e5ff;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
             padding: 20px 0;
             display: flex;
             flex-direction: column;
@@ -31,14 +185,14 @@
             height: 100vh;
             overflow-y: auto;
             z-index: 1000;
-            transition: transform 0.3s ease;
-            border-right: 1px solid rgba(0, 229, 255, 0.1);
+            transition: transform 0.3s ease, background 0.5s ease;
+            border-right: 1px solid var(--sidebar-border);
             box-shadow: 0 0 40px rgba(0, 229, 255, 0.03);
         }
 
         .sidebar-brand {
             padding: 0 16px 20px 16px;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.06);
+            border-bottom: 1px solid var(--sidebar-border);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -115,15 +269,13 @@
             border-color: rgba(255, 215, 0, 0.1);
         }
 
-        /* ========== SIDEBAR FOOTER - USER CARD + STATUS ========== */
         .sidebar-footer {
             padding: 16px 16px 12px 16px;
-            border-top: 1px solid rgba(0, 229, 255, 0.06);
+            border-top: 1px solid var(--sidebar-border);
             background: rgba(0, 229, 255, 0.01);
             margin-top: auto;
         }
 
-        /* ========== STATUS - DIPINDAH KE ATAS USER CARD ========== */
         .sidebar-footer .status {
             display: flex;
             align-items: center;
@@ -150,7 +302,6 @@
             box-shadow: 0 0 10px rgba(0, 230, 118, 0.15);
         }
 
-        /* ========== USER CARD ========== */
         .sidebar-footer .user-info {
             display: flex;
             align-items: center;
@@ -257,7 +408,9 @@
             border-color: rgba(0, 188, 212, 0.1);
         }
 
-        /* ========== MAIN CONTENT ========== */
+        /* ============================================================
+           MAIN CONTENT
+           ============================================================ */
         .main-content {
             margin-left: 240px;
             flex: 1;
@@ -265,9 +418,13 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            background: var(--bg-primary);
+            transition: background var(--transition-speed) ease;
         }
 
-        /* ========== TOPBAR ========== */
+        /* ============================================================
+           TOPBAR
+           ============================================================ */
         .topbar {
             display: flex;
             justify-content: space-between;
@@ -276,7 +433,8 @@
             gap: 12px;
             margin-bottom: 12px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #e8ecf1;
+            border-bottom: 2px solid var(--border-color);
+            transition: border-color var(--transition-speed) ease;
         }
         .topbar-left {
             display: flex;
@@ -285,16 +443,107 @@
         }
         .topbar-left h1 {
             font-size: 20px;
-            color: #1a2a4a;
+            color: var(--text-primary);
         }
         .topbar-left h1 small {
             font-size: 12px;
             font-weight: normal;
-            color: #888;
+            color: var(--text-muted);
         }
 
+        /* ============================================================
+           THEME TOGGLE - PREMIUM BUTTON
+           ============================================================ */
+        .theme-toggle-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            width: 52px;
+            height: 28px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 30px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            box-shadow: var(--shadow-sm);
+            flex-shrink: 0;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--sidebar-text);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+        }
+
+        .theme-toggle .toggle-track {
+            width: 100%;
+            height: 100%;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4px;
+            position: relative;
+            background: var(--bg-input);
+            transition: background 0.3s ease;
+        }
+
+        .theme-toggle .toggle-thumb {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00e5ff, #00bcd4);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 2px 8px rgba(0, 229, 255, 0.3);
+            top: 2px;
+            left: 2px;
+        }
+
+        [data-theme="dark"] .theme-toggle .toggle-thumb {
+            left: 26px;
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .theme-toggle .toggle-icon {
+            font-size: 12px;
+            z-index: 1;
+            line-height: 1;
+            user-select: none;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .theme-toggle .toggle-icon.active {
+            opacity: 1;
+        }
+
+        .theme-toggle-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 8px;
+            font-weight: 500;
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .theme-toggle-label {
+                display: inline;
+            }
+        }
+
+        /* ============================================================
+           WELCOME BANNER
+           ============================================================ */
         .welcome-banner {
-            background: linear-gradient(135deg, #1a2a4a, #2a3a5a);
+            background: var(--welcome-bg);
             border-radius: 10px;
             padding: 10px 20px;
             margin-bottom: 12px;
@@ -302,9 +551,10 @@
             align-items: center;
             justify-content: space-between;
             border: 1px solid rgba(0, 229, 255, 0.08);
-            box-shadow: 0 4px 16px rgba(26, 42, 74, 0.06);
+            box-shadow: var(--shadow-lg);
             flex-wrap: wrap;
             gap: 8px;
+            transition: background var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
         }
         .welcome-banner .welcome-left {
             display: flex;
@@ -332,7 +582,7 @@
         .welcome-banner .welcome-left .text .username {
             font-size: 16px;
             font-weight: 700;
-            color: #00e5ff;
+            color: var(--welcome-text);
         }
         .welcome-banner .welcome-right {
             display: flex;
@@ -344,7 +594,7 @@
             border: 1px solid rgba(0, 229, 255, 0.15);
             padding: 3px 14px;
             border-radius: 20px;
-            color: #00e5ff;
+            color: var(--welcome-text);
             font-size: 10px;
             font-weight: 600;
         }
@@ -370,13 +620,9 @@
             font-size: 13px;
         }
         .welcome-banner .welcome-right .quick-stats .stat-item .stat-value {
-            color: #00e5ff;
+            color: var(--welcome-text);
             font-weight: 600;
             font-size: 12px;
-        }
-
-        .test-badge-modern {
-            display: none;
         }
 
         .topbar-right {
@@ -386,31 +632,37 @@
             flex-wrap: wrap;
         }
 
-        /* ========== CLOCK ========== */
+        /* ============================================================
+           CLOCK
+           ============================================================ */
         .clock-container {
-            background: white;
+            background: var(--bg-secondary);
             padding: 6px 14px;
             border-radius: 24px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-sm);
             font-size: 12px;
             font-weight: 600;
-            color: #1a2a4a;
+            color: var(--text-primary);
             font-family: 'Courier New', monospace;
             display: flex;
             align-items: center;
             gap: 6px;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-speed) ease;
         }
         .clock-container .date {
             font-weight: 400;
-            color: #888;
+            color: var(--text-muted);
             font-family: 'Segoe UI', sans-serif;
             font-size: 11px;
         }
         .clock-container .time {
-            color: #1a2a4a;
+            color: var(--text-primary);
         }
 
-        /* ========== PROFILE DROPDOWN PREMIUM ========== */
+        /* ============================================================
+           PROFILE DROPDOWN
+           ============================================================ */
         .profile-container {
             position: relative;
             cursor: pointer;
@@ -420,12 +672,12 @@
             height: 36px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #ddd;
+            border: 2px solid var(--border-color);
             transition: 0.3s;
             cursor: pointer;
         }
         .profile-container .profile-avatar:hover {
-            border-color: #1a2a4a;
+            border-color: var(--sidebar-text);
         }
 
         .profile-dropdown {
@@ -433,16 +685,21 @@
             position: absolute;
             right: 0;
             top: 46px;
-            background: linear-gradient(145deg, #0d1230, #1a0a2e);
+            background: var(--bg-card);
             border-radius: 14px;
             min-width: 220px;
             padding: 16px 0;
             z-index: 1000;
             animation: slideDown 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 1px solid rgba(0, 229, 255, 0.06);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 229, 255, 0.02);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-xl);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+        }
+
+        [data-theme="dark"] .profile-dropdown {
+            background: #1c2333;
+            border-color: #30363d;
         }
 
         .profile-dropdown.show {
@@ -472,12 +729,12 @@
 
         .profile-dropdown .dropdown-header {
             padding: 0 18px 12px 18px;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.03);
+            border-bottom: 1px solid var(--border-color);
             margin-bottom: 4px;
         }
 
         .profile-dropdown .dropdown-header .header-name {
-            color: #00e5ff;
+            color: var(--sidebar-text);
             font-weight: 700;
             font-size: 14px;
             text-transform: uppercase;
@@ -486,20 +743,20 @@
 
         .profile-dropdown .dropdown-header .header-role {
             font-size: 10px;
-            color: rgba(0, 229, 255, 0.2);
+            color: var(--text-muted);
             letter-spacing: 0.5px;
             margin-top: 2px;
         }
 
         .profile-dropdown .dropdown-divider {
             height: 1px;
-            background: rgba(0, 229, 255, 0.03);
+            background: var(--border-color);
             margin: 4px 16px;
         }
 
         .profile-dropdown .dropdown-item {
             padding: 8px 18px;
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary);
             font-size: 12px;
             transition: 0.2s;
             display: flex;
@@ -510,8 +767,8 @@
         }
 
         .profile-dropdown .dropdown-item:hover {
-            background: rgba(0, 229, 255, 0.03);
-            color: rgba(255, 255, 255, 0.6);
+            background: var(--bg-hover);
+            color: var(--text-primary);
             border-left-color: rgba(0, 229, 255, 0.08);
         }
 
@@ -525,7 +782,7 @@
         }
 
         .profile-dropdown .dropdown-item .value {
-            color: #00e5ff;
+            color: var(--sidebar-text);
             font-weight: 600;
             font-size: 12px;
             font-family: 'Courier New', monospace;
@@ -538,7 +795,7 @@
         .profile-dropdown .dropdown-item.logout {
             color: rgba(255, 107, 107, 0.4);
             margin-top: 4px;
-            border-top: 1px solid rgba(255, 255, 255, 0.02);
+            border-top: 1px solid var(--border-color);
             padding-top: 10px;
         }
 
@@ -568,7 +825,7 @@
             border: none;
             font-size: 24px;
             cursor: pointer;
-            color: #1a2a4a;
+            color: var(--text-primary);
             padding: 4px 6px;
         }
 
@@ -586,29 +843,11 @@
             display: block;
         }
 
-        /* ========== TAB CONTENT ========== */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        .tab-content.active {
-            display: block;
-            flex: 1;
-        }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ========== TICKER - PERBAIKAN ========== */
+        /* ============================================================
+           TICKER
+           ============================================================ */
         .ticker-container {
-            background: linear-gradient(135deg, #1a2a4a, #2a3a5a);
+            background: var(--ticker-bg);
             border-radius: 10px;
             padding: 6px 14px;
             margin-bottom: 12px;
@@ -616,10 +855,11 @@
             align-items: center;
             gap: 14px;
             border: 1px solid rgba(0, 229, 255, 0.08);
-            box-shadow: 0 2px 12px rgba(26, 42, 74, 0.08);
+            box-shadow: var(--shadow-md);
             overflow: hidden;
             position: relative;
             height: 42px;
+            transition: background var(--transition-speed) ease;
         }
         .ticker-container .ticker-icon {
             font-size: 18px;
@@ -634,7 +874,6 @@
             height: 100%;
         }
 
-        /* 🔥 PERBAIKAN: Ticker selalu terlihat */
         .ticker-container .ticker-track {
             display: flex;
             white-space: nowrap;
@@ -666,7 +905,7 @@
         .ticker-container .ticker-item {
             display: inline-flex;
             align-items: center;
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--ticker-text);
             font-size: 13px;
             font-weight: 400;
             padding: 0 30px;
@@ -728,16 +967,19 @@
             }
         }
 
-        /* ========== LIVE IZIN ========== */
+        /* ============================================================
+           LIVE IZIN
+           ============================================================ */
         .live-izin-container {
-            background: linear-gradient(145deg, #ffffff, #f8faff);
+            background: var(--bg-card);
             border-radius: 14px;
             padding: 12px 16px 14px;
             margin-bottom: 16px;
-            box-shadow: 0 4px 16px rgba(26, 42, 74, 0.05);
-            border: 1px solid rgba(0, 229, 255, 0.06);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
             position: relative;
             overflow: hidden;
+            transition: all var(--transition-speed) ease;
         }
         .live-izin-container::before {
             content: '';
@@ -760,15 +1002,16 @@
         }
         .live-izin-header .count {
             font-size: 11px;
-            color: #888;
+            color: var(--text-muted);
             font-weight: 500;
-            background: #f0f4f8;
+            background: var(--bg-hover);
             padding: 3px 14px;
             border-radius: 16px;
+            border: 1px solid var(--border-color);
         }
         .live-izin-header .count span {
             font-weight: 700;
-            color: #1a2a4a;
+            color: var(--text-primary);
         }
         .live-izin-grid {
             display: grid;
@@ -776,26 +1019,26 @@
             gap: 8px;
         }
         .live-role-column {
-            background: rgba(255,255,255,0.5);
+            background: var(--bg-hover);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 10px;
             padding: 8px 10px;
             min-height: 60px;
-            border: 1px solid rgba(0,0,0,0.04);
+            border: 1px solid var(--border-color);
             transition: all 0.3s ease;
         }
         .live-role-column:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+            box-shadow: var(--shadow-md);
             border-color: rgba(0, 229, 255, 0.08);
         }
         .live-role-column .role-header {
             font-weight: 700;
             font-size: 12px;
-            color: #1a2a4a;
+            color: var(--text-primary);
             padding-bottom: 6px;
-            border-bottom: 2px solid #e8ecf1;
+            border-bottom: 2px solid var(--border-color);
             margin-bottom: 6px;
             display: flex;
             justify-content: space-between;
@@ -807,19 +1050,20 @@
         }
         .live-role-column .role-header .role-count {
             font-size: 11px;
-            color: #888;
+            color: var(--text-muted);
             font-weight: 400;
-            background: #f0f4f8;
+            background: var(--bg-secondary);
             padding: 1px 10px;
             border-radius: 12px;
+            border: 1px solid var(--border-color);
         }
         .live-role-column .role-header .role-count span {
             font-weight: 700;
-            color: #1a2a4a;
+            color: var(--text-primary);
         }
         .live-role-column .empty-live-col {
             text-align: center;
-            color: #bbb;
+            color: var(--text-muted);
             font-size: 12px;
             padding: 12px 0;
             font-weight: 300;
@@ -836,14 +1080,22 @@
             transition: all 0.3s ease;
             font-size: 12px;
         }
+        [data-theme="dark"] .live-card-col {
+            background: linear-gradient(135deg, #2a1a0a, #3a2a1a);
+            border-left-color: #e65100;
+        }
         .live-card-col:hover {
             transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            box-shadow: var(--shadow-sm);
         }
         .live-card-col.over-limit {
             background: linear-gradient(135deg, #ffebee, #ffcdd2);
             border-left-color: #c62828;
             animation: pulse-red-premium 1.5s ease-in-out infinite;
+        }
+        [data-theme="dark"] .live-card-col.over-limit {
+            background: linear-gradient(135deg, #3a1a1a, #4a2a2a);
+            border-left-color: #ef5350;
         }
         @keyframes pulse-red-premium {
             0%, 100% { 
@@ -853,9 +1105,17 @@
                 background: linear-gradient(135deg, #ffcdd2, #ef9a9a);
             }
         }
+        [data-theme="dark"] @keyframes pulse-red-premium {
+            0%, 100% { 
+                background: linear-gradient(135deg, #3a1a1a, #4a2a2a);
+            }
+            50% { 
+                background: linear-gradient(135deg, #4a2a2a, #5a3a3a);
+            }
+        }
         .live-card-col .nama {
             font-weight: 600;
-            color: #1a2a4a;
+            color: var(--text-primary);
             text-transform: uppercase;
             font-size: 12px;
             max-width: 130px;
@@ -875,9 +1135,17 @@
             flex-shrink: 0;
             margin-left: 4px;
         }
+        [data-theme="dark"] .live-card-col .timer-col {
+            background: rgba(0,0,0,0.3);
+            color: #4caf50;
+        }
         .live-card-col .timer-col.over-limit {
             color: #c62828;
             background: rgba(198, 40, 40, 0.08);
+        }
+        [data-theme="dark"] .live-card-col .timer-col.over-limit {
+            color: #ef5350;
+            background: rgba(239, 83, 80, 0.15);
         }
         .live-card-col .warning-badge-col {
             background: #c62828;
@@ -926,16 +1194,20 @@
             border-left-color: #00838f;
         }
 
-        /* ========== TABLE DASHBOARD ========== */
+        /* ============================================================
+           TABLE DASHBOARD
+           ============================================================ */
         .table-dashboard-wrap {
-            background: white;
+            background: var(--bg-card);
             border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-md);
             overflow-x: auto;
             overflow-y: visible;
             flex: 1;
             min-width: 0;
             width: 100%;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-speed) ease;
         }
 
         .table-dashboard-wrap table {
@@ -947,8 +1219,8 @@
         }
 
         .table-dashboard-wrap th {
-            background: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
-            color: white;
+            background: var(--bg-table-header);
+            color: var(--text-white);
             padding: 10px 12px;
             text-align: left;
             font-weight: 600;
@@ -960,19 +1232,21 @@
             position: sticky;
             top: 0;
             z-index: 2;
+            transition: background var(--transition-speed) ease;
         }
 
         .table-dashboard-wrap td {
             padding: 10px 12px;
-            border-bottom: 1px solid #f0f2f5;
+            border-bottom: 1px solid var(--border-light);
             vertical-align: middle;
             font-size: 13px;
             word-break: break-word;
             overflow-wrap: break-word;
             min-width: 0;
+            color: var(--text-primary);
+            transition: border-color var(--transition-speed) ease, background var(--transition-speed) ease;
         }
 
-        /* 🔥 PERBAIKAN: Kolom Nama tetap terlihat */
         .table-dashboard-wrap .col-nama {
             width: auto;
             min-width: 80px;
@@ -983,7 +1257,7 @@
 
         .table-dashboard-wrap .col-nama .nama-cell {
             font-weight: 600;
-            color: #1a2a4a;
+            color: var(--text-primary);
             text-transform: uppercase;
             letter-spacing: 0.3px;
             font-size: 12px;
@@ -994,7 +1268,6 @@
             line-height: 1.3;
         }
 
-        /* 🔥 PERBAIKAN: Kolom Progress dan Aksi diperlebar */
         .table-dashboard-wrap .col-status { 
             width: 90px; 
             min-width: 70px; 
@@ -1024,14 +1297,12 @@
             max-width: 90px; 
             text-align: center; 
         }
-        /* 🔥 PROGRESS diperlebar */
         .table-dashboard-wrap .col-progress { 
             width: 200px; 
             min-width: 150px; 
             max-width: 240px; 
             text-align: center; 
         }
-        /* 🔥 AKSI diperlebar */
         .table-dashboard-wrap .col-aksi { 
             width: 140px; 
             min-width: 110px; 
@@ -1043,24 +1314,26 @@
             border-bottom: none;
         }
         .table-dashboard-wrap tr:hover td {
-            background: #f8f9fc;
+            background: var(--bg-hover);
         }
 
         .table-dashboard-wrap tr.row-online {
-            background: linear-gradient(90deg, #e8f5e9 0%, #f1f8f2 100%);
+            background: var(--online-bg);
         }
         .table-dashboard-wrap tr.row-online:hover td {
-            background: linear-gradient(90deg, #d4edda 0%, #e8f5e9 100%);
+            background: var(--online-hover);
         }
 
         .table-dashboard-wrap tr.row-offline {
-            background: #ffffff;
+            background: var(--bg-secondary);
         }
         .table-dashboard-wrap tr.row-offline:hover td {
-            background: #f8f9fc;
+            background: var(--bg-hover);
         }
 
-        /* ========== STATUS BADGE ========== */
+        /* ============================================================
+           STATUS BADGE
+           ============================================================ */
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -1078,22 +1351,27 @@
             display: inline-block;
         }
         .status-badge.online {
-            background: #e8f5e9;
-            color: #1b5e20;
+            background: var(--success-bg);
+            color: var(--success);
         }
         .status-badge.online .dot {
-            background: #2e7d32;
+            background: var(--success);
             box-shadow: 0 0 8px rgba(46, 125, 50, 0.3);
         }
+        [data-theme="dark"] .status-badge.online .dot {
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
+        }
         .status-badge.offline {
-            background: #f5f5f5;
-            color: #9e9e9e;
+            background: var(--bg-hover);
+            color: var(--text-muted);
         }
         .status-badge.offline .dot {
-            background: #bdbdbd;
+            background: var(--text-muted);
         }
 
-        /* ========== ROLE TAG ========== */
+        /* ============================================================
+           ROLE TAG
+           ============================================================ */
         .role-tag {
             font-size: 10px;
             padding: 3px 10px;
@@ -1102,33 +1380,30 @@
             font-weight: 600;
             letter-spacing: 0.3px;
             white-space: nowrap;
+            color: white;
         }
         .role-tag.leader {
-            background: linear-gradient(135deg, #1a6e4a, #0d4a2e);
-            color: white;
+            background: var(--role-leader);
         }
         .role-tag.csline {
-            background: linear-gradient(135deg, #e65100, #bf360c);
-            color: white;
+            background: var(--role-csline);
         }
         .role-tag.cs {
-            background: linear-gradient(135deg, #1565c0, #0d47a1);
-            color: white;
+            background: var(--role-cs);
         }
         .role-tag.kapten {
-            background: linear-gradient(135deg, #6a1b9a, #4a148c);
-            color: white;
+            background: var(--role-kapten);
         }
         .role-tag.kasir {
-            background: linear-gradient(135deg, #00838f, #006064);
-            color: white;
+            background: var(--role-kasir);
         }
         .role-tag.admin {
-            background: linear-gradient(135deg, #c62828, #b71c1c);
-            color: white;
+            background: var(--role-admin);
         }
 
-        /* ========== QUOTA BADGE ========== */
+        /* ============================================================
+           QUOTA BADGE
+           ============================================================ */
         .quota-badge-modern {
             display: inline-flex;
             align-items: center;
@@ -1141,35 +1416,41 @@
             border: 2px solid transparent;
             min-width: 36px;
             justify-content: center;
+            transition: all var(--transition-speed) ease;
         }
         .quota-badge-modern .used {
             font-weight: 600;
+            color: var(--text-primary);
         }
         .quota-badge-modern .total {
             font-weight: 400;
             opacity: 0.7;
+            color: var(--text-muted);
         }
         .quota-badge-modern .separator {
             opacity: 0.3;
             margin: 0 2px;
+            color: var(--text-muted);
         }
         .quota-badge-modern.full {
-            background: #ffebee;
-            color: #c62828;
-            border-color: #ef9a9a;
+            background: var(--danger-bg);
+            color: var(--danger);
+            border-color: var(--danger);
         }
         .quota-badge-modern.warning {
-            background: #fff3e0;
-            color: #e65100;
-            border-color: #ffcc80;
+            background: var(--warning-bg);
+            color: var(--warning);
+            border-color: var(--warning);
         }
         .quota-badge-modern.ok {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border-color: #a5d6a7;
+            background: var(--success-bg);
+            color: var(--success);
+            border-color: var(--success);
         }
 
-        /* ========== VOUCHER BADGE ========== */
+        /* ============================================================
+           VOUCHER BADGE
+           ============================================================ */
         .voucher-badge {
             display: inline-flex;
             align-items: center;
@@ -1186,23 +1467,30 @@
             position: relative;
             transition: 0.2s;
         }
+        [data-theme="dark"] .voucher-badge {
+            background: linear-gradient(135deg, #2a1a0a, #3a2a1a);
+            color: #ffd54f;
+            border-color: #ffd54f;
+        }
 
         .voucher-badge .icon {
             font-size: 12px;
         }
 
-        /* ========== VOUCHER TOOLTIP PREMIUM ========== */
+        /* ============================================================
+           VOUCHER TOOLTIP
+           ============================================================ */
         .voucher-tooltip {
             position: fixed;
-            background: linear-gradient(145deg, #1a1a2e, #0d0d1a);
-            border: 1px solid rgba(255, 215, 0, 0.15);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             padding: 8px 14px;
             border-radius: 10px;
             font-size: 11px;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-secondary);
             font-weight: 400;
             letter-spacing: 0.3px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.03);
+            box-shadow: var(--shadow-xl);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             z-index: 10000;
@@ -1233,13 +1521,13 @@
 
         .voucher-tooltip .tooltip-desc {
             font-size: 10px;
-            color: rgba(255, 255, 255, 0.35);
+            color: var(--text-muted);
             margin-top: 2px;
         }
 
         .voucher-tooltip .tooltip-divider {
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.08), transparent);
+            background: var(--border-color);
             margin: 4px 0;
         }
 
@@ -1261,9 +1549,9 @@
             transform: translateX(-50%);
             width: 10px;
             height: 10px;
-            background: linear-gradient(145deg, #1a1a2e, #0d0d1a);
-            border-right: 1px solid rgba(255, 215, 0, 0.05);
-            border-bottom: 1px solid rgba(255, 215, 0, 0.05);
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
             transform: translateX(-50%) rotate(45deg);
             border-radius: 0 0 2px 0;
         }
@@ -1274,12 +1562,14 @@
         }
 
         .voucher-empty {
-            color: #ccc;
+            color: var(--text-muted);
             font-weight: 400;
             font-size: 13px;
         }
 
-        /* ========== PROGRESS BAR ========== */
+        /* ============================================================
+           PROGRESS BAR
+           ============================================================ */
         .progress-container {
             display: flex;
             align-items: center;
@@ -1290,12 +1580,13 @@
         .progress-bar-wrap {
             flex: 1;
             height: 6px;
-            background: #e9ecef;
+            background: var(--bg-hover);
             border-radius: 10px;
             overflow: hidden;
             position: relative;
             min-width: 50px;
             max-width: 120px;
+            border: 1px solid var(--border-color);
         }
         .progress-bar-fill {
             height: 100%;
@@ -1303,6 +1594,9 @@
             transition: width 0.5s ease;
             background: linear-gradient(90deg, #43a047, #66bb6a);
             width: 0%;
+        }
+        [data-theme="dark"] .progress-bar-fill {
+            background: linear-gradient(90deg, #2e7d32, #4caf50);
         }
         .progress-bar-fill.warning {
             background: linear-gradient(90deg, #fb8c00, #ffa726);
@@ -1335,57 +1629,63 @@
         .progress-text {
             font-size: 10px;
             font-weight: 600;
-            color: #555;
+            color: var(--text-secondary);
             min-width: 28px;
             text-align: center;
             font-family: 'Courier New', monospace;
         }
         .progress-text.over-limit {
-            color: #c62828;
+            color: var(--danger);
             animation: blink 0.5s infinite;
         }
         .progress-text.full {
-            color: #c62828;
+            color: var(--danger);
             font-weight: 700;
         }
 
-        /* ========== WAKTU MULAI ========== */
+        /* ============================================================
+           WAKTU MULAI
+           ============================================================ */
         .time-mulai {
             font-family: 'Courier New', monospace;
             font-size: 12px;
             font-weight: 700;
-            color: #1a2a4a;
+            color: var(--text-primary);
             white-space: nowrap;
             letter-spacing: 0.3px;
         }
 
-        /* ========== TIMER DISPLAY ========== */
+        /* ============================================================
+           TIMER DISPLAY
+           ============================================================ */
         .timer-display {
             font-family: 'Courier New', monospace;
             font-weight: 600;
             font-size: 12px;
-            color: #2e7d32;
+            color: var(--success);
             white-space: nowrap;
             min-width: 45px;
         }
         .timer-display.over-limit {
-            color: #c62828;
+            color: var(--danger);
             animation: blink 0.5s infinite;
         }
         .timer-display.done {
-            color: #999;
+            color: var(--text-muted);
         }
 
         .nama-cell {
             font-weight: 600;
-            color: #1a2a4a;
+            color: var(--text-primary);
             text-transform: uppercase;
             letter-spacing: 0.3px;
             font-size: 12px;
             white-space: nowrap;
         }
 
-        /* ========== SEARCH & FILTER ========== */
+        /* ============================================================
+           SEARCH & FILTER
+           ============================================================ */
         .search-box {
             margin-bottom: 12px;
         }
@@ -1399,44 +1699,57 @@
             flex: 1;
             min-width: 200px;
             padding: 8px 16px;
-            border: 2px solid #e0e4ea;
+            border: 2px solid var(--border-input);
             border-radius: 24px;
             font-size: 13px;
             outline: none;
             transition: 0.3s;
-            background: white;
+            background: var(--bg-input);
+            color: var(--text-primary);
         }
         .search-box input:focus {
-            border-color: #1a2a4a;
-            box-shadow: 0 0 0 4px rgba(26, 42, 74, 0.05);
+            border-color: var(--sidebar-text);
+            box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.05);
+        }
+        .search-box input::placeholder {
+            color: var(--text-muted);
         }
         .search-box select {
             padding: 8px 14px;
-            border: 2px solid #e0e4ea;
+            border: 2px solid var(--border-input);
             border-radius: 24px;
             font-size: 13px;
             outline: none;
-            background: white;
+            background: var(--bg-input);
+            color: var(--text-primary);
             cursor: pointer;
             transition: 0.3s;
             min-width: 130px;
         }
         .search-box select:focus {
-            border-color: #1a2a4a;
-            box-shadow: 0 0 0 4px rgba(26, 42, 74, 0.05);
+            border-color: var(--sidebar-text);
+            box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.05);
+        }
+        .search-box select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
 
-        /* ========== FORM ========== */
+        /* ============================================================
+           FORM
+           ============================================================ */
         .form-anggota {
-            background: white;
+            background: var(--bg-card);
             padding: 16px 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-md);
             margin-bottom: 16px;
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
             align-items: flex-end;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-speed) ease;
         }
         .form-anggota .group {
             flex: 1;
@@ -1446,27 +1759,35 @@
             display: block;
             font-size: 12px;
             font-weight: 600;
-            color: #555;
+            color: var(--text-secondary);
             margin-bottom: 4px;
         }
         .form-anggota input,
         .form-anggota select {
             width: 100%;
             padding: 8px 12px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--border-input);
             border-radius: 6px;
             font-size: 13px;
             outline: none;
             transition: 0.3s;
-            background: white;
+            background: var(--bg-input);
+            color: var(--text-primary);
         }
         .form-anggota input:focus,
         .form-anggota select:focus {
-            border-color: #1a2a4a;
+            border-color: var(--sidebar-text);
+        }
+        .form-anggota input::placeholder {
+            color: var(--text-muted);
+        }
+        .form-anggota select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
         .form-anggota button {
             padding: 8px 24px;
-            background: #1a2a4a;
+            background: var(--info);
             color: white;
             border: none;
             border-radius: 6px;
@@ -1478,10 +1799,11 @@
             height: 38px;
         }
         .form-anggota button:hover {
-            background: #0f1a30;
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         .form-anggota button.btn-danger {
-            background: #c62828;
+            background: var(--danger);
         }
         .form-anggota button.btn-danger:hover {
             background: #b71c1c;
@@ -1491,12 +1813,16 @@
             cursor: not-allowed;
         }
 
-        /* ========== TABLE WRAP ========== */
+        /* ============================================================
+           TABLE WRAP
+           ============================================================ */
         .table-wrap {
-            background: white;
+            background: var(--bg-card);
             border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-md);
             overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-speed) ease;
         }
         .table-wrap table {
             width: 100%;
@@ -1504,8 +1830,8 @@
             font-size: 13px;
         }
         .table-wrap th {
-            background: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
-            color: white;
+            background: var(--bg-table-header);
+            color: var(--text-white);
             padding: 10px 16px;
             text-align: left;
             font-weight: 600;
@@ -1514,18 +1840,21 @@
             text-transform: uppercase;
             white-space: nowrap;
             border-bottom: 3px solid rgba(255,255,255,0.1);
+            transition: background var(--transition-speed) ease;
         }
         .table-wrap td {
             padding: 10px 16px;
-            border-bottom: 1px solid #f0f2f5;
+            border-bottom: 1px solid var(--border-light);
             vertical-align: middle;
             font-size: 13px;
+            color: var(--text-primary);
+            transition: border-color var(--transition-speed) ease;
         }
         .table-wrap tr:last-child td {
             border-bottom: none;
         }
         .table-wrap tr:hover td {
-            background: #f8f9fc;
+            background: var(--bg-hover);
         }
 
         .badge {
@@ -1538,39 +1867,41 @@
             white-space: nowrap;
         }
         .badge.selesai {
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: var(--success-bg);
+            color: var(--success);
         }
         .badge.telat {
-            background: #ffebee;
-            color: #c62828;
+            background: var(--danger-bg);
+            color: var(--danger);
         }
         .badge.role-leader {
-            background: linear-gradient(135deg, #1a6e4a, #0d4a2e);
+            background: var(--role-leader);
             color: white;
         }
         .badge.role-csline {
-            background: linear-gradient(135deg, #e65100, #bf360c);
+            background: var(--role-csline);
             color: white;
         }
         .badge.role-cs {
-            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            background: var(--role-cs);
             color: white;
         }
         .badge.role-kapten {
-            background: linear-gradient(135deg, #6a1b9a, #4a148c);
+            background: var(--role-kapten);
             color: white;
         }
         .badge.role-kasir {
-            background: linear-gradient(135deg, #00838f, #006064);
+            background: var(--role-kasir);
             color: white;
         }
         .badge.role-admin {
-            background: linear-gradient(135deg, #c62828, #b71c1c);
+            background: var(--role-admin);
             color: white;
         }
 
-        /* ========== FILTER HISTORY ========== */
+        /* ============================================================
+           FILTER HISTORY
+           ============================================================ */
         .filter-history {
             display: flex;
             gap: 10px;
@@ -1581,19 +1912,28 @@
         .filter-history input,
         .filter-history select {
             padding: 8px 14px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--border-input);
             border-radius: 6px;
             font-size: 13px;
             outline: none;
-            background: white;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            transition: all var(--transition-speed) ease;
         }
         .filter-history input:focus,
         .filter-history select:focus {
-            border-color: #1a2a4a;
+            border-color: var(--sidebar-text);
+        }
+        .filter-history input::placeholder {
+            color: var(--text-muted);
+        }
+        .filter-history select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
 
         .btn-export {
-            background: #1a2a4a;
+            background: var(--info);
             color: white;
             border: none;
             padding: 8px 18px;
@@ -1601,17 +1941,20 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 12px;
+            transition: 0.3s;
         }
         .btn-export:hover {
-            background: #0f1a30;
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         .btn-export:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         .btn-danger-sm {
-            background: #c62828;
+            background: var(--danger);
             color: white;
             border: none;
             padding: 8px 18px;
@@ -1619,30 +1962,37 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 12px;
+            transition: 0.3s;
         }
         .btn-danger-sm:hover {
-            background: #b71c1c;
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         .btn-danger-sm:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         .history-count {
             text-align: center;
-            color: #999;
+            color: var(--text-muted);
             font-size: 12px;
             margin-top: 12px;
         }
 
-        /* ========== SETTINGS ========== */
+        /* ============================================================
+           SETTINGS
+           ============================================================ */
         .settings-card {
-            background: white;
+            background: var(--bg-card);
             border-radius: 10px;
             padding: 20px 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-md);
             max-width: 720px;
             flex: 1;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-speed) ease;
         }
 
         .settings-card .section {
@@ -1650,8 +2000,8 @@
             padding: 14px 18px;
             padding-bottom: 16px;
             border-radius: 8px;
-            background: #fafbfc;
-            border: 1px solid #e8ecf1;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
             transition: 0.3s;
         }
 
@@ -1660,14 +2010,14 @@
         }
 
         .settings-card .section:hover {
-            border-color: #d0d5dd;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border-color: var(--border-input);
+            box-shadow: var(--shadow-sm);
         }
 
         .settings-card .section-title {
             font-size: 15px;
             font-weight: 700;
-            color: #1a2a4a;
+            color: var(--text-primary);
             margin-bottom: 4px;
             display: flex;
             align-items: center;
@@ -1676,10 +2026,10 @@
 
         .settings-card .section-desc {
             font-size: 12px;
-            color: #888;
+            color: var(--text-muted);
             margin-bottom: 10px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #edf0f5;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .settings-card .form-group {
@@ -1689,37 +2039,50 @@
         .settings-card .form-group label {
             display: block;
             font-weight: 600;
-            color: #333;
+            color: var(--text-secondary);
             margin-bottom: 4px;
             font-size: 13px;
         }
 
         .settings-card .form-group input,
-        .settings-card .form-group select {
+        .settings-card .form-group select,
+        .settings-card .form-group textarea {
             width: 100%;
             padding: 8px 12px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--border-input);
             border-radius: 6px;
             font-size: 13px;
             outline: none;
             transition: 0.3s;
-            background: white;
+            background: var(--bg-input);
+            color: var(--text-primary);
         }
 
         .settings-card .form-group input:focus,
-        .settings-card .form-group select:focus {
-            border-color: #1a2a4a;
+        .settings-card .form-group select:focus,
+        .settings-card .form-group textarea:focus {
+            border-color: var(--sidebar-text);
+        }
+
+        .settings-card .form-group textarea {
+            font-family: 'Segoe UI', sans-serif;
+            resize: vertical;
+            min-height: 120px;
         }
 
         .settings-card .form-group .hint {
             font-size: 11px;
-            color: #888;
+            color: var(--text-muted);
             margin-top: 3px;
+        }
+        .settings-card .form-group .hint .highlight {
+            color: var(--sidebar-text);
+            font-weight: 600;
         }
 
         .settings-card .btn-settings {
             padding: 8px 24px;
-            background: #1a2a4a;
+            background: var(--info);
             color: white;
             border: none;
             border-radius: 6px;
@@ -1730,18 +2093,18 @@
         }
 
         .settings-card .btn-settings:hover {
-            background: #0f1a30;
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
 
         .settings-card .btn-settings:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            background: #cfd8dc;
-            color: #90a4ae;
+            transform: none;
         }
 
         .settings-card .saved-notice {
-            color: #2e7d32;
+            color: var(--success);
             font-size: 12px;
             display: none;
             margin-top: 8px;
@@ -1752,59 +2115,63 @@
             align-items: center;
             gap: 12px;
             padding: 8px 12px;
-            background: #f8f9fa;
+            background: var(--bg-secondary);
             border-radius: 6px;
             margin-bottom: 8px;
-            border: 1px solid #edf0f5;
+            border: 1px solid var(--border-color);
         }
 
         .settings-card .limit-row .role-label {
             font-weight: 600;
             min-width: 70px;
-            color: #1a2a4a;
+            color: var(--text-primary);
             font-size: 13px;
         }
 
         .settings-card .limit-row input {
             width: 70px;
             padding: 5px 8px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--border-input);
             border-radius: 4px;
             font-size: 13px;
             text-align: center;
+            background: var(--bg-input);
+            color: var(--text-primary);
         }
 
         .settings-card .limit-row input:focus {
-            border-color: #1a2a4a;
+            border-color: var(--sidebar-text);
         }
 
         .settings-card .limit-row .current-count {
             font-size: 12px;
-            color: #888;
+            color: var(--text-muted);
             margin-left: auto;
         }
         .settings-card .limit-row .current-count .count {
             font-weight: 700;
-            color: #1a2a4a;
+            color: var(--text-primary);
         }
 
         .view-only-indicator {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #f5f5f5;
-            color: #888;
+            background: var(--bg-hover);
+            color: var(--text-muted);
             padding: 4px 14px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--border-color);
         }
         .view-only-indicator .icon {
             font-size: 14px;
         }
 
-        /* ========== POPUP LIMIT ========== */
+        /* ============================================================
+           POPUP LIMIT
+           ============================================================ */
         .popup-overlay {
             display: none;
             position: fixed;
@@ -1830,16 +2197,17 @@
             }
         }
         .popup-content {
-            background: white;
+            background: var(--bg-card);
             border-radius: 16px;
             padding: 30px 36px;
             max-width: 420px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow-xl);
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             overflow: hidden;
+            border: 1px solid var(--border-color);
         }
         @keyframes popIn {
             0% {
@@ -1864,34 +2232,34 @@
         .popup-content .popup-title {
             font-size: 20px;
             font-weight: 800;
-            color: #e65100;
+            color: var(--warning);
             margin-bottom: 6px;
         }
         .popup-content .popup-message {
             font-size: 14px;
-            color: #555;
+            color: var(--text-secondary);
             line-height: 1.6;
             margin-bottom: 12px;
         }
         .popup-content .popup-message strong {
-            color: #1a2a4a;
+            color: var(--text-primary);
         }
         .popup-content .popup-message .highlight {
-            color: #e65100;
+            color: var(--warning);
             font-weight: 700;
         }
         .popup-content .popup-divider {
             height: 2px;
-            background: linear-gradient(to right, transparent, #ffcc80, transparent);
+            background: linear-gradient(to right, transparent, var(--border-color), transparent);
             margin: 12px 0;
         }
         .popup-content .popup-footer {
             font-size: 12px;
-            color: #999;
+            color: var(--text-muted);
             margin-top: 4px;
         }
         .popup-content .popup-btn {
-            background: #1a2a4a;
+            background: var(--info);
             color: white;
             border: none;
             padding: 10px 30px;
@@ -1903,7 +2271,7 @@
             margin-top: 12px;
         }
         .popup-content .popup-btn:hover {
-            background: #0f1a30;
+            opacity: 0.9;
             transform: scale(1.05);
         }
         .popup-content .popup-decoration {
@@ -1922,7 +2290,9 @@
             transform: rotate(-20deg);
         }
 
-        /* ========== JACKPOT POPUP ========== */
+        /* ============================================================
+           JACKPOT POPUP
+           ============================================================ */
         .jackpot-modal {
             display: none;
             position: fixed;
@@ -1950,7 +2320,7 @@
             }
         }
         .jackpot-content-premium {
-            background: linear-gradient(145deg, #0a0e1a, #0d1230, #1a0a2e);
+            background: var(--sidebar-bg);
             border-radius: 24px;
             padding: 50px 60px;
             max-width: 480px;
@@ -2090,7 +2460,9 @@
             border-radius: 0 0 4px 0;
         }
 
-        /* ========== CLAIM VOUCHER POPUP ========== */
+        /* ============================================================
+           CLAIM VOUCHER POPUP
+           ============================================================ */
         .claim-popup-overlay {
             display: none;
             position: fixed;
@@ -2108,7 +2480,7 @@
             display: flex;
         }
         .claim-popup-premium {
-            background: linear-gradient(145deg, #0a0e1a, #0d1230, #1a0a2e);
+            background: var(--sidebar-bg);
             border-radius: 24px;
             padding: 50px 60px;
             max-width: 480px;
@@ -2233,29 +2605,31 @@
             border-radius: 0 0 4px 0;
         }
 
-        /* ========== EMPTY STATE ========== */
+        /* ============================================================
+           EMPTY STATE
+           ============================================================ */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #999;
+            color: var(--text-muted);
         }
         .empty-state .icon {
             font-size: 40px;
             margin-bottom: 12px;
         }
         .empty-state h3 {
-            color: #555;
+            color: var(--text-secondary);
             margin-bottom: 6px;
         }
 
         .loading {
             text-align: center;
             padding: 30px;
-            color: #999;
+            color: var(--text-muted);
         }
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #1a2a4a;
+            border: 4px solid var(--bg-hover);
+            border-top: 4px solid var(--sidebar-text);
             border-radius: 50%;
             width: 36px;
             height: 36px;
@@ -2271,16 +2645,20 @@
             }
         }
 
-        /* ========== LOCKED NOTICE ========== */
+        /* ============================================================
+           LOCKED NOTICE
+           ============================================================ */
         .locked-notice {
             display: none !important;
         }
 
-        /* ========== FOOTER ========== */
+        /* ============================================================
+           FOOTER
+           ============================================================ */
         .footer-premium {
             margin-top: 20px;
             padding: 12px 24px;
-            background: linear-gradient(135deg, #1a2a4a, #2a3a5a);
+            background: var(--footer-bg);
             border-radius: 10px;
             display: flex;
             justify-content: space-between;
@@ -2288,8 +2666,9 @@
             flex-wrap: wrap;
             gap: 10px;
             border: 1px solid rgba(0, 229, 255, 0.06);
-            box-shadow: 0 2px 16px rgba(26, 42, 74, 0.06);
+            box-shadow: var(--shadow-md);
             flex-shrink: 0;
+            transition: background var(--transition-speed) ease;
         }
         .footer-premium .footer-left {
             display: flex;
@@ -2337,7 +2716,9 @@
             font-size: 11px;
         }
 
-        /* ========== RESPONSIVE ========== */
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
         @media (max-width: 992px) {
             .live-izin-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -2375,7 +2756,6 @@
             .welcome-banner .welcome-right .quick-stats .stat-item { font-size: 10px; }
             .footer-premium { padding: 10px 16px; flex-direction: column; text-align: center; }
             
-            /* 🔥 Perbaikan tabel di mobile - NAMA TETAP TERLIHAT */
             .table-dashboard-wrap {
                 overflow-x: auto;
             }
@@ -2440,7 +2820,6 @@
             .footer-premium { flex-direction: column; text-align: center; gap: 6px; }
             .footer-premium .footer-left .footer-divider { display: none; }
             
-            /* 🔥 Perbaikan tabel di HP */
             .table-dashboard-wrap table {
                 min-width: 420px !important;
                 font-size: 11px !important;
@@ -2504,7 +2883,6 @@
                 font-size: 10px !important;
                 padding: 2px 6px !important;
             }
-            /* 🔥 Progress & Aksi di HP */
             .table-dashboard-wrap .col-progress { min-width: 90px !important; max-width: 130px !important; }
             .table-dashboard-wrap .col-aksi { min-width: 70px !important; max-width: 90px !important; }
         }
@@ -2549,7 +2927,7 @@
         }
 
         .btn-refresh {
-            background: #1a2a4a;
+            background: var(--info);
             color: white;
             border: none;
             padding: 6px 16px;
@@ -2560,24 +2938,26 @@
             transition: 0.3s;
         }
         .btn-refresh:hover {
-            background: #0f1a30;
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         .btn-refresh:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         .time-detail {
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            color: #333;
+            color: var(--text-primary);
         }
         .time-detail .durasi-green {
-            color: #2e7d32;
+            color: var(--success);
             font-weight: 600;
         }
         .time-detail .durasi-red {
-            color: #c62828;
+            color: var(--danger);
             font-weight: 600;
         }
 
@@ -2591,25 +2971,26 @@
             font-weight: 600;
             z-index: 9998;
             max-width: 360px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            box-shadow: var(--shadow-xl);
             animation: slideInRight 0.4s ease;
             display: none;
             font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         .toast-notification.success {
-            background: #2e7d32;
+            background: var(--success);
         }
         .toast-notification.error {
-            background: #c62828;
+            background: var(--danger);
         }
         .toast-notification.warning {
-            background: #e65100;
+            background: var(--warning);
         }
         .toast-notification.info {
-            background: #1a2a4a;
+            background: var(--info);
         }
         .toast-notification.jackpot {
-            background: linear-gradient(135deg, #0a0e1a, #0d1230);
+            background: var(--sidebar-bg);
             border: 1px solid rgba(0, 229, 255, 0.1);
             color: #00e5ff;
             font-size: 13px;
@@ -2628,18 +3009,20 @@
         .access-denied {
             text-align: center;
             padding: 50px 20px;
-            color: #999;
+            color: var(--text-muted);
         }
         .access-denied .icon {
             font-size: 56px;
             margin-bottom: 12px;
         }
         .access-denied h3 {
-            color: #555;
+            color: var(--text-secondary);
             margin-bottom: 6px;
         }
 
-        /* ========== NOT REGISTERED POPUP - PREMIUM THEME ========== */
+        /* ============================================================
+           NOT REGISTERED POPUP
+           ============================================================ */
         .not-registered-overlay {
             position: fixed;
             top: 0;
@@ -2656,44 +3039,8 @@
             animation: fadeInModal 0.5s ease;
         }
 
-        @keyframes fadeInModal {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes premiumBounce {
-            0% {
-                opacity: 0;
-                transform: scale(0.8) rotate(-2deg);
-            }
-            60% {
-                transform: scale(1.02) rotate(0.5deg);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) rotate(0deg);
-            }
-        }
-
-        @keyframes glowPulse {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.1); }
-        }
-
-        @keyframes jackpotSpin {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.05); }
-            75% { transform: rotate(-5deg) scale(1.05); }
-        }
-
         .not-registered-popup {
-            background: linear-gradient(145deg, #0a0e1a, #0d1230, #1a0a2e);
+            background: var(--sidebar-bg);
             border-radius: 24px;
             padding: 40px 45px;
             max-width: 440px;
@@ -2854,12 +3201,12 @@
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
-            background: #c62828;
+            background: var(--danger);
             color: white;
             transition: 0.2s;
         }
         .btn-hapus:hover:not(:disabled) {
-            background: #b71c1c;
+            opacity: 0.9;
             transform: scale(1.05);
         }
         .btn-hapus:disabled {
@@ -2875,12 +3222,12 @@
             font-size: 10px;
             font-weight: 600;
             cursor: pointer;
-            background: #e65100;
+            background: var(--warning);
             color: white;
             transition: 0.2s;
         }
         .btn-voucher:hover:not(:disabled) {
-            background: #bf360c;
+            opacity: 0.9;
             transform: scale(1.05);
         }
         .btn-voucher:disabled {
@@ -2893,7 +3240,7 @@
             display: flex;
             gap: 14px;
             font-size: 12px;
-            color: #666;
+            color: var(--text-secondary);
             flex-wrap: wrap;
             align-items: center;
         }
@@ -2903,15 +3250,17 @@
             gap: 4px;
         }
         .role-summary span strong {
-            color: #1a2a4a;
+            color: var(--text-primary);
             font-weight: 700;
         }
         .role-summary .separator {
-            color: #ddd;
+            color: var(--border-color);
             font-weight: 300;
         }
 
-        /* ========== BUTTON ACTION ========== */
+        /* ============================================================
+           BUTTON ACTION
+           ============================================================ */
         .btn-action {
             padding: 7px 18px;
             border: none;
@@ -2934,7 +3283,7 @@
             font-size: 14px;
         }
         .btn-action.start {
-            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            background: linear-gradient(135deg, var(--success), #1b5e20);
             color: white;
             box-shadow: 0 2px 8px rgba(46, 125, 50, 0.25);
         }
@@ -2947,15 +3296,15 @@
             box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
         }
         .btn-action.start:disabled {
-            background: #cfd8dc;
-            color: #90a4ae;
+            background: var(--bg-hover);
+            color: var(--text-muted);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
             opacity: 0.6;
         }
         .btn-action.end {
-            background: linear-gradient(135deg, #c62828, #b71c1c);
+            background: linear-gradient(135deg, var(--danger), #b71c1c);
             color: white;
             box-shadow: 0 2px 8px rgba(198, 40, 40, 0.25);
         }
@@ -2968,15 +3317,17 @@
             box-shadow: 0 2px 8px rgba(198, 40, 40, 0.2);
         }
         .btn-action.end:disabled {
-            background: #cfd8dc;
-            color: #90a4ae;
+            background: var(--bg-hover);
+            color: var(--text-muted);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
             opacity: 0.6;
         }
 
-        /* ========== LOADING STATE UNTUK START BUTTON ========== */
+        /* ============================================================
+           LOADING STATE
+           ============================================================ */
         .btn-action.start.loading-state {
             background: #2a2a4a !important;
             color: rgba(255, 255, 255, 0.2) !important;
@@ -2990,7 +3341,9 @@
             opacity: 0.3;
         }
 
-        /* ========== SMOOTH LOADING - FLICKER PREVENTION ========== */
+        /* ============================================================
+           SMOOTH LOADING
+           ============================================================ */
         .sidebar-footer .user-info .name,
         .sidebar-footer .user-info .email,
         .sidebar-footer .user-info .role-badge,
@@ -2999,7 +3352,7 @@
         .clock-container .date,
         .clock-container .time,
         .profile-avatar {
-            transition: opacity 0.25s ease;
+            transition: opacity 0.25s ease, border-color var(--transition-speed) ease;
         }
 
         .loading-flash {
@@ -3104,14 +3457,11 @@
             </div>
         </nav>
 
-        <!-- SIDEBAR FOOTER -->
         <div class="sidebar-footer">
-            <!-- Status - Paling Atas di Footer -->
             <div class="status">
                 <span class="dot online" id="statusDot"></span>
                 <span id="statusText">Terhubung</span>
             </div>
-            <!-- User Card - Paling Bawah -->
             <div class="user-info">
                 <img id="userAvatar" src="https://ui-avatars.com/api/?name=Test" alt="Avatar" />
                 <div class="user-details">
@@ -3133,10 +3483,20 @@
                 <h1 id="pageTitle">📊 Dashboard <small>Izin Anggota</small></h1>
             </div>
             <div class="topbar-right">
-                <span class="test-badge-modern" style="display:none;">
-                    <span class="dot"></span>
-                    🧪 TEST MODE
-                </span>
+                <!-- ============================================================
+                THEME TOGGLE - PREMIUM
+                ============================================================ -->
+                <div class="theme-toggle-wrapper">
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                        <span class="toggle-track">
+                            <span class="toggle-icon" id="lightIcon">☀️</span>
+                            <span class="toggle-thumb"></span>
+                            <span class="toggle-icon" id="darkIcon">🌙</span>
+                        </span>
+                    </button>
+                    <span class="theme-toggle-label" id="themeLabel">Light</span>
+                </div>
+
                 <div class="clock-container" id="clockDisplay">
                     <span class="date" id="dateDisplay">Mon, 06 Jul, 2026</span>
                     <span class="time" id="timeDisplay">17:16:20</span>
@@ -3287,7 +3647,7 @@
                         </tr>
                     </thead>
                     <tbody id="dashboardTableBody">
-                        <tr><td colspan="8" style="text-align:center;color:#999;padding:24px;font-size:13px;">Memuat data...</td></tr>
+                        <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px;">Memuat data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -3320,7 +3680,7 @@
                 </select>
                 <input type="month" id="filterBulan" onchange="renderHistory()" />
                 <button class="btn-export" onclick="exportHistory()">📥 Export Harian</button>
-                <button class="btn-export" onclick="exportHistoryBulanan()" style="background:#e65100;">📆 Export Bulanan</button>
+                <button class="btn-export" onclick="exportHistoryBulanan()" style="background:var(--warning);">📆 Export Bulanan</button>
                 <button class="btn-danger-sm" onclick="hapusSemuaHistory()" id="btnHapusHistory">🗑️ Hapus Semua</button>
             </div>
             <div class="table-wrap">
@@ -3338,7 +3698,7 @@
                         </tr>
                     </thead>
                     <tbody id="historyBody">
-                        <tr><td colspan="8" style="text-align:center;color:#999;padding:24px;font-size:13px;">Belum ada data history</td></tr>
+                        <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px;">Belum ada data history</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -3377,8 +3737,8 @@
                     <div class="section-desc">Atur teks informasi yang berjalan di Dashboard. Setiap baris akan menjadi satu item yang berjalan.</div>
                     <div class="form-group">
                         <label>📝 Teks Ticker (satu baris = satu item)</label>
-                        <textarea id="tickerTextInput" rows="5" style="width:100%;padding:10px 14px;border:2px solid #ddd;border-radius:8px;font-size:13px;outline:none;transition:0.3s;background:white;font-family:'Segoe UI',sans-serif;resize:vertical;min-height:120px;"></textarea>
-                        <div class="hint">Tips: Gunakan <span class="highlight" style="color:#00e5ff;font-weight:600;">&lt;span class="highlight"&gt;</span> untuk teks berwarna cyan, dan <span style="color:#ffd54f;font-weight:600;">&lt;span class="highlight-gold"&gt;</span> untuk teks berwarna emas.</div>
+                        <textarea id="tickerTextInput" rows="5"></textarea>
+                        <div class="hint">Tips: Gunakan <span class="highlight">&lt;span class="highlight"&gt;</span> untuk teks berwarna cyan, dan <span style="color:#ffd54f;font-weight:600;">&lt;span class="highlight-gold"&gt;</span> untuk teks berwarna emas.</div>
                     </div>
                     <div class="form-group" style="margin-top:12px;">
                         <label>⏱️ Kecepatan Ticker (detik)</label>
@@ -3387,8 +3747,8 @@
                     </div>
                     <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
                         <button class="btn-settings" onclick="saveTickerSettings()" id="btnSaveTicker">💾 Simpan Ticker</button>
-                        <button class="btn-settings" onclick="resetTickerSettings()" style="background:#e65100;" id="btnResetTicker">↩️ Reset Default</button>
-                        <button class="btn-settings" onclick="previewTicker()" style="background:#1565c0;" id="btnPreviewTicker">👁️ Preview</button>
+                        <button class="btn-settings" onclick="resetTickerSettings()" style="background:var(--warning);" id="btnResetTicker">↩️ Reset Default</button>
+                        <button class="btn-settings" onclick="previewTicker()" style="background:var(--role-cs);" id="btnPreviewTicker">👁️ Preview</button>
                     </div>
                     <div class="saved-notice" id="tickerSavedNotice">✅ Ticker berhasil disimpan!</div>
                 </div>
@@ -3407,8 +3767,8 @@
                         <input type="number" id="limitDurasi" min="1" max="60" value="15" />
                         <div class="hint">Durasi izin dalam menit. User yang melewati batas ini akan mendapatkan Jackpot + Voucher.</div>
                     </div>
-                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid #eee;">
-                        <label style="font-weight:600;color:#333;margin-bottom:8px;display:block;font-size:13px;">📊 Maksimal Izin per Hari (per Role)</label>
+                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
+                        <label style="font-weight:600;color:var(--text-secondary);margin-bottom:8px;display:block;font-size:13px;">📊 Maksimal Izin per Hari (per Role)</label>
                         <div class="limit-row">
                             <span class="role-label">👑 Leader</span>
                             <input type="number" id="maxLeader" min="0" max="20" value="4" />
@@ -3650,9 +4010,44 @@
         let isDataReady = false;
 
         // ============================================================
-        // FUNGSI UTILITY - BERDASARKAN EMAIL
+        // THEME FUNCTIONS - PREMIUM
         // ============================================================
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            updateThemeUI(newTheme);
+        }
 
+        function updateThemeUI(theme) {
+            const label = document.getElementById('themeLabel');
+            const lightIcon = document.getElementById('lightIcon');
+            const darkIcon = document.getElementById('darkIcon');
+            
+            if (theme === 'dark') {
+                if (label) label.textContent = 'Dark';
+                if (lightIcon) lightIcon.style.opacity = '0.3';
+                if (darkIcon) darkIcon.style.opacity = '1';
+            } else {
+                if (label) label.textContent = 'Light';
+                if (lightIcon) lightIcon.style.opacity = '1';
+                if (darkIcon) darkIcon.style.opacity = '0.3';
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeUI(savedTheme);
+        }
+
+        // ============================================================
+        // FUNGSI UTILITY
+        // ============================================================
         function getUserByEmail(email) {
             const formattedEmail = formatEmail(email);
             return listUsers.find(u => u.email === formattedEmail);
@@ -3679,9 +4074,6 @@
             return user ? currentEmail === user.email : false;
         }
 
-        // ============================================================
-        // FUNGSI UTILITY - ORIGINAL
-        // ============================================================
         function formatName(name) {
             return name ? name.toUpperCase() : '';
         }
@@ -4983,7 +5375,6 @@
             renderTicker();
         }
 
-        // 🔥 PERUBAHAN 1: Badge History hanya hitung hari ini
         function updateStatsAndBadges() {
             let totalIzin = 0;
 
@@ -5006,7 +5397,7 @@
 
             if (badgeIzin) badgeIzin.textContent = totalIzin;
             if (badgeTotal) badgeTotal.textContent = daftarAnggota.length;
-            if (badgeHistory) badgeHistory.textContent = todayHistory.length; // 🔥 HANYA HARI INI
+            if (badgeHistory) badgeHistory.textContent = todayHistory.length;
             if (liveCount) liveCount.innerHTML = `<span>${totalIzin}</span> orang sedang izin`;
         }
 
@@ -5124,13 +5515,13 @@
 
             if (daftarAnggota.length === 0) {
                 tbody.innerHTML =
-                    `<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;font-size:13px;">Belum ada anggota</td></tr>`;
+                    `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Belum ada anggota</td></tr>`;
                 return;
             }
 
             if (filtered.length === 0) {
                 tbody.innerHTML =
-                    `<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;font-size:13px;">Anggota tidak ditemukan</td></tr>`;
+                    `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Anggota tidak ditemukan</td></tr>`;
                 return;
             }
 
@@ -5277,10 +5668,10 @@
                         `;
                     progressHTML = `
                             <div class="progress-container" style="justify-content:center;">
-                                <span style="color:#ccc;font-size:11px;font-weight:300;">-</span>
+                                <span style="color:var(--text-muted);font-size:11px;font-weight:300;">-</span>
                             </div>
                         `;
-                    mulaiHTML = `<span style="color:#ccc;font-size:11px;">-</span>`;
+                    mulaiHTML = `<span style="color:var(--text-muted);font-size:11px;">-</span>`;
                 }
 
                 let voucherDisplay = '-';
@@ -5315,7 +5706,7 @@
                             <td class="col-progress" style="text-align:center;">
                                 <div style="display:flex;flex-direction:column;gap:2px;width:100%;align-items:center;">
                                     <div style="display:flex;align-items:center;gap:6px;width:100%;justify-content:center;">
-                                        <span style="font-size:11px;color:#666;min-width:45px;font-family:'Courier New',monospace;text-align:right;">${timerHTML}</span>
+                                        <span style="font-size:11px;color:var(--text-muted);min-width:45px;font-family:'Courier New',monospace;text-align:right;">${timerHTML}</span>
                                         ${progressHTML}
                                     </div>
                                 </div>
@@ -5385,7 +5776,7 @@
             let userRows = '';
             if (sortedUsers.length === 0) {
                 userRows =
-                    `<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;font-size:13px;">Belum ada user terdaftar</td></tr>`;
+                    `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Belum ada user terdaftar</td></tr>`;
             } else {
                 userRows = sortedUsers.map((user, index) => {
                     const roleClass = `role-${user.role}`;
@@ -5402,11 +5793,11 @@
                                 <td>${index + 1}</td>
                                 <td>
                                     <span class="nama-cell">${user.name}</span>
-                                    ${isCurrentUser ? '<span style="font-size:10px;color:#888;margin-left:4px;">(Anda)</span>' : ''}
+                                    ${isCurrentUser ? '<span style="font-size:10px;color:var(--text-muted);margin-left:4px;">(Anda)</span>' : ''}
                                 </td>
-                                <td style="text-transform:lowercase;font-size:12px;">${user.email}</td>
+                                <td style="text-transform:lowercase;font-size:12px;color:var(--text-secondary);">${user.email}</td>
                                 <td><span class="badge ${roleClass}">${roleLabel}</span></td>
-                                <td style="font-size:12px;">${tanggal}</td>
+                                <td style="font-size:12px;color:var(--text-secondary);">${tanggal}</td>
                                 <td>
                                     <button class="btn-hapus" onclick="hapusUser('${user.id}', '${user.email}')" 
                                         ${!canManage || isCurrentUser ? 'disabled' : ''}>
@@ -5419,10 +5810,10 @@
             }
 
             const viewOnlyText = !canManage ?
-                '<span style="font-size:11px;color:#888;margin-left:10px;">👁️ View Only</span>' : '';
+                '<span style="font-size:11px;color:var(--text-muted);margin-left:10px;">👁️ View Only</span>' : '';
 
             container.innerHTML = `
-                    <h2 style="margin:16px 0 12px;color:#1a2a4a;font-size:18px;">📝 Register User</h2>
+                    <h2 style="margin:16px 0 12px;color:var(--text-primary);font-size:18px;">📝 Register User</h2>
 
                     <div class="form-anggota">
                         <div class="group">
@@ -5448,7 +5839,7 @@
                     </div>
 
                     <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 12px;flex-wrap:wrap;gap:8px;">
-                        <h3 style="color:#1a2a4a;font-size:17px;margin:0;">📋 List User</h3>
+                        <h3 style="color:var(--text-primary);font-size:17px;margin:0;">📋 List User</h3>
                         <div class="role-summary">
                             <span>👑 Leader: <strong>${roleCounts.leader}</strong></span>
                             <span class="separator">|</span>
@@ -5516,7 +5907,7 @@
             if (voucherList.length === 0) {
                 rows = `
                         <tr>
-                            <td colspan="${userPermissions.canManageVoucher ? 5 : 4}" style="text-align:center;color:#999;padding:24px;font-size:13px;">
+                            <td colspan="${userPermissions.canManageVoucher ? 5 : 4}" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px;">
                                 <div style="font-size:40px;margin-bottom:8px;">🎫</div>
                                 Belum ada anggota yang memiliki voucher
                             </td>
@@ -5580,10 +5971,10 @@
                 '👀 Mode Lihat - Hanya Leader & CS Line yang dapat mengurangi voucher';
 
             container.innerHTML = `
-                    <h2 style="margin:16px 0 12px;color:#1a2a4a;font-size:18px;">🎫 Manajemen Voucher</h2>
-                    <div style="background:white;border-radius:8px;padding:12px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <h2 style="margin:16px 0 12px;color:var(--text-primary);font-size:18px;">🎫 Manajemen Voucher</h2>
+                    <div style="background:var(--bg-card);border-radius:8px;padding:12px 16px;margin-bottom:16px;box-shadow:var(--shadow-md);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border:1px solid var(--border-color);">
                         <div>
-                            <span style="font-weight:600;color:#1a2a4a;font-size:14px;">Total Voucher:</span>
+                            <span style="font-weight:600;color:var(--text-primary);font-size:14px;">Total Voucher:</span>
                             <span class="voucher-badge" style="font-size:14px;padding:4px 14px;margin-left:8px;">
                                 <span class="icon">🎫</span> ${totalVoucher}
                                 <div class="voucher-tooltip">
@@ -5596,7 +5987,7 @@
                                 </div>
                             </span>
                         </div>
-                        <div style="font-size:12px;color:#888;">
+                        <div style="font-size:12px;color:var(--text-muted);">
                             ${infoText}
                         </div>
                     </div>
@@ -5634,7 +6025,7 @@
         }
 
         // ============================================================
-        // RENDER HISTORY - 🔥 PERUBAHAN 2: Otomatis filter hari ini
+        // RENDER HISTORY - Otomatis filter hari ini
         // ============================================================
         window.renderHistory = function() {
             const tbody = document.getElementById('historyBody');
@@ -5645,7 +6036,6 @@
             const filterRole = document.getElementById('filterRole');
             const filterBulan = document.getElementById('filterBulan');
 
-            // 🔥 SET TANGGAL KE HARI INI JIKA BELUM ADA
             if (filterTanggal && !filterTanggal.value) {
                 const today = new Date();
                 const year = today.getFullYear();
@@ -5690,7 +6080,7 @@
 
             if (filtered.length === 0) {
                 tbody.innerHTML =
-                    `<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;font-size:13px;">Belum ada data history</td></tr>`;
+                    `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Belum ada data history</td></tr>`;
                 return;
             }
 
@@ -5746,7 +6136,7 @@
                             <td>${index + 1}</td>
                             <td><span class="nama-cell">${item.nama}</span></td>
                             <td><span class="role-tag ${item.role}">${roleLabel}</span></td>
-                            <td style="font-size:12px;">${tanggal}</td>
+                            <td style="font-size:12px;color:var(--text-secondary);">${tanggal}</td>
                             <td class="time-detail">${waktuMulai}</td>
                             <td class="time-detail">${waktuSelesai}</td>
                             <td class="time-detail"><span class="${durasiClass}">${durasiText}</span></td>
@@ -6638,7 +7028,6 @@
             else if (tab === 'users') renderUsersPage();
             else if (tab === 'voucher') renderVoucherPage();
             else if (tab === 'history') {
-                // 🔥 PERUBAHAN 2: Set filter tanggal ke hari ini saat tab history di klik
                 const filterTanggal = document.getElementById('filterTanggal');
                 if (filterTanggal) {
                     const today = new Date();
@@ -6725,6 +7114,9 @@
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Dashboard Izin - Starting...');
+
+            // 🔥 Load theme dari localStorage
+            loadTheme();
 
             renderTicker();
             checkAuth();
