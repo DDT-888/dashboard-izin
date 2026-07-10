@@ -456,7 +456,7 @@
         }
 
         /* ============================================================
-           THEME TOGGLE - PREMIUM (ukuran compact)
+           THEME TOGGLE - PREMIUM COMPACT
            ============================================================ */
         .theme-toggle-wrapper {
             display: flex;
@@ -587,23 +587,28 @@
         }
 
         /* ============================================================
-           PROFILE DROPDOWN
+           PROFILE DROPDOWN - PREMIUM PROFILE CARD
            ============================================================ */
         .profile-container {
             position: relative;
             cursor: pointer;
         }
+
         .profile-container .profile-avatar {
             width: 32px;
             height: 32px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--border-color);
-            transition: 0.3s;
+            transition: all 0.3s ease;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
+
         .profile-container .profile-avatar:hover {
             border-color: var(--sidebar-text);
+            box-shadow: 0 4px 16px rgba(0, 229, 255, 0.15);
+            transform: scale(1.02);
         }
 
         .profile-dropdown {
@@ -611,21 +616,72 @@
             position: absolute;
             right: 0;
             top: 42px;
-            background: var(--bg-card);
-            border-radius: 14px;
-            min-width: 220px;
-            padding: 16px 0;
+            min-width: 270px;
+            padding: 0;
             z-index: 1000;
-            animation: slideDown 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-xl);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            animation: slideDown 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 20px;
+            overflow: hidden;
         }
 
+        /* LIGHT MODE - Clean White Card + Soft Blue Tint */
+        .profile-dropdown {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(200, 220, 240, 0.3);
+            box-shadow: 
+                0 24px 80px rgba(0, 20, 40, 0.12),
+                0 12px 40px rgba(0, 20, 40, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        /* DARK MODE */
         [data-theme="dark"] .profile-dropdown {
-            background: #1c2333;
-            border-color: #30363d;
+            background: rgba(13, 18, 48, 0.95);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(0, 229, 255, 0.06);
+            box-shadow: 
+                0 24px 80px rgba(0, 0, 0, 0.6),
+                0 12px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+
+        .profile-dropdown::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+            opacity: 0.3;
+        }
+
+        [data-theme="dark"] .profile-dropdown::before {
+            opacity: 0.2;
+        }
+
+        .profile-dropdown::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 20px;
+            width: 14px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.92);
+            border-top: 1px solid rgba(200, 220, 240, 0.2);
+            border-left: 1px solid rgba(200, 220, 240, 0.2);
+            transform: rotate(45deg);
+            border-radius: 4px 0 0 0;
+            backdrop-filter: blur(24px);
+        }
+
+        [data-theme="dark"] .profile-dropdown::after {
+            background: rgba(13, 18, 48, 0.95);
+            border-top: 1px solid rgba(0, 229, 255, 0.03);
+            border-left: 1px solid rgba(0, 229, 255, 0.03);
         }
 
         .profile-dropdown.show {
@@ -633,116 +689,388 @@
         }
 
         @keyframes slideDown {
-            from {
+            0% {
                 opacity: 0;
-                transform: translateY(-10px) scale(0.96);
+                transform: translateY(-16px) scale(0.96);
             }
-            to {
+            100% {
                 opacity: 1;
                 transform: translateY(0) scale(1);
             }
         }
 
-        .profile-dropdown::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 20%;
-            right: 20%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.08), transparent);
+        .profile-dropdown .dropdown-header {
+            padding: 20px 20px 16px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.02), rgba(0, 100, 200, 0.02));
         }
 
-        .profile-dropdown .dropdown-header {
-            padding: 0 18px 12px 18px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 4px;
+        [data-theme="dark"] .profile-dropdown .dropdown-header {
+            border-bottom: 1px solid rgba(0, 229, 255, 0.04);
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.02), rgba(0, 100, 200, 0.02));
+        }
+
+        .profile-dropdown .dropdown-header .header-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(0, 229, 255, 0.15);
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(0, 229, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-avatar {
+            border-color: rgba(0, 229, 255, 0.1);
+        }
+
+        .profile-dropdown .dropdown-header .header-info {
+            flex: 1;
+            min-width: 0;
         }
 
         .profile-dropdown .dropdown-header .header-name {
-            color: var(--sidebar-text);
+            color: #1a2a4a;
             font-weight: 700;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 15px;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .profile-dropdown .dropdown-header .header-role {
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-name {
+            color: #00e5ff;
+        }
+
+        .profile-dropdown .dropdown-header .header-role-badge {
+            font-size: 8px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: rgba(0, 229, 255, 0.08);
+            color: #00bcd4;
+            border: 1px solid rgba(0, 229, 255, 0.06);
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-role-badge {
+            background: rgba(0, 229, 255, 0.06);
+            color: #00e5ff;
+            border-color: rgba(0, 229, 255, 0.04);
+        }
+
+        .profile-dropdown .dropdown-header .header-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 10px;
-            color: var(--text-muted);
-            letter-spacing: 0.5px;
+            color: #2e7d32;
             margin-top: 2px;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-status {
+            color: #4caf50;
+        }
+
+        .profile-dropdown .dropdown-header .header-status .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        .profile-dropdown .dropdown-header .header-email {
+            font-size: 10px;
+            color: rgba(26, 42, 74, 0.3);
+            margin-top: 1px;
+            font-weight: 400;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-header .header-email {
+            color: rgba(255, 255, 255, 0.2);
         }
 
         .profile-dropdown .dropdown-divider {
             height: 1px;
-            background: var(--border-color);
             margin: 4px 16px;
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-divider {
+            background: rgba(0, 229, 255, 0.02);
         }
 
         .profile-dropdown .dropdown-item {
-            padding: 8px 18px;
-            color: var(--text-secondary);
-            font-size: 12px;
-            transition: 0.2s;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            padding: 10px 16px;
+            margin: 2px 10px;
+            border-radius: 10px;
+            color: rgba(26, 42, 74, 0.3);
+            font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
-            border-left: 2px solid transparent;
+            transition: all 0.25s ease;
+            background: transparent;
+            position: relative;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item {
+            color: rgba(0, 229, 255, 0.2);
         }
 
         .profile-dropdown .dropdown-item:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-            border-left-color: rgba(0, 229, 255, 0.08);
+            background: rgba(0, 229, 255, 0.05);
+            color: #1a2a4a;
+            transform: translateX(2px);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item:hover {
+            background: rgba(0, 229, 255, 0.04);
+            color: #00e5ff;
         }
 
         .profile-dropdown .dropdown-item .icon {
-            font-size: 14px;
+            font-size: 15px;
+            width: 22px;
+            text-align: center;
             opacity: 0.4;
+            flex-shrink: 0;
+        }
+
+        .profile-dropdown .dropdown-item:hover .icon {
+            opacity: 0.8;
         }
 
         .profile-dropdown .dropdown-item .label {
             flex: 1;
+            font-weight: 500;
+            color: rgba(26, 42, 74, 0.4);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item .label {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .profile-dropdown .dropdown-item:hover .label {
+            color: rgba(26, 42, 74, 0.8);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item:hover .label {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .profile-dropdown .dropdown-item .chevron {
+            font-size: 14px;
+            color: rgba(26, 42, 74, 0.1);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item .chevron {
+            color: rgba(255, 255, 255, 0.05);
+        }
+
+        .profile-dropdown .dropdown-item:hover .chevron {
+            opacity: 1;
+            color: rgba(0, 229, 255, 0.3);
+            transform: translateX(2px);
         }
 
         .profile-dropdown .dropdown-item .value {
-            color: var(--sidebar-text);
+            color: #1a2a4a;
             font-weight: 600;
             font-size: 12px;
             font-family: 'Courier New', monospace;
+            background: rgba(0, 229, 255, 0.06);
+            padding: 1px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 229, 255, 0.04);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item .value {
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.06);
+            border-color: rgba(0, 229, 255, 0.04);
         }
 
         .profile-dropdown .dropdown-item .value.voucher {
+            color: #e65100;
+            background: rgba(255, 215, 0, 0.08);
+            border-color: rgba(255, 215, 0, 0.06);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item .value.voucher {
             color: #ffd700;
+            background: rgba(255, 215, 0, 0.06);
+            border-color: rgba(255, 215, 0, 0.04);
         }
 
         .profile-dropdown .dropdown-item.logout {
-            color: rgba(255, 107, 107, 0.4);
-            margin-top: 4px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 10px;
+            margin: 6px 10px 4px 10px;
+            padding: 10px 16px;
+            border-top: 1px solid rgba(200, 40, 40, 0.06);
+            border-radius: 10px;
+            background: transparent;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout {
+            border-top: 1px solid rgba(255, 107, 107, 0.04);
+        }
+
+        .profile-dropdown .dropdown-item.logout .label {
+            color: rgba(200, 40, 40, 0.3);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout .label {
+            color: rgba(255, 107, 107, 0.3);
+        }
+
+        .profile-dropdown .dropdown-item.logout .icon {
+            opacity: 0.3;
+        }
+
+        .profile-dropdown .dropdown-item.logout .chevron {
+            color: rgba(200, 40, 40, 0.1);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout .chevron {
+            color: rgba(255, 107, 107, 0.05);
         }
 
         .profile-dropdown .dropdown-item.logout:hover {
+            background: rgba(200, 40, 40, 0.06);
+            color: #c62828;
+            transform: translateX(2px);
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout:hover {
+            background: rgba(255, 107, 107, 0.06);
             color: #ff6b6b;
-            background: rgba(255, 107, 107, 0.03);
-            border-left-color: rgba(255, 107, 107, 0.08);
+        }
+
+        .profile-dropdown .dropdown-item.logout:hover .label {
+            color: #c62828;
+        }
+
+        [data-theme="dark"] .profile-dropdown .dropdown-item.logout:hover .label {
+            color: #ff6b6b;
+        }
+
+        .profile-dropdown .dropdown-item.logout:hover .icon {
+            opacity: 0.8;
+        }
+
+        .profile-dropdown .dropdown-item.logout:hover .chevron {
+            opacity: 1;
+            color: rgba(200, 40, 40, 0.3);
+            transform: translateX(2px);
         }
 
         .profile-dropdown .dropdown-item .badge-voucher {
-            background: rgba(255, 215, 0, 0.06);
-            border: 1px solid rgba(255, 215, 0, 0.04);
-            padding: 1px 8px;
-            border-radius: 10px;
-            font-size: 9px;
-            color: #ffd700;
-            font-weight: 600;
+            display: none;
         }
 
         .profile-container .upload-avatar {
             display: none;
+        }
+
+        [data-theme="light"] .profile-dropdown {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(200, 220, 240, 0.3);
+            box-shadow: 
+                0 24px 80px rgba(0, 20, 40, 0.12),
+                0 12px 40px rgba(0, 20, 40, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        [data-theme="light"] .profile-dropdown::after {
+            background: rgba(255, 255, 255, 0.92);
+            border-top: 1px solid rgba(200, 220, 240, 0.2);
+            border-left: 1px solid rgba(200, 220, 240, 0.2);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header .header-name {
+            color: #1a2a4a;
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header .header-role-badge {
+            background: rgba(0, 229, 255, 0.08);
+            color: #00bcd4;
+            border-color: rgba(0, 229, 255, 0.06);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header .header-email {
+            color: rgba(26, 42, 74, 0.3);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header .header-status {
+            color: #2e7d32;
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item {
+            color: rgba(26, 42, 74, 0.3);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item .label {
+            color: rgba(26, 42, 74, 0.4);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item:hover {
+            background: rgba(0, 229, 255, 0.05);
+            color: #1a2a4a;
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item:hover .label {
+            color: rgba(26, 42, 74, 0.8);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item .value {
+            color: #1a2a4a;
+            background: rgba(0, 229, 255, 0.06);
+            border-color: rgba(0, 229, 255, 0.04);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item .value.voucher {
+            color: #e65100;
+            background: rgba(255, 215, 0, 0.08);
+            border-color: rgba(255, 215, 0, 0.06);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item .chevron {
+            color: rgba(26, 42, 74, 0.1);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item.logout .label {
+            color: rgba(200, 40, 40, 0.3);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item.logout:hover {
+            background: rgba(200, 40, 40, 0.06);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-item.logout:hover .label {
+            color: #c62828;
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-divider {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        [data-theme="light"] .profile-dropdown .dropdown-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
         }
 
         .hamburger {
@@ -792,7 +1120,7 @@
         }
 
         /* ============================================================
-           WELCOME BANNER - ukuran normal seperti sebelumnya
+           WELCOME BANNER - ukuran normal
            ============================================================ */
         .welcome-banner {
             background: var(--welcome-bg);
@@ -2770,7 +3098,7 @@
         }
 
         /* ============================================================
-           BUTTON ACTION - RESPONSIVE & LEBIH MUDAH DIKLIK
+           BUTTON ACTION - RESPONSIVE
            ============================================================ */
         .btn-action {
             padding: 8px 20px;
@@ -2800,7 +3128,6 @@
             flex-shrink: 0;
         }
 
-        /* Hover & Active - Lebih responsif */
         .btn-action.start {
             background: linear-gradient(135deg, var(--success), #1b5e20);
             color: white;
@@ -2853,7 +3180,6 @@
             opacity: 0.6;
         }
 
-        /* LOADING STATE */
         .btn-action.start.loading-state {
             background: #2a2a4a !important;
             color: rgba(255, 255, 255, 0.2) !important;
@@ -2941,7 +3267,6 @@
                 word-break: break-word !important;
             }
             
-            /* Tombol lebih besar di mobile */
             .btn-action {
                 padding: 10px 16px !important;
                 min-width: 75px !important;
@@ -3440,20 +3765,6 @@
             font-weight: 300;
         }
 
-        /* ============================================================
-           SMOOTH LOADING
-           ============================================================ */
-        .sidebar-footer .user-info .name,
-        .sidebar-footer .user-info .email,
-        .sidebar-footer .user-info .role-badge,
-        .welcome-banner .welcome-left .text .username,
-        .welcome-banner .welcome-right .badge-role,
-        .clock-container .date,
-        .clock-container .time,
-        .profile-avatar {
-            transition: opacity 0.25s ease, border-color var(--transition-speed) ease;
-        }
-
         .loading-flash {
             opacity: 0 !important;
             transition: opacity 0.15s ease;
@@ -3598,30 +3909,52 @@
                     <span class="date" id="dateDisplay">Mon, 06 Jul, 2026</span>
                     <span class="time" id="timeDisplay">17:16:20</span>
                 </div>
+
+                <!-- PROFILE CONTAINER -->
                 <div class="profile-container" id="profileContainer">
                     <img class="profile-avatar" id="profileAvatar" src="https://ui-avatars.com/api/?name=User" alt="Profile" onclick="toggleDropdown()" />
                     <input type="file" class="upload-avatar" id="uploadAvatar" accept="image/*" onchange="uploadProfileImage(event)" />
+                    
                     <div class="profile-dropdown" id="profileDropdown">
+                        <!-- HEADER - Profile Card Premium -->
                         <div class="dropdown-header">
-                            <div class="header-name" id="dropdownName">User</div>
-                            <div class="header-role" id="dropdownRole">💰 Kasir</div>
+                            <img class="header-avatar" id="dropdownAvatar" src="https://ui-avatars.com/api/?name=User&size=52" alt="Avatar" />
+                            <div class="header-info">
+                                <div class="header-name">
+                                    <span id="dropdownName">User</span>
+                                    <span class="header-role-badge" id="dropdownRoleBadge">Kasir</span>
+                                </div>
+                                <div class="header-status">
+                                    <span class="dot"></span>
+                                    <span>Online</span>
+                                </div>
+                                <div class="header-email" id="dropdownEmail">user@email.com</div>
+                            </div>
                         </div>
+                        
                         <div class="dropdown-divider"></div>
+                        
                         <div class="dropdown-item" onclick="document.getElementById('uploadAvatar').click()">
                             <span class="icon">📸</span>
                             <span class="label">Upload Foto</span>
+                            <span class="chevron">›</span>
                         </div>
+                        
                         <div class="dropdown-divider"></div>
+                        
                         <div class="dropdown-item" style="cursor:default;">
                             <span class="icon">🎫</span>
                             <span class="label">Voucher</span>
                             <span class="value voucher" id="dropdownVoucher">0</span>
-                            <span class="badge-voucher">Kutip Sampah</span>
+                            <span class="chevron">›</span>
                         </div>
+                        
                         <div class="dropdown-divider"></div>
+                        
                         <div class="dropdown-item logout" onclick="logout()">
                             <span class="icon">🚪</span>
                             <span class="label">Logout</span>
+                            <span class="chevron">›</span>
                         </div>
                     </div>
                 </div>
@@ -4786,12 +5119,59 @@
         }
 
         // ============================================================
-        // UPDATE PROFILE DROPDOWN
+        // UPDATE PROFILE DROPDOWN - FULL
         // ============================================================
         function updateProfileDropdown() {
             const userVoucher = getCurrentUserName() ? getVoucherCount(getCurrentUserName()) : 0;
+            const userName = getCurrentUserName() || 'User';
+            const userEmail = currentUser?.email || 'user@email.com';
+            const avatarUrl = currentUser?.user_metadata?.avatar_url || 
+                             `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=52`;
+
+            // Update voucher
             const voucherEl = document.getElementById('dropdownVoucher');
             if (voucherEl) voucherEl.textContent = userVoucher;
+
+            // Update nama
+            const nameEl = document.getElementById('dropdownName');
+            if (nameEl) nameEl.textContent = userName;
+
+            // Update avatar di dropdown
+            const avatarEl = document.getElementById('dropdownAvatar');
+            if (avatarEl) avatarEl.src = avatarUrl;
+
+            // Update email
+            const emailEl = document.getElementById('dropdownEmail');
+            if (emailEl) emailEl.textContent = userEmail;
+
+            // Update role badge
+            const roleBadge = document.getElementById('dropdownRoleBadge');
+            if (roleBadge) {
+                const roleLabels = {
+                    leader: '👑 Leader',
+                    csline: '⭐ CS Line',
+                    cs: '💬 CS',
+                    kapten: '⚓ Kapten',
+                    kasir: '💰 Kasir'
+                };
+                roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+            }
+
+            // Update role text (old style - fallback)
+            const roleEl = document.getElementById('dropdownRole');
+            if (roleEl) {
+                const roleLabels = {
+                    leader: '👑 Leader',
+                    csline: '⭐ CS Line',
+                    cs: '💬 CS',
+                    kapten: '⚓ Kapten',
+                    kasir: '💰 Kasir'
+                };
+                roleEl.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+            }
+
+            // Update quick stats
+            updateQuickStats();
         }
 
         // ============================================================
@@ -4934,8 +5314,23 @@
                 document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
                 document.getElementById('profileAvatar').src = 'https://ui-avatars.com/api/?name=Test+Leader';
                 document.getElementById('dropdownName').textContent = formatName('Test Leader (TEST MODE)');
-                document.getElementById('dropdownEmail').textContent = formatEmail('test@leader.com');
                 document.getElementById('dropdownRole').textContent = '👑 Leader';
+
+                // Elemen baru di dropdown
+                const dropdownAvatar = document.getElementById('dropdownAvatar');
+                if (dropdownAvatar) {
+                    dropdownAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader&size=52';
+                }
+
+                const dropdownEmail = document.getElementById('dropdownEmail');
+                if (dropdownEmail) {
+                    dropdownEmail.textContent = formatEmail('test@leader.com');
+                }
+
+                const roleBadge = document.getElementById('dropdownRoleBadge');
+                if (roleBadge) {
+                    roleBadge.textContent = '👑 Leader';
+                }
 
                 document.getElementById('welcomeUsername').textContent = 'Test Leader';
                 document.querySelector('.welcome-banner .badge-role').innerHTML =
@@ -5068,9 +5463,10 @@
         }
 
         // ============================================================
-        // UPDATE USER UI
+        // UPDATE USER UI - FULL
         // ============================================================
         function updateUserUI() {
+            // 🔥 Sembunyikan flash saat update
             const flashElements = document.querySelectorAll(
                 '.sidebar-footer .user-info .name, .sidebar-footer .user-info .email, .sidebar-footer .user-info .role-badge, .welcome-banner .welcome-left .text .username, .welcome-banner .welcome-right .badge-role'
                 );
@@ -5083,28 +5479,59 @@
 
             console.log(`🔄 Update UI: Role = ${currentUserRole}, Label = ${roleLabel}`);
 
+            // Update sidebar
             document.getElementById('userName').textContent = userNameDisplay || 'User';
             document.getElementById('userEmail').textContent = userEmail;
             document.getElementById('userRole').textContent = `${roleIcon} ${roleLabel}`;
             document.getElementById('userRole').className = `role-badge ${currentUserRole}`;
 
+            // Update avatar
             const avatarUrl = currentUser?.user_metadata?.avatar_url ||
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay || 'User')}`;
             document.getElementById('userAvatar').src = avatarUrl;
             document.getElementById('profileAvatar').src = avatarUrl;
 
+            // Update dropdown
             document.getElementById('dropdownName').textContent = userNameDisplay || 'User';
             document.getElementById('dropdownRole').textContent = `${roleIcon} ${roleLabel}`;
 
+            // 🔥 UPDATE DROPDOWN AVATAR
+            const dropdownAvatar = document.getElementById('dropdownAvatar');
+            if (dropdownAvatar) {
+                dropdownAvatar.src = avatarUrl;
+            }
+
+            // 🔥 UPDATE DROPDOWN ROLE BADGE
+            const roleBadge = document.getElementById('dropdownRoleBadge');
+            if (roleBadge) {
+                const roleLabels = {
+                    leader: '👑 Leader',
+                    csline: '⭐ CS Line',
+                    cs: '💬 CS',
+                    kapten: '⚓ Kapten',
+                    kasir: '💰 Kasir'
+                };
+                roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+            }
+
+            // 🔥 UPDATE DROPDOWN EMAIL
+            const dropdownEmail = document.getElementById('dropdownEmail');
+            if (dropdownEmail) {
+                dropdownEmail.textContent = currentUser?.email || 'user@email.com';
+            }
+
+            // Update welcome banner
             document.getElementById('welcomeUsername').textContent = userNameDisplay || 'User';
             document.querySelector('.welcome-banner .badge-role').innerHTML =
                 `<span class="icon">${roleIcon}</span> ${roleLabel}`;
             updateGreeting();
 
+            // Menu visibility
             document.getElementById('menuManagement').style.display = 'flex';
             document.getElementById('menuSettings').style.display = userPermissions.canViewSettings ? 'flex' : 'none';
             document.getElementById('menuVoucher').style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
 
+            // Settings view only
             const canEdit = userPermissions.canEditSettings;
             document.querySelectorAll('.view-only-indicator').forEach(el => {
                 el.style.display = canEdit ? 'none' : 'inline-flex';
@@ -5130,6 +5557,7 @@
 
             document.getElementById('lockedNotice').style.display = 'none';
 
+            // 🔥 Tampilkan setelah update selesai
             setTimeout(() => {
                 flashElements.forEach(el => {
                     el.classList.remove('loading-flash');
@@ -5137,7 +5565,10 @@
                 });
             }, 50);
 
+            // 🔥 Aktifkan tombol setelah UI siap
             enableStartButtons();
+
+            // 🔥 Update voucher di dropdown
             updateProfileDropdown();
         }
 
@@ -6432,8 +6863,10 @@
                 const imageUrl = e.target.result;
                 const profileAvatar = document.getElementById('profileAvatar');
                 const userAvatar = document.getElementById('userAvatar');
+                const dropdownAvatar = document.getElementById('dropdownAvatar');
                 if (profileAvatar) profileAvatar.src = imageUrl;
                 if (userAvatar) userAvatar.src = imageUrl;
+                if (dropdownAvatar) dropdownAvatar.src = imageUrl;
 
                 if (!TEST_MODE && currentUser) {
                     supabaseDashboard
