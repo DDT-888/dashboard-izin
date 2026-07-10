@@ -5041,30 +5041,23 @@ const DEFAULT_TICKER_ITEMS = [
         }
 
         function updateStatsAndBadges() {
-    let totalIzin = 0;
+            let totalIzin = 0;
 
-    daftarAnggota.forEach(nama => {
-        const d = dataIzin[nama];
-        if (d && d.status === 'izin') totalIzin++;
-    });
+            daftarAnggota.forEach(nama => {
+                const d = dataIzin[nama];
+                if (d && d.status === 'izin') totalIzin++;
+            });
 
-    // 🔥 Hitung history hari ini
-    const today = new Date().toDateString();
-    const todayHistory = historyData.filter(h => {
-        const historyDate = new Date(h.mulai);
-        return historyDate.toDateString() === today;
-    });
+            const badgeIzin = document.getElementById('sidebarBadgeIzin');
+            const badgeTotal = document.getElementById('sidebarBadgeTotal');
+            const badgeHistory = document.getElementById('sidebarBadgeHistory');
+            const liveCount = document.getElementById('liveCount');
 
-    const badgeIzin = document.getElementById('sidebarBadgeIzin');
-    const badgeTotal = document.getElementById('sidebarBadgeTotal');
-    const badgeHistory = document.getElementById('sidebarBadgeHistory');
-    const liveCount = document.getElementById('liveCount');
-
-    if (badgeIzin) badgeIzin.textContent = totalIzin;
-    if (badgeTotal) badgeTotal.textContent = daftarAnggota.length;
-    if (badgeHistory) badgeHistory.textContent = todayHistory.length; // 🔥 Hanya hari ini
-    if (liveCount) liveCount.innerHTML = `<span>${totalIzin}</span> orang sedang izin`;
-}
+            if (badgeIzin) badgeIzin.textContent = totalIzin;
+            if (badgeTotal) badgeTotal.textContent = daftarAnggota.length;
+            if (badgeHistory) badgeHistory.textContent = historyData.length;
+            if (liveCount) liveCount.innerHTML = `<span>${totalIzin}</span> orang sedang izin`;
+        }
 
         // ============================================================
         // RENDER LIVE IZIN
@@ -5696,22 +5689,21 @@ const DEFAULT_TICKER_ITEMS = [
         // RENDER HISTORY - TAMPILKAN HARI INI & SORT BERDASARKAN MULAI
         // ============================================================
         window.renderHistory = function() {
-    const tbody = document.getElementById('historyBody');
-    if (!tbody) return;
-    
-    const filterNama = document.getElementById('filterNama');
-    const filterTanggal = document.getElementById('filterTanggal');
-    const filterRole = document.getElementById('filterRole');
-    const filterBulan = document.getElementById('filterBulan');
+            const tbody = document.getElementById('historyBody');
+            if (!tbody) return;
 
-    // 🔥 Jika belum ada tanggal, set ke hari ini
-    if (filterTanggal && !filterTanggal.value) {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        filterTanggal.value = `${year}-${month}-${day}`;
-    }
+            const filterNama = document.getElementById('filterNama');
+            const filterTanggal = document.getElementById('filterTanggal');
+            const filterRole = document.getElementById('filterRole');
+            const filterBulan = document.getElementById('filterBulan');
+
+            if (filterTanggal && !filterTanggal.value) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                filterTanggal.value = `${year}-${month}-${day}`;
+            }
 
             const namaValue = filterNama ? filterNama.value : '';
             const tanggalValue = filterTanggal ? filterTanggal.value : '';
@@ -6699,17 +6691,15 @@ const DEFAULT_TICKER_ITEMS = [
             else if (tab === 'users') renderUsersPage();
             else if (tab === 'voucher') renderVoucherPage();
             else if (tab === 'history') {
-    // 🔥 Set filter tanggal ke hari ini
-    const filterTanggal = document.getElementById('filterTanggal');
-    if (filterTanggal) {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        filterTanggal.value = `${year}-${month}-${day}`;
-    }
-    renderHistory();
-}
+                renderHistory();
+                const filterTanggal = document.getElementById('filterTanggal');
+                if (filterTanggal && !filterTanggal.value) {
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    filterTanggal.value = `${year}-${month}-${day}`;
+                }
             } else if (tab === 'settings') {
                 loadIPWhitelist();
                 updateSettingsUI();
