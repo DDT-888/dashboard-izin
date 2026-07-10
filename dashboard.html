@@ -58,6 +58,7 @@
 
         .sidebar-menu {
             padding: 16px 10px;
+            flex: 1;
         }
         .sidebar-menu .menu-item {
             display: flex;
@@ -119,7 +120,7 @@
             padding: 16px 16px;
             border-top: 1px solid rgba(0, 229, 255, 0.06);
             background: rgba(0, 229, 255, 0.01);
-	    margin-top: auto;
+            margin-top: auto;
         }
 
         .sidebar-footer .user-info {
@@ -839,21 +840,26 @@
             border-left-color: #00838f;
         }
 
-        /* ========== TABLE DASHBOARD ========== */
+        /* ========== TABLE DASHBOARD - PERBAIKAN RESPONSIVE ========== */
         .table-dashboard-wrap {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            overflow: hidden;
             overflow-x: auto;
+            overflow-y: visible;
             flex: 1;
+            min-width: 0;
+            width: 100%;
         }
+
         .table-dashboard-wrap table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
             table-layout: fixed;
+            min-width: 700px;
         }
+
         .table-dashboard-wrap th {
             background: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
             color: white;
@@ -865,14 +871,80 @@
             text-transform: uppercase;
             white-space: nowrap;
             border-bottom: 3px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
+
         .table-dashboard-wrap td {
             padding: 10px 12px;
             border-bottom: 1px solid #f0f2f5;
             vertical-align: middle;
             font-size: 13px;
-            word-break: break-word;
+            word-break: normal;
+            overflow-wrap: break-word;
+            min-width: 0;
         }
+
+        /* 🔥 PERBAIKAN: Kolom Nama tidak pecah */
+        .table-dashboard-wrap .col-nama {
+            width: auto;
+            min-width: 100px;
+            max-width: 200px;
+        }
+
+        .table-dashboard-wrap .col-nama .nama-cell {
+            display: inline-block;
+            white-space: nowrap;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+
+        /* Kolom lain dengan fixed width */
+        .table-dashboard-wrap .col-status { 
+            width: 100px; 
+            min-width: 90px; 
+            max-width: 110px; 
+        }
+        .table-dashboard-wrap .col-role { 
+            width: 100px; 
+            min-width: 85px; 
+            max-width: 110px; 
+            text-align: center; 
+        }
+        .table-dashboard-wrap .col-quota { 
+            width: 90px; 
+            min-width: 75px; 
+            max-width: 105px; 
+            text-align: center; 
+        }
+        .table-dashboard-wrap .col-voucher { 
+            width: 90px; 
+            min-width: 75px; 
+            max-width: 105px; 
+            text-align: center; 
+        }
+        .table-dashboard-wrap .col-mulai { 
+            width: 85px; 
+            min-width: 70px; 
+            max-width: 100px; 
+            text-align: center; 
+        }
+        .table-dashboard-wrap .col-progress { 
+            width: 180px; 
+            min-width: 140px; 
+            max-width: 220px; 
+            text-align: center; 
+        }
+        .table-dashboard-wrap .col-aksi { 
+            width: 120px; 
+            min-width: 100px; 
+            max-width: 140px; 
+            text-align: center; 
+        }
+
         .table-dashboard-wrap tr:last-child td {
             border-bottom: none;
         }
@@ -893,15 +965,6 @@
         .table-dashboard-wrap tr.row-offline:hover td {
             background: #f8f9fc;
         }
-
-        .table-dashboard-wrap .col-status { width: 110px; min-width: 100px; max-width: 120px; text-align: left; }
-        .table-dashboard-wrap .col-nama { width: auto; min-width: 150px; }
-        .table-dashboard-wrap .col-role { width: 110px; min-width: 95px; max-width: 120px; text-align: center; }
-        .table-dashboard-wrap .col-quota { width: 105px; min-width: 90px; max-width: 115px; text-align: center; }
-        .table-dashboard-wrap .col-voucher { width: 105px; min-width: 90px; max-width: 115px; text-align: center; }
-        .table-dashboard-wrap .col-mulai { width: 105px; min-width: 90px; max-width: 115px; text-align: center; }
-        .table-dashboard-wrap .col-progress { width: 230px; min-width: 190px; max-width: 260px; text-align: center; }
-        .table-dashboard-wrap .col-aksi { width: 150px; min-width: 130px; max-width: 170px; text-align: center; }
 
         /* ========== STATUS BADGE ========== */
         .status-badge {
@@ -1139,6 +1202,7 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
             font-size: 12px;
+            white-space: nowrap;
         }
 
         /* ========== SEARCH & FILTER ========== */
@@ -2101,6 +2165,7 @@
             .ticker-container { height: 38px; padding: 4px 12px; }
             .ticker-container .ticker-item { font-size: 12px; }
         }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -2129,7 +2194,29 @@
             .welcome-banner .welcome-right .quick-stats { padding-left: 10px; gap: 10px; }
             .welcome-banner .welcome-right .quick-stats .stat-item { font-size: 10px; }
             .footer-premium { padding: 10px 16px; flex-direction: column; text-align: center; }
+            
+            /* 🔥 Perbaikan tabel di mobile */
+            .table-dashboard-wrap .col-nama {
+                min-width: 70px !important;
+                max-width: 120px !important;
+            }
+            .table-dashboard-wrap .col-status { min-width: 70px !important; max-width: 85px !important; }
+            .table-dashboard-wrap .col-role { min-width: 70px !important; max-width: 85px !important; }
+            .table-dashboard-wrap .col-quota { min-width: 60px !important; max-width: 75px !important; }
+            .table-dashboard-wrap .col-voucher { min-width: 60px !important; max-width: 75px !important; }
+            .table-dashboard-wrap .col-mulai { min-width: 60px !important; max-width: 75px !important; }
+            .table-dashboard-wrap .col-progress { min-width: 100px !important; max-width: 150px !important; }
+            .table-dashboard-wrap .col-aksi { min-width: 75px !important; max-width: 100px !important; }
+            .table-dashboard-wrap table {
+                min-width: 550px !important;
+                font-size: 12px !important;
+            }
+            .nama-cell {
+                font-size: 11px !important;
+                white-space: nowrap !important;
+            }
         }
+
         @media (max-width: 600px) {
             .ticker-container { height: 32px; padding: 3px 8px; }
             .ticker-container .ticker-item { font-size: 10px; padding: 0 16px; }
@@ -2158,6 +2245,73 @@
             .clock-container .date { font-size: 9px; }
             .footer-premium { flex-direction: column; text-align: center; gap: 6px; }
             .footer-premium .footer-left .footer-divider { display: none; }
+            
+            /* 🔥 Perbaikan tabel di HP */
+            .table-dashboard-wrap table {
+                min-width: 480px !important;
+                font-size: 11px !important;
+            }
+            .table-dashboard-wrap td, .table-dashboard-wrap th {
+                padding: 6px 8px !important;
+            }
+            .nama-cell {
+                font-size: 10px !important;
+                white-space: nowrap !important;
+            }
+            .quota-badge-modern {
+                font-size: 10px !important;
+                padding: 2px 5px !important;
+                min-width: 28px !important;
+            }
+            .role-tag {
+                font-size: 8px !important;
+                padding: 2px 6px !important;
+            }
+            .status-badge {
+                font-size: 9px !important;
+                padding: 2px 6px !important;
+            }
+            .timer-display {
+                font-size: 10px !important;
+                min-width: 35px !important;
+            }
+            .time-mulai {
+                font-size: 10px !important;
+            }
+            .btn-action {
+                font-size: 10px !important;
+                padding: 4px 10px !important;
+                min-width: 60px !important;
+            }
+            .btn-action .icon {
+                font-size: 12px !important;
+            }
+            .progress-bar-wrap {
+                min-width: 30px !important;
+                max-width: 60px !important;
+            }
+            .progress-text {
+                font-size: 8px !important;
+                min-width: 20px !important;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .table-dashboard-wrap table {
+                min-width: 420px !important;
+                font-size: 10px !important;
+            }
+            .table-dashboard-wrap td, .table-dashboard-wrap th {
+                padding: 4px 6px !important;
+            }
+            .nama-cell {
+                font-size: 9px !important;
+                white-space: nowrap !important;
+            }
+            .col-nama {
+                min-width: 55px !important;
+                max-width: 80px !important;
+            }
         }
 
         .sidebar::-webkit-scrollbar {
@@ -2597,6 +2751,20 @@
             transform: none;
             box-shadow: none;
             opacity: 0.6;
+        }
+
+        /* ========== LOADING STATE UNTUK START BUTTON ========== */
+        .btn-action.start.loading-state {
+            background: #2a2a4a !important;
+            color: rgba(255, 255, 255, 0.2) !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            opacity: 0.5 !important;
+            pointer-events: none !important;
+        }
+
+        .btn-action.start.loading-state .icon {
+            opacity: 0.3;
         }
     </style>
 </head>
@@ -3232,6 +3400,9 @@
         let isInitialLoad = true;
         let realtimeChannel = null;
 
+        // 🔥 LOADING STATE - START BUTTON TIDAK BISA DIKLIK SAMPAI DATA SIAP
+        let isDataReady = false;
+
         // ============================================================
         // FUNGSI UTILITY - BERDASARKAN EMAIL
         // ============================================================
@@ -3664,6 +3835,10 @@
         async function loadDataFromDatabase() {
             if (isLoading) return;
             isLoading = true;
+
+            // 🔥 Reset data ready state
+            isDataReady = false;
+            disableStartButtons();
             
             try {
                 console.log('📥 Loading data from database...');
@@ -3859,6 +4034,10 @@
                 updateQuickStats();
                 console.log('✅ All data loaded successfully!');
 
+                // 🔥 Data siap, enable START buttons
+                isDataReady = true;
+                enableStartButtons();
+
                 // Subscribe ke realtime setelah data selesai di-load
                 subscribeToIzinChanges();
 
@@ -3868,6 +4047,32 @@
                 isLoading = false;
                 isInitialLoad = false;
             }
+        }
+
+        // ============================================================
+        // ENABLE / DISABLE START BUTTONS
+        // ============================================================
+        function disableStartButtons() {
+            document.querySelectorAll('.btn-action.start').forEach(function(btn) {
+                btn.classList.add('loading-state');
+                btn.disabled = true;
+            });
+        }
+
+        function enableStartButtons() {
+            document.querySelectorAll('.btn-action.start').forEach(function(btn) {
+                btn.classList.remove('loading-state');
+                // Cek ulang apakah seharusnya di-enable
+                var nama = btn.getAttribute('data-nama');
+                if (nama) {
+                    var isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+                    var isCurrentUser = isUserCurrent(nama);
+                    var used = getUsedIzinToday(nama);
+                    var maxQuota = getMaxQuota(nama);
+                    var canStart = (isLeaderOrCsLine || isCurrentUser) && canUserIzinLive(nama) && used < maxQuota;
+                    btn.disabled = !canStart;
+                }
+            });
         }
 
         // ============================================================
@@ -3898,6 +4103,9 @@
         // AUTHENTICATION - PERBAIKAN LOADING CARD + ROLE
         // ============================================================
         async function checkAuth() {
+            // 🔥 Reset data ready state
+            isDataReady = false;
+            
             console.log('🔍 checkAuth - Memulai...');
 
             const urlParams = new URLSearchParams(window.location.search);
@@ -4190,6 +4398,9 @@
             });
 
             document.getElementById('lockedNotice').style.display = 'none';
+
+            // 🔥 Aktifkan tombol setelah UI siap
+            enableStartButtons();
         }
 
         // ============================================================
@@ -4800,10 +5011,17 @@
                     rowClass = 'row-offline';
                     statusHTML =
                         `<span class="status-badge offline"><span class="dot"></span> Offline</span>`;
-                    actionHTML =
-                        `<button class="btn-action start" onclick="mulaiIzin('${nama}')" ${!canStart ? 'disabled' : ''}>
-                            <span class="icon">▶</span> START
-                        </button>`;
+
+                    // 🔥 START BUTTON dengan loading state
+                    const loadingClass = !isDataReady ? 'loading-state' : '';
+                    actionHTML = `
+                            <button class="btn-action start ${loadingClass}" 
+                                    onclick="mulaiIzin('${nama}')" 
+                                    data-nama="${nama}"
+                                    ${!canStart || !isDataReady ? 'disabled' : ''}>
+                                <span class="icon">▶</span> START
+                            </button>
+                        `;
                     progressHTML = `
                         <div class="progress-container" style="justify-content:center;">
                             <span style="color:#ccc;font-size:11px;font-weight:300;">-</span>
