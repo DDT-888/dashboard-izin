@@ -606,75 +606,75 @@
             }
         }
 
-        /* ========== TICKER ========== */
-.ticker-container {
-    background: linear-gradient(135deg, #1a2a4a, #2a3a5a);
-    border-radius: 10px;
-    padding: 6px 14px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    border: 1px solid rgba(0, 229, 255, 0.08);
-    box-shadow: 0 2px 12px rgba(26, 42, 74, 0.08);
-    overflow: hidden;
-    position: relative;
-    height: 42px;
-}
-.ticker-container .ticker-icon {
-    font-size: 18px;
-    color: #00e5ff;
-    flex-shrink: 0;
-    animation: glowPulse 2s ease-in-out infinite;
-}
-.ticker-container .ticker-wrapper {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-    height: 100%;
-}
+        /* ========== TICKER - PERBAIKAN ========== */
+        .ticker-container {
+            background: linear-gradient(135deg, #1a2a4a, #2a3a5a);
+            border-radius: 10px;
+            padding: 6px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border: 1px solid rgba(0, 229, 255, 0.08);
+            box-shadow: 0 2px 12px rgba(26, 42, 74, 0.08);
+            overflow: hidden;
+            position: relative;
+            height: 42px;
+        }
+        .ticker-container .ticker-icon {
+            font-size: 18px;
+            color: #00e5ff;
+            flex-shrink: 0;
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+        .ticker-container .ticker-wrapper {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            height: 100%;
+        }
 
-/* 🔥 PERBAIKAN: Ticker langsung muncul */
-.ticker-container .ticker-track {
-    display: flex;
-    white-space: nowrap;
-    will-change: transform;
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%) translateX(0);
-    height: auto;
-    align-items: center;
-    opacity: 1 !important;
-    visibility: visible !important;
-    animation: none;
-}
+        /* 🔥 PERBAIKAN: Ticker selalu terlihat */
+        .ticker-container .ticker-track {
+            display: flex;
+            white-space: nowrap;
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%) translateX(0%);
+            height: auto;
+            align-items: center;
+            opacity: 1 !important;
+            visibility: visible !important;
+            animation: tickerScroll 30s linear infinite;
+            min-width: 200%;
+        }
 
-.ticker-container .ticker-wrapper:hover .ticker-track {
-    animation-play-state: paused !important;
-}
+        .ticker-container .ticker-wrapper:hover .ticker-track {
+            animation-play-state: paused !important;
+        }
 
-@keyframes tickerScroll {
-    0% {
-        transform: translateY(-50%) translateX(100%);
-    }
-    100% {
-        transform: translateY(-50%) translateX(-100%);
-    }
-}
+        @keyframes tickerScroll {
+            0% {
+                transform: translateY(-50%) translateX(0%);
+            }
+            100% {
+                transform: translateY(-50%) translateX(-50%);
+            }
+        }
 
-.ticker-container .ticker-item {
-    display: inline-flex;
-    align-items: center;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 13px;
-    font-weight: 400;
-    padding: 0 30px;
-    gap: 8px;
-    white-space: nowrap;
-    height: 100%;
-    flex-shrink: 0;
-}
+        .ticker-container .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            font-weight: 400;
+            padding: 0 30px;
+            gap: 8px;
+            white-space: nowrap;
+            height: 100%;
+            flex-shrink: 0;
+        }
         .ticker-container .ticker-item .highlight {
             color: #00e5ff;
             font-weight: 600;
@@ -3205,13 +3205,18 @@
             <div class="ticker-container">
                 <span class="ticker-icon">📢</span>
                 <div class="ticker-wrapper" id="tickerWrapper">
-                    <div class="ticker-track" id="tickerTrack" style="opacity: 1; visibility: visible; animation: none;">
-    <!-- Ticker Default - Langsung Muncul -->
-    <span class="ticker-item">💡 <span class="highlight">Tips:</span> Klik START untuk memulai izin, END untuk mengakhiri izin.</span>
-    <span class="ticker-item">💡 <span class="highlight">Tips Izin:</span> Maksimal <span class="highlight-gold">17 menit</span> per izin • Hitungan sampai detik! ⏰ • Kalo udah 17:01, berarti telat! 😄</span>
-    <span class="ticker-item">⏱️ Melewati batas izin akan mendapatkan <span class="highlight-gold">Jackpot + Voucher</span>!</span>
-    <span class="ticker-item">🎫 Voucher dapat digunakan untuk <span class="highlight">Kutip Sampah Office</span>!</span>
-</div>
+                    <div class="ticker-track" id="tickerTrack">
+                        <!-- 🔥 Ticker langsung terlihat -->
+                        <span class="ticker-item">💡 <span class="highlight">Tips:</span> Klik START untuk memulai izin, END untuk mengakhiri izin.</span>
+                        <span class="ticker-item">💡 <span class="highlight">Tips Izin:</span> Maksimal <span class="highlight-gold">17 menit</span> per izin • Hitungan sampai detik! ⏰ • Kalo udah 17:01, berarti telat! 😄</span>
+                        <span class="ticker-item">⏱️ Melewati batas izin akan mendapatkan <span class="highlight-gold">Jackpot + Voucher</span>!</span>
+                        <span class="ticker-item">🎫 Voucher dapat digunakan untuk <span class="highlight">Kutip Sampah Office</span>!</span>
+                        <!-- Duplikat untuk infinite scroll -->
+                        <span class="ticker-item">💡 <span class="highlight">Tips:</span> Klik START untuk memulai izin, END untuk mengakhiri izin.</span>
+                        <span class="ticker-item">💡 <span class="highlight">Tips Izin:</span> Maksimal <span class="highlight-gold">17 menit</span> per izin • Hitungan sampai detik! ⏰ • Kalo udah 17:01, berarti telat! 😄</span>
+                        <span class="ticker-item">⏱️ Melewati batas izin akan mendapatkan <span class="highlight-gold">Jackpot + Voucher</span>!</span>
+                        <span class="ticker-item">🎫 Voucher dapat digunakan untuk <span class="highlight">Kutip Sampah Office</span>!</span>
+                    </div>
                 </div>
                 <span class="ticker-badge">
                     <span class="live-dot"></span> LIVE
@@ -4087,9 +4092,6 @@
             if (isLoading) return;
             isLoading = true;
 
-            // 🔥 Render ticker dulu agar cepat muncul
-            renderTicker();
-
             // 🔥 Reset data ready state
             isDataReady = false;
             disableStartButtons();
@@ -4285,7 +4287,6 @@
                     console.log('⚠️ Settings table error:', err.message);
                 }
 
-                renderTicker();
                 renderAll();
                 updateQuickStats();
                 console.log('✅ All data loaded successfully!');
@@ -4296,6 +4297,9 @@
 
                 // 🔥 Update profile dropdown voucher
                 updateProfileDropdown();
+
+                // 🔥 Render ticker setelah data siap
+                renderTicker();
 
                 // Subscribe ke realtime setelah data selesai di-load
                 subscribeToIzinChanges();
@@ -6459,7 +6463,7 @@
             renderTicker();
         }
 
-        // 🔥 PERBAIKAN: Ticker langsung muncul dengan kecepatan dari state
+        // 🔥 PERBAIKAN: Ticker langsung muncul
         function renderTicker() {
             const track = document.getElementById('tickerTrack');
             if (!track) return;
@@ -6467,6 +6471,8 @@
             const items = tickerItems.filter(item => item.trim() !== '');
             const speed = tickerSpeed || 30;
 
+            // Build HTML dengan duplikat untuk infinite scroll
+            let html = '';
             if (items.length === 0) {
                 const defaultItems = [
                     '💡 <span class="highlight">Tips:</span> Klik START untuk memulai izin, END untuk mengakhiri izin.',
@@ -6474,24 +6480,23 @@
                     '⏱️ Melewati batas izin akan mendapatkan <span class="highlight-gold">Jackpot + Voucher</span>!',
                     '🎫 Voucher dapat digunakan untuk <span class="highlight">Kutip Sampah Office</span>!'
                 ];
-                const doubledItems = [...defaultItems, ...defaultItems];
-                track.innerHTML = doubledItems.map(item =>
-                    `<span class="ticker-item">${item}</span>`
-                ).join('');
+                const doubled = [...defaultItems, ...defaultItems, ...defaultItems];
+                html = doubled.map(item => `<span class="ticker-item">${item}</span>`).join('');
             } else {
-                const doubledItems = [...items, ...items];
-                track.innerHTML = doubledItems.map(item =>
-                    `<span class="ticker-item">${item}</span>`
-                ).join('');
+                const tripled = [...items, ...items, ...items];
+                html = tripled.map(item => `<span class="ticker-item">${item}</span>`).join('');
             }
 
-            // 🔥 Mulai animasi dengan kecepatan dari state
-            track.style.animation = 'none';
-            // Force reflow
-            void track.offsetHeight;
-            track.style.animation = `tickerScroll ${speed}s linear infinite`;
+            track.innerHTML = html;
             track.style.opacity = '1';
             track.style.visibility = 'visible';
+            track.style.animation = 'none';
+
+            // Force reflow
+            void track.offsetHeight;
+
+            // Mulai animasi
+            track.style.animation = `tickerScroll ${speed}s linear infinite`;
         }
 
         window.saveTickerSettings = function() {
@@ -6643,8 +6648,8 @@
             const track = document.getElementById('tickerTrack');
             if (!track) return;
 
-            const doubledItems = [...lines, ...lines];
-            track.innerHTML = doubledItems.map(item =>
+            const tripled = [...lines, ...lines, ...lines];
+            track.innerHTML = tripled.map(item =>
                 `<span class="ticker-item">${item}</span>`
             ).join('');
 
@@ -6777,64 +6782,11 @@
         }
 
         // ============================================================
-// 🔥 START TICKER IMMEDIATELY
-// ============================================================
-function startTickerImmediately() {
-    const track = document.getElementById('tickerTrack');
-    if (!track) return;
-
-    // Pastikan terlihat
-    track.style.opacity = '1';
-    track.style.visibility = 'visible';
-    track.style.animation = 'none';
-    
-    // Force reflow
-    void track.offsetHeight;
-    
-    // Mulai dengan kecepatan default
-    const speed = tickerSpeed || 30;
-    track.style.animation = `tickerScroll ${speed}s linear infinite`;
-}
-
-// ============================================================
-// RENDER TICKER - PERBAIKAN
-// ============================================================
-function renderTicker() {
-    const track = document.getElementById('tickerTrack');
-    if (!track) return;
-
-    const items = tickerItems.filter(item => item.trim() !== '');
-    const speed = tickerSpeed || 30;
-
-    // Build HTML
-    let html = '';
-    if (items.length === 0) {
-        const defaultItems = [
-            '💡 <span class="highlight">Tips:</span> Klik START untuk memulai izin, END untuk mengakhiri izin.',
-            '💡 <span class="highlight">Tips Izin:</span> Maksimal <span class="highlight-gold">17 menit</span> per izin • Hitungan sampai detik! ⏰ • Kalo udah 17:01, berarti telat! 😄',
-            '⏱️ Melewati batas izin akan mendapatkan <span class="highlight-gold">Jackpot + Voucher</span>!',
-            '🎫 Voucher dapat digunakan untuk <span class="highlight">Kutip Sampah Office</span>!'
-        ];
-        const doubled = [...defaultItems, ...defaultItems];
-        html = doubled.map(item => `<span class="ticker-item">${item}</span>`).join('');
-    } else {
-        const doubled = [...items, ...items];
-        html = doubled.map(item => `<span class="ticker-item">${item}</span>`).join('');
-    }
-
-    track.innerHTML = html;
-
-    // 🔥 Mulai animasi
-    track.style.animation = 'none';
-    track.style.opacity = '1';
-    track.style.visibility = 'visible';
-    
-    // Force reflow
-    void track.offsetHeight;
-    
-    // Mulai animasi
-    track.style.animation = `tickerScroll ${speed}s linear infinite`;
-}
+        // 🔥 START TICKER IMMEDIATELY
+        // ============================================================
+        function startTickerImmediately() {
+            renderTicker();
+        }
 
         // ============================================================
         // INIT
@@ -6842,8 +6794,8 @@ function renderTicker() {
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Dashboard Izin - Starting...');
 
-            // 🔥 Mulai ticker segera (tanpa jeda)
-            setTimeout(startTickerImmediately, 50);
+            // 🔥 Render ticker segera
+            renderTicker();
 
             checkAuth();
         });
