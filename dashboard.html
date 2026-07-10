@@ -633,6 +633,8 @@
             position: relative;
             height: 100%;
         }
+
+        /* 🔥 PERBAIKAN: Ticker langsung muncul tanpa jeda */
         .ticker-container .ticker-track {
             display: flex;
             white-space: nowrap;
@@ -641,13 +643,25 @@
             position: absolute;
             left: 0;
             top: 50%;
-            transform: translateY(-50%) translateX(100%);
+            transform: translateY(-50%) translateX(0);
             height: auto;
             align-items: center;
+            opacity: 1;
         }
+
         .ticker-container .ticker-wrapper:hover .ticker-track {
             animation-play-state: paused !important;
         }
+
+        @keyframes tickerScroll {
+            0% {
+                transform: translateY(-50%) translateX(100%);
+            }
+            100% {
+                transform: translateY(-50%) translateX(-100%);
+            }
+        }
+
         .ticker-container .ticker-item {
             display: inline-flex;
             align-items: center;
@@ -695,14 +709,6 @@
             box-shadow: 0 0 12px rgba(76, 175, 80, 0.2);
         }
 
-        @keyframes tickerScroll {
-            0% {
-                transform: translateY(-50%) translateX(100%);
-            }
-            100% {
-                transform: translateY(-50%) translateX(-100%);
-            }
-        }
         @keyframes glowPulse {
             0%, 100% { opacity: 0.7; transform: scale(1); }
             50% { opacity: 1; transform: scale(1.1); }
@@ -3711,7 +3717,7 @@
             const hour = new Date().getHours();
             const greetingEl = document.getElementById('welcomeGreeting');
             if (!greetingEl) return;
-            
+
             let greeting = 'Good Evening';
             if (hour >= 5 && hour < 12) {
                 greeting = 'Good Morning';
@@ -3768,7 +3774,7 @@
         function addVoucher(nama) {
             const formattedNama = formatName(nama);
             voucherData[formattedNama] = (voucherData[formattedNama] || 0) + 1;
-            
+
             if (!TEST_MODE) {
                 supabaseDashboard
                     .from('vouchers')
@@ -3780,7 +3786,7 @@
                         if (error) console.error('❌ Gagal simpan voucher:', error);
                     });
             }
-            
+
             updateSidebarBadge();
             updateQuickStats();
         }
@@ -3789,7 +3795,7 @@
             const formattedNama = formatName(nama);
             if (voucherData[formattedNama] && voucherData[formattedNama] > 0) {
                 voucherData[formattedNama]--;
-                
+
                 if (!TEST_MODE) {
                     supabaseDashboard
                         .from('vouchers')
@@ -3801,7 +3807,7 @@
                             if (error) console.error('❌ Gagal update voucher:', error);
                         });
                 }
-                
+
                 updateSidebarBadge();
                 updateQuickStats();
                 return true;
@@ -3818,7 +3824,7 @@
         function updateQuickStats() {
             const currentUserName = getCurrentUserName();
             const userVoucher = currentUserName ? getVoucherCount(currentUserName) : 0;
-            
+
             const voucherEl = document.getElementById('quickVoucher');
             const usersEl = document.getElementById('quickUsers');
             if (voucherEl) voucherEl.textContent = userVoucher;
@@ -3866,14 +3872,14 @@
         function getUsedIzinToday(nama) {
             const today = new Date().toDateString();
             const formattedNama = formatName(nama);
-            
-            const used = historyData.filter(h => 
-                h.nama === formattedNama && 
-                h.tanggal === today && 
+
+            const used = historyData.filter(h =>
+                h.nama === formattedNama &&
+                h.tanggal === today &&
                 h.status === 'selesai' &&
                 h.durasiDetik >= MIN_IZIN_DURATION_SECONDS
             ).length;
-            
+
             return used;
         }
 
@@ -4014,26 +4020,25 @@
             }
 
             console.log('🔌 Subscribing to izin_anggota changes...');
-            
+
             realtimeChannel = supabaseDashboard
                 .channel('izin_anggota_changes')
                 .on(
-                    'postgres_changes',
-                    {
+                    'postgres_changes', {
                         event: '*',
                         schema: 'public',
                         table: 'izin_anggota'
                     },
                     (payload) => {
                         console.log('🔄 Real-time update received:', payload);
-                        
+
                         const { eventType, new: newRecord, old: oldRecord } = payload;
-                        
+
                         if (eventType === 'INSERT' || eventType === 'UPDATE') {
                             const nama = newRecord.nama;
                             if (dataIzin[nama]) {
                                 dataIzin[nama].status = newRecord.status || 'none';
-                                
+
                                 if (newRecord.mulai) {
                                     let mulaiStr = newRecord.mulai;
                                     if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
@@ -4043,11 +4048,13 @@
                                 } else {
                                     dataIzin[nama].mulai = null;
                                 }
-                                
+
                                 dataIzin[nama].tanggal = newRecord.tanggal;
                                 dataIzin[nama].selesai = newRecord.selesai;
-                                
-                                console.log(`✅ Updated ${nama}: status=${newRecord.status}, mulai=${dataIzin[nama].mulai}`);
+
+                                console.log(
+                                    `✅ Updated ${nama}: status=${newRecord.status}, mulai=${dataIzin[nama].mulai}`
+                                    );
                             }
                         } else if (eventType === 'DELETE') {
                             const nama = oldRecord.nama;
@@ -4059,7 +4066,7 @@
                                 console.log(`✅ Removed ${nama} from izin list`);
                             }
                         }
-                        
+
                         renderAll();
                         updateCurrentCounts();
                         console.log('🔄 Dashboard updated via real-time subscription');
@@ -4068,7 +4075,7 @@
                 .subscribe((status) => {
                     console.log('📡 Subscription status:', status);
                 });
-            
+
             return realtimeChannel;
         }
 
@@ -4085,10 +4092,10 @@
             // 🔥 Reset data ready state
             isDataReady = false;
             disableStartButtons();
-            
+
             try {
                 console.log('📥 Loading data from database...');
-                
+
                 // 1. Load users
                 const { data: usersData, error: usersError } = await supabaseDashboard
                     .from('users')
@@ -4097,7 +4104,7 @@
                 if (!usersError && usersData && usersData.length > 0) {
                     listUsers = usersData;
                     daftarAnggota = usersData.map(u => u.name);
-                    
+
                     usersData.forEach(user => {
                         const nama = user.name;
                         if (!dataIzin[nama]) {
@@ -4153,7 +4160,7 @@
 
                     if (!izinError && izinData) {
                         console.log(`📋 Found ${izinData.length} izin records in database`);
-                        
+
                         daftarAnggota.forEach(nama => {
                             if (dataIzin[nama]) {
                                 dataIzin[nama].status = 'none';
@@ -4162,7 +4169,7 @@
                                 dataIzin[nama].selesai = null;
                             }
                         });
-                        
+
                         let aktifCount = 0;
                         izinData.forEach(item => {
                             if (dataIzin[item.nama]) {
@@ -4220,14 +4227,14 @@
                     if (!settingsError && settingsData && settingsData.length > 0) {
                         settingsData.forEach(setting => {
                             if (setting.key === 'role_limits') {
-                                try { 
-                                    limits = JSON.parse(setting.value); 
+                                try {
+                                    limits = JSON.parse(setting.value);
                                     updateLimitUI();
                                     console.log('✅ role_limits loaded');
-                                } catch(e) { console.log('⚠️ Failed to parse role_limits'); }
+                                } catch (e) { console.log('⚠️ Failed to parse role_limits'); }
                             }
                             if (setting.key === 'izin_settings') {
-                                try { 
+                                try {
                                     const izinSettings = JSON.parse(setting.value);
                                     if (izinSettings.jackpotLimitMinutes) {
                                         jackpotLimitMinutes = izinSettings.jackpotLimitMinutes;
@@ -4237,7 +4244,7 @@
                                     }
                                     updateSettingsUI();
                                     console.log('✅ izin_settings loaded');
-                                } catch(e) { console.log('⚠️ Failed to parse izin_settings'); }
+                                } catch (e) { console.log('⚠️ Failed to parse izin_settings'); }
                             }
                             if (setting.key === 'ticker_settings') {
                                 try {
@@ -4251,7 +4258,7 @@
                                     updateTickerUI();
                                     updateTickerSpeedUI();
                                     console.log('✅ ticker_settings loaded');
-                                } catch(e) { console.log('⚠️ Failed to parse ticker_settings'); }
+                                } catch (e) { console.log('⚠️ Failed to parse ticker_settings'); }
                             }
                             if (setting.key === 'whitelist_ip') {
                                 const input = document.getElementById('ipWhitelistInput');
@@ -4263,9 +4270,11 @@
                         console.log('⚠️ No settings found, using defaults');
                         const defaultSettings = [
                             { key: 'role_limits', value: JSON.stringify(DEFAULT_LIMITS) },
-                            { key: 'izin_settings', value: JSON.stringify({ jackpotLimitMinutes: 15, maxIzinPerRole: DEFAULT_MAX_IZIN }) },
+                            { key: 'izin_settings', value: JSON.stringify({ jackpotLimitMinutes: 15,
+                                    maxIzinPerRole: DEFAULT_MAX_IZIN }) },
                             { key: 'whitelist_ip', value: '0.0.0.0' },
-                            { key: 'ticker_settings', value: JSON.stringify({ items: DEFAULT_TICKER_ITEMS, speed: 30 }) }
+                            { key: 'ticker_settings', value: JSON.stringify({ items: DEFAULT_TICKER_ITEMS,
+                                    speed: 30 }) }
                         ];
                         for (const setting of defaultSettings) {
                             await supabaseDashboard.from('settings').upsert(setting, { onConflict: 'key' });
@@ -4323,11 +4332,13 @@
                 // Cek ulang apakah seharusnya di-enable
                 var nama = btn.getAttribute('data-nama');
                 if (nama) {
-                    var isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+                    var isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' ||
+                        currentUserRole === 'admin';
                     var isCurrentUser = isUserCurrent(nama);
                     var used = getUsedIzinToday(nama);
                     var maxQuota = getMaxQuota(nama);
-                    var canStart = (isLeaderOrCsLine || isCurrentUser) && canUserIzinLive(nama) && used < maxQuota;
+                    var canStart = (isLeaderOrCsLine || isCurrentUser) && canUserIzinLive(nama) && used <
+                    maxQuota;
                     btn.disabled = !canStart;
                 }
             });
@@ -4363,7 +4374,7 @@
         async function checkAuth() {
             // 🔥 Reset data ready state
             isDataReady = false;
-            
+
             console.log('🔍 checkAuth - Memulai...');
 
             const urlParams = new URLSearchParams(window.location.search);
@@ -4373,7 +4384,7 @@
             // Cek user terdaftar SEBELUM apapun
             try {
                 const { data: { session } } = await supabaseDashboard.auth.getSession();
-                
+
                 if (session?.user?.email) {
                     const isRegistered = await checkUserRegistered(session.user.email);
                     if (!isRegistered) {
@@ -4392,34 +4403,34 @@
                 console.log('🔑 Detected OAuth redirect, processing...');
                 try {
                     const { data, error } = await supabaseDashboard.auth.getSession();
-                    
+
                     if (error) {
                         console.error('❌ Error getting session after redirect:', error);
                         showNotRegisteredPopup('error@email.com');
                         return;
                     }
-                    
+
                     if (data?.session) {
                         console.log('✅ Session found after redirect for:', data.session.user.email);
                         currentUser = data.session.user;
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        
+
                         // 🔥 Render ticker dulu agar cepat muncul
                         renderTicker();
-                        
+
                         // 🔥 PERBAIKAN: Load data dulu, baru update UI
                         await loadDataFromDatabase();
                         await checkIPAccess();
-                        
+
                         // 🔥 PERBAIKAN: Ambil role dari database setelah loadDataFromDatabase()
                         await syncUserRoleFromDatabase();
-                        
+
                         // 🔥 PERBAIKAN: Update UI setelah data siap
                         updateUserUI();
-                        
+
                         // 🔥 Update profile dropdown
                         updateProfileDropdown();
-                        
+
                         renderAll();
                         startTimerUpdates();
                         startClock();
@@ -4462,7 +4473,8 @@
                 document.getElementById('dropdownRole').textContent = '👑 Leader';
 
                 document.getElementById('welcomeUsername').textContent = 'Test Leader';
-                document.querySelector('.welcome-banner .badge-role').innerHTML = '<span class="icon">👑</span> Leader';
+                document.querySelector('.welcome-banner .badge-role').innerHTML =
+                '<span class="icon">👑</span> Leader';
                 updateGreeting();
 
                 document.getElementById('lockedNotice').style.display = 'none';
@@ -4555,7 +4567,7 @@
                     currentUserRole = userFromDB.role;
                     userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
                     console.log(`✅ Role ditemukan di database: ${currentUserRole}`);
-                    
+
                     // Update currentUser dengan data dari database
                     currentUser = { ...currentUser, ...userFromDB };
                 } else {
@@ -4579,7 +4591,7 @@
                         userPermissions = ROLE_PERMISSIONS[currentUserRole] || ROLE_PERMISSIONS.cs;
                         currentUser = { ...currentUser, ...userData };
                         console.log(`✅ Role ditemukan via query langsung: ${currentUserRole}`);
-                        
+
                         // Tambahkan ke listUsers jika belum ada
                         if (!listUsers.some(u => u.email === formattedEmail)) {
                             listUsers.push(userData);
@@ -4610,9 +4622,11 @@
         // ============================================================
         function updateUserUI() {
             // 🔥 Sembunyikan flash saat update
-            const flashElements = document.querySelectorAll('.sidebar-footer .user-info .name, .sidebar-footer .user-info .email, .sidebar-footer .user-info .role-badge, .welcome-banner .welcome-left .text .username, .welcome-banner .welcome-right .badge-role');
+            const flashElements = document.querySelectorAll(
+                '.sidebar-footer .user-info .name, .sidebar-footer .user-info .email, .sidebar-footer .user-info .role-badge, .welcome-banner .welcome-left .text .username, .welcome-banner .welcome-right .badge-role'
+                );
             flashElements.forEach(el => el.classList.add('loading-flash'));
-            
+
             const roleLabel = userPermissions.label || 'User';
             const roleIcon = userPermissions.icon || '👤';
             const userNameDisplay = getCurrentUserName();
@@ -4625,20 +4639,21 @@
             document.getElementById('userEmail').textContent = userEmail;
             document.getElementById('userRole').textContent = `${roleIcon} ${roleLabel}`;
             document.getElementById('userRole').className = `role-badge ${currentUserRole}`;
-            
+
             // Update avatar
-            const avatarUrl = currentUser?.user_metadata?.avatar_url || 
+            const avatarUrl = currentUser?.user_metadata?.avatar_url ||
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay || 'User')}`;
             document.getElementById('userAvatar').src = avatarUrl;
             document.getElementById('profileAvatar').src = avatarUrl;
-            
+
             // Update dropdown
             document.getElementById('dropdownName').textContent = userNameDisplay || 'User';
             document.getElementById('dropdownRole').textContent = `${roleIcon} ${roleLabel}`;
 
             // Update welcome banner
             document.getElementById('welcomeUsername').textContent = userNameDisplay || 'User';
-            document.querySelector('.welcome-banner .badge-role').innerHTML = `<span class="icon">${roleIcon}</span> ${roleLabel}`;
+            document.querySelector('.welcome-banner .badge-role').innerHTML =
+            `<span class="icon">${roleIcon}</span> ${roleLabel}`;
             updateGreeting();
 
             // Menu visibility
@@ -4679,10 +4694,10 @@
                     el.classList.add('loading-flash-show');
                 });
             }, 50);
-            
+
             // 🔥 Aktifkan tombol setelah UI siap
             enableStartButtons();
-            
+
             // 🔥 Update voucher di dropdown
             updateProfileDropdown();
         }
@@ -4749,7 +4764,7 @@
                 } else {
                     tickerItems = [...DEFAULT_TICKER_ITEMS];
                 }
-                
+
                 const savedSettings = localStorage.getItem('izinSettings');
                 if (savedSettings) {
                     try {
@@ -4773,7 +4788,8 @@
         // ============================================================
         window.mulaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
+                'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
@@ -4784,7 +4800,8 @@
             if (!canIzinByDailyLimit(formattedNama)) {
                 const used = getUsedIzinToday(formattedNama);
                 const maxQuota = getMaxQuota(formattedNama);
-                showToast(`⚠️ ${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`, 'error');
+                showToast(`⚠️ ${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`,
+                    'error');
                 return;
             }
 
@@ -4802,11 +4819,10 @@
                 try {
                     const role = getRoleForUser(formattedNama);
                     const mulaiISO = now.toISOString();
-                    
+
                     // Panggil RPC function di database
                     const { data: result, error: rpcError } = await supabaseDashboard.rpc(
-                        'start_izin',
-                        {
+                        'start_izin', {
                             p_nama: formattedNama,
                             p_role: role,
                             p_tanggal: today,
@@ -4822,17 +4838,17 @@
 
                     // Parse result dari RPC
                     const resultData = typeof result === 'string' ? JSON.parse(result) : result;
-                    
+
                     if (!resultData.success) {
                         // Tampilkan pesan error dari database
                         showToast(`⚠️ ${resultData.message}`, 'warning', 4000);
-                        
+
                         // Jika kuota penuh, tampilkan popup limit
                         if (resultData.message && resultData.message.includes('Kuota penuh')) {
                             const roleLabel = ROLE_LABELS[role] || role;
                             const currentCount = resultData.current_count || 0;
                             const limit = resultData.limit || 0;
-                            
+
                             document.getElementById('popupMessage').innerHTML =
                                 `Mohon menunggu beberapa saat kedepan <br /><span class="highlight">PS:</span> apabila urgent dapat konfirmasi ke <strong>Kapten</strong>.`;
                             document.getElementById('popupCurrentCount').textContent = currentCount;
@@ -4854,11 +4870,11 @@
                     renderAll();
                     updateCurrentCounts();
                     showToast(`▶️ ${formattedNama} mulai izin!`, 'info');
-                    
+
                     // Refresh data untuk sync
                     await loadDataFromDatabase();
                     renderAll();
-                    
+
                 } catch (err) {
                     console.error('❌ Error:', err);
                     showToast('❌ Gagal memulai izin: ' + err.message, 'error');
@@ -4881,7 +4897,8 @@
 
         window.selesaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
+                'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
@@ -4898,7 +4915,7 @@
 
             const selesaiTime = now.toISOString();
             const durasiDetik = Math.floor((now - new Date(data.mulai)) / 1000);
-            
+
             const batasDetik = (jackpotLimitMinutes * 60) - 1;
             const isOverLimit = durasiDetik > batasDetik;
 
@@ -4923,16 +4940,16 @@
 
             if (isQuotaValid) {
                 const today = new Date().toDateString();
-                const validHistory = historyData.filter(h => 
-                    h.nama === formattedNama && 
-                    h.tanggal === today && 
+                const validHistory = historyData.filter(h =>
+                    h.nama === formattedNama &&
+                    h.tanggal === today &&
                     h.status === 'selesai' &&
                     h.durasiDetik >= MIN_IZIN_DURATION_SECONDS
                 );
-                
+
                 const usedCount = validHistory.length;
                 const maxQuota = getMaxQuota(formattedNama);
-                
+
                 if (!quotaData[formattedNama] || quotaData[formattedNama].date !== today) {
                     quotaData[formattedNama] = { count: 0, date: today };
                 }
@@ -5142,10 +5159,10 @@
         window.renderDashboardTable = function() {
             const tbody = document.getElementById('dashboardTableBody');
             if (!tbody) return;
-            
+
             const search = document.getElementById('searchInput');
             const searchValue = search ? search.value.toLowerCase().trim() : '';
-            
+
             const filterRole = document.getElementById('filterRoleDashboard');
             const filterRoleValue = filterRole ? filterRole.value : '';
 
@@ -5189,7 +5206,8 @@
                 kasir: 'Kasir'
             };
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
+                'admin';
 
             tbody.innerHTML = filtered.map(nama => {
                 const data = dataIzin[nama];
@@ -5223,7 +5241,7 @@
 
                 if (status === 'izin') {
                     rowClass = 'row-online';
-                    
+
                     if (!data.mulai) {
                         console.warn(`⚠️ User ${nama} status izin tapi tidak ada mulai`);
                         timerHTML = '0m 0s';
@@ -5232,26 +5250,26 @@
                         if (!mulaiStr.endsWith('Z')) {
                             mulaiStr = mulaiStr + 'Z';
                         }
-                        
+
                         const tMulai = new Date(mulaiStr);
                         const now = new Date();
                         const diffMs = now.getTime() - tMulai.getTime();
                         const diff = Math.floor(diffMs / 1000);
                         const validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
-                        
+
                         const menit = Math.floor(validDiff / 60);
                         const detik = validDiff % 60;
-                        
+
                         const batasDetik = (jackpotLimitMinutes * 60) - 1;
                         const isOverLimit = validDiff > batasDetik;
                         const isJackpot = isOverLimit;
 
                         const maxProgressDetik = jackpotLimitMinutes * 60;
                         const progressPercent = Math.min((validDiff / maxProgressDetik) * 100, 100);
-                        
+
                         let progressClass = '';
                         let textClass = '';
-                        
+
                         if (progressPercent >= 100) {
                             progressClass = 'full';
                             textClass = 'full';
@@ -5262,9 +5280,10 @@
                         } else if (progressPercent > 60) {
                             progressClass = 'warning';
                         }
-                        
-                        const progressFill = `<div class="progress-bar-fill ${progressClass}" style="width: ${progressPercent}%;"></div>`;
-                        
+
+                        const progressFill =
+                            `<div class="progress-bar-fill ${progressClass}" style="width: ${progressPercent}%;"></div>`;
+
                         progressHTML = `
                             <div class="progress-container">
                                 <div class="progress-bar-wrap">
@@ -5282,9 +5301,10 @@
 
                         statusHTML =
                             `<span class="status-badge online"><span class="dot"></span> Online</span>`;
-                        timerHTML = `<span class="timer-display ${isOverLimit ? 'over-limit' : ''}">${menit}m ${detik}s</span>`;
+                        timerHTML =
+                            `<span class="timer-display ${isOverLimit ? 'over-limit' : ''}">${menit}m ${detik}s</span>`;
                     }
-                    
+
                     const canEnd = isLeaderOrCsLine || isCurrentUser;
                     actionHTML = `
                             <button class="btn-action end" onclick="selesaiIzin('${nama}')" ${!canEnd ? 'disabled' : ''}>
@@ -5450,7 +5470,8 @@
                 }).join('');
             }
 
-            const viewOnlyText = !canManage ? '<span style="font-size:11px;color:#888;margin-left:10px;">👁️ View Only</span>' : '';
+            const viewOnlyText = !canManage ?
+                '<span style="font-size:11px;color:#888;margin-left:10px;">👁️ View Only</span>' : '';
 
             container.innerHTML = `
                     <h2 style="margin:16px 0 12px;color:#1a2a4a;font-size:18px;">📝 Register User</h2>
@@ -5599,14 +5620,14 @@
             }
 
             const totalVoucher = Object.values(voucherData).reduce((a, b) => a + b, 0);
-            
-            const headers = userPermissions.canManageVoucher ? 
+
+            const headers = userPermissions.canManageVoucher ?
                 ['#', 'Nama', 'Role', '🎫 Voucher', 'Aksi'] :
                 ['#', 'Nama', 'Role', '🎫 Voucher'];
 
             const headerRow = headers.map(h => `<th>${h}</th>`).join('');
 
-            const infoText = userPermissions.canManageVoucher ? 
+            const infoText = userPermissions.canManageVoucher ?
                 '💡 Klik <strong>Kurangi 1</strong> untuk mengurangi voucher yang sudah digunakan' :
                 '👀 Mode Lihat - Hanya Leader & CS Line yang dapat mengurangi voucher';
 
@@ -5671,7 +5692,7 @@
         window.renderHistory = function() {
             const tbody = document.getElementById('historyBody');
             if (!tbody) return;
-            
+
             const filterNama = document.getElementById('filterNama');
             const filterTanggal = document.getElementById('filterTanggal');
             const filterRole = document.getElementById('filterRole');
@@ -5793,10 +5814,10 @@
         function updateFilterNama() {
             const select = document.getElementById('filterNama');
             if (!select) return;
-            
+
             const currentValue = select.value;
             const sortedAnggota = [...daftarAnggota].sort((a, b) => a.localeCompare(b));
-            
+
             select.innerHTML = '<option value="">Semua Anggota</option>';
             sortedAnggota.forEach(nama => {
                 select.innerHTML += `<option value="${nama}">${nama}</option>`;
@@ -5813,7 +5834,7 @@
                 showToast('⚠️ Pilih bulan terlebih dahulu!', 'warning');
                 return;
             }
-            
+
             const bulanValue = filterBulan.value;
             if (!bulanValue) {
                 showToast('⚠️ Pilih bulan terlebih dahulu!', 'warning');
@@ -5928,10 +5949,10 @@
 
             const dateEl = document.getElementById('dateDisplay');
             const timeEl = document.getElementById('timeDisplay');
-            
+
             if (dateEl) dateEl.textContent = `${day}, ${date} ${month}, ${year}`;
             if (timeEl) timeEl.textContent = `${hours}:${minutes}:${seconds}`;
-            
+
             updateGreeting();
         }
 
@@ -6150,12 +6171,12 @@
                             .from('izin_anggota')
                             .delete()
                             .eq('nama', userName);
-                        
+
                         await supabaseDashboard
                             .from('history')
                             .delete()
                             .eq('nama', userName);
-                        
+
                         await supabaseDashboard
                             .from('vouchers')
                             .delete()
@@ -6206,7 +6227,8 @@
             }
 
             if (removeVoucher(formattedNama)) {
-                showToast(`✅ 1 voucher ${formattedNama} berhasil dikurangi! Sisa: ${getVoucherCount(formattedNama)}`, 'success');
+                showToast(`✅ 1 voucher ${formattedNama} berhasil dikurangi! Sisa: ${getVoucherCount(formattedNama)}`,
+                    'success');
                 renderVoucherPage();
                 renderDashboardTable();
                 updateSidebarBadge();
@@ -6321,7 +6343,7 @@
             const csInput = document.getElementById('limitCS');
             const kaptenInput = document.getElementById('limitKapten');
             const kasirInput = document.getElementById('limitKasir');
-            
+
             const newLimits = {
                 cs: parseInt(csInput ? csInput.value : 2) || 2,
                 kapten: parseInt(kaptenInput ? kaptenInput.value : 1) || 1,
@@ -6337,7 +6359,8 @@
             if (!TEST_MODE) {
                 supabaseDashboard
                     .from('settings')
-                    .upsert({ key: 'role_limits', value: JSON.stringify(limits), updated_at: new Date().toISOString() }, { onConflict: 'key' })
+                    .upsert({ key: 'role_limits', value: JSON.stringify(limits),
+                        updated_at: new Date().toISOString() }, { onConflict: 'key' })
                     .then(() => {
                         const notice = document.getElementById('limitSavedNotice');
                         if (notice) {
@@ -6435,6 +6458,7 @@
             renderTicker();
         }
 
+        // 🔥 PERBAIKAN: Ticker langsung muncul dengan kecepatan dari state
         function renderTicker() {
             const track = document.getElementById('tickerTrack');
             if (!track) return;
@@ -6450,22 +6474,20 @@
                     '🎫 Voucher dapat digunakan untuk <span class="highlight">Kutip Sampah Office</span>!'
                 ];
                 const doubledItems = [...defaultItems, ...defaultItems];
-                track.innerHTML = doubledItems.map(item => 
+                track.innerHTML = doubledItems.map(item =>
                     `<span class="ticker-item">${item}</span>`
                 ).join('');
-                track.style.animation = 'none';
-                track.offsetHeight;
-                track.style.animation = `tickerScroll ${speed}s linear infinite`;
-                return;
+            } else {
+                const doubledItems = [...items, ...items];
+                track.innerHTML = doubledItems.map(item =>
+                    `<span class="ticker-item">${item}</span>`
+                ).join('');
             }
 
-            const doubledItems = [...items, ...items];
-            track.innerHTML = doubledItems.map(item => 
-                `<span class="ticker-item">${item}</span>`
-            ).join('');
-            
+            // 🔥 Mulai animasi dengan kecepatan dari state
             track.style.animation = 'none';
-            track.offsetHeight;
+            // Force reflow
+            void track.offsetHeight;
             track.style.animation = `tickerScroll ${speed}s linear infinite`;
         }
 
@@ -6619,10 +6641,10 @@
             if (!track) return;
 
             const doubledItems = [...lines, ...lines];
-            track.innerHTML = doubledItems.map(item => 
+            track.innerHTML = doubledItems.map(item =>
                 `<span class="ticker-item">${item}</span>`
             ).join('');
-            
+
             track.style.animation = 'none';
             track.offsetHeight;
             track.style.animation = `tickerScroll ${speed}s linear infinite`;
@@ -6686,7 +6708,7 @@
                 const canManageLimits = userPermissions.canManageLimits;
                 const container = document.getElementById('limitSettingsContainer');
                 if (container) container.style.display = canManageLimits ? 'block' : 'none';
-                
+
                 const canEdit = userPermissions.canEditSettings;
                 document.querySelectorAll('.view-only-indicator').forEach(el => {
                     el.style.display = canEdit ? 'none' : 'inline-flex';
@@ -6750,10 +6772,32 @@
         }
 
         // ============================================================
+        // 🔥 START TICKER IMMEDIATELY - TAMBAHAN
+        // ============================================================
+        function startTickerImmediately() {
+            const track = document.getElementById('tickerTrack');
+            if (!track) return;
+
+            // Pastikan track terlihat
+            track.style.opacity = '1';
+
+            // Mulai animasi dengan kecepatan dari state
+            const speed = tickerSpeed || 30;
+            track.style.animation = 'none';
+            // Force reflow
+            void track.offsetHeight;
+            track.style.animation = `tickerScroll ${speed}s linear infinite`;
+        }
+
+        // ============================================================
         // INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Dashboard Izin - Starting...');
+
+            // 🔥 Mulai ticker segera
+            startTickerImmediately();
+
             checkAuth();
         });
     </script>
