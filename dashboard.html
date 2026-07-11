@@ -7385,42 +7385,90 @@
             showToast(`✅ Export bulan ${monthName} berhasil!`, 'success');
         };
 
-        window.exportHistory = function() {
-            if (historyData.length === 0) {
-                showToast('⚠️ Tidak ada data untuk diexport!', 'warning');
-                return;
-            }
+// ============================================================
+// EXPORT HISTORY - DENGAN SEMUA FILTER (Tanggal, Nama, Role)
+// ============================================================
+window.exportHistory = function() {
+    // Ambil semua nilai filter
+    const filterTanggal = document.getElementById('filterTanggal');
+    const filterNama = document.getElementById('filterNama');
+    const filterRole = document.getElementById('filterRole');
+    
+    const selectedDate = filterTanggal ? filterTanggal.value : '';
+    const selectedNama = filterNama ? filterNama.value : '';
+    const selectedRole = filterRole ? filterRole.value : '';
+    
+    let dataToExport = [...historyData];
+    
+    // Filter berdasarkan tanggal
+    if (selectedDate) {
+        const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+        const dateStr = selectedDateObj.toDateString();
+        dataToExport = dataToExport.filter(h => {
+            const historyDate = new Date(h.mulai);
+            return historyDate.toDateString() === dateStr;
+        });
+    }
+    
+    // Filter berdasarkan nama
+    if (selectedNama) {
+        dataToExport = dataToExport.filter(h => h.nama === formatName(selectedNama));
+    }
+    
+    // Filter berdasarkan role
+    if (selectedRole) {
+        dataToExport = dataToExport.filter(h => h.role === selectedRole);
+    }
+    
+    if (dataToExport.length === 0) {
+        let filterInfo = [];
+        if (selectedDate) filterInfo.push(new Date(selectedDate).toLocaleDateString('id-ID'));
+        if (selectedNama) filterInfo.push(`"${selectedNama}"`);
+        if (selectedRole) filterInfo.push(`Role ${selectedRole}`);
+        const info = filterInfo.length > 0 ? filterInfo.join(', ') : 'Semua data';
+        showToast(`⚠️ Tidak ada data untuk filter: ${info}!`, 'warning');
+        return;
+    }
 
-            let csv = 'No,Nama,Role,Tanggal,Mulai,Selesai,Durasi(menit),Durasi(detik),Status\n';
-            historyData.forEach((item, index) => {
-                const tMulai = new Date(item.mulai);
-                const tSelesai = new Date(item.selesai);
-                const durasiDetik = Math.floor((tSelesai - tMulai) / 1000);
-                const menit = Math.floor(durasiDetik / 60);
-                const detik = durasiDetik % 60;
-                const batasDetik = (jackpotLimitMinutes * 60) - 1;
-                const isOverLimit = durasiDetik > batasDetik;
-                const status = isOverLimit ? 'Telat' : 'Selesai';
-                const tanggal = tMulai.toLocaleDateString('id-ID');
-                const waktuMulai = tMulai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit',
-                    second: '2-digit' });
-                const waktuSelesai = tSelesai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit',
-                    second: '2-digit' });
-                const roleLabel = ROLE_LABELS[item.role] || item.role;
+    let csv = 'No,Nama,Role,Tanggal,Mulai,Selesai,Durasi(menit),Durasi(detik),Status\n';
+    dataToExport.forEach((item, index) => {
+        const tMulai = new Date(item.mulai);
+        const tSelesai = new Date(item.selesai);
+        const durasiDetik = Math.floor((tSelesai - tMulai) / 1000);
+        const menit = Math.floor(durasiDetik / 60);
+        const detik = durasiDetik % 60;
+        const batasDetik = (jackpotLimitMinutes * 60) - 1;
+        const isOverLimit = durasiDetik > batasDetik;
+        const status = isOverLimit ? 'Telat' : 'Selesai';
+        const tanggal = tMulai.toLocaleDateString('id-ID');
+        const waktuMulai = tMulai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const waktuSelesai = tSelesai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const roleLabel = ROLE_LABELS[item.role] || item.role;
 
-                csv +=
-                    `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${status}\n`;
-            });
+        csv += `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${status}\n`;
+    });
 
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `history-izin-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            showToast('✅ CSV berhasil diexport!', 'success');
-        };
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    
+    // Nama file dengan informasi filter
+    let fileName = 'history-izin';
+    if (selectedDate) fileName += `-${selectedDate}`;
+    if (selectedNama) fileName += `-${selectedNama}`;
+    a.download = `${fileName}.csv`;
+    
+    a.href = url;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    let filterInfo = [];
+    if (selectedDate) filterInfo.push(new Date(selectedDate).toLocaleDateString('id-ID'));
+    if (selectedNama) filterInfo.push(`"${selectedNama}"`);
+    if (selectedRole) filterInfo.push(`Role ${selectedRole}`);
+    const info = filterInfo.length > 0 ? filterInfo.join(', ') : 'Semua data';
+    showToast(`✅ Export ${info} berhasil! (${dataToExport.length} data)`, 'success');
+};
 
         // ============================================================
         // CLOCK
