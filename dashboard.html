@@ -5340,6 +5340,9 @@
         async function loadDataFromDatabase() {
             if (isLoading) return;
             isLoading = true;
+            
+            // 🔥 Sembunyikan tooltip saat loading dimulai
+            hideTooltip();
 
             isDataReady = false;
             disableStartButtons();
@@ -6697,7 +6700,7 @@
 
                     const loadingClass = !isDataReady ? 'loading-state' : '';
                     
-                    // 🔥 Data untuk tooltip disimpan di data-* attributes
+                    // 🔥 Data untuk tooltip - dihitung dengan baik
                     let tooltipIcon = '⏳';
                     let tooltipTitle = 'Informasi';
                     let tooltipDesc = '';
@@ -6708,6 +6711,9 @@
                     const isQuotaFull = used >= maxQuota;
                     const isLimitFull = !canUserIzinLive(nama);
                     
+                    // 🔥 Hanya buat tooltip jika ada alasan yang valid
+                    let hasTooltipData = false;
+                    
                     if (isQuotaFull) {
                         tooltipIcon = '📊';
                         tooltipTitle = 'Kuota Penuh';
@@ -6715,6 +6721,7 @@
                         tooltipStatusText = '❌ Tidak dapat START';
                         tooltipStatusClass = 'danger';
                         tooltipFooter = 'Hubungi Leader atau CS Line';
+                        hasTooltipData = true;
                     } else if (isLimitFull) {
                         tooltipIcon = '⏳';
                         tooltipTitle = 'Sedang Ada Izin';
@@ -6722,6 +6729,7 @@
                         tooltipStatusText = '⏳ Mohon tunggu';
                         tooltipStatusClass = 'warning';
                         tooltipFooter = 'Coba beberapa saat lagi';
+                        hasTooltipData = true;
                     } else if (!isLeaderOrCsLine && !isCurrentUser) {
                         tooltipIcon = '🔒';
                         tooltipTitle = 'Akses Terbatas';
@@ -6729,18 +6737,24 @@
                         tooltipStatusText = 'ℹ️ Hanya untuk akun sendiri';
                         tooltipStatusClass = 'info';
                         tooltipFooter = 'Silakan gunakan akun Anda sendiri';
+                        hasTooltipData = true;
                     }
+
+                    // 🔥 Hanya tambahkan data tooltip jika ada data yang valid
+                    const tooltipAttrs = hasTooltipData ? `
+                        data-tooltip-icon="${tooltipIcon}"
+                        data-tooltip-title="${tooltipTitle}"
+                        data-tooltip-desc="${tooltipDesc}"
+                        data-tooltip-status="${tooltipStatusText}"
+                        data-tooltip-status-class="${tooltipStatusClass}"
+                        data-tooltip-footer="${tooltipFooter}"
+                    ` : '';
 
                     actionHTML = `
                             <button class="btn-action start ${loadingClass}" 
                                     onclick="mulaiIzin('${nama}')" 
                                     data-nama="${nama}"
-                                    data-tooltip-icon="${tooltipIcon}"
-                                    data-tooltip-title="${tooltipTitle}"
-                                    data-tooltip-desc="${tooltipDesc}"
-                                    data-tooltip-status="${tooltipStatusText}"
-                                    data-tooltip-status-class="${tooltipStatusClass}"
-                                    data-tooltip-footer="${tooltipFooter}"
+                                    ${tooltipAttrs}
                                     ${!canStart || !isDataReady ? 'disabled' : ''}
                                     style="position:relative;">
                                 <span class="icon">▶</span> START
@@ -6829,9 +6843,20 @@
             renderLiveIzin();
         };
 
-        // 🔥 Handler untuk tooltip START - dipisahkan agar bisa di-reuse
+        // 🔥 Handler untuk tooltip START - dengan pengecekan data kosong
         function handleStartMouseEnter(e) {
             const btn = e.currentTarget;
+            
+            // 🔥 CEK: Jika data tooltip kosong, jangan tampilkan tooltip
+            const hasData = btn.dataset.tooltipTitle && 
+                            btn.dataset.tooltipTitle !== 'Informasi' &&
+                            btn.dataset.tooltipDesc && 
+                            btn.dataset.tooltipDesc !== '';
+            
+            if (!hasData) {
+                // Tooltip data kosong, abaikan
+                return;
+            }
             
             // Batalkan timer sebelumnya
             if (tooltipTimeout) {
@@ -6861,8 +6886,11 @@
                 clearTimeout(tooltipTimeout);
                 tooltipTimeout = null;
             }
-            // Sembunyikan tooltip
-            hideTooltip();
+            
+            // 🔥 Force hide dengan delay kecil untuk memastikan
+            setTimeout(() => {
+                hideTooltip();
+            }, 50);
         }
 
         // ============================================================
