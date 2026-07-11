@@ -6369,7 +6369,7 @@
                                     <span class="icon">▶</span> START
                                 </button>
                                 ${(!canStart || !isDataReady) ? `
-                                <div class="voucher-tooltip" style="position:fixed; pointer-events:none; opacity:0; transition:opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); transform:translateY(6px) scale(0.96); max-width:260px; white-space:normal; line-height:1.5; padding:12px 18px; border-radius:12px; font-size:11px; color:var(--text-secondary); font-weight:400; letter-spacing:0.3px; box-shadow:0 16px 48px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.05); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:10000; border-top:2px solid rgba(0,229,255,0.15); background:var(--bg-card); border:1px solid var(--border-color);">
+                                <div class="voucher-tooltip start-tooltip" style="position:fixed; pointer-events:none; opacity:0; transition:opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); transform:translateY(6px) scale(0.96); max-width:260px; white-space:normal; line-height:1.5; padding:12px 18px; border-radius:12px; font-size:11px; color:var(--text-secondary); font-weight:400; letter-spacing:0.3px; box-shadow:0 16px 48px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.05); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:10000; border-top:2px solid rgba(0,229,255,0.15); background:var(--bg-card); border:1px solid var(--border-color);">
                                     <div style="display:flex; align-items:center; gap:8px;">
                                         <span style="font-size:16px; flex-shrink:0;">${tooltipIcon}</span>
                                         <div>
@@ -6436,24 +6436,40 @@
                     `;
             }).join('');
 
-            // 🔥 EVENT LISTENER UNTUK TOOLTIP START BUTTON
-            document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
-                const tooltip = btn.parentElement.querySelector('.voucher-tooltip');
-                if (!tooltip) return;
-                
-                btn.addEventListener('mouseenter', function(e) {
-                    const rect = btn.getBoundingClientRect();
-                    tooltip.style.left = (rect.left + rect.width / 2 - 130) + 'px';
-                    tooltip.style.top = (rect.top - 80) + 'px';
-                    tooltip.style.opacity = '1';
-                    tooltip.style.transform = 'translateY(0) scale(1)';
-                });
-                
-                btn.addEventListener('mouseleave', function() {
-                    tooltip.style.opacity = '0';
-                    tooltip.style.transform = 'translateY(6px) scale(0.96)';
-                });
-            });
+            // 🔥 EVENT LISTENER UNTUK TOOLTIP START BUTTON - DENGAN DELAY 400ms
+document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
+    const tooltip = btn.parentElement.querySelector('.voucher-tooltip.start-tooltip');
+    if (!tooltip) return;
+    
+    let tooltipTimer = null;
+    
+    btn.addEventListener('mouseenter', function(e) {
+        // Hapus timer sebelumnya jika ada
+        if (tooltipTimer) {
+            clearTimeout(tooltipTimer);
+            tooltipTimer = null;
+        }
+        
+        // Set timer 400ms sebelum tooltip muncul
+        tooltipTimer = setTimeout(() => {
+            const rect = btn.getBoundingClientRect();
+            tooltip.style.left = (rect.left + rect.width / 2 - 130) + 'px';
+            tooltip.style.top = (rect.top - 80) + 'px';
+            tooltip.style.opacity = '1';
+            tooltip.style.transform = 'translateY(0) scale(1)';
+        }, 400);
+    });
+    
+    btn.addEventListener('mouseleave', function() {
+        // Batalkan timer jika mouse keluar sebelum 400ms
+        if (tooltipTimer) {
+            clearTimeout(tooltipTimer);
+            tooltipTimer = null;
+        }
+        tooltip.style.opacity = '0';
+        tooltip.style.transform = 'translateY(6px) scale(0.96)';
+    });
+});
 
             // 🔥 VOUCHER TOOLTIP EVENT LISTENERS
             document.querySelectorAll('.voucher-badge').forEach(function(el) {
