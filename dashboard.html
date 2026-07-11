@@ -1885,6 +1885,12 @@
             border-top: 2px solid rgba(0, 229, 255, 0.15);
         }
 
+/* 🔥 STICKY TOOLTIP - Tetap terlihat saat hover */
+.voucher-tooltip.tooltip-active {
+    opacity: 1 !important;
+    transform: translateY(0) scale(1) !important;
+}
+
         [data-theme="dark"] .voucher-tooltip {
             background: rgba(13, 18, 48, 0.95);
             border: 1px solid rgba(0, 229, 255, 0.1);
@@ -6436,7 +6442,7 @@
                     `;
             }).join('');
 
-            // 🔥 EVENT LISTENER UNTUK TOOLTIP START BUTTON - DENGAN DELAY 400ms
+            // 🔥 EVENT LISTENER UNTUK TOOLTIP START BUTTON - STICKY VERSION
 document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
     const tooltip = btn.parentElement.querySelector('.voucher-tooltip.start-tooltip');
     if (!tooltip) return;
@@ -6450,24 +6456,24 @@ document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
             tooltipTimer = null;
         }
         
-        // Set timer 400ms sebelum tooltip muncul
+        // Set timer 300ms sebelum tooltip muncul
         tooltipTimer = setTimeout(() => {
             const rect = btn.getBoundingClientRect();
             tooltip.style.left = (rect.left + rect.width / 2 - 130) + 'px';
             tooltip.style.top = (rect.top - 80) + 'px';
-            tooltip.style.opacity = '1';
-            tooltip.style.transform = 'translateY(0) scale(1)';
+            // 🔥 Gunakan class, bukan inline style
+            tooltip.classList.add('tooltip-active');
         }, 300);
     });
     
     btn.addEventListener('mouseleave', function() {
-        // Batalkan timer jika mouse keluar sebelum 400ms
+        // Batalkan timer jika mouse keluar sebelum 300ms
         if (tooltipTimer) {
             clearTimeout(tooltipTimer);
             tooltipTimer = null;
         }
-        tooltip.style.opacity = '0';
-        tooltip.style.transform = 'translateY(6px) scale(0.96)';
+        // 🔥 Hapus class untuk menyembunyikan tooltip
+        tooltip.classList.remove('tooltip-active');
     });
 });
 
