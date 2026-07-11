@@ -1859,29 +1859,37 @@
         }
 
         /* ============================================================
-           VOUCHER TOOLTIP
+           VOUCHER TOOLTIP - PREMIUM LIGHT MODE FIX
            ============================================================ */
         .voucher-tooltip {
             position: fixed;
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            padding: 8px 14px;
-            border-radius: 10px;
+            padding: 12px 18px;
+            border-radius: 12px;
             font-size: 11px;
             color: var(--text-secondary);
             font-weight: 400;
             letter-spacing: 0.3px;
-            box-shadow: var(--shadow-xl);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             z-index: 10000;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            transform: translateY(4px) scale(0.96);
-            max-width: 220px;
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(6px) scale(0.96);
+            max-width: 260px;
             white-space: normal;
-            line-height: 1.4;
+            line-height: 1.5;
+            border-top: 2px solid rgba(0, 229, 255, 0.15);
+        }
+
+        [data-theme="dark"] .voucher-tooltip {
+            background: rgba(13, 18, 48, 0.95);
+            border: 1px solid rgba(0, 229, 255, 0.1);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-top: 2px solid rgba(0, 229, 255, 0.2);
         }
 
         .voucher-tooltip.visible {
@@ -1890,26 +1898,62 @@
         }
 
         .voucher-tooltip .tooltip-icon {
-            font-size: 14px;
-            margin-right: 6px;
+            font-size: 16px;
+            margin-right: 8px;
+            flex-shrink: 0;
         }
 
         .voucher-tooltip .tooltip-title {
-            color: #ffd700;
-            font-weight: 600;
-            font-size: 12px;
+            color: #00e5ff;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        [data-theme="dark"] .voucher-tooltip .tooltip-title {
+            color: #00e5ff;
         }
 
         .voucher-tooltip .tooltip-desc {
-            font-size: 10px;
+            font-size: 11px;
             color: var(--text-muted);
-            margin-top: 2px;
+            margin-top: 3px;
+        }
+
+        [data-theme="dark"] .voucher-tooltip .tooltip-desc {
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .voucher-tooltip .tooltip-divider {
             height: 1px;
             background: var(--border-color);
-            margin: 4px 0;
+            margin: 6px 0;
+            opacity: 0.5;
+        }
+
+        [data-theme="dark"] .voucher-tooltip .tooltip-divider {
+            background: rgba(0, 229, 255, 0.08);
+        }
+
+        .voucher-tooltip .tooltip-status {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 0;
+        }
+
+        .voucher-tooltip .tooltip-status.warning {
+            color: var(--warning);
+        }
+
+        .voucher-tooltip .tooltip-status.danger {
+            color: var(--danger);
+        }
+
+        .voucher-tooltip .tooltip-status.success {
+            color: var(--success);
+        }
+
+        .voucher-tooltip .tooltip-status.info {
+            color: var(--info);
         }
 
         .voucher-tooltip::before {
@@ -1919,22 +1963,28 @@
             left: 20%;
             right: 20%;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.15), transparent);
+            background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.2), transparent);
         }
 
         .voucher-tooltip::after {
             content: '';
             position: absolute;
-            bottom: -6px;
+            bottom: -7px;
             left: 50%;
             transform: translateX(-50%);
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: var(--bg-card);
             border-right: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
             transform: translateX(-50%) rotate(45deg);
-            border-radius: 0 0 2px 0;
+            border-radius: 0 0 3px 0;
+        }
+
+        [data-theme="dark"] .voucher-tooltip::after {
+            background: rgba(13, 18, 48, 0.95);
+            border-right: 1px solid rgba(0, 229, 255, 0.08);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.08);
         }
 
         .voucher-badge:hover .voucher-tooltip {
@@ -4439,6 +4489,9 @@
 
         let isDataReady = false;
 
+        // 🔥 NEW: Lock untuk mencegah double-click END
+        let endLock = {};
+
         // ============================================================
         // THEME FUNCTIONS - PREMIUM
         // ============================================================
@@ -5122,57 +5175,57 @@
         // UPDATE PROFILE DROPDOWN - FULL
         // ============================================================
         function updateProfileDropdown() {
-    const userVoucher = getCurrentUserName() ? getVoucherCount(getCurrentUserName()) : 0;
-    const userName = getCurrentUserName() || 'User';
-    const userEmail = currentUser?.email || 'user@email.com';
-    const avatarUrl = currentUser?.user_metadata?.avatar_url || 
-                     `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=52`;
+            const userVoucher = getCurrentUserName() ? getVoucherCount(getCurrentUserName()) : 0;
+            const userName = getCurrentUserName() || 'User';
+            const userEmail = currentUser?.email || 'user@email.com';
+            const avatarUrl = currentUser?.user_metadata?.avatar_url || 
+                             `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=52`;
 
-    // Update voucher
-    const voucherEl = document.getElementById('dropdownVoucher');
-    if (voucherEl) voucherEl.textContent = userVoucher;
+            // Update voucher
+            const voucherEl = document.getElementById('dropdownVoucher');
+            if (voucherEl) voucherEl.textContent = userVoucher;
 
-    // Update nama
-    const nameEl = document.getElementById('dropdownName');
-    if (nameEl) nameEl.textContent = userName;
+            // Update nama
+            const nameEl = document.getElementById('dropdownName');
+            if (nameEl) nameEl.textContent = userName;
 
-    // Update avatar di dropdown
-    const avatarEl = document.getElementById('dropdownAvatar');
-    if (avatarEl) avatarEl.src = avatarUrl;
+            // Update avatar di dropdown
+            const avatarEl = document.getElementById('dropdownAvatar');
+            if (avatarEl) avatarEl.src = avatarUrl;
 
-    // Update email
-    const emailEl = document.getElementById('dropdownEmail');
-    if (emailEl) emailEl.textContent = userEmail;
+            // Update email
+            const emailEl = document.getElementById('dropdownEmail');
+            if (emailEl) emailEl.textContent = userEmail;
 
-    // Update role badge
-    const roleBadge = document.getElementById('dropdownRoleBadge');
-    if (roleBadge) {
-        const roleLabels = {
-            leader: '👑 Leader',
-            csline: '⭐ CS Line',
-            cs: '💬 CS',
-            kapten: '⚓ Kapten',
-            kasir: '💰 Kasir'
-        };
-        roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
-    }
+            // Update role badge
+            const roleBadge = document.getElementById('dropdownRoleBadge');
+            if (roleBadge) {
+                const roleLabels = {
+                    leader: '👑 Leader',
+                    csline: '⭐ CS Line',
+                    cs: '💬 CS',
+                    kapten: '⚓ Kapten',
+                    kasir: '💰 Kasir'
+                };
+                roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+            }
 
-    // Update role text (old style - fallback)
-    const roleEl = document.getElementById('dropdownRole');
-    if (roleEl) {
-        const roleLabels = {
-            leader: '👑 Leader',
-            csline: '⭐ CS Line',
-            cs: '💬 CS',
-            kapten: '⚓ Kapten',
-            kasir: '💰 Kasir'
-        };
-        roleEl.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
-    }
+            // Update role text (old style - fallback)
+            const roleEl = document.getElementById('dropdownRole');
+            if (roleEl) {
+                const roleLabels = {
+                    leader: '👑 Leader',
+                    csline: '⭐ CS Line',
+                    cs: '💬 CS',
+                    kapten: '⚓ Kapten',
+                    kasir: '💰 Kasir'
+                };
+                roleEl.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+            }
 
-    // Update quick stats
-    updateQuickStats();
-}
+            // Update quick stats
+            updateQuickStats();
+        }
 
         // ============================================================
         // ENABLE / DISABLE START BUTTONS
@@ -5296,74 +5349,74 @@
             }
 
             if (TEST_MODE) {
-    console.log('🧪 TEST MODE - Bypassing login...');
-    currentUser = {
-        email: 'test@leader.com',
-        user_metadata: { full_name: 'Test Leader' }
-    };
-    currentUserRole = 'leader';
-    userPermissions = ROLE_PERMISSIONS.leader;
+                console.log('🧪 TEST MODE - Bypassing login...');
+                currentUser = {
+                    email: 'test@leader.com',
+                    user_metadata: { full_name: 'Test Leader' }
+                };
+                currentUserRole = 'leader';
+                userPermissions = ROLE_PERMISSIONS.leader;
 
-    const userNameEl = document.getElementById('userName');
-    const userEmailEl = document.getElementById('userEmail');
-    const userRoleEl = document.getElementById('userRole');
-    const menuSettings = document.getElementById('menuSettings');
-    const menuManagement = document.getElementById('menuManagement');
-    const menuVoucher = document.getElementById('menuVoucher');
-    const userAvatar = document.getElementById('userAvatar');
-    const profileAvatar = document.getElementById('profileAvatar');
-    const dropdownName = document.getElementById('dropdownName');
-    const dropdownRole = document.getElementById('dropdownRole');
-    const welcomeUsername = document.getElementById('welcomeUsername');
-    const badgeRole = document.querySelector('.welcome-banner .badge-role');
-    const lockedNotice = document.getElementById('lockedNotice');
+                const userNameEl = document.getElementById('userName');
+                const userEmailEl = document.getElementById('userEmail');
+                const userRoleEl = document.getElementById('userRole');
+                const menuSettings = document.getElementById('menuSettings');
+                const menuManagement = document.getElementById('menuManagement');
+                const menuVoucher = document.getElementById('menuVoucher');
+                const userAvatar = document.getElementById('userAvatar');
+                const profileAvatar = document.getElementById('profileAvatar');
+                const dropdownName = document.getElementById('dropdownName');
+                const dropdownRole = document.getElementById('dropdownRole');
+                const welcomeUsername = document.getElementById('welcomeUsername');
+                const badgeRole = document.querySelector('.welcome-banner .badge-role');
+                const lockedNotice = document.getElementById('lockedNotice');
 
-    if (userNameEl) userNameEl.textContent = formatName('Test Leader (TEST MODE)');
-    if (userEmailEl) userEmailEl.textContent = formatEmail('test@leader.com');
-    if (userRoleEl) {
-        userRoleEl.textContent = '💰 Kasir';
-        userRoleEl.className = 'role-badge kasir';
-    }
-    if (menuSettings) menuSettings.style.display = 'flex';
-    if (menuManagement) menuManagement.style.display = 'flex';
-    if (menuVoucher) menuVoucher.style.display = 'flex';
-    if (userAvatar) userAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader';
-    if (profileAvatar) profileAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader';
-    if (dropdownName) dropdownName.textContent = formatName('Test Leader (TEST MODE)');
-    if (dropdownRole) dropdownRole.textContent = '👑 Leader';
+                if (userNameEl) userNameEl.textContent = formatName('Test Leader (TEST MODE)');
+                if (userEmailEl) userEmailEl.textContent = formatEmail('test@leader.com');
+                if (userRoleEl) {
+                    userRoleEl.textContent = '💰 Kasir';
+                    userRoleEl.className = 'role-badge kasir';
+                }
+                if (menuSettings) menuSettings.style.display = 'flex';
+                if (menuManagement) menuManagement.style.display = 'flex';
+                if (menuVoucher) menuVoucher.style.display = 'flex';
+                if (userAvatar) userAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader';
+                if (profileAvatar) profileAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader';
+                if (dropdownName) dropdownName.textContent = formatName('Test Leader (TEST MODE)');
+                if (dropdownRole) dropdownRole.textContent = '👑 Leader';
 
-    // Elemen baru di dropdown
-    const dropdownAvatar = document.getElementById('dropdownAvatar');
-    if (dropdownAvatar) {
-        dropdownAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader&size=52';
-    }
+                // Elemen baru di dropdown
+                const dropdownAvatar = document.getElementById('dropdownAvatar');
+                if (dropdownAvatar) {
+                    dropdownAvatar.src = 'https://ui-avatars.com/api/?name=Test+Leader&size=52';
+                }
 
-    const dropdownEmail = document.getElementById('dropdownEmail');
-    if (dropdownEmail) {
-        dropdownEmail.textContent = formatEmail('test@leader.com');
-    }
+                const dropdownEmail = document.getElementById('dropdownEmail');
+                if (dropdownEmail) {
+                    dropdownEmail.textContent = formatEmail('test@leader.com');
+                }
 
-    const roleBadge = document.getElementById('dropdownRoleBadge');
-    if (roleBadge) {
-        roleBadge.textContent = '👑 Leader';
-    }
+                const roleBadge = document.getElementById('dropdownRoleBadge');
+                if (roleBadge) {
+                    roleBadge.textContent = '👑 Leader';
+                }
 
-    if (welcomeUsername) welcomeUsername.textContent = 'Test Leader';
-    if (badgeRole) badgeRole.innerHTML = '<span class="icon">👑</span> Leader';
-    if (lockedNotice) lockedNotice.style.display = 'none';
+                if (welcomeUsername) welcomeUsername.textContent = 'Test Leader';
+                if (badgeRole) badgeRole.innerHTML = '<span class="icon">👑</span> Leader';
+                if (lockedNotice) lockedNotice.style.display = 'none';
 
-    updateGreeting();
+                updateGreeting();
 
-    loadSettings();
-    await loadDummyData();
-    await loadDummyUsers();
-    startTimerUpdates();
-    startClock();
-    renderTicker();
-    updateQuickStats();
-    console.log('✅ TEST MODE - Dashboard siap!');
-    return;
-}
+                loadSettings();
+                await loadDummyData();
+                await loadDummyUsers();
+                startTimerUpdates();
+                startClock();
+                renderTicker();
+                updateQuickStats();
+                console.log('✅ TEST MODE - Dashboard siap!');
+                return;
+            }
 
             try {
                 const { data: { session }, error } = await supabaseDashboard.auth.getSession();
@@ -5481,125 +5534,125 @@
         // UPDATE USER UI - FULL
         // ============================================================
         function updateUserUI() {
-    // 🔥 Sembunyikan flash saat update
-    const flashElements = document.querySelectorAll(
-        '.sidebar-footer .user-info .name, .sidebar-footer .user-info .email, .sidebar-footer .user-info .role-badge, .welcome-banner .welcome-left .text .username, .welcome-banner .welcome-right .badge-role'
-        );
-    flashElements.forEach(el => el.classList.add('loading-flash'));
+            // 🔥 Sembunyikan flash saat update
+            const flashElements = document.querySelectorAll(
+                '.sidebar-footer .user-info .name, .sidebar-footer .user-info .email, .sidebar-footer .user-info .role-badge, .welcome-banner .welcome-left .text .username, .welcome-banner .welcome-right .badge-role'
+            );
+            flashElements.forEach(el => el.classList.add('loading-flash'));
 
-    const roleLabel = userPermissions.label || 'User';
-    const roleIcon = userPermissions.icon || '👤';
-    const userNameDisplay = getCurrentUserName();
-    const userEmail = formatEmail(currentUser?.email || '');
+            const roleLabel = userPermissions.label || 'User';
+            const roleIcon = userPermissions.icon || '👤';
+            const userNameDisplay = getCurrentUserName();
+            const userEmail = formatEmail(currentUser?.email || '');
 
-    console.log(`🔄 Update UI: Role = ${currentUserRole}, Label = ${roleLabel}`);
+            console.log(`🔄 Update UI: Role = ${currentUserRole}, Label = ${roleLabel}`);
 
-    // Update sidebar
-    const userNameEl = document.getElementById('userName');
-    const userEmailEl = document.getElementById('userEmail');
-    const userRoleEl = document.getElementById('userRole');
-    if (userNameEl) userNameEl.textContent = userNameDisplay || 'User';
-    if (userEmailEl) userEmailEl.textContent = userEmail;
-    if (userRoleEl) {
-        userRoleEl.textContent = `${roleIcon} ${roleLabel}`;
-        userRoleEl.className = `role-badge ${currentUserRole}`;
-    }
+            // Update sidebar
+            const userNameEl = document.getElementById('userName');
+            const userEmailEl = document.getElementById('userEmail');
+            const userRoleEl = document.getElementById('userRole');
+            if (userNameEl) userNameEl.textContent = userNameDisplay || 'User';
+            if (userEmailEl) userEmailEl.textContent = userEmail;
+            if (userRoleEl) {
+                userRoleEl.textContent = `${roleIcon} ${roleLabel}`;
+                userRoleEl.className = `role-badge ${currentUserRole}`;
+            }
 
-    // Update avatar
-    const avatarUrl = currentUser?.user_metadata?.avatar_url ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay || 'User')}`;
-    const userAvatar = document.getElementById('userAvatar');
-    const profileAvatar = document.getElementById('profileAvatar');
-    if (userAvatar) userAvatar.src = avatarUrl;
-    if (profileAvatar) profileAvatar.src = avatarUrl;
+            // Update avatar
+            const avatarUrl = currentUser?.user_metadata?.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(userNameDisplay || 'User')}`;
+            const userAvatar = document.getElementById('userAvatar');
+            const profileAvatar = document.getElementById('profileAvatar');
+            if (userAvatar) userAvatar.src = avatarUrl;
+            if (profileAvatar) profileAvatar.src = avatarUrl;
 
-    // Update dropdown - dengan pengecekan null
-    const dropdownName = document.getElementById('dropdownName');
-    const dropdownRole = document.getElementById('dropdownRole');
-    if (dropdownName) dropdownName.textContent = userNameDisplay || 'User';
-    if (dropdownRole) dropdownRole.textContent = `${roleIcon} ${roleLabel}`;
+            // Update dropdown - dengan pengecekan null
+            const dropdownName = document.getElementById('dropdownName');
+            const dropdownRole = document.getElementById('dropdownRole');
+            if (dropdownName) dropdownName.textContent = userNameDisplay || 'User';
+            if (dropdownRole) dropdownRole.textContent = `${roleIcon} ${roleLabel}`;
 
-    // 🔥 UPDATE DROPDOWN AVATAR
-    const dropdownAvatar = document.getElementById('dropdownAvatar');
-    if (dropdownAvatar) {
-        dropdownAvatar.src = avatarUrl;
-    }
+            // 🔥 UPDATE DROPDOWN AVATAR
+            const dropdownAvatar = document.getElementById('dropdownAvatar');
+            if (dropdownAvatar) {
+                dropdownAvatar.src = avatarUrl;
+            }
 
-    // 🔥 UPDATE DROPDOWN ROLE BADGE
-    const roleBadge = document.getElementById('dropdownRoleBadge');
-    if (roleBadge) {
-        const roleLabels = {
-            leader: '👑 Leader',
-            csline: '⭐ CS Line',
-            cs: '💬 CS',
-            kapten: '⚓ Kapten',
-            kasir: '💰 Kasir'
-        };
-        roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
-    }
+            // 🔥 UPDATE DROPDOWN ROLE BADGE
+            const roleBadge = document.getElementById('dropdownRoleBadge');
+            if (roleBadge) {
+                const roleLabels = {
+                    leader: '👑 Leader',
+                    csline: '⭐ CS Line',
+                    cs: '💬 CS',
+                    kapten: '⚓ Kapten',
+                    kasir: '💰 Kasir'
+                };
+                roleBadge.textContent = roleLabels[currentUserRole] || currentUserRole || 'User';
+            }
 
-    // 🔥 UPDATE DROPDOWN EMAIL - dengan pengecekan null
-    const dropdownEmail = document.getElementById('dropdownEmail');
-    if (dropdownEmail) {
-        dropdownEmail.textContent = currentUser?.email || 'user@email.com';
-    }
+            // 🔥 UPDATE DROPDOWN EMAIL - dengan pengecekan null
+            const dropdownEmail = document.getElementById('dropdownEmail');
+            if (dropdownEmail) {
+                dropdownEmail.textContent = currentUser?.email || 'user@email.com';
+            }
 
-    // Update welcome banner
-    const welcomeUsername = document.getElementById('welcomeUsername');
-    const badgeRole = document.querySelector('.welcome-banner .badge-role');
-    if (welcomeUsername) welcomeUsername.textContent = userNameDisplay || 'User';
-    if (badgeRole) badgeRole.innerHTML = `<span class="icon">${roleIcon}</span> ${roleLabel}`;
-    updateGreeting();
+            // Update welcome banner
+            const welcomeUsername = document.getElementById('welcomeUsername');
+            const badgeRole = document.querySelector('.welcome-banner .badge-role');
+            if (welcomeUsername) welcomeUsername.textContent = userNameDisplay || 'User';
+            if (badgeRole) badgeRole.innerHTML = `<span class="icon">${roleIcon}</span> ${roleLabel}`;
+            updateGreeting();
 
-    // Menu visibility
-    const menuManagement = document.getElementById('menuManagement');
-    const menuSettings = document.getElementById('menuSettings');
-    const menuVoucher = document.getElementById('menuVoucher');
-    if (menuManagement) menuManagement.style.display = 'flex';
-    if (menuSettings) menuSettings.style.display = userPermissions.canViewSettings ? 'flex' : 'none';
-    if (menuVoucher) menuVoucher.style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
+            // Menu visibility
+            const menuManagement = document.getElementById('menuManagement');
+            const menuSettings = document.getElementById('menuSettings');
+            const menuVoucher = document.getElementById('menuVoucher');
+            if (menuManagement) menuManagement.style.display = 'flex';
+            if (menuSettings) menuSettings.style.display = userPermissions.canViewSettings ? 'flex' : 'none';
+            if (menuVoucher) menuVoucher.style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
 
-    // Settings view only
-    const canEdit = userPermissions.canEditSettings;
-    document.querySelectorAll('.view-only-indicator').forEach(el => {
-        el.style.display = canEdit ? 'none' : 'inline-flex';
-    });
+            // Settings view only
+            const canEdit = userPermissions.canEditSettings;
+            document.querySelectorAll('.view-only-indicator').forEach(el => {
+                el.style.display = canEdit ? 'none' : 'inline-flex';
+            });
 
-    const settingsInputs = document.querySelectorAll('.settings-card input, .settings-card textarea');
-    settingsInputs.forEach(input => {
-        if (!canEdit) {
-            input.disabled = true;
-            input.style.cursor = 'not-allowed';
-            input.style.opacity = '0.6';
+            const settingsInputs = document.querySelectorAll('.settings-card input, .settings-card textarea');
+            settingsInputs.forEach(input => {
+                if (!canEdit) {
+                    input.disabled = true;
+                    input.style.cursor = 'not-allowed';
+                    input.style.opacity = '0.6';
+                }
+            });
+
+            const settingsButtons = document.querySelectorAll('.settings-card .btn-settings');
+            settingsButtons.forEach(btn => {
+                if (!canEdit) {
+                    btn.disabled = true;
+                    btn.style.cursor = 'not-allowed';
+                    btn.style.opacity = '0.5';
+                }
+            });
+
+            const lockedNotice = document.getElementById('lockedNotice');
+            if (lockedNotice) lockedNotice.style.display = 'none';
+
+            // 🔥 Tampilkan setelah update selesai
+            setTimeout(() => {
+                flashElements.forEach(el => {
+                    el.classList.remove('loading-flash');
+                    el.classList.add('loading-flash-show');
+                });
+            }, 50);
+
+            // 🔥 Aktifkan tombol setelah UI siap
+            enableStartButtons();
+
+            // 🔥 Update voucher di dropdown
+            updateProfileDropdown();
         }
-    });
-
-    const settingsButtons = document.querySelectorAll('.settings-card .btn-settings');
-    settingsButtons.forEach(btn => {
-        if (!canEdit) {
-            btn.disabled = true;
-            btn.style.cursor = 'not-allowed';
-            btn.style.opacity = '0.5';
-        }
-    });
-
-    const lockedNotice = document.getElementById('lockedNotice');
-    if (lockedNotice) lockedNotice.style.display = 'none';
-
-    // 🔥 Tampilkan setelah update selesai
-    setTimeout(() => {
-        flashElements.forEach(el => {
-            el.classList.remove('loading-flash');
-            el.classList.add('loading-flash-show');
-        });
-    }, 50);
-
-    // 🔥 Aktifkan tombol setelah UI siap
-    enableStartButtons();
-
-    // 🔥 Update voucher di dropdown
-    updateProfileDropdown();
-}
 
         // ============================================================
         // DUMMY DATA - HANYA UNTUK TEST MODE
@@ -5786,8 +5839,18 @@
             showToast(`▶️ ${formattedNama} mulai izin!`, 'info');
         };
 
+        // ============================================================
+        // FUNGSI SELESAI IZIN - DENGAN LOCK UNTUK PREVENT DOUBLE END
+        // ============================================================
         window.selesaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
+
+            // 🔥 CEK LOCK - PREVENT DOUBLE END
+            if (endLock[formattedNama]) {
+                showToast(`⏳ ${formattedNama} sedang diproses, mohon tunggu...`, 'warning', 1500);
+                return;
+            }
+
             const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
                 'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
@@ -5804,113 +5867,147 @@
                 return;
             }
 
-            const selesaiTime = now.toISOString();
-            const durasiDetik = Math.floor((now - new Date(data.mulai)) / 1000);
+            // 🔥 SET LOCK
+            endLock[formattedNama] = true;
 
-            const batasDetik = (jackpotLimitMinutes * 60) - 1;
-            const isOverLimit = durasiDetik > batasDetik;
+            // 🔥 Disable tombol END sementara
+            const endButtons = document.querySelectorAll(`.btn-action.end[onclick*="${formattedNama}"]`);
+            endButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.textContent = '⏳ ...';
+            });
 
-            data.status = 'selesai';
-            data.selesai = selesaiTime;
+            try {
+                const selesaiTime = now.toISOString();
+                const durasiDetik = Math.floor((now - new Date(data.mulai)) / 1000);
 
-            const isQuotaValid = durasiDetik >= MIN_IZIN_DURATION_SECONDS;
+                const batasDetik = (jackpotLimitMinutes * 60) - 1;
+                const isOverLimit = durasiDetik > batasDetik;
 
-            const historyEntry = {
-                nama: formattedNama,
-                tanggal: data.tanggal,
-                mulai: data.mulai,
-                selesai: data.selesai,
-                status: 'selesai',
-                role: getRoleForUser(formattedNama),
-                durasiDetik: durasiDetik,
-                isQuotaValid: isQuotaValid
-            };
+                data.status = 'selesai';
+                data.selesai = selesaiTime;
 
-            historyData.push(historyEntry);
-            historyData.sort((a, b) => new Date(b.mulai) - new Date(a.mulai));
+                const isQuotaValid = durasiDetik >= MIN_IZIN_DURATION_SECONDS;
 
-            if (isQuotaValid) {
-                const today = new Date().toDateString();
-                const validHistory = historyData.filter(h =>
-                    h.nama === formattedNama &&
-                    h.tanggal === today &&
-                    h.status === 'selesai' &&
-                    h.durasiDetik >= MIN_IZIN_DURATION_SECONDS
-                );
+                const historyEntry = {
+                    nama: formattedNama,
+                    tanggal: data.tanggal,
+                    mulai: data.mulai,
+                    selesai: data.selesai,
+                    status: 'selesai',
+                    role: getRoleForUser(formattedNama),
+                    durasiDetik: durasiDetik,
+                    isQuotaValid: isQuotaValid
+                };
 
-                const usedCount = validHistory.length;
+                historyData.push(historyEntry);
+                historyData.sort((a, b) => new Date(b.mulai) - new Date(a.mulai));
+
+                if (isQuotaValid) {
+                    const today = new Date().toDateString();
+                    const validHistory = historyData.filter(h =>
+                        h.nama === formattedNama &&
+                        h.tanggal === today &&
+                        h.status === 'selesai' &&
+                        h.durasiDetik >= MIN_IZIN_DURATION_SECONDS
+                    );
+
+                    const usedCount = validHistory.length;
+                    const maxQuota = getMaxQuota(formattedNama);
+
+                    if (!quotaData[formattedNama] || quotaData[formattedNama].date !== today) {
+                        quotaData[formattedNama] = { count: 0, date: today };
+                    }
+                    quotaData[formattedNama].count = Math.min(usedCount, maxQuota);
+                }
+
+                if (isOverLimit) {
+                    addVoucher(formattedNama);
+                    pendingVoucherClaim = formattedNama;
+                }
+
+                dataIzin[formattedNama] = data;
+
+                if (!TEST_MODE) {
+                    try {
+                        await supabaseDashboard
+                            .from('izin_anggota')
+                            .upsert({
+                                nama: formattedNama,
+                                status: 'selesai',
+                                mulai: data.mulai,
+                                selesai: data.selesai,
+                                tanggal: data.tanggal,
+                                role: getRoleForUser(formattedNama)
+                            }, { onConflict: 'nama' });
+
+                        await supabaseDashboard
+                            .from('history')
+                            .insert({
+                                nama: formattedNama,
+                                tanggal: data.tanggal,
+                                mulai: data.mulai,
+                                selesai: data.selesai,
+                                status: 'selesai',
+                                role: getRoleForUser(formattedNama),
+                                durasi_detik: durasiDetik,
+                                is_quota_valid: isQuotaValid
+                            });
+
+                    } catch (err) {
+                        console.error('❌ Error simpan ke database:', err);
+                    }
+                }
+
+                renderAll();
+                updateCurrentCounts();
+                updateQuickStats();
+
+                const menit = Math.floor(durasiDetik / 60);
+                const detik = durasiDetik % 60;
+                const used = getUsedIzinToday(formattedNama);
                 const maxQuota = getMaxQuota(formattedNama);
 
-                if (!quotaData[formattedNama] || quotaData[formattedNama].date !== today) {
-                    quotaData[formattedNama] = { count: 0, date: today };
+                let pesan = `⏹️ Izin selesai! Durasi: ${menit}m ${detik}s`;
+
+                if (!isQuotaValid) {
+                    pesan += ` ⚠️ (Di bawah 2 menit, tidak mengurangi quota)`;
+                    showToast(pesan, 'warning', 4000);
+                } else {
+                    pesan += ` ✅ Quota: ${used}/${maxQuota}`;
+                    if (isOverLimit) {
+                        pesan += ` 🎫 +1 Voucher!`;
+                    }
+                    showToast(pesan, 'success', 4000);
                 }
-                quotaData[formattedNama].count = Math.min(usedCount, maxQuota);
-            }
 
-            if (isOverLimit) {
-                addVoucher(formattedNama);
-                pendingVoucherClaim = formattedNama;
-            }
-
-            dataIzin[formattedNama] = data;
-
-            if (!TEST_MODE) {
-                try {
-                    await supabaseDashboard
-                        .from('izin_anggota')
-                        .upsert({
-                            nama: formattedNama,
-                            status: 'selesai',
-                            mulai: data.mulai,
-                            selesai: data.selesai,
-                            tanggal: data.tanggal,
-                            role: getRoleForUser(formattedNama)
-                        }, { onConflict: 'nama' });
-
-                    await supabaseDashboard
-                        .from('history')
-                        .insert({
-                            nama: formattedNama,
-                            tanggal: data.tanggal,
-                            mulai: data.mulai,
-                            selesai: data.selesai,
-                            status: 'selesai',
-                            role: getRoleForUser(formattedNama),
-                            durasi_detik: durasiDetik,
-                            is_quota_valid: isQuotaValid
-                        });
-
-                } catch (err) {
-                    console.error('❌ Error simpan ke database:', err);
+                if (isOverLimit && !isJackpotShown[formattedNama]) {
+                    isJackpotShown[formattedNama] = true;
+                    setTimeout(() => {
+                        showJackpot();
+                    }, 500);
                 }
-            }
 
-            renderAll();
-            updateCurrentCounts();
-            updateQuickStats();
-
-            const menit = Math.floor(durasiDetik / 60);
-            const detik = durasiDetik % 60;
-            const used = getUsedIzinToday(formattedNama);
-            const maxQuota = getMaxQuota(formattedNama);
-
-            let pesan = `⏹️ Izin selesai! Durasi: ${menit}m ${detik}s`;
-
-            if (!isQuotaValid) {
-                pesan += ` ⚠️ (Di bawah 2 menit, tidak mengurangi quota)`;
-                showToast(pesan, 'warning', 4000);
-            } else {
-                pesan += ` ✅ Quota: ${used}/${maxQuota}`;
-                if (isOverLimit) {
-                    pesan += ` 🎫 +1 Voucher!`;
-                }
-                showToast(pesan, 'success', 4000);
-            }
-
-            if (isOverLimit && !isJackpotShown[formattedNama]) {
-                isJackpotShown[formattedNama] = true;
+            } catch (err) {
+                console.error('❌ Error selesai izin:', err);
+                showToast('❌ Gagal menyelesaikan izin: ' + err.message, 'error');
+            } finally {
+                // 🔥 UNLOCK setelah selesai
                 setTimeout(() => {
-                    showJackpot();
+                    endLock[formattedNama] = false;
+                    // 🔥 Refresh tombol END
+                    const endButtons = document.querySelectorAll(`.btn-action.end[onclick*="${formattedNama}"]`);
+                    endButtons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.innerHTML = '<span class="icon">■</span> END';
+                    });
+                }, 1000);
+
+                // 🔥 Reload data dari database untuk sync
+                setTimeout(() => {
+                    loadDataFromDatabase();
                 }, 500);
             }
         };
@@ -6052,7 +6149,7 @@
         }
 
         // ============================================================
-        // RENDER DASHBOARD TABLE
+        // RENDER DASHBOARD TABLE - DENGAN TOOLTIP PADA TOMBOL START
         // ============================================================
         window.renderDashboardTable = function() {
             const tbody = document.getElementById('dashboardTableBody');
@@ -6215,14 +6312,80 @@
                         `<span class="status-badge offline"><span class="dot"></span> Offline</span>`;
 
                     const loadingClass = !isDataReady ? 'loading-state' : '';
-                    actionHTML = `
-                            <button class="btn-action start ${loadingClass}" 
-                                    onclick="mulaiIzin('${nama}')" 
-                                    data-nama="${nama}"
-                                    ${!canStart || !isDataReady ? 'disabled' : ''}>
-                                <span class="icon">▶</span> START
-                            </button>
+                    
+                    // 🔥 BUAT TOOLTIP UNTUK TOMBOL START
+                    let tooltipHTML = '';
+                    let tooltipIcon = '⏳';
+                    let tooltipTitle = '';
+                    let tooltipDesc = '';
+                    let tooltipStatus = '';
+                    
+                    const isQuotaFull = used >= maxQuota;
+                    const isLimitFull = !canUserIzinLive(nama);
+                    
+                    if (isQuotaFull) {
+                        tooltipIcon = '🚫';
+                        tooltipTitle = 'Kuota Izin Penuh';
+                        tooltipDesc = `${nama} sudah menggunakan ${used} dari ${maxQuota} izin hari ini.`;
+                        tooltipStatus = 'danger';
+                    } else if (isLimitFull) {
+                        tooltipIcon = '⏳';
+                        tooltipTitle = 'Sedang Ada Izin';
+                        tooltipDesc = `Saat ini ada anggota ${roleLabel} yang sedang izin. Mohon tunggu.`;
+                        tooltipStatus = 'warning';
+                    } else if (!isLeaderOrCsLine && !isCurrentUser) {
+                        tooltipIcon = '🔒';
+                        tooltipTitle = 'Tidak Bisa START';
+                        tooltipDesc = `Anda hanya bisa memulai izin untuk diri sendiri.`;
+                        tooltipStatus = 'warning';
+                    }
+                    
+                    // Jika tombol disabled dan ada tooltip info
+                    if (!canStart || !isDataReady) {
+                        tooltipHTML = `
+                            <div class="voucher-tooltip" style="position:fixed; pointer-events:none; opacity:0; transition:opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); transform:translateY(6px) scale(0.96); max-width:260px; white-space:normal; line-height:1.5; padding:12px 18px; border-radius:12px; font-size:11px; color:var(--text-secondary); font-weight:400; letter-spacing:0.3px; box-shadow:0 16px 48px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.05); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:10000; border-top:2px solid rgba(0,229,255,0.15);">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:16px; flex-shrink:0;">${tooltipIcon}</span>
+                                    <div>
+                                        <div style="color:#00e5ff; font-weight:700; font-size:13px;">${tooltipTitle}</div>
+                                        <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">${tooltipDesc}</div>
+                                        <div style="font-size:11px; font-weight:500; padding:2px 0; color:${tooltipStatus === 'danger' ? 'var(--danger)' : tooltipStatus === 'warning' ? 'var(--warning)' : 'var(--info)'};">${tooltipStatus === 'danger' ? '⚠️ Kuota penuh' : tooltipStatus === 'warning' ? '⏳ Mohon tunggu' : 'ℹ️ Informasi'}</div>
+                                    </div>
+                                </div>
+                                <div style="height:1px; background:var(--border-color); margin:6px 0; opacity:0.5;"></div>
+                                <div style="font-size:10px; color:var(--text-muted);">💡 ${isQuotaFull ? 'Hubungi Leader atau CS Line untuk bantuan' : isLimitFull ? 'Coba beberapa saat lagi' : ''}</div>
+                                <div style="position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:12px; height:12px; background:var(--bg-card); border-right:1px solid var(--border-color); border-bottom:1px solid var(--border-color); transform:translateX(-50%) rotate(45deg); border-radius:0 0 3px 0;"></div>
+                            </div>
                         `;
+                    }
+
+                    actionHTML = `
+                            <div style="position:relative; display:inline-block;">
+                                <button class="btn-action start ${loadingClass}" 
+                                        onclick="mulaiIzin('${nama}')" 
+                                        data-nama="${nama}"
+                                        ${!canStart || !isDataReady ? 'disabled' : ''}
+                                        style="position:relative;">
+                                    <span class="icon">▶</span> START
+                                </button>
+                                ${(!canStart || !isDataReady) ? `
+                                <div class="voucher-tooltip" style="position:fixed; pointer-events:none; opacity:0; transition:opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); transform:translateY(6px) scale(0.96); max-width:260px; white-space:normal; line-height:1.5; padding:12px 18px; border-radius:12px; font-size:11px; color:var(--text-secondary); font-weight:400; letter-spacing:0.3px; box-shadow:0 16px 48px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.05); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:10000; border-top:2px solid rgba(0,229,255,0.15); background:var(--bg-card); border:1px solid var(--border-color);">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:16px; flex-shrink:0;">${tooltipIcon}</span>
+                                        <div>
+                                            <div style="color:#00e5ff; font-weight:700; font-size:13px;">${tooltipTitle}</div>
+                                            <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">${tooltipDesc}</div>
+                                            <div style="font-size:11px; font-weight:500; padding:2px 0; color:${tooltipStatus === 'danger' ? 'var(--danger)' : tooltipStatus === 'warning' ? 'var(--warning)' : 'var(--info)'};">${tooltipStatus === 'danger' ? '⚠️ Kuota penuh' : tooltipStatus === 'warning' ? '⏳ Mohon tunggu' : 'ℹ️ Informasi'}</div>
+                                        </div>
+                                    </div>
+                                    <div style="height:1px; background:var(--border-color); margin:6px 0; opacity:0.5;"></div>
+                                    <div style="font-size:10px; color:var(--text-muted);">💡 ${isQuotaFull ? 'Hubungi Leader atau CS Line untuk bantuan' : isLimitFull ? 'Coba beberapa saat lagi' : ''}</div>
+                                    <div style="position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:12px; height:12px; background:var(--bg-card); border-right:1px solid var(--border-color); border-bottom:1px solid var(--border-color); transform:translateX(-50%) rotate(45deg); border-radius:0 0 3px 0;"></div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    
                     progressHTML = `
                             <div class="progress-container" style="justify-content:center;">
                                 <span style="color:var(--text-muted);font-size:11px;font-weight:300;">-</span>
@@ -6273,6 +6436,26 @@
                     `;
             }).join('');
 
+            // 🔥 EVENT LISTENER UNTUK TOOLTIP START BUTTON
+            document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
+                const tooltip = btn.parentElement.querySelector('.voucher-tooltip');
+                if (!tooltip) return;
+                
+                btn.addEventListener('mouseenter', function(e) {
+                    const rect = btn.getBoundingClientRect();
+                    tooltip.style.left = (rect.left + rect.width / 2 - 130) + 'px';
+                    tooltip.style.top = (rect.top - 80) + 'px';
+                    tooltip.style.opacity = '1';
+                    tooltip.style.transform = 'translateY(0) scale(1)';
+                });
+                
+                btn.addEventListener('mouseleave', function() {
+                    tooltip.style.opacity = '0';
+                    tooltip.style.transform = 'translateY(6px) scale(0.96)';
+                });
+            });
+
+            // 🔥 VOUCHER TOOLTIP EVENT LISTENERS
             document.querySelectorAll('.voucher-badge').forEach(function(el) {
                 var tooltip = el.querySelector('.voucher-tooltip');
                 if (!tooltip) return;
