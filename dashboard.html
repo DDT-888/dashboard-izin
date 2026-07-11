@@ -4790,6 +4790,9 @@
         let tooltipTimeout = null;
         let isTooltipVisible = false;
 
+        // 🔥 Interval untuk periodic refresh
+        let refreshInterval = null;
+
         // ============================================================
         // THEME FUNCTIONS - PREMIUM
         // ============================================================
@@ -5293,6 +5296,42 @@
             if (!tooltipEl) return;
             tooltipEl.classList.remove('visible');
             isTooltipVisible = false;
+        }
+
+        // ============================================================
+        // 🔥 PERIODIC REFRESH - Setiap 60 detik dengan guard
+        // ============================================================
+        function startPeriodicRefresh() {
+            // Hapus interval lama jika ada
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+            
+            console.log('🔄 Periodic refresh started (60s interval)');
+            
+            refreshInterval = setInterval(() => {
+                // 🔥 Guard: Hanya refresh jika:
+                // 1. Tidak sedang loading
+                // 2. Tab aktif (visible)
+                // 3. Data sudah siap (isDataReady)
+                if (!isLoading && document.visibilityState === 'visible' && isDataReady) {
+                    console.log('🔄 Periodic refresh (60s): syncing data...');
+                    loadDataFromDatabase();
+                } else if (document.visibilityState === 'hidden') {
+                    console.log('⏸️ Skip periodic refresh: tab inactive');
+                } else if (isLoading) {
+                    console.log('⏸️ Skip periodic refresh: already loading');
+                }
+            }, 60000); // 60 detik
+        }
+
+        function stopPeriodicRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+                console.log('🔄 Periodic refresh stopped');
+            }
         }
 
         // ============================================================
@@ -7455,12 +7494,16 @@
         // TIMER UPDATES
         // ============================================================
         function startTimerUpdates() {
+            // Live timer (1 detik)
             setInterval(() => {
                 updateLiveTimers();
                 renderDashboardTable();
                 updateCurrentCounts();
                 renderLiveIzin();
             }, 1000);
+            
+            // 🔥 Periodic refresh (60 detik) - GUARD SUDAH DI DALAM FUNGSI
+            startPeriodicRefresh();
         }
 
         function updateLiveTimers() {
@@ -8164,6 +8207,9 @@
         };
 
         window.logout = async function() {
+            // 🔥 Stop periodic refresh sebelum logout
+            stopPeriodicRefresh();
+            
             if (TEST_MODE) {
                 showToast('🧪 TEST MODE: Logout tidak tersedia. Refresh halaman untuk reset.', 'warning');
                 return;
@@ -8215,6 +8261,18 @@
 
             renderTicker();
             checkAuth();
+
+            // 🔥 Listener untuk visibility change - refresh saat tab aktif kembali
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') {
+                    console.log('👁️ Tab became visible, checking data...');
+                    if (!isLoading && isDataReady) {
+                        loadDataFromDatabase();
+                    }
+                    // Restart interval untuk memastikan berjalan
+                    startPeriodicRefresh();
+                }
+            });
         });
     </script>
 
