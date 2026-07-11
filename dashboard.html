@@ -1885,11 +1885,11 @@
             border-top: 2px solid rgba(0, 229, 255, 0.15);
         }
 
-/* 🔥 STICKY TOOLTIP - Tetap terlihat saat hover */
-.voucher-tooltip.tooltip-active {
-    opacity: 1 !important;
-    transform: translateY(0) scale(1) !important;
-}
+        /* 🔥 STICKY TOOLTIP - Tetap terlihat saat hover */
+        .voucher-tooltip.tooltip-active {
+            opacity: 1 !important;
+            transform: translateY(0) scale(1) !important;
+        }
 
         [data-theme="dark"] .voucher-tooltip {
             background: rgba(13, 18, 48, 0.95);
@@ -3830,6 +3830,121 @@
             opacity: 1 !important;
             transition: opacity 0.3s ease;
         }
+
+        /* ============================================================
+           🔥 TOOLTIP GLOBAL - Untuk tooltip yang berdiri sendiri
+           ============================================================ */
+        #startTooltipGlobal {
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 10001;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(8px) scale(0.96);
+            max-width: 280px;
+            white-space: normal;
+            line-height: 1.5;
+            border-top: 2px solid rgba(0, 229, 255, 0.15);
+        }
+
+        [data-theme="dark"] #startTooltipGlobal {
+            background: rgba(13, 18, 48, 0.95);
+            border: 1px solid rgba(0, 229, 255, 0.1);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-top: 2px solid rgba(0, 229, 255, 0.2);
+        }
+
+        #startTooltipGlobal.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        #startTooltipGlobal .tooltip-icon {
+            font-size: 16px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        #startTooltipGlobal .tooltip-title {
+            color: #00e5ff;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        #startTooltipGlobal .tooltip-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        [data-theme="dark"] #startTooltipGlobal .tooltip-desc {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        #startTooltipGlobal .tooltip-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 6px 0;
+            opacity: 0.5;
+        }
+
+        [data-theme="dark"] #startTooltipGlobal .tooltip-divider {
+            background: rgba(0, 229, 255, 0.08);
+        }
+
+        #startTooltipGlobal .tooltip-status {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 0;
+        }
+
+        #startTooltipGlobal .tooltip-status.warning {
+            color: var(--warning);
+        }
+
+        #startTooltipGlobal .tooltip-status.danger {
+            color: var(--danger);
+        }
+
+        #startTooltipGlobal .tooltip-status.success {
+            color: var(--success);
+        }
+
+        #startTooltipGlobal .tooltip-status.info {
+            color: var(--info);
+        }
+
+        #startTooltipGlobal::after {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            transform: translateX(-50%) rotate(45deg);
+            border-radius: 0 0 3px 0;
+        }
+
+        [data-theme="dark"] #startTooltipGlobal::after {
+            background: rgba(13, 18, 48, 0.95);
+            border-right: 1px solid rgba(0, 229, 255, 0.08);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.08);
+        }
     </style>
 </head>
 <body>
@@ -4334,6 +4449,22 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
     </script>
 
+    <!-- ============================================================ -->
+    <!-- TOOLTIP GLOBAL - Dibuat sekali di luar tabel -->
+    <!-- ============================================================ -->
+    <div id="startTooltipGlobal">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tooltip-icon" id="tooltipIcon">⏳</span>
+            <div>
+                <div class="tooltip-title" id="tooltipTitle">Informasi</div>
+                <div class="tooltip-desc" id="tooltipDesc">Deskripsi tooltip</div>
+                <div class="tooltip-status" id="tooltipStatus">ℹ️ Informasi</div>
+            </div>
+        </div>
+        <div class="tooltip-divider"></div>
+        <div style="font-size:10px; color:var(--text-muted);" id="tooltipFooter">💡 Informasi tambahan</div>
+    </div>
+
     <script>
         // ============================================================
         // ⚠️ TEST MODE - SET ke false untuk production
@@ -4495,8 +4626,12 @@
 
         let isDataReady = false;
 
-        // 🔥 NEW: Lock untuk mencegah double-click END
+        // 🔥 Lock untuk mencegah double-click END
         let endLock = {};
+
+        // 🔥 State untuk tooltip global
+        let tooltipTimeout = null;
+        let isTooltipVisible = false;
 
         // ============================================================
         // THEME FUNCTIONS - PREMIUM
@@ -4954,6 +5089,41 @@
                 });
 
             return realtimeChannel;
+        }
+
+        // ============================================================
+        // 🔥 FUNGSI TOOLTIP GLOBAL
+        // ============================================================
+        function showTooltip(btn, tooltipData) {
+            const tooltipEl = document.getElementById('startTooltipGlobal');
+            if (!tooltipEl) return;
+
+            // Update konten tooltip
+            document.getElementById('tooltipIcon').textContent = tooltipData.icon || '⏳';
+            document.getElementById('tooltipTitle').textContent = tooltipData.title || 'Informasi';
+            document.getElementById('tooltipDesc').textContent = tooltipData.desc || '';
+            
+            const statusEl = document.getElementById('tooltipStatus');
+            statusEl.textContent = tooltipData.statusText || 'ℹ️ Informasi';
+            statusEl.className = 'tooltip-status ' + (tooltipData.statusClass || 'info');
+            
+            document.getElementById('tooltipFooter').textContent = tooltipData.footer || '💡 Informasi tambahan';
+
+            // Posisikan tooltip
+            const rect = btn.getBoundingClientRect();
+            tooltipEl.style.left = (rect.left + rect.width / 2 - 140) + 'px';
+            tooltipEl.style.top = (rect.top - 90) + 'px';
+            
+            // Tampilkan tooltip
+            tooltipEl.classList.add('visible');
+            isTooltipVisible = true;
+        }
+
+        function hideTooltip() {
+            const tooltipEl = document.getElementById('startTooltipGlobal');
+            if (!tooltipEl) return;
+            tooltipEl.classList.remove('visible');
+            isTooltipVisible = false;
         }
 
         // ============================================================
@@ -6155,7 +6325,7 @@
         }
 
         // ============================================================
-        // RENDER DASHBOARD TABLE - DENGAN TOOLTIP PADA TOMBOL START
+        // 🔥 RENDER DASHBOARD TABLE - Dengan Tooltip Global
         // ============================================================
         window.renderDashboardTable = function() {
             const tbody = document.getElementById('dashboardTableBody');
@@ -6319,12 +6489,13 @@
 
                     const loadingClass = !isDataReady ? 'loading-state' : '';
                     
-                    // 🔥 BUAT TOOLTIP UNTUK TOMBOL START
-                    let tooltipHTML = '';
+                    // 🔥 Data untuk tooltip disimpan di data-* attributes
                     let tooltipIcon = '⏳';
-                    let tooltipTitle = '';
+                    let tooltipTitle = 'Informasi';
                     let tooltipDesc = '';
-                    let tooltipStatus = '';
+                    let tooltipStatusText = 'ℹ️ Informasi';
+                    let tooltipStatusClass = 'info';
+                    let tooltipFooter = '💡 Informasi tambahan';
                     
                     const isQuotaFull = used >= maxQuota;
                     const isLimitFull = !canUserIzinLive(nama);
@@ -6333,63 +6504,39 @@
                         tooltipIcon = '🚫';
                         tooltipTitle = 'Kuota Izin Penuh';
                         tooltipDesc = `${nama} sudah menggunakan ${used} dari ${maxQuota} izin hari ini.`;
-                        tooltipStatus = 'danger';
+                        tooltipStatusText = '⚠️ Kuota penuh';
+                        tooltipStatusClass = 'danger';
+                        tooltipFooter = '💡 Hubungi Leader atau CS Line untuk bantuan';
                     } else if (isLimitFull) {
                         tooltipIcon = '⏳';
                         tooltipTitle = 'Sedang Ada Izin';
                         tooltipDesc = `Saat ini ada anggota ${roleLabel} yang sedang izin.`;
-                        tooltipStatus = 'warning';
+                        tooltipStatusText = '⏳ Mohon tunggu';
+                        tooltipStatusClass = 'warning';
+                        tooltipFooter = '💡 Coba beberapa saat lagi';
                     } else if (!isLeaderOrCsLine && !isCurrentUser) {
                         tooltipIcon = '🔒';
                         tooltipTitle = 'Tidak Bisa START';
                         tooltipDesc = `Anda hanya bisa memulai izin untuk diri sendiri.`;
-                        tooltipStatus = 'warning';
-                    }
-                    
-                    // Jika tombol disabled dan ada tooltip info
-                    if (!canStart || !isDataReady) {
-                        tooltipHTML = `
-                            <div class="voucher-tooltip" style="position:fixed; pointer-events:none; opacity:0; transition:opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); transform:translateY(6px) scale(0.96); max-width:260px; white-space:normal; line-height:1.5; padding:12px 18px; border-radius:12px; font-size:11px; color:var(--text-secondary); font-weight:400; letter-spacing:0.3px; box-shadow:0 16px 48px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.05); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:10000; border-top:2px solid rgba(0,229,255,0.15);">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:16px; flex-shrink:0;">${tooltipIcon}</span>
-                                    <div>
-                                        <div style="color:#00e5ff; font-weight:700; font-size:13px;">${tooltipTitle}</div>
-                                        <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">${tooltipDesc}</div>
-                                        <div style="font-size:11px; font-weight:500; padding:2px 0; color:${tooltipStatus === 'danger' ? 'var(--danger)' : tooltipStatus === 'warning' ? 'var(--warning)' : 'var(--info)'};">${tooltipStatus === 'danger' ? '⚠️ Kuota penuh' : tooltipStatus === 'warning' ? '⏳ Mohon tunggu' : 'ℹ️ Informasi'}</div>
-                                    </div>
-                                </div>
-                                <div style="height:1px; background:var(--border-color); margin:6px 0; opacity:0.5;"></div>
-                                <div style="font-size:10px; color:var(--text-muted);">💡 ${isQuotaFull ? 'Hubungi Leader atau CS Line untuk bantuan' : isLimitFull ? 'Coba beberapa saat lagi' : ''}</div>
-                                <div style="position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:12px; height:12px; background:var(--bg-card); border-right:1px solid var(--border-color); border-bottom:1px solid var(--border-color); transform:translateX(-50%) rotate(45deg); border-radius:0 0 3px 0;"></div>
-                            </div>
-                        `;
+                        tooltipStatusText = 'ℹ️ Informasi';
+                        tooltipStatusClass = 'info';
+                        tooltipFooter = '💡 Anda hanya bisa START untuk akun sendiri';
                     }
 
                     actionHTML = `
-                            <div style="position:relative; display:inline-block;">
-                                <button class="btn-action start ${loadingClass}" 
-                                        onclick="mulaiIzin('${nama}')" 
-                                        data-nama="${nama}"
-                                        ${!canStart || !isDataReady ? 'disabled' : ''}
-                                        style="position:relative;">
-                                    <span class="icon">▶</span> START
-                                </button>
-                                ${(!canStart || !isDataReady) ? `
-                                <div class="voucher-tooltip start-tooltip" style="position:fixed; pointer-events:none; opacity:0; transition:opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); transform:translateY(6px) scale(0.96); max-width:260px; white-space:normal; line-height:1.5; padding:12px 18px; border-radius:12px; font-size:11px; color:var(--text-secondary); font-weight:400; letter-spacing:0.3px; box-shadow:0 16px 48px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.05); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:10000; border-top:2px solid rgba(0,229,255,0.15); background:var(--bg-card); border:1px solid var(--border-color);">
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <span style="font-size:16px; flex-shrink:0;">${tooltipIcon}</span>
-                                        <div>
-                                            <div style="color:#00e5ff; font-weight:700; font-size:13px;">${tooltipTitle}</div>
-                                            <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">${tooltipDesc}</div>
-                                            <div style="font-size:11px; font-weight:500; padding:2px 0; color:${tooltipStatus === 'danger' ? 'var(--danger)' : tooltipStatus === 'warning' ? 'var(--warning)' : 'var(--info)'};">${tooltipStatus === 'danger' ? '⚠️ Kuota penuh' : tooltipStatus === 'warning' ? '⏳ Mohon tunggu' : 'ℹ️ Informasi'}</div>
-                                        </div>
-                                    </div>
-                                    <div style="height:1px; background:var(--border-color); margin:6px 0; opacity:0.5;"></div>
-                                    <div style="font-size:10px; color:var(--text-muted);">💡 ${isQuotaFull ? 'Hubungi Leader atau CS Line untuk bantuan' : isLimitFull ? 'Coba beberapa saat lagi' : ''}</div>
-                                    <div style="position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:12px; height:12px; background:var(--bg-card); border-right:1px solid var(--border-color); border-bottom:1px solid var(--border-color); transform:translateX(-50%) rotate(45deg); border-radius:0 0 3px 0;"></div>
-                                </div>
-                                ` : ''}
-                            </div>
+                            <button class="btn-action start ${loadingClass}" 
+                                    onclick="mulaiIzin('${nama}')" 
+                                    data-nama="${nama}"
+                                    data-tooltip-icon="${tooltipIcon}"
+                                    data-tooltip-title="${tooltipTitle}"
+                                    data-tooltip-desc="${tooltipDesc}"
+                                    data-tooltip-status="${tooltipStatusText}"
+                                    data-tooltip-status-class="${tooltipStatusClass}"
+                                    data-tooltip-footer="${tooltipFooter}"
+                                    ${!canStart || !isDataReady ? 'disabled' : ''}
+                                    style="position:relative;">
+                                <span class="icon">▶</span> START
+                            </button>
                         `;
                     
                     progressHTML = `
@@ -6442,42 +6589,18 @@
                     `;
             }).join('');
 
-            // 🔥 EVENT LISTENER UNTUK TOOLTIP START BUTTON - STICKY VERSION
-document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
-    const tooltip = btn.parentElement.querySelector('.voucher-tooltip.start-tooltip');
-    if (!tooltip) return;
-    
-    let tooltipTimer = null;
-    
-    btn.addEventListener('mouseenter', function(e) {
-        // Hapus timer sebelumnya jika ada
-        if (tooltipTimer) {
-            clearTimeout(tooltipTimer);
-            tooltipTimer = null;
-        }
-        
-        // Set timer 300ms sebelum tooltip muncul
-        tooltipTimer = setTimeout(() => {
-            const rect = btn.getBoundingClientRect();
-            tooltip.style.left = (rect.left + rect.width / 2 - 130) + 'px';
-            tooltip.style.top = (rect.top - 80) + 'px';
-            // 🔥 Gunakan class, bukan inline style
-            tooltip.classList.add('tooltip-active');
-        }, 300);
-    });
-    
-    btn.addEventListener('mouseleave', function() {
-        // Batalkan timer jika mouse keluar sebelum 300ms
-        if (tooltipTimer) {
-            clearTimeout(tooltipTimer);
-            tooltipTimer = null;
-        }
-        // 🔥 Hapus class untuk menyembunyikan tooltip
-        tooltip.classList.remove('tooltip-active');
-    });
-});
+            // 🔥 EVENT LISTENER UNTUK TOOLTIP START - MENGGUNAKAN GLOBAL TOOLTIP
+            document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
+                // Hapus event listener lama jika ada (mencegah duplikasi)
+                btn.removeEventListener('mouseenter', handleStartMouseEnter);
+                btn.removeEventListener('mouseleave', handleStartMouseLeave);
+                
+                // Tambahkan event listener baru
+                btn.addEventListener('mouseenter', handleStartMouseEnter);
+                btn.addEventListener('mouseleave', handleStartMouseLeave);
+            });
 
-            // 🔥 VOUCHER TOOLTIP EVENT LISTENERS
+            // 🔥 VOUCHER TOOLTIP EVENT LISTENERS (tetap seperti sebelumnya)
             document.querySelectorAll('.voucher-badge').forEach(function(el) {
                 var tooltip = el.querySelector('.voucher-tooltip');
                 if (!tooltip) return;
@@ -6496,6 +6619,42 @@ document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
 
             renderLiveIzin();
         };
+
+        // 🔥 Handler untuk tooltip START - dipisahkan agar bisa di-reuse
+        function handleStartMouseEnter(e) {
+            const btn = e.currentTarget;
+            
+            // Batalkan timer sebelumnya
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+                tooltipTimeout = null;
+            }
+            
+            // Ambil data dari atribut tombol
+            const tooltipData = {
+                icon: btn.dataset.tooltipIcon || '⏳',
+                title: btn.dataset.tooltipTitle || 'Informasi',
+                desc: btn.dataset.tooltipDesc || '',
+                statusText: btn.dataset.tooltipStatus || 'ℹ️ Informasi',
+                statusClass: btn.dataset.tooltipStatusClass || 'info',
+                footer: btn.dataset.tooltipFooter || '💡 Informasi tambahan'
+            };
+            
+            // Tampilkan tooltip dengan delay 300ms
+            tooltipTimeout = setTimeout(() => {
+                showTooltip(btn, tooltipData);
+            }, 300);
+        }
+
+        function handleStartMouseLeave(e) {
+            // Batalkan timer
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+                tooltipTimeout = null;
+            }
+            // Sembunyikan tooltip
+            hideTooltip();
+        }
 
         // ============================================================
         // RENDER USERS PAGE
