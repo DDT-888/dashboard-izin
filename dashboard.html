@@ -4194,86 +4194,6 @@
     font-weight: 700;
 }
 
-/* --- Toolbar --- */
-.shift-toolbar {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.btn-shift {
-    padding: 6px 16px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 34px;
-}
-
-.btn-shift:hover:not(:disabled) {
-    transform: translateY(-1px);
-}
-
-.btn-shift:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.btn-shift.primary {
-    background: var(--info);
-    color: white;
-}
-.btn-shift.primary:hover:not(:disabled) {
-    box-shadow: 0 4px 16px rgba(26, 42, 74, 0.2);
-}
-
-.btn-shift.success {
-    background: var(--success);
-    color: white;
-}
-.btn-shift.success:hover:not(:disabled) {
-    box-shadow: 0 4px 16px rgba(46, 125, 50, 0.25);
-}
-
-.btn-shift.danger {
-    background: var(--danger);
-    color: white;
-}
-.btn-shift.danger:hover:not(:disabled) {
-    box-shadow: 0 4px 16px rgba(198, 40, 40, 0.25);
-}
-
-.btn-shift.preview {
-    background: linear-gradient(135deg, #6a1b9a, #4a148c);
-    color: white;
-}
-.btn-shift.preview:hover:not(:disabled) {
-    box-shadow: 0 4px 16px rgba(106, 27, 154, 0.3);
-}
-
-.btn-shift.outline {
-    background: transparent;
-    color: var(--text-primary);
-    border: 2px solid var(--border-color);
-}
-.btn-shift.outline:hover:not(:disabled) {
-    border-color: var(--sidebar-text);
-    color: var(--sidebar-text);
-}
-
-.btn-shift.sm {
-    padding: 4px 12px;
-    font-size: 10px;
-    height: 28px;
-}
-
 /* --- Main Grid --- */
 .shift-main-grid {
     display: grid;
@@ -4322,7 +4242,7 @@
     border: 1px solid var(--border-color);
 }
 
-/* 🔥 DROPZONE DATA STAFF */
+/* 🔥 DROPZONE UNTUK DATA STAFF */
 .shift-available-dropzone {
     flex: 1;
     overflow-y: auto;
@@ -4333,19 +4253,8 @@
 
 .shift-available-dropzone.drag-over {
     background: var(--bg-hover);
-    box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.03);
+    box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.08);
     border-radius: 0 0 12px 12px;
-}
-
-.shift-available .body::-webkit-scrollbar {
-    width: 4px;
-}
-.shift-available .body::-webkit-scrollbar-track {
-    background: transparent;
-}
-.shift-available .body::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
 }
 
 /* --- Shift Columns Wrapper --- */
@@ -4390,15 +4299,18 @@
     cursor: grabbing;
 }
 
+/* 🔥 DRAG KOLOM - Visual Feedback */
 .shift-column.dragging-col {
     opacity: 0.4;
     transform: scale(0.95);
+    border: 2px dashed var(--sidebar-text);
 }
 
 .shift-column.drag-over-col {
     border-color: var(--sidebar-text);
     background: var(--bg-hover);
-    box-shadow: 0 0 30px rgba(0, 229, 255, 0.08);
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.15);
+    transform: scale(1.02);
 }
 
 /* 🔥 DROPZONE UNTUK DRAG STAFF - KOLOM SHIFT */
@@ -4414,7 +4326,8 @@
 
 .shift-column-dropzone.drag-over {
     background: var(--bg-hover);
-    box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.03);
+    box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.08);
+    border-radius: 0 0 12px 12px;
 }
 
 .shift-column .column-header {
@@ -4578,9 +4491,9 @@
 }
 
 .shift-column .column-body .empty-drop.drag-over {
-    border-color: var(--sidebar-text);
-    background: rgba(0, 229, 255, 0.04);
-    color: var(--sidebar-text);
+    border-color: var(--sidebar-text) !important;
+    background: rgba(0, 229, 255, 0.06) !important;
+    color: var(--sidebar-text) !important;
 }
 
 /* --- User Card --- */
@@ -4606,10 +4519,11 @@
     cursor: grabbing;
 }
 
+/* 🔥 DRAG STAFF - Visual Feedback */
 .user-card-shift.dragging {
     opacity: 0.3;
     transform: scale(0.95);
-    border-color: var(--sidebar-text);
+    border: 2px dashed var(--sidebar-text);
 }
 
 /* Warna Card berdasarkan Role */
@@ -9744,9 +9658,14 @@ function onStaffDragStart(e, userId, sourceType, columnId) {
         columnId: columnId || null
     };
 
-    // 🔥 GUNAKAN FORMAT YANG BERBEDA UNTUK STAFF
+    // 🔥 GUNAKAN FORMAT KHUSUS UNTUK STAFF
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('staff-drag', JSON.stringify(staffDragData));
+    
+    // 🔥 SET DRAG IMAGE (opsional, untuk visual lebih baik)
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(img, 0, 0);
     
     setTimeout(() => {
         e.target.classList.add('dragging');
@@ -9822,6 +9741,7 @@ function onStaffDrop(e, targetColumnId) {
                 return;
             }
             user = availableUsers.splice(idx, 1)[0];
+            console.log('📦 User diambil dari DATA STAFF:', user?.name);
         } else {
             const sourceColumn = shiftColumns.find(c => c.id === sourceColumnId);
             if (!sourceColumn) {
@@ -9834,6 +9754,7 @@ function onStaffDrop(e, targetColumnId) {
                 return;
             }
             user = sourceColumn.users.splice(idx, 1)[0];
+            console.log('📦 User diambil dari kolom', sourceColumn.name, ':', user?.name);
         }
 
         if (!user) {
@@ -9847,12 +9768,14 @@ function onStaffDrop(e, targetColumnId) {
             // Jika target tidak ditemukan, kembalikan ke available
             availableUsers.push(user);
             sortAvailableUsers();
+            console.log('📦 User dikembalikan ke DATA STAFF:', user.name);
         } else {
             // Cek apakah user sudah ada di target
             const exists = targetCol.users.some(u => String(u.id) === String(user.id));
             if (!exists) {
                 targetCol.users.push(user);
                 sortColumnUsers(targetCol);
+                console.log('📦 User dipindahkan ke kolom', targetCol.name, ':', user.name);
             } else {
                 // Jika sudah ada, kembalikan ke available
                 availableUsers.push(user);
@@ -9931,6 +9854,7 @@ function onAvailableDrop(e) {
 
         // Ambil user dari kolom
         const user = sourceColumn.users.splice(idx, 1)[0];
+        console.log('📦 User dikembalikan ke DATA STAFF:', user.name);
 
         // Tambahkan ke availableUsers
         availableUsers.push(user);
@@ -9962,15 +9886,19 @@ function onColumnDragStart(e, columnId) {
         columnId: columnId
     };
     
-    // 🔥 GUNAKAN FORMAT YANG BERBEDA UNTUK KOLOM
+    // 🔥 GUNAKAN FORMAT KHUSUS UNTUK KOLOM
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('column-drag', JSON.stringify(columnDragData));
+    
+    // 🔥 SET DRAG IMAGE (opsional, untuk visual lebih baik)
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(img, 0, 0);
     
     setTimeout(() => {
         e.target.classList.add('dragging-col');
     }, 0);
 }
-
 function onColumnDragEnd(e) {
     e.target.classList.remove('dragging-col');
     document.querySelectorAll('.shift-column.drag-over-col').forEach(el => {
@@ -10004,10 +9932,12 @@ function onColumnDrop(e, targetColumnId) {
     }
     
     try {
-        // 🔥 AMBIL DATA KOLOM (bukan data staff)
+        // 🔥 CEK: Apakah ini data kolom atau data staff?
         const rawData = e.dataTransfer.getData('column-drag');
+        
+        // 🔥 JIKA TIDAK ADA DATA KOLOM, BERARTI INI DRAG STAFF → ABUIKAN
         if (!rawData) {
-            showShiftToast('❌ Data kolom tidak valid', 'error');
+            // Ini adalah drag staff, biarkan onStaffDrop yang menangani
             return;
         }
 
