@@ -4126,6 +4126,13 @@
     flex: 1;
 }
 
+.shift-header-left .subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-right: 4px;
+}
+
 .shift-header-right {
     display: flex;
     align-items: center;
@@ -4140,31 +4147,38 @@
     gap: 4px;
     background: var(--bg-input);
     border: 2px solid var(--border-input);
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 2px 8px;
-    height: 30px;
+    height: 32px;
 }
 
 .shift-header-right .periode-wrapper span {
     font-size: 11px;
     color: var(--text-muted);
     font-weight: 500;
+    flex-shrink: 0;
 }
 
 .shift-header-right .periode-wrapper input[type="date"] {
     border: none;
     background: transparent;
     padding: 2px 0;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-primary);
     outline: none;
-    width: 110px;
+    width: 95px;
     height: 24px;
+    cursor: pointer;
 }
 
 .shift-header-right .periode-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: pointer;
+    padding: 2px;
+}
+
+.shift-header-right .periode-wrapper input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 0.8;
 }
 
 /* 🔥 HAPUS .shift-stats karena sudah digabung ke header */
@@ -4190,40 +4204,6 @@
 
 .shift-stats-wrapper .stat-total {
     color: var(--sidebar-text);
-}
-
-/* Tooltip custom untuk stats */
-.shift-stats-wrapper[title] {
-    position: relative;
-}
-
-.shift-stats-wrapper[title]:hover::after {
-    content: attr(title);
-    position: fixed;
-    background: var(--bg-card);
-    color: var(--text-primary);
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.6;
-    white-space: pre-line;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    border: 1px solid var(--border-color);
-    z-index: 1000;
-    max-width: 300px;
-    pointer-events: none;
-    top: 50px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: left;
-    backdrop-filter: blur(10px);
-    background: rgba(var(--bg-card-rgb, 255,255,255), 0.95);
-}
-
-[data-theme="dark"] .shift-stats-wrapper[title]:hover::after {
-    background: rgba(28, 35, 51, 0.95);
-    border-color: #30363d;
 }
 
 /* --- Main Grid --- */
@@ -9512,17 +9492,13 @@ function renderShiftPage() {
     if (dateStart) dateStart.value = shiftCurrentDate;
     if (dateEnd) dateEnd.value = shiftCurrentDate;
 
-    // 🔥 BUAT TOOLTIP UNTUK STATS
-    const statsTooltip = `📊 Total: ${totalStaff} staff\n${shiftColumns.map(col => `${col.name}: ${col.users.length} staff`).join('\n')}\n📋 Belum diatur: ${availableUsers.length} staff${shiftIsDirty ? '\n⚠️ Belum disimpan' : ''}`;
-
     container.innerHTML = `
         <div class="shift-container">
-            <!-- 🔥 HEADER BARU - Stats di atas sejajar dengan tombol -->
+            <!-- 🔥 HEADER - Tanpa Tooltip Stats, dengan Teks Drag & Drop -->
             <div class="shift-header">
                 <div class="shift-header-left">
-                    <div class="shift-stats-wrapper" 
-                         title="${statsTooltip}" 
-                         style="cursor:help;display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text-muted);padding:2px 0;flex-wrap:wrap;">
+                    <div class="shift-stats-wrapper" style="display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text-muted);padding:2px 0;flex-wrap:wrap;">
+                        <span class="subtitle" style="font-size:12px;color:var(--text-muted);font-weight:400;margin-right:8px;">📌 Drag & drop staff untuk mengatur shift</span>
                         <span>📊 Total: <strong style="color:var(--text-primary);">${totalStaff}</strong> staff</span>
                         ${shiftColumns.map(col => `
                             <span>${col.name}: <strong style="color:var(--text-primary);">${col.users.length}</strong></span>
@@ -9538,14 +9514,12 @@ function renderShiftPage() {
                         <span>-</span>
                         <input type="date" id="shiftDateEnd" value="${shiftCurrentDate}" onchange="onShiftDateChangeEnd(this.value)" />
                     </div>
-                    <button class="btn-shift preview sm" onclick="openShiftPreview()">👁️ Preview</button>
-                    <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
-                    <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
-                    <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
+                    <button class="btn-shift preview" onclick="openShiftPreview()">👁️ Preview</button>
+                    <button class="btn-shift success" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
+                    <button class="btn-shift danger" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
+                    <button class="btn-shift primary" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
                 </div>
             </div>
-
-            <!-- 🔥 TIDAK ADA LAGI SHIFT-STATS TERPISAH -->
 
             <div class="shift-main-grid">
                 <!-- DATA STAFF -->
