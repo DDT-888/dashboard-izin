@@ -4412,6 +4412,21 @@
     box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.03);
 }
 
+/* 🔥 DROPZONE UNTUK DATA STAFF */
+.shift-available-dropzone {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 10px;
+    transition: all 0.3s ease;
+    border-radius: 0 0 12px 12px;
+}
+
+.shift-available-dropzone.drag-over {
+    background: var(--bg-hover);
+    box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.03);
+    border-radius: 0 0 12px 12px;
+}
+
         .shift-column .column-header {
             padding: 8px 12px 6px 12px;
             background: var(--bg-hover);
@@ -9596,33 +9611,41 @@
 
             <div class="shift-main-grid">
                 <div class="shift-available">
-                    <div class="header">
-                        <span class="title">DATA STAFF</span>
-                        <span class="count">${availableUsers.length}</span>
-                    </div>
-                    <div class="body" id="shiftAvailableBody">
-                        ${availableUsers.length === 0 ? `
-                            <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px;">
-                                Semua staff sudah ditempatkan
-                            </div>
-                        ` : availableUsers.map(user => `
-                            <div class="user-card-shift role-${user.role}" 
-                                 draggable="${canEdit}"
-                                 data-user-id="${user.id}"
-                                 data-source="available"
-                                 ondragstart="onShiftDragStart(event, '${user.id}', 'available')"
-                                 ondragend="onShiftDragEnd(event)">
-                                <div class="avatar">${user.name.charAt(0)}</div>
-                                <div class="user-info">
-                                    <div class="user-name">${user.name}</div>
-                                    <div class="user-role">${user.role}</div>
-                                </div>
-                                <span class="role-tag-shift ${user.role}">${user.role}</span>
-                                <span class="drag-handle">⠿</span>
-                            </div>
-                        `).join('')}
-                    </div>
+    <div class="header">
+        <span class="title">DATA STAFF</span>
+        <span class="count">${availableUsers.length}</span>
+    </div>
+    <!-- 🔥 DROPZONE UNTUK DATA STAFF -->
+    <div class="shift-available-dropzone"
+         style="flex:1;overflow-y:auto;padding:8px 10px;"
+         ondragover="onAvailableDragOver(event)"
+         ondragleave="onAvailableDragLeave(event)"
+         ondrop="onAvailableDrop(event)">
+        <div class="body" id="shiftAvailableBody">
+            ${availableUsers.length === 0 ? `
+                <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px;">
+                    Semua staff sudah ditempatkan
                 </div>
+            ` : availableUsers.map(user => `
+                <div class="user-card-shift role-${user.role}" 
+                     draggable="${canEdit}"
+                     data-user-id="${user.id}"
+                     data-source="available"
+                     ondragstart="onShiftDragStart(event, '${user.id}', 'available')"
+                     ondragend="onShiftDragEnd(event)">
+                    <div class="avatar">${user.name.charAt(0)}</div>
+                    <div class="user-info">
+                        <div class="user-name">${user.name}</div>
+                        <div class="user-role">${user.role}</div>
+                    </div>
+                    <span class="role-tag-shift ${user.role}">${user.role}</span>
+                    <span class="drag-handle">⠿</span>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+    <!-- 🔥 END DROPZONE -->
+</div>
 
                 <div class="shift-columns-wrapper" id="shiftColumnsWrapper">
                     ${shiftColumns.map((col, index) => `
@@ -9758,74 +9781,166 @@
         }
 
         function onShiftDrop(e, targetColumnId) {
-            e.preventDefault();
-            const target = e.currentTarget;
-            target.classList.remove('drag-over');
-            const emptyDrop = target.querySelector('.empty-drop');
-            if (emptyDrop) emptyDrop.classList.remove('drag-over');
+    e.preventDefault();
+    const target = e.currentTarget;
+    target.classList.remove('drag-over');
+    const emptyDrop = target.querySelector('.empty-drop');
+    if (emptyDrop) emptyDrop.classList.remove('drag-over');
 
-            if (!canEditShift()) {
-                showShiftToast('❌ Anda tidak memiliki izin untuk mengatur shift!', 'error');
+    if (!canEditShift()) {
+        showShiftToast('❌ Anda tidak memiliki izin untuk mengatur shift!', 'error');
+        return;
+    }
+
+    try {
+        const rawData = e.dataTransfer.getData('text/plain');
+        if (!rawData) {
+            showShiftToast('❌ Data tidak valid', 'error');
+            return;
+        }
+
+        const data = JSON.parse(rawData);
+        const { userId, sourceType, columnId: sourceColumnId } = data;
+
+        // 🔥 CEK: Jika sumbernya sama dengan target, abaikan
+        if (sourceType === 'column' && sourceColumnId === targetColumnId) {
+            showShiftToast('ℹ️ Staff sudah berada di kolom ini', 'info', 1500);
+            return;
+        }
+
+        let user = null;
+
+        // Ambil user dari sumber
+        if (sourceType === 'available') {
+            const idx = availableUsers.findIndex(u => String(u.id) === String(userId));
+            if (idx === -1) {
+                showShiftToast('❌ User tidak ditemukan di data staff', 'error');
                 return;
             }
+            user = availableUsers.splice(idx, 1)[0];
+        } else {
+            const sourceColumn = shiftColumns.find(c => c.id === sourceColumnId);
+            if (!sourceColumn) {
+                showShiftToast('❌ Kolom sumber tidak ditemukan', 'error');
+                return;
+            }
+            const idx = sourceColumn.users.findIndex(u => String(u.id) === String(userId));
+            if (idx === -1) {
+                showShiftToast('❌ User tidak ditemukan di kolom sumber', 'error');
+                return;
+            }
+            user = sourceColumn.users.splice(idx, 1)[0];
+        }
 
-            try {
-                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                const { userId, sourceType, columnId: sourceColumnId } = data;
+        if (!user) {
+            showShiftToast('❌ Gagal menemukan user', 'error');
+            return;
+        }
 
-                let user = null;
-                let sourceColumn = null;
-                
-                if (sourceType === 'available') {
-                    const idx = availableUsers.findIndex(u => String(u.id) === String(userId));
-                    if (idx === -1) {
-                        showShiftToast('❌ User tidak ditemukan di data staff', 'error');
-                        return;
-                    }
-                    user = availableUsers.splice(idx, 1)[0];
-                } else {
-                    sourceColumn = shiftColumns.find(c => c.id === sourceColumnId);
-                    if (!sourceColumn) {
-                        showShiftToast('❌ Kolom sumber tidak ditemukan', 'error');
-                        return;
-                    }
-                    const idx = sourceColumn.users.findIndex(u => String(u.id) === String(userId));
-                    if (idx === -1) {
-                        showShiftToast('❌ User tidak ditemukan di kolom sumber', 'error');
-                        return;
-                    }
-                    user = sourceColumn.users.splice(idx, 1)[0];
-                }
-
-                if (!user) {
-                    showShiftToast('❌ Gagal menemukan user', 'error');
-                    return;
-                }
-
-                const targetCol = shiftColumns.find(c => c.id === targetColumnId);
-                if (!targetCol) {
-                    availableUsers.push(user);
-                    sortAvailableUsers();
-                } else {
-                    const exists = targetCol.users.some(u => String(u.id) === String(user.id));
-                    if (!exists) {
-                        targetCol.users.push(user);
-                        sortColumnUsers(targetCol);
-                    } else {
-                        availableUsers.push(user);
-                        sortAvailableUsers();
-                    }
-                }
-
-                shiftIsDirty = true;
+        // Tambahkan ke target
+        const targetCol = shiftColumns.find(c => c.id === targetColumnId);
+        if (!targetCol) {
+            // Jika target tidak ditemukan, kembalikan ke available
+            availableUsers.push(user);
+            sortAvailableUsers();
+        } else {
+            // Cek apakah user sudah ada di target
+            const exists = targetCol.users.some(u => String(u.id) === String(user.id));
+            if (!exists) {
+                targetCol.users.push(user);
+                sortColumnUsers(targetCol);
+            } else {
+                // Jika sudah ada, kembalikan ke available
+                availableUsers.push(user);
+                sortAvailableUsers();
+                showShiftToast(`ℹ️ ${user.name} sudah ada di kolom ini`, 'info', 1500);
                 renderShiftPage();
-                showShiftToast(`✅ ${user.name} dipindahkan`, 'success', 1200);
-
-            } catch (err) {
-                console.error('❌ Drop error:', err);
-                showShiftToast('❌ Gagal memindahkan staff', 'error');
+                return;
             }
         }
+
+        shiftIsDirty = true;
+        renderShiftPage();
+        showShiftToast(`✅ ${user.name} dipindahkan`, 'success', 1200);
+
+    } catch (err) {
+        console.error('❌ Drop error:', err);
+        showShiftToast('❌ Gagal memindahkan staff', 'error');
+    }
+}
+
+// ============================================================
+// DATA STAFF - DROP ZONE
+// ============================================================
+
+function onAvailableDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.currentTarget;
+    target.classList.add('drag-over');
+}
+
+function onAvailableDragLeave(e) {
+    const target = e.currentTarget;
+    target.classList.remove('drag-over');
+}
+
+function onAvailableDrop(e) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    target.classList.remove('drag-over');
+
+    if (!canEditShift()) {
+        showShiftToast('❌ Anda tidak memiliki izin untuk mengatur shift!', 'error');
+        return;
+    }
+
+    try {
+        // Ambil data dari drag
+        const rawData = e.dataTransfer.getData('text/plain');
+        if (!rawData) {
+            showShiftToast('❌ Data tidak valid', 'error');
+            return;
+        }
+
+        const data = JSON.parse(rawData);
+        const { userId, sourceType, columnId: sourceColumnId } = data;
+
+        // 🔥 CEK: Jika sumbernya sudah 'available', tidak perlu diproses
+        if (sourceType === 'available') {
+            showShiftToast('ℹ️ Staff sudah berada di DATA STAFF', 'info', 1500);
+            return;
+        }
+
+        // Cari user di kolom shift
+        const sourceColumn = shiftColumns.find(c => c.id === sourceColumnId);
+        if (!sourceColumn) {
+            showShiftToast('❌ Kolom sumber tidak ditemukan', 'error');
+            return;
+        }
+
+        const idx = sourceColumn.users.findIndex(u => String(u.id) === String(userId));
+        if (idx === -1) {
+            showShiftToast('❌ User tidak ditemukan di kolom sumber', 'error');
+            return;
+        }
+
+        // Ambil user dari kolom
+        const user = sourceColumn.users.splice(idx, 1)[0];
+
+        // Tambahkan ke availableUsers
+        availableUsers.push(user);
+        sortAvailableUsers();
+
+        shiftIsDirty = true;
+        renderShiftPage();
+        showShiftToast(`✅ ${user.name} dikembalikan ke DATA STAFF`, 'success', 1200);
+
+    } catch (err) {
+        console.error('❌ Drop error:', err);
+        showShiftToast('❌ Gagal mengembalikan staff', 'error');
+    }
+}
 
         // ============================================================
         // DRAG & DROP KOLOM SHIFT
