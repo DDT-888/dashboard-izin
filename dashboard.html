@@ -4102,9 +4102,10 @@
 .shift-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
     height: 100%;
-    min-height: 450px;
+    min-height: 400px;
+    max-height: calc(100vh - 200px);
 }
 
 .shift-header {
@@ -4112,43 +4113,44 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
-    padding: 4px 0 8px 0;
+    gap: 8px;
+    padding: 4px 0 6px 0;
     border-bottom: 1px solid var(--border-color);
 }
 
 .shift-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
 .shift-header-left .subtitle {
     font-size: 12px;
     color: var(--text-muted);
+    font-weight: 400;
 }
 
 .shift-header-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
 .shift-header-right .periode-wrapper {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     background: var(--bg-input);
     border: 2px solid var(--border-input);
     border-radius: 8px;
-    padding: 2px 10px;
-    height: 34px;
+    padding: 2px 8px;
+    height: 30px;
 }
 
 .shift-header-right .periode-wrapper span {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -4156,12 +4158,12 @@
 .shift-header-right .periode-wrapper input[type="date"] {
     border: none;
     background: transparent;
-    padding: 4px 0;
-    font-size: 13px;
+    padding: 2px 0;
+    font-size: 12px;
     color: var(--text-primary);
     outline: none;
-    width: 125px;
-    height: 28px;
+    width: 110px;
+    height: 24px;
 }
 
 .shift-header-right .periode-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
@@ -4171,11 +4173,12 @@
 
 .shift-stats {
     display: flex;
-    gap: 16px;
+    gap: 14px;
     font-size: 12px;
     color: var(--text-muted);
-    padding: 4px 0;
+    padding: 4px 0 6px 0;
     flex-wrap: wrap;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .shift-stats span {
@@ -4200,9 +4203,9 @@
     grid-template-columns: 260px 1fr;
     gap: 14px;
     flex: 1;
-    min-height: 380px;
-    height: calc(100vh - 380px);
-    max-height: 650px;
+    min-height: 300px;
+    height: calc(100vh - 420px);
+    max-height: 580px;
 }
 
 /* --- Data Staff (Available) --- */
@@ -9489,33 +9492,35 @@ function renderShiftPage() {
     if (dateEnd) dateEnd.value = shiftCurrentDate;
 
     container.innerHTML = `
-        <div class="shift-container">
-            <div class="shift-header">
-                <div class="shift-header-left">
-                    <span class="subtitle">${canEdit ? 'Drag & drop staff untuk mengatur shift' : '👀 Mode Lihat'}</span>
-                </div>
-                <div class="shift-header-right">
-                    <div class="periode-wrapper">
-                        <span>Periode:</span>
-                        <input type="date" id="shiftDateStart" value="${shiftCurrentDate}" onchange="onShiftDateChange(this.value)" />
-                        <span>-</span>
-                        <input type="date" id="shiftDateEnd" value="${shiftCurrentDate}" onchange="onShiftDateChangeEnd(this.value)" />
-                    </div>
-                    <button class="btn-shift preview sm" onclick="openShiftPreview()">👁️ Preview</button>
-                    <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
-                    <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
-                    <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
-                </div>
+    <div class="shift-container">
+        <!-- 🔥 HEADER BARU - Lebih Rapi -->
+        <div class="shift-header">
+            <div class="shift-header-left">
+                <span class="subtitle">${canEdit ? 'Drag & drop staff untuk mengatur shift' : '👀 Mode Lihat'}</span>
             </div>
+            <div class="shift-header-right">
+                <div class="periode-wrapper">
+                    <span>Periode:</span>
+                    <input type="date" id="shiftDateStart" value="${shiftCurrentDate}" onchange="onShiftDateChange(this.value)" />
+                    <span>-</span>
+                    <input type="date" id="shiftDateEnd" value="${shiftCurrentDate}" onchange="onShiftDateChangeEnd(this.value)" />
+                </div>
+                <button class="btn-shift preview sm" onclick="openShiftPreview()">👁️ Preview</button>
+                <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
+                <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
+                <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
+            </div>
+        </div>
 
-            <div class="shift-stats">
-                <span>📊 Total: <strong>${totalStaff}</strong> staff</span>
-                ${shiftColumns.map(col => `
-                    <span>${col.name}: <strong>${col.users.length}</strong></span>
-                `).join('')}
-                <span>📋 Belum diatur: <strong class="stat-total">${availableUsers.length}</strong></span>
-                ${shiftIsDirty ? '<span style="color:var(--warning);">⚠️ Belum disimpan</span>' : ''}
-            </div>
+        <!-- 🔥 STATS - Pindah ke baris kedua -->
+        <div class="shift-stats">
+            <span>📊 Total: <strong>${totalStaff}</strong> staff</span>
+            ${shiftColumns.map(col => `
+                <span>${col.name}: <strong>${col.users.length}</strong></span>
+            `).join('')}
+            <span>📋 Belum diatur: <strong class="stat-total">${availableUsers.length}</strong></span>
+            ${shiftIsDirty ? '<span style="color:var(--warning);">⚠️ Belum disimpan</span>' : ''}
+        </div>
 
             <div class="shift-main-grid">
                 <!-- DATA STAFF -->
@@ -9658,14 +9663,10 @@ function onStaffDragStart(e, userId, sourceType, columnId) {
         columnId: columnId || null
     };
 
-    // 🔥 GUNAKAN FORMAT KHUSUS UNTUK STAFF
+    // 🔥 SIMPAN DI DUA TEMPAT (untuk kompatibilitas)
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('staff-drag', JSON.stringify(staffDragData));
-    
-    // 🔥 SET DRAG IMAGE (opsional, untuk visual lebih baik)
-    const img = new Image();
-    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    e.dataTransfer.setDragImage(img, 0, 0);
+    e.dataTransfer.setData('text/plain', JSON.stringify(staffDragData));
     
     setTimeout(() => {
         e.target.classList.add('dragging');
@@ -9715,8 +9716,14 @@ function onStaffDrop(e, targetColumnId) {
     }
 
     try {
-        // 🔥 AMBIL DATA STAFF (bukan data kolom)
-        const rawData = e.dataTransfer.getData('staff-drag');
+        // 🔥 AMBIL DATA STAFF
+        let rawData = e.dataTransfer.getData('staff-drag');
+        
+        // 🔥 FALLBACK: Jika tidak ada, coba ambil dari text/plain (untuk kompatibilitas)
+        if (!rawData) {
+            rawData = e.dataTransfer.getData('text/plain');
+        }
+        
         if (!rawData) {
             showShiftToast('❌ Data staff tidak valid', 'error');
             return;
@@ -9724,6 +9731,8 @@ function onStaffDrop(e, targetColumnId) {
 
         const data = JSON.parse(rawData);
         const { userId, sourceType, columnId: sourceColumnId } = data;
+
+        console.log('📦 Staff Drop - Data:', { userId, sourceType, sourceColumnId, targetColumnId });
 
         // CEK: Jika sumbernya sama dengan target, abaikan
         if (sourceType === 'column' && sourceColumnId === targetColumnId) {
@@ -9823,8 +9832,12 @@ function onAvailableDrop(e) {
     }
 
     try {
-        // 🔥 AMBIL DATA STAFF (bukan data kolom)
-        const rawData = e.dataTransfer.getData('staff-drag');
+        // 🔥 AMBIL DATA STAFF
+        let rawData = e.dataTransfer.getData('staff-drag');
+        if (!rawData) {
+            rawData = e.dataTransfer.getData('text/plain');
+        }
+        
         if (!rawData) {
             showShiftToast('❌ Data staff tidak valid', 'error');
             return;
@@ -9854,7 +9867,6 @@ function onAvailableDrop(e) {
 
         // Ambil user dari kolom
         const user = sourceColumn.users.splice(idx, 1)[0];
-        console.log('📦 User dikembalikan ke DATA STAFF:', user.name);
 
         // Tambahkan ke availableUsers
         availableUsers.push(user);
