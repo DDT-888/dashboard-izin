@@ -4343,6 +4343,7 @@
     flex-shrink: 0;
     gap: 6px;
     cursor: grab;
+    user-select: none;
 }
 
 .shift-column .column-header:active {
@@ -9492,35 +9493,33 @@ function renderShiftPage() {
     if (dateEnd) dateEnd.value = shiftCurrentDate;
 
     container.innerHTML = `
-    <div class="shift-container">
-        <!-- 🔥 HEADER BARU - Lebih Rapi -->
-        <div class="shift-header">
-            <div class="shift-header-left">
-                <span class="subtitle">${canEdit ? 'Drag & drop staff untuk mengatur shift' : '👀 Mode Lihat'}</span>
-            </div>
-            <div class="shift-header-right">
-                <div class="periode-wrapper">
-                    <span>Periode:</span>
-                    <input type="date" id="shiftDateStart" value="${shiftCurrentDate}" onchange="onShiftDateChange(this.value)" />
-                    <span>-</span>
-                    <input type="date" id="shiftDateEnd" value="${shiftCurrentDate}" onchange="onShiftDateChangeEnd(this.value)" />
+        <div class="shift-container">
+            <div class="shift-header">
+                <div class="shift-header-left">
+                    <span class="subtitle">${canEdit ? 'Drag & drop staff untuk mengatur shift' : '👀 Mode Lihat'}</span>
                 </div>
-                <button class="btn-shift preview sm" onclick="openShiftPreview()">👁️ Preview</button>
-                <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
-                <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
-                <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
+                <div class="shift-header-right">
+                    <div class="periode-wrapper">
+                        <span>Periode:</span>
+                        <input type="date" id="shiftDateStart" value="${shiftCurrentDate}" onchange="onShiftDateChange(this.value)" />
+                        <span>-</span>
+                        <input type="date" id="shiftDateEnd" value="${shiftCurrentDate}" onchange="onShiftDateChangeEnd(this.value)" />
+                    </div>
+                    <button class="btn-shift preview sm" onclick="openShiftPreview()">👁️ Preview</button>
+                    <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
+                    <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
+                    <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
+                </div>
             </div>
-        </div>
 
-        <!-- 🔥 STATS - Pindah ke baris kedua -->
-        <div class="shift-stats">
-            <span>📊 Total: <strong>${totalStaff}</strong> staff</span>
-            ${shiftColumns.map(col => `
-                <span>${col.name}: <strong>${col.users.length}</strong></span>
-            `).join('')}
-            <span>📋 Belum diatur: <strong class="stat-total">${availableUsers.length}</strong></span>
-            ${shiftIsDirty ? '<span style="color:var(--warning);">⚠️ Belum disimpan</span>' : ''}
-        </div>
+            <div class="shift-stats">
+                <span>📊 Total: <strong>${totalStaff}</strong> staff</span>
+                ${shiftColumns.map(col => `
+                    <span>${col.name}: <strong>${col.users.length}</strong></span>
+                `).join('')}
+                <span>📋 Belum diatur: <strong class="stat-total">${availableUsers.length}</strong></span>
+                ${shiftIsDirty ? '<span style="color:var(--warning);">⚠️ Belum disimpan</span>' : ''}
+            </div>
 
             <div class="shift-main-grid">
                 <!-- DATA STAFF -->
@@ -9562,39 +9561,40 @@ function renderShiftPage() {
                 <!-- SHIFT COLUMNS -->
                 <div class="shift-columns-wrapper" id="shiftColumnsWrapper">
                     ${shiftColumns.map((col, index) => `
+                        <!-- 🔥 KOLOM SHIFT - DRAG KOLOM (HANYA PADA HEADER) -->
                         <div class="shift-column" 
-                             data-column-id="${col.id}"
-                             draggable="${canEdit}"
-                             ondragstart="onColumnDragStart(event, '${col.id}')"
-                             ondragend="onColumnDragEnd(event)"
-                             ondragover="onColumnDragOver(event)"
-                             ondragleave="onColumnDragLeave(event)"
-                             ondrop="onColumnDrop(event, '${col.id}')">
+                             data-column-id="${col.id}">
                             
-                            <!-- INI ADALAH DROPZONE UNTUK STAFF -->
+                            <!-- 🔥 HEADER UNTUK DRAG KOLOM -->
+                            <div class="column-header"
+                                 draggable="${canEdit}"
+                                 ondragstart="onColumnDragStart(event, '${col.id}')"
+                                 ondragend="onColumnDragEnd(event)"
+                                 ondragover="onColumnDragOver(event)"
+                                 ondragleave="onColumnDragLeave(event)"
+                                 ondrop="onColumnDrop(event, '${col.id}')">
+                                <div class="title-wrap">
+                                    <span class="col-name" 
+                                          onclick="editColumnName('${col.id}')"
+                                          title="Double-click untuk edit nama">
+                                        ${col.name}
+                                    </span>
+                                    <span class="col-count">${col.users.length}</span>
+                                </div>
+                                <div class="col-actions">
+                                    ${canEdit ? `
+                                        <button class="delete-col" onclick="deleteShiftColumn('${col.id}')" title="Hapus kolom">✕</button>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <!-- 🔥 DROPZONE UNTUK STAFF (BUKAN UNTUK KOLOM) -->
                             <div class="shift-column-dropzone"
                                  id="columnDropzone_${col.id}"
-                                 style="display:flex;flex-direction:column;flex:1;min-height:0;"
                                  ondragover="onStaffDragOver(event)"
                                  ondragleave="onStaffDragLeave(event)"
                                  ondrop="onStaffDrop(event, '${col.id}')">
                                 
-                                <div class="column-header">
-                                    <div class="title-wrap">
-                                        <span class="col-name" 
-                                              onclick="editColumnName('${col.id}')"
-                                              title="Double-click untuk edit nama">
-                                            ${col.name}
-                                        </span>
-                                        <span class="col-count">${col.users.length}</span>
-                                    </div>
-                                    <div class="col-actions">
-                                        ${canEdit ? `
-                                            <button class="delete-col" onclick="deleteShiftColumn('${col.id}')" title="Hapus kolom">✕</button>
-                                        ` : ''}
-                                    </div>
-                                </div>
-
                                 <div class="column-note">
                                     <span class="note-text ${!col.note ? 'empty' : ''}" 
                                           onclick="editColumnNote('${col.id}')"
@@ -9889,6 +9889,14 @@ function onAvailableDrop(e) {
 let columnDragData = null;
 
 function onColumnDragStart(e, columnId) {
+    // 🔥 CEK: Apakah yang di-drag adalah header (bukan staff)?
+    // Jika target bukan .column-header atau anaknya, batalkan
+    const target = e.target.closest('.column-header');
+    if (!target) {
+        e.preventDefault();
+        return false;
+    }
+    
     if (!canEditShift()) {
         e.preventDefault();
         return false;
@@ -9898,19 +9906,14 @@ function onColumnDragStart(e, columnId) {
         columnId: columnId
     };
     
-    // 🔥 GUNAKAN FORMAT KHUSUS UNTUK KOLOM
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('column-drag', JSON.stringify(columnDragData));
     
-    // 🔥 SET DRAG IMAGE (opsional, untuk visual lebih baik)
-    const img = new Image();
-    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    e.dataTransfer.setDragImage(img, 0, 0);
-    
     setTimeout(() => {
-        e.target.classList.add('dragging-col');
+        e.target.closest('.shift-column').classList.add('dragging-col');
     }, 0);
 }
+
 function onColumnDragEnd(e) {
     e.target.classList.remove('dragging-col');
     document.querySelectorAll('.shift-column.drag-over-col').forEach(el => {
