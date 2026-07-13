@@ -3989,7 +3989,7 @@
         }
 
         /* ============================================================
-           SHIFT KERJA - CSS (DIPERBAIKI)
+           SHIFT KERJA - CSS
            ============================================================ */
 
         /* Container & Layout */
@@ -9337,7 +9337,7 @@
         };
 
         // ============================================================
-        // SHIFT KERJA - FUNCTIONS (DIPERBAIKI)
+        // SHIFT KERJA - FUNCTIONS (DIPERBAIKI - DATA STAFF TIDAK HILANG)
         // ============================================================
 
         function canEditShift() {
@@ -9372,6 +9372,7 @@
             if (!endDate) endDate = shiftPeriodeEnd;
 
             try {
+                // Ambil semua user dengan role yang relevan
                 const { data: users, error: usersError } = await supabaseDashboard
                     .from('users')
                     .select('*')
@@ -9381,13 +9382,9 @@
 
                 if (usersError) throw usersError;
 
-                const rolePriority = { csline: 0, cs: 1, kapten: 2, kasir: 3 };
-                availableUsers = (users || []).sort((a, b) => {
-                    const orderA = rolePriority[a.role] ?? 99;
-                    const orderB = rolePriority[b.role] ?? 99;
-                    if (orderA !== orderB) return orderA - orderB;
-                    return a.name.localeCompare(b.name);
-                });
+                // Reset availableUsers dengan semua user
+                availableUsers = (users || []).map(u => ({ ...u }));
+                sortAvailableUsers();
 
                 // Coba ambil data dari shift_history berdasarkan range
                 const { data: history, error: histError } = await supabaseDashboard
@@ -9397,9 +9394,17 @@
                     .eq('periode_end', endDate)
                     .maybeSingle();
 
+                // Load assignments berdasarkan tanggal start
+                const { data: assignments, error: assignError } = await supabaseDashboard
+                    .from('shift_assignments')
+                    .select('*')
+                    .eq('tanggal', startDate);
+
                 if (!histError && history) {
                     try {
                         const savedData = JSON.parse(history.shift_data);
+                        
+                        // Buat kolom dari saved data
                         shiftColumns = savedData.columns.map(col => ({
                             id: col.id || `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
                             name: col.name,
@@ -9407,27 +9412,25 @@
                             users: []
                         }));
 
-                        // Load assignments untuk range tanggal
-                        const { data: assignments, error: assignError } = await supabaseDashboard
-                            .from('shift_assignments')
-                            .select('*')
-                            .eq('tanggal', startDate);
-
-                        if (!assignError && assignments) {
+                        // Assign user ke kolom berdasarkan assignments
+                        if (assignments && !assignError) {
                             const userMap = {};
                             availableUsers.forEach(u => userMap[u.id] = u);
 
                             shiftColumns.forEach(col => {
                                 const colAssignments = assignments.filter(a => a.shift_name === col.name);
                                 col.users = colAssignments
-                                    .map(a => userMap[a.user_id])
+                                    .map(a => {
+                                        const user = userMap[a.user_id];
+                                        if (user) {
+                                            // Hapus dari availableUsers
+                                            const idx = availableUsers.findIndex(av => av.id === user.id);
+                                            if (idx !== -1) availableUsers.splice(idx, 1);
+                                            return user;
+                                        }
+                                        return null;
+                                    })
                                     .filter(Boolean);
-                                
-                                // Hapus user yang sudah diassign dari availableUsers
-                                col.users.forEach(u => {
-                                    const idx = availableUsers.findIndex(av => av.id === u.id);
-                                    if (idx !== -1) availableUsers.splice(idx, 1);
-                                });
                             });
                         }
 
@@ -9439,13 +9442,8 @@
                     }
                 }
 
-                // Jika tidak ada history, coba ambil dari shift_assignments
-                const { data: assignments, error: assignError } = await supabaseDashboard
-                    .from('shift_assignments')
-                    .select('*')
-                    .eq('tanggal', startDate);
-
-                if (!assignError && assignments && assignments.length > 0) {
+                // Jika ada assignments tapi tidak ada history
+                if (assignments && !assignError && assignments.length > 0) {
                     const shiftNames = [...new Set(assignments.map(a => a.shift_name))];
                     const userMap = {};
                     availableUsers.forEach(u => userMap[u.id] = u);
@@ -9456,16 +9454,17 @@
                         note: '',
                         users: assignments
                             .filter(a => a.shift_name === name)
-                            .map(a => userMap[a.user_id])
+                            .map(a => {
+                                const user = userMap[a.user_id];
+                                if (user) {
+                                    const idx = availableUsers.findIndex(av => av.id === user.id);
+                                    if (idx !== -1) availableUsers.splice(idx, 1);
+                                    return user;
+                                }
+                                return null;
+                            })
                             .filter(Boolean)
                     }));
-
-                    shiftColumns.forEach(col => {
-                        col.users.forEach(u => {
-                            const idx = availableUsers.findIndex(av => av.id === u.id);
-                            if (idx !== -1) availableUsers.splice(idx, 1);
-                        });
-                    });
 
                     shiftIsDirty = false;
                     renderShiftPage();
@@ -9971,7 +9970,7 @@
         }
 
         // ============================================================
-        // SHIFT DATE CHANGE (DIPERBAIKI)
+        // SHIFT DATE CHANGE
         // ============================================================
 
         function onShiftDateChange(date, type) {
@@ -10001,7 +10000,7 @@
         }
 
         // ============================================================
-        // SAVE SHIFT (DIPERBAIKI - Simpan dengan range)
+        // SAVE SHIFT (DIPERBAIKI)
         // ============================================================
 
         async function saveShift() {
@@ -10093,6 +10092,7 @@
 
             if (!confirm('⚠️ Yakin ingin mereset semua shift? Semua staff akan kembali ke DATA STAFF.')) return;
 
+            // Kembalikan semua user ke availableUsers
             shiftColumns.forEach(col => {
                 col.users.forEach(user => {
                     if (!availableUsers.some(u => u.id === user.id)) {
@@ -10261,7 +10261,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT (DIPERBAIKI)
+        // PREVIEW SHIFT
         // ============================================================
 
         function openShiftPreview() {
@@ -10450,7 +10450,7 @@
         }
 
         // ============================================================
-        // RIWAYAT SHIFT - FUNCTIONS
+        // RIWAYAT SHIFT - FUNCTIONS (DIPERBAIKI - Dengan fitur Gunakan Lagi)
         // ============================================================
 
         async function loadShiftHistory() {
@@ -10472,7 +10472,7 @@
         }
 
         // ============================================================
-        // RENDER RIWAYAT SHIFT (DIPERBAIKI - Judul dihapus, filter di atas)
+        // RENDER RIWAYAT SHIFT (DIPERBAIKI - Dengan tombol Gunakan Lagi)
         // ============================================================
 
         function renderShiftHistory() {
@@ -10603,6 +10603,7 @@
                                                 <div class="col-actions" style="justify-content:center;gap:4px;">
                                                     <button class="action-btn open" onclick="openShiftFromHistory('${item.id}')" title="Buka" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">📂</button>
                                                     <button class="action-btn preview" onclick="previewShiftFromHistory('${item.id}')" title="Preview" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">👁️</button>
+                                                    <button class="action-btn reuse" onclick="reuseShiftFromHistory('${item.id}')" title="Gunakan Lagi" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">🔄</button>
                                                     ${canEdit ? `
                                                         <button class="action-btn delete" onclick="deleteShiftHistory('${item.id}')" title="Hapus" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">🗑️</button>
                                                     ` : ''}
@@ -10623,7 +10624,7 @@
         }
 
         // ============================================================
-        // OPEN SHIFT FROM HISTORY (DIPERBAIKI)
+        // OPEN SHIFT FROM HISTORY
         // ============================================================
 
         async function openShiftFromHistory(historyId) {
@@ -10660,7 +10661,7 @@
         }
 
         // ============================================================
-        // REUSE SHIFT (DIPERBAIKI)
+        // REUSE SHIFT (Gunakan Lagi)
         // ============================================================
 
         function reuseShiftFromHistory(historyId) {
@@ -10740,8 +10741,7 @@
                     users: []
                 }));
 
-                availableUsers = [];
-
+                // Ambil semua user dan assign ulang
                 const { data: users, error: usersError } = await supabaseDashboard
                     .from('users')
                     .select('*')
@@ -10753,20 +10753,23 @@
                 const userMap = {};
                 allUsers.forEach(u => userMap[u.id] = u);
 
+                // Set availableUsers dengan semua user
+                availableUsers = allUsers.map(u => ({ ...u }));
+                sortAvailableUsers();
+
                 shiftData.columns.forEach((col, index) => {
                     if (col.users) {
                         col.users.forEach(u => {
                             const user = userMap[u.id];
                             if (user) {
                                 shiftColumns[index].users.push(user);
-                                delete userMap[u.id];
+                                // Hapus dari availableUsers
+                                const idx = availableUsers.findIndex(av => av.id === user.id);
+                                if (idx !== -1) availableUsers.splice(idx, 1);
                             }
                         });
                     }
                 });
-
-                availableUsers = Object.values(userMap);
-                sortAvailableUsers();
 
                 shiftIsDirty = true;
                 renderShiftPage();
@@ -10786,7 +10789,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT FROM HISTORY (DIPERBAIKI)
+        // PREVIEW SHIFT FROM HISTORY
         // ============================================================
 
         function previewShiftFromHistory(historyId) {
@@ -10830,7 +10833,7 @@
         }
 
         // ============================================================
-        // DELETE SHIFT HISTORY (DIPERBAIKI)
+        // DELETE SHIFT HISTORY
         // ============================================================
 
         async function deleteShiftHistory(historyId) {
