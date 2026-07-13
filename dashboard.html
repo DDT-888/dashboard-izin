@@ -4094,7 +4094,7 @@
             transition: opacity 0.3s ease;
         }
 
-        /* ============================================================
+   /* ============================================================
    🔥 SHIFT KERJA - CSS
    ============================================================ */
 
@@ -4123,12 +4123,7 @@
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-}
-
-.shift-header-left .subtitle {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 400;
+    flex: 1;
 }
 
 .shift-header-right {
@@ -4136,6 +4131,7 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .shift-header-right .periode-wrapper {
@@ -4171,30 +4167,63 @@
     cursor: pointer;
 }
 
+/* 🔥 HAPUS .shift-stats karena sudah digabung ke header */
 .shift-stats {
-    display: flex;
-    gap: 14px;
-    font-size: 12px;
-    color: var(--text-muted);
-    padding: 4px 0 6px 0;
-    flex-wrap: wrap;
-    border-bottom: 1px solid var(--border-color);
+    display: none;
 }
 
-.shift-stats span {
+/* 🔥 TOOLTIP UNTUK STATS */
+.shift-stats-wrapper {
+    cursor: help;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 2px 0;
+    flex-wrap: wrap;
 }
 
-.shift-stats strong {
+.shift-stats-wrapper strong {
     color: var(--text-primary);
-    font-weight: 700;
 }
 
-.shift-stats .stat-total {
+.shift-stats-wrapper .stat-total {
     color: var(--sidebar-text);
-    font-weight: 700;
+}
+
+/* Tooltip custom untuk stats */
+.shift-stats-wrapper[title] {
+    position: relative;
+}
+
+.shift-stats-wrapper[title]:hover::after {
+    content: attr(title);
+    position: fixed;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.6;
+    white-space: pre-line;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    border: 1px solid var(--border-color);
+    z-index: 1000;
+    max-width: 300px;
+    pointer-events: none;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: left;
+    backdrop-filter: blur(10px);
+    background: rgba(var(--bg-card-rgb, 255,255,255), 0.95);
+}
+
+[data-theme="dark"] .shift-stats-wrapper[title]:hover::after {
+    background: rgba(28, 35, 51, 0.95);
+    border-color: #30363d;
 }
 
 /* --- Main Grid --- */
@@ -4204,7 +4233,7 @@
     gap: 14px;
     flex: 1;
     min-height: 300px;
-    height: calc(100vh - 420px);
+    height: calc(100vh - 380px);
     max-height: 580px;
 }
 
@@ -4294,12 +4323,6 @@
     flex-direction: column;
     transition: all 0.3s ease;
     position: relative;
-    cursor: grab;
-    user-select: none;
-}
-
-.shift-column:active {
-    cursor: grabbing;
 }
 
 /* 🔥 DRAG KOLOM - Visual Feedback */
@@ -4333,6 +4356,7 @@
     border-radius: 0 0 12px 12px;
 }
 
+/* --- Column Header --- */
 .shift-column .column-header {
     padding: 8px 12px 6px 12px;
     background: var(--bg-hover);
@@ -5409,10 +5433,6 @@
                         <option value="kapten">⚓ Kapten</option>
                         <option value="kasir">💰 Kasir</option>
                     </select>
-                    <!-- 🔥 TOMBOL REFRESH MANUAL -->
-                    <button class="btn-shift outline sm" onclick="refreshAllData()" style="margin-left:auto;white-space:nowrap;">
-                        🔄 Refresh Data
-                    </button>
                 </div>
             </div>
 
@@ -9492,11 +9512,24 @@ function renderShiftPage() {
     if (dateStart) dateStart.value = shiftCurrentDate;
     if (dateEnd) dateEnd.value = shiftCurrentDate;
 
+    // 🔥 BUAT TOOLTIP UNTUK STATS
+    const statsTooltip = `📊 Total: ${totalStaff} staff\n${shiftColumns.map(col => `${col.name}: ${col.users.length} staff`).join('\n')}\n📋 Belum diatur: ${availableUsers.length} staff${shiftIsDirty ? '\n⚠️ Belum disimpan' : ''}`;
+
     container.innerHTML = `
         <div class="shift-container">
+            <!-- 🔥 HEADER BARU - Stats di atas sejajar dengan tombol -->
             <div class="shift-header">
                 <div class="shift-header-left">
-                    <span class="subtitle">${canEdit ? 'Drag & drop staff untuk mengatur shift' : '👀 Mode Lihat'}</span>
+                    <div class="shift-stats-wrapper" 
+                         title="${statsTooltip}" 
+                         style="cursor:help;display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text-muted);padding:2px 0;flex-wrap:wrap;">
+                        <span>📊 Total: <strong style="color:var(--text-primary);">${totalStaff}</strong> staff</span>
+                        ${shiftColumns.map(col => `
+                            <span>${col.name}: <strong style="color:var(--text-primary);">${col.users.length}</strong></span>
+                        `).join('')}
+                        <span>📋 Belum diatur: <strong style="color:var(--sidebar-text);">${availableUsers.length}</strong></span>
+                        ${shiftIsDirty ? '<span style="color:var(--warning);font-weight:600;">⚠️ Belum disimpan</span>' : ''}
+                    </div>
                 </div>
                 <div class="shift-header-right">
                     <div class="periode-wrapper">
@@ -9512,14 +9545,7 @@ function renderShiftPage() {
                 </div>
             </div>
 
-            <div class="shift-stats">
-                <span>📊 Total: <strong>${totalStaff}</strong> staff</span>
-                ${shiftColumns.map(col => `
-                    <span>${col.name}: <strong>${col.users.length}</strong></span>
-                `).join('')}
-                <span>📋 Belum diatur: <strong class="stat-total">${availableUsers.length}</strong></span>
-                ${shiftIsDirty ? '<span style="color:var(--warning);">⚠️ Belum disimpan</span>' : ''}
-            </div>
+            <!-- 🔥 TIDAK ADA LAGI SHIFT-STATS TERPISAH -->
 
             <div class="shift-main-grid">
                 <!-- DATA STAFF -->
@@ -9561,11 +9587,7 @@ function renderShiftPage() {
                 <!-- SHIFT COLUMNS -->
                 <div class="shift-columns-wrapper" id="shiftColumnsWrapper">
                     ${shiftColumns.map((col, index) => `
-                        <!-- 🔥 KOLOM SHIFT - DRAG KOLOM (HANYA PADA HEADER) -->
-                        <div class="shift-column" 
-                             data-column-id="${col.id}">
-                            
-                            <!-- 🔥 HEADER UNTUK DRAG KOLOM -->
+                        <div class="shift-column" data-column-id="${col.id}">
                             <div class="column-header"
                                  draggable="${canEdit}"
                                  ondragstart="onColumnDragStart(event, '${col.id}')"
@@ -9588,7 +9610,6 @@ function renderShiftPage() {
                                 </div>
                             </div>
 
-                            <!-- 🔥 DROPZONE UNTUK STAFF (BUKAN UNTUK KOLOM) -->
                             <div class="shift-column-dropzone"
                                  id="columnDropzone_${col.id}"
                                  ondragover="onStaffDragOver(event)"
@@ -9627,7 +9648,6 @@ function renderShiftPage() {
                                     `).join('')}
                                 </div>
                             </div>
-                            <!-- END DROPZONE STAFF -->
                         </div>
                     `).join('')}
                 </div>
@@ -10576,9 +10596,6 @@ function renderShiftHistory() {
         <div class="history-shift-container">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:4px 0 8px 0;border-bottom:1px solid var(--border-color);">
                 <h2 style="color:var(--text-primary);font-size:17px;margin:0;font-weight:600;">📋 Riwayat Shift</h2>
-                <button class="btn-shift outline sm" onclick="loadShiftHistory()" style="display:flex;align-items:center;gap:4px;">
-                    🔄 Refresh
-                </button>
             </div>
 
             <div class="filter-bar" style="padding:6px 0 2px 0;">
