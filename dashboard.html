@@ -4136,20 +4136,37 @@
             flex-wrap: wrap;
         }
 
-        .shift-header-right input[type="date"] {
-            padding: 6px 12px;
+        .shift-header-right .periode-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-input);
             border: 2px solid var(--border-input);
             border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-input);
-            color: var(--text-primary);
-            outline: none;
-            transition: 0.3s;
-            width: 200px;
+            padding: 2px 10px;
+            height: 34px;
         }
 
-        .shift-header-right input[type="date"]:focus {
-            border-color: var(--sidebar-text);
+        .shift-header-right .periode-wrapper span {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .shift-header-right .periode-wrapper input[type="date"] {
+            border: none;
+            background: transparent;
+            padding: 4px 0;
+            font-size: 13px;
+            color: var(--text-primary);
+            outline: none;
+            width: 125px;
+            height: 28px;
+        }
+
+        .shift-header-right .periode-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0.5;
+            cursor: pointer;
         }
 
         .shift-stats {
@@ -4356,12 +4373,28 @@
             flex-direction: column;
             transition: all 0.3s ease;
             position: relative;
+            cursor: grab;
+        }
+
+        .shift-column:active {
+            cursor: grabbing;
         }
 
         .shift-column.drag-over {
             border-color: var(--sidebar-text);
             background: var(--bg-hover);
             box-shadow: 0 0 30px rgba(0, 229, 255, 0.05);
+        }
+
+        .shift-column.dragging-col {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+
+        .shift-column.drag-over-col {
+            border-color: var(--sidebar-text);
+            background: var(--bg-hover);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.08);
         }
 
         .shift-column .column-header {
@@ -4745,12 +4778,12 @@
             gap: 12px;
             flex-wrap: wrap;
             align-items: center;
-            padding: 8px 0;
+            padding: 6px 0 2px 0;
         }
 
         .history-shift-container .filter-bar input,
         .history-shift-container .filter-bar select {
-            padding: 6px 12px;
+            padding: 7px 14px;
             border: 2px solid var(--border-input);
             border-radius: 8px;
             font-size: 13px;
@@ -4819,6 +4852,7 @@
             display: flex;
             gap: 6px;
             flex-wrap: wrap;
+            justify-content: center;
         }
 
         .history-table-wrap .col-actions .action-btn {
@@ -5102,6 +5136,15 @@
                 flex-wrap: wrap;
             }
 
+            .shift-header-right .periode-wrapper {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .shift-header-right .periode-wrapper input[type="date"] {
+                width: 100px;
+            }
+
             .shift-toolbar {
                 flex-wrap: wrap;
             }
@@ -5142,11 +5185,10 @@
     </style>
 </head>
 <body>
-
-    <!-- ========== TOAST NOTIFICATION ========== -->
+    <!-- ============================================================ -->
+    <!-- TOAST NOTIFICATION, JACKPOT POPUP, CLAIM POPUP, POPUP LIMIT   -->
+    <!-- ============================================================ -->
     <div class="toast-notification" id="toastNotification"></div>
-
-    <!-- ========== JACKPOT POPUP ========== -->
     <div class="jackpot-modal" id="jackpotModal">
         <div class="jackpot-content-premium">
             <div class="jackpot-glow"></div>
@@ -5163,8 +5205,6 @@
             <button class="btn-jackpot" onclick="closeJackpot()">🎯 Ambil Hadiah</button>
         </div>
     </div>
-
-    <!-- ========== CLAIM VOUCHER POPUP ========== -->
     <div class="claim-popup-overlay" id="claimPopup">
         <div class="claim-popup-premium">
             <div class="claim-glow"></div>
@@ -5182,8 +5222,6 @@
             <button class="btn-claim" onclick="closeClaimPopup()">👍 OK</button>
         </div>
     </div>
-
-    <!-- ========== POPUP LIMIT ========== -->
     <div class="popup-overlay" id="popupLimit">
         <div class="popup-content">
             <span class="popup-decoration d1">🚦</span>
@@ -5199,8 +5237,6 @@
             <button class="popup-btn" onclick="closePopup()">Mengerti</button>
         </div>
     </div>
-
-    <!-- ========== OVERLAY ========== -->
     <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
     <!-- ========== SIDEBAR ========== -->
@@ -5210,7 +5246,7 @@
         </div>
 
         <nav class="sidebar-menu">
-            <div class="menu-item active" onclick="switchTab('dashboard')">
+            <div class="menu-item active" onclick="switchTab('dashboard')" id="menuDashboard">
                 <span class="icon">📊</span> Dashboard
                 <span class="badge" id="sidebarBadgeIzin">0</span>
             </div>
@@ -5222,7 +5258,7 @@
                 <span class="icon">🎫</span> Voucher
                 <span class="badge gold" id="sidebarBadgeVoucher">0</span>
             </div>
-            <div class="menu-item" onclick="switchTab('history')">
+            <div class="menu-item" onclick="switchTab('history')" id="menuHistory">
                 <span class="icon">📜</span> History
                 <span class="badge gray" id="sidebarBadgeHistory">0</span>
             </div>
@@ -5430,6 +5466,10 @@
                         <option value="kapten">⚓ Kapten</option>
                         <option value="kasir">💰 Kasir</option>
                     </select>
+                    <!-- 🔥 TOMBOL REFRESH MANUAL -->
+                    <button class="btn-shift outline sm" onclick="refreshAllData()" style="margin-left:auto;white-space:nowrap;">
+                        🔄 Refresh Data
+                    </button>
                 </div>
             </div>
 
@@ -9226,7 +9266,10 @@
         // ============================================================
         // FUNGSI GLOBAL
         // ============================================================
-        window.switchTab = function(tab) {
+        function switchTab(tab) {
+            // Simpan tab ke localStorage agar F5 tetap di menu terakhir
+            localStorage.setItem('lastTab', tab);
+            
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(el => {
                 const text = el.textContent.trim();
@@ -9292,21 +9335,27 @@
                     el.style.display = canEdit ? 'none' : 'inline-flex';
                 });
             }
-        };
+        }
 
-        window.toggleSidebar = function() {
+        // Override fungsi switchTab global
+        window.switchTab = switchTab;
+
+        function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
             if (sidebar) sidebar.classList.toggle('open');
             if (overlay) overlay.classList.toggle('show');
-        };
+        }
 
-        window.closeSidebar = function() {
+        function closeSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
             if (sidebar) sidebar.classList.remove('open');
             if (overlay) overlay.classList.remove('show');
-        };
+        }
+
+        window.toggleSidebar = toggleSidebar;
+        window.closeSidebar = closeSidebar;
 
         window.logout = async function() {
             stopPeriodicRefresh();
@@ -9352,6 +9401,21 @@
         }
 
         // ============================================================
+        // 🔥 FUNGSI REFRESH DATA MANUAL
+        // ============================================================
+        window.refreshAllData = function() {
+            showToast('🔄 Memperbarui data...', 'info', 1500);
+            loadDataFromDatabase();
+            // Jika di tab shift, refresh juga
+            if (currentTab === 'shifts') {
+                loadShiftData(shiftCurrentDate);
+            }
+            if (currentTab === 'historyshift') {
+                loadShiftHistory();
+            }
+        };
+
+        // ============================================================
         // 🔥 SHIFT KERJA - FUNCTIONS
         // ============================================================
 
@@ -9361,6 +9425,32 @@
                    currentUserRole === 'kapten';
         }
 
+        // ============================================================
+        // SORT FUNCTIONS
+        // ============================================================
+        function sortAvailableUsers() {
+            const rolePriority = { csline: 0, cs: 1, kapten: 2, kasir: 3 };
+            availableUsers.sort((a, b) => {
+                const orderA = rolePriority[a.role] ?? 99;
+                const orderB = rolePriority[b.role] ?? 99;
+                if (orderA !== orderB) return orderA - orderB;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        function sortColumnUsers(column) {
+            const rolePriority = { csline: 0, cs: 1, kapten: 2, kasir: 3 };
+            column.users.sort((a, b) => {
+                const orderA = rolePriority[a.role] ?? 99;
+                const orderB = rolePriority[b.role] ?? 99;
+                if (orderA !== orderB) return orderA - orderB;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        // ============================================================
+        // LOAD SHIFT DATA
+        // ============================================================
         async function loadShiftData(tanggal) {
             if (!tanggal) tanggal = shiftCurrentDate;
 
@@ -9444,6 +9534,9 @@
             }
         }
 
+        // ============================================================
+        // RENDER SHIFT PAGE
+        // ============================================================
         function renderShiftPage() {
             const container = document.getElementById('shiftsContent');
             if (!container) return;
@@ -9452,6 +9545,12 @@
             const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
             const totalInShift = shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
 
+            // Set date picker value
+            const dateStart = document.getElementById('shiftDateStart');
+            const dateEnd = document.getElementById('shiftDateEnd');
+            if (dateStart) dateStart.value = shiftCurrentDate;
+            if (dateEnd) dateEnd.value = shiftCurrentDate;
+
             container.innerHTML = `
                 <div class="shift-container">
                     <div class="shift-header">
@@ -9459,17 +9558,16 @@
                             <span class="subtitle">${canEdit ? 'Drag & drop staff untuk mengatur shift' : '👀 Mode Lihat'}</span>
                         </div>
                         <div class="shift-header-right">
-                            <input type="date" id="shiftDatePicker" value="${shiftCurrentDate}" onchange="onShiftDateChange(this.value)" />
+                            <div class="periode-wrapper">
+                                <span>Periode:</span>
+                                <input type="date" id="shiftDateStart" value="${shiftCurrentDate}" onchange="onShiftDateChange(this.value)" />
+                                <span>-</span>
+                                <input type="date" id="shiftDateEnd" value="${shiftCurrentDate}" onchange="onShiftDateChangeEnd(this.value)" />
+                            </div>
                             <button class="btn-shift preview sm" onclick="openShiftPreview()">👁️ Preview</button>
-                            <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>
-                                💾 Simpan
-                            </button>
-                            <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>
-                                ↩️ Reset
-                            </button>
-                            <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>
-                                ➕ Tambah Kolom
-                            </button>
+                            <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
+                            <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
+                            <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
                         </div>
                     </div>
 
@@ -9516,9 +9614,12 @@
                             ${shiftColumns.map((col, index) => `
                                 <div class="shift-column" 
                                      data-column-id="${col.id}"
-                                     ondragover="onShiftDragOver(event)"
-                                     ondragleave="onShiftDragLeave(event)"
-                                     ondrop="onShiftDrop(event, '${col.id}')">
+                                     draggable="${canEdit}"
+                                     ondragstart="onColumnDragStart(event, '${col.id}')"
+                                     ondragend="onColumnDragEnd(event)"
+                                     ondragover="onColumnDragOver(event)"
+                                     ondragleave="onColumnDragLeave(event)"
+                                     ondrop="onColumnDrop(event, '${col.id}')">
                                     
                                     <div class="column-header">
                                         <div class="title-wrap">
@@ -9584,6 +9685,9 @@
             });
         }
 
+        // ============================================================
+        // SHIFT DRAG & DROP - STAFF
+        // ============================================================
         let dragData = null;
 
         function onShiftDragStart(e, userId, sourceType, columnId) {
@@ -9650,36 +9754,46 @@
                 const { userId, sourceType, columnId: sourceColumnId } = data;
 
                 let user = null;
+                let sourceColumn = null;
+                
                 if (sourceType === 'available') {
-                    const idx = availableUsers.findIndex(u => u.id === userId);
-                    if (idx === -1) return;
+                    const idx = availableUsers.findIndex(u => String(u.id) === String(userId));
+                    if (idx === -1) {
+                        showShiftToast('❌ User tidak ditemukan di data staff', 'error');
+                        return;
+                    }
                     user = availableUsers.splice(idx, 1)[0];
                 } else {
-                    const sourceCol = shiftColumns.find(c => c.id === sourceColumnId);
-                    if (!sourceCol) return;
-                    const idx = sourceCol.users.findIndex(u => u.id === userId);
-                    if (idx === -1) return;
-                    user = sourceCol.users.splice(idx, 1)[0];
+                    sourceColumn = shiftColumns.find(c => c.id === sourceColumnId);
+                    if (!sourceColumn) {
+                        showShiftToast('❌ Kolom sumber tidak ditemukan', 'error');
+                        return;
+                    }
+                    const idx = sourceColumn.users.findIndex(u => String(u.id) === String(userId));
+                    if (idx === -1) {
+                        showShiftToast('❌ User tidak ditemukan di kolom sumber', 'error');
+                        return;
+                    }
+                    user = sourceColumn.users.splice(idx, 1)[0];
+                }
+
+                if (!user) {
+                    showShiftToast('❌ Gagal menemukan user', 'error');
+                    return;
                 }
 
                 const targetCol = shiftColumns.find(c => c.id === targetColumnId);
                 if (!targetCol) {
                     availableUsers.push(user);
-                    availableUsers.sort((a, b) => a.name.localeCompare(b.name));
+                    sortAvailableUsers();
                 } else {
-                    const exists = targetCol.users.some(u => u.id === userId);
+                    const exists = targetCol.users.some(u => String(u.id) === String(user.id));
                     if (!exists) {
                         targetCol.users.push(user);
-                        const rolePriority = { csline: 0, cs: 1, kapten: 2, kasir: 3 };
-                        targetCol.users.sort((a, b) => {
-                            const orderA = rolePriority[a.role] ?? 99;
-                            const orderB = rolePriority[b.role] ?? 99;
-                            if (orderA !== orderB) return orderA - orderB;
-                            return a.name.localeCompare(b.name);
-                        });
+                        sortColumnUsers(targetCol);
                     } else {
                         availableUsers.push(user);
-                        availableUsers.sort((a, b) => a.name.localeCompare(b.name));
+                        sortAvailableUsers();
                     }
                 }
 
@@ -9693,6 +9807,87 @@
             }
         }
 
+        // ============================================================
+        // DRAG & DROP KOLOM SHIFT
+        // ============================================================
+        let columnDragData = null;
+
+        function onColumnDragStart(e, columnId) {
+            if (!canEditShift()) {
+                e.preventDefault();
+                return false;
+            }
+            
+            columnDragData = {
+                columnId: columnId
+            };
+            
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', JSON.stringify(columnDragData));
+            
+            setTimeout(() => {
+                e.target.classList.add('dragging-col');
+            }, 0);
+        }
+
+        function onColumnDragEnd(e) {
+            e.target.classList.remove('dragging-col');
+            document.querySelectorAll('.shift-column.drag-over-col').forEach(el => {
+                el.classList.remove('drag-over-col');
+            });
+        }
+
+        function onColumnDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const target = e.currentTarget;
+            if (!target.classList.contains('dragging-col')) {
+                target.classList.add('drag-over-col');
+            }
+        }
+
+        function onColumnDragLeave(e) {
+            const target = e.currentTarget;
+            target.classList.remove('drag-over-col');
+        }
+
+        function onColumnDrop(e, targetColumnId) {
+            e.preventDefault();
+            const target = e.currentTarget;
+            target.classList.remove('drag-over-col');
+            
+            if (!canEditShift()) {
+                showShiftToast('❌ Anda tidak memiliki izin untuk mengatur shift!', 'error');
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                const { columnId: sourceColumnId } = data;
+                
+                if (sourceColumnId === targetColumnId) return;
+                
+                const sourceIndex = shiftColumns.findIndex(c => c.id === sourceColumnId);
+                const targetIndex = shiftColumns.findIndex(c => c.id === targetColumnId);
+                
+                if (sourceIndex === -1 || targetIndex === -1) return;
+                
+                const [movedColumn] = shiftColumns.splice(sourceIndex, 1);
+                shiftColumns.splice(targetIndex, 0, movedColumn);
+                
+                shiftIsDirty = true;
+                renderShiftPage();
+                showShiftToast('✅ Kolom shift dipindahkan', 'success', 1200);
+                
+            } catch (err) {
+                console.error('❌ Column drop error:', err);
+                showShiftToast('❌ Gagal memindahkan kolom', 'error');
+            }
+        }
+
+        // ============================================================
+        // EDIT COLUMN NAME & NOTE
+        // ============================================================
         function editColumnName(columnId) {
             if (!canEditShift()) return;
 
@@ -9797,6 +9992,9 @@
             };
         }
 
+        // ============================================================
+        // ADD / DELETE COLUMN
+        // ============================================================
         function addShiftColumn() {
             if (!canEditShift()) return;
 
@@ -9831,14 +10029,17 @@
                     availableUsers.push(user);
                 }
             });
-            availableUsers.sort((a, b) => a.name.localeCompare(b.name));
-
+            
+            sortAvailableUsers();
             shiftColumns = shiftColumns.filter(c => c.id !== columnId);
             shiftIsDirty = true;
             renderShiftPage();
             showShiftToast('✅ Kolom shift dihapus', 'success', 1500);
         }
 
+        // ============================================================
+        // RESET SHIFT
+        // ============================================================
         function resetShift() {
             if (!canEditShift()) return;
 
@@ -9853,12 +10054,15 @@
                 col.users = [];
             });
 
-            availableUsers.sort((a, b) => a.name.localeCompare(b.name));
+            sortAvailableUsers();
             shiftIsDirty = true;
             renderShiftPage();
             showShiftToast('✅ Shift di-reset', 'success', 1500);
         }
 
+        // ============================================================
+        // SAVE SHIFT
+        // ============================================================
         async function saveShift() {
             if (!canEditShift()) return;
 
@@ -9933,11 +10137,24 @@
             }
         }
 
+        // ============================================================
+        // DATE CHANGE
+        // ============================================================
         function onShiftDateChange(date) {
             shiftCurrentDate = date;
             loadShiftData(date);
         }
 
+        function onShiftDateChangeEnd(date) {
+            // Bisa digunakan untuk filter atau range, untuk sekarang simpan saja
+            // Optional: load data untuk tanggal tersebut
+            // shiftCurrentDate = date;
+            // loadShiftData(date);
+        }
+
+        // ============================================================
+        // PREVIEW SHIFT
+        // ============================================================
         function openShiftPreview() {
             const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
             
@@ -10082,6 +10299,9 @@
             });
         }
 
+        // ============================================================
+        // SHIFT TOAST
+        // ============================================================
         function showShiftToast(message, type = 'info', duration = 2000) {
             let toast = document.getElementById('shiftToast');
             if (!toast) {
@@ -10102,15 +10322,12 @@
         }
 
         function updateShiftBadges() {
-            const totalInShift = shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
-            const badge = document.getElementById('sidebarBadgeShift');
-            if (badge) badge.textContent = totalInShift;
+            // Shift badge dihapus, tidak perlu update
         }
 
         // ============================================================
         // 🔥 RIWAYAT SHIFT - FUNCTIONS
         // ============================================================
-
         async function loadShiftHistory() {
             try {
                 const { data, error } = await supabaseDashboard
@@ -10206,14 +10423,16 @@
 
             container.innerHTML = `
                 <div class="history-shift-container">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:4px 0;">
-                        <h2 style="color:var(--text-primary);font-size:18px;margin:0;">📋 Riwayat Shift Kerja</h2>
-                        <button class="btn-shift outline sm" onclick="loadShiftHistory()">🔄 Refresh</button>
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:4px 0 8px 0;border-bottom:1px solid var(--border-color);">
+                        <h2 style="color:var(--text-primary);font-size:17px;margin:0;font-weight:600;">📋 Riwayat Shift</h2>
+                        <button class="btn-shift outline sm" onclick="loadShiftHistory()" style="display:flex;align-items:center;gap:4px;">
+                            🔄 Refresh
+                        </button>
                     </div>
 
-                    <div class="filter-bar">
-                        <input type="text" id="historyShiftSearch" placeholder="🔍 Cari periode atau pembuat..." oninput="renderShiftHistory()" />
-                        <select id="historyShiftFilter" onchange="renderShiftHistory()">
+                    <div class="filter-bar" style="padding:6px 0 2px 0;">
+                        <input type="text" id="historyShiftSearch" placeholder="🔍 Cari periode atau pembuat..." oninput="renderShiftHistory()" style="flex:1;min-width:180px;padding:7px 14px;border:2px solid var(--border-input);border-radius:8px;font-size:13px;background:var(--bg-input);color:var(--text-primary);outline:none;transition:0.3s;" />
+                        <select id="historyShiftFilter" onchange="renderShiftHistory()" style="padding:7px 14px;border:2px solid var(--border-input);border-radius:8px;font-size:13px;background:var(--bg-input);color:var(--text-primary);outline:none;cursor:pointer;">
                             <option value="all">📅 Semua</option>
                             <option value="this_month">Bulan Ini</option>
                             <option value="last_month">Bulan Lalu</option>
@@ -10296,7 +10515,8 @@
                 }
 
                 shiftCurrentDate = data.tanggal;
-                document.getElementById('shiftDatePicker').value = data.tanggal;
+                document.getElementById('shiftDateStart').value = data.tanggal;
+                document.getElementById('shiftDateEnd').value = data.tanggal;
 
                 await loadShiftData(data.tanggal);
 
@@ -10362,7 +10582,8 @@
                 }
 
                 shiftCurrentDate = newDate;
-                document.getElementById('shiftDatePicker').value = newDate;
+                document.getElementById('shiftDateStart').value = newDate;
+                document.getElementById('shiftDateEnd').value = newDate;
 
                 const shiftData = JSON.parse(data.shift_data);
                 
@@ -10399,7 +10620,7 @@
                 });
 
                 availableUsers = Object.values(userMap);
-                availableUsers.sort((a, b) => a.name.localeCompare(b.name));
+                sortAvailableUsers();
 
                 shiftIsDirty = true;
                 renderShiftPage();
@@ -10461,11 +10682,13 @@
 
             const item = shiftHistoryData.find(h => h.id === historyId);
             if (!item) {
-                showShiftToast('❌ Data tidak ditemukan', 'error');
+                showShiftToast('❌ Data tidak ditemukan di riwayat!', 'error');
                 return;
             }
 
-            if (!confirm(`⚠️ Yakin ingin menghapus riwayat shift ${item.tanggal}?`)) return;
+            if (!confirm(`⚠️ Yakin ingin menghapus riwayat shift untuk tanggal ${item.tanggal}?`)) {
+                return;
+            }
 
             try {
                 const { error } = await supabaseDashboard
@@ -10473,14 +10696,20 @@
                     .delete()
                     .eq('id', historyId);
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Error deleting from database:', error);
+                    showShiftToast('❌ Gagal menghapus: ' + error.message, 'error');
+                    return;
+                }
 
                 await supabaseDashboard
                     .from('shift_assignments')
                     .delete()
                     .eq('tanggal', item.tanggal);
 
-                await loadShiftHistory();
+                shiftHistoryData = shiftHistoryData.filter(h => h.id !== historyId);
+
+                renderShiftHistory();
                 showShiftToast('✅ Riwayat shift dihapus', 'success', 2000);
 
             } catch (err) {
@@ -10492,26 +10721,25 @@
         // ============================================================
         // 🔥 SHIFT INIT
         // ============================================================
-
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Dashboard Izin - Starting...');
+
+            loadTheme();
+
+            // 🔥 CEK TAB TERAKHIR DARI localStorage
+            const lastTab = localStorage.getItem('lastTab') || 'dashboard';
+            console.log(`📌 Last tab: ${lastTab}`);
+
+            renderTicker();
+            checkAuth();
+
+            // 🔥 SHIFT PREVIEW MODAL
             if (!document.getElementById('shiftPreviewModal')) {
                 const modal = document.createElement('div');
                 modal.id = 'shiftPreviewModal';
                 modal.className = 'shift-preview-modal';
                 document.body.appendChild(modal);
             }
-        });
-
-        // ============================================================
-        // INIT
-        // ============================================================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Dashboard Izin - Starting...');
-
-            loadTheme();
-
-            renderTicker();
-            checkAuth();
 
             document.addEventListener('visibilitychange', function() {
                 if (document.visibilityState === 'visible') {
@@ -10522,6 +10750,19 @@
                     startPeriodicRefresh();
                 }
             });
+
+            // 🔥 SETELAH AUTH SELESAI, SWITCH KE TAB TERAKHIR
+            const originalCheckAuth = checkAuth;
+            checkAuth = async function() {
+                await originalCheckAuth();
+                // Setelah auth selesai, switch ke tab terakhir
+                setTimeout(() => {
+                    const savedTab = localStorage.getItem('lastTab') || 'dashboard';
+                    if (document.getElementById(`tab-${savedTab}`)) {
+                        switchTab(savedTab);
+                    }
+                }, 500);
+            };
         });
     </script>
 
