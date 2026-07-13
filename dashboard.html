@@ -4397,6 +4397,21 @@
             box-shadow: 0 0 30px rgba(0, 229, 255, 0.08);
         }
 
+/* 🔥 DROPZONE UNTUK DRAG STAFF */
+.shift-column-dropzone {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+}
+
+.shift-column-dropzone.drag-over {
+    background: var(--bg-hover);
+    box-shadow: inset 0 0 30px rgba(0, 229, 255, 0.03);
+}
+
         .shift-column .column-header {
             padding: 8px 12px 6px 12px;
             background: var(--bg-hover);
@@ -9538,152 +9553,157 @@
         // RENDER SHIFT PAGE
         // ============================================================
         function renderShiftPage() {
-            const container = document.getElementById('shiftsContent');
-            if (!container) return;
+    const container = document.getElementById('shiftsContent');
+    if (!container) return;
 
-            const canEdit = canEditShift();
-            const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
-            const totalInShift = shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
+    const canEdit = canEditShift();
+    const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
+    const totalInShift = shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
 
-            // Set date picker value
-            const dateStart = document.getElementById('shiftDateStart');
-            const dateEnd = document.getElementById('shiftDateEnd');
-            if (dateStart) dateStart.value = shiftCurrentDate;
-            if (dateEnd) dateEnd.value = shiftCurrentDate;
+    const dateStart = document.getElementById('shiftDateStart');
+    const dateEnd = document.getElementById('shiftDateEnd');
+    if (dateStart) dateStart.value = shiftCurrentDate;
+    if (dateEnd) dateEnd.value = shiftCurrentDate;
 
-            container.innerHTML = `
-                <div class="shift-container">
-                    <div class="shift-header">
-                        <div class="shift-header-left">
-                            <span class="subtitle">${canEdit ? 'Drag & drop staff untuk mengatur shift' : '👀 Mode Lihat'}</span>
-                        </div>
-                        <div class="shift-header-right">
-                            <div class="periode-wrapper">
-                                <span>Periode:</span>
-                                <input type="date" id="shiftDateStart" value="${shiftCurrentDate}" onchange="onShiftDateChange(this.value)" />
-                                <span>-</span>
-                                <input type="date" id="shiftDateEnd" value="${shiftCurrentDate}" onchange="onShiftDateChangeEnd(this.value)" />
-                            </div>
-                            <button class="btn-shift preview sm" onclick="openShiftPreview()">👁️ Preview</button>
-                            <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
-                            <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
-                            <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
-                        </div>
+    container.innerHTML = `
+        <div class="shift-container">
+            <div class="shift-header">
+                <div class="shift-header-left">
+                    <span class="subtitle">${canEdit ? 'Drag & drop staff untuk mengatur shift' : '👀 Mode Lihat'}</span>
+                </div>
+                <div class="shift-header-right">
+                    <div class="periode-wrapper">
+                        <span>Periode:</span>
+                        <input type="date" id="shiftDateStart" value="${shiftCurrentDate}" onchange="onShiftDateChange(this.value)" />
+                        <span>-</span>
+                        <input type="date" id="shiftDateEnd" value="${shiftCurrentDate}" onchange="onShiftDateChangeEnd(this.value)" />
                     </div>
+                    <button class="btn-shift preview sm" onclick="openShiftPreview()">👁️ Preview</button>
+                    <button class="btn-shift success sm" onclick="saveShift()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
+                    <button class="btn-shift danger sm" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
+                    <button class="btn-shift primary sm" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''}>➕ Tambah Kolom</button>
+                </div>
+            </div>
 
-                    <div class="shift-stats">
-                        <span>📊 Total: <strong>${totalStaff}</strong> staff</span>
-                        ${shiftColumns.map(col => `
-                            <span>${col.name}: <strong>${col.users.length}</strong></span>
-                        `).join('')}
-                        <span>📋 Belum diatur: <strong class="stat-total">${availableUsers.length}</strong></span>
-                        ${shiftIsDirty ? '<span style="color:var(--warning);">⚠️ Belum disimpan</span>' : ''}
+            <div class="shift-stats">
+                <span>📊 Total: <strong>${totalStaff}</strong> staff</span>
+                ${shiftColumns.map(col => `
+                    <span>${col.name}: <strong>${col.users.length}</strong></span>
+                `).join('')}
+                <span>📋 Belum diatur: <strong class="stat-total">${availableUsers.length}</strong></span>
+                ${shiftIsDirty ? '<span style="color:var(--warning);">⚠️ Belum disimpan</span>' : ''}
+            </div>
+
+            <div class="shift-main-grid">
+                <div class="shift-available">
+                    <div class="header">
+                        <span class="title">DATA STAFF</span>
+                        <span class="count">${availableUsers.length}</span>
                     </div>
-
-                    <div class="shift-main-grid">
-                        <div class="shift-available">
-                            <div class="header">
-                                <span class="title">DATA STAFF</span>
-                                <span class="count">${availableUsers.length}</span>
+                    <div class="body" id="shiftAvailableBody">
+                        ${availableUsers.length === 0 ? `
+                            <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px;">
+                                Semua staff sudah ditempatkan
                             </div>
-                            <div class="body" id="shiftAvailableBody">
-                                ${availableUsers.length === 0 ? `
-                                    <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px;">
-                                        Semua staff sudah ditempatkan
-                                    </div>
-                                ` : availableUsers.map(user => `
-                                    <div class="user-card-shift role-${user.role}" 
-                                         draggable="${canEdit}"
-                                         data-user-id="${user.id}"
-                                         data-source="available"
-                                         ondragstart="onShiftDragStart(event, '${user.id}', 'available')"
-                                         ondragend="onShiftDragEnd(event)">
-                                        <div class="avatar">${user.name.charAt(0)}</div>
-                                        <div class="user-info">
-                                            <div class="user-name">${user.name}</div>
-                                            <div class="user-role">${user.role}</div>
-                                        </div>
-                                        <span class="role-tag-shift ${user.role}">${user.role}</span>
-                                        <span class="drag-handle">⠿</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <div class="shift-columns-wrapper" id="shiftColumnsWrapper">
-                            ${shiftColumns.map((col, index) => `
-                                <div class="shift-column" 
-                                     data-column-id="${col.id}"
-                                     draggable="${canEdit}"
-                                     ondragstart="onColumnDragStart(event, '${col.id}')"
-                                     ondragend="onColumnDragEnd(event)"
-                                     ondragover="onColumnDragOver(event)"
-                                     ondragleave="onColumnDragLeave(event)"
-                                     ondrop="onColumnDrop(event, '${col.id}')">
-                                    
-                                    <div class="column-header">
-                                        <div class="title-wrap">
-                                            <span class="col-name" 
-                                                  onclick="editColumnName('${col.id}')"
-                                                  title="Double-click untuk edit nama">
-                                                ${col.name}
-                                            </span>
-                                            <span class="col-count">${col.users.length}</span>
-                                        </div>
-                                        <div class="col-actions">
-                                            ${canEdit ? `
-                                                <button class="delete-col" onclick="deleteShiftColumn('${col.id}')" title="Hapus kolom">✕</button>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-
-                                    <div class="column-note">
-                                        <span class="note-text ${!col.note ? 'empty' : ''}" 
-                                              onclick="editColumnNote('${col.id}')"
-                                              title="Klik untuk edit note">
-                                            ${col.note || 'Tambah note...'}
-                                        </span>
-                                    </div>
-
-                                    <div class="column-body" id="shiftColumnBody_${col.id}">
-                                        ${col.users.length === 0 ? `
-                                            <div class="empty-drop" id="emptyDrop_${col.id}">
-                                                Drag staff ke sini
-                                            </div>
-                                        ` : col.users.map(user => `
-                                            <div class="user-card-shift role-${user.role}" 
-                                                 draggable="${canEdit}"
-                                                 data-user-id="${user.id}"
-                                                 data-source="column"
-                                                 data-column-id="${col.id}"
-                                                 ondragstart="onShiftDragStart(event, '${user.id}', 'column', '${col.id}')"
-                                                 ondragend="onShiftDragEnd(event)">
-                                                <div class="avatar">${user.name.charAt(0)}</div>
-                                                <div class="user-info">
-                                                    <div class="user-name">${user.name}</div>
-                                                    <div class="user-role">${user.role}</div>
-                                                </div>
-                                                <span class="role-tag-shift ${user.role}">${user.role}</span>
-                                                <span class="drag-handle">⠿</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
+                        ` : availableUsers.map(user => `
+                            <div class="user-card-shift role-${user.role}" 
+                                 draggable="${canEdit}"
+                                 data-user-id="${user.id}"
+                                 data-source="available"
+                                 ondragstart="onShiftDragStart(event, '${user.id}', 'available')"
+                                 ondragend="onShiftDragEnd(event)">
+                                <div class="avatar">${user.name.charAt(0)}</div>
+                                <div class="user-info">
+                                    <div class="user-name">${user.name}</div>
+                                    <div class="user-role">${user.role}</div>
                                 </div>
-                            `).join('')}
-                        </div>
+                                <span class="role-tag-shift ${user.role}">${user.role}</span>
+                                <span class="drag-handle">⠿</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
-            `;
 
-            updateShiftBadges();
+                <div class="shift-columns-wrapper" id="shiftColumnsWrapper">
+                    ${shiftColumns.map((col, index) => `
+                        <div class="shift-column" 
+                             data-column-id="${col.id}"
+                             draggable="${canEdit}"
+                             ondragstart="onColumnDragStart(event, '${col.id}')"
+                             ondragend="onColumnDragEnd(event)">
+                            
+                            <!-- 🔥 DROPZONE UNTUK STAFF -->
+                            <div class="shift-column-dropzone"
+                                 style="display:flex;flex-direction:column;flex:1;min-height:0;"
+                                 ondragover="onShiftDragOver(event)"
+                                 ondragleave="onShiftDragLeave(event)"
+                                 ondrop="onShiftDrop(event, '${col.id}')">
+                                
+                                <div class="column-header">
+                                    <div class="title-wrap">
+                                        <span class="col-name" 
+                                              onclick="editColumnName('${col.id}')"
+                                              title="Double-click untuk edit nama">
+                                            ${col.name}
+                                        </span>
+                                        <span class="col-count">${col.users.length}</span>
+                                    </div>
+                                    <div class="col-actions">
+                                        ${canEdit ? `
+                                            <button class="delete-col" onclick="deleteShiftColumn('${col.id}')" title="Hapus kolom">✕</button>
+                                        ` : ''}
+                                    </div>
+                                </div>
 
-            document.querySelectorAll('.note-text').forEach(el => {
-                el.addEventListener('dblclick', function() {
-                    const colId = this.closest('.shift-column').dataset.columnId;
-                    editColumnNote(colId);
-                });
-            });
-        }
+                                <div class="column-note">
+                                    <span class="note-text ${!col.note ? 'empty' : ''}" 
+                                          onclick="editColumnNote('${col.id}')"
+                                          title="Klik untuk edit note">
+                                        ${col.note || 'Tambah note...'}
+                                    </span>
+                                </div>
+
+                                <div class="column-body" id="shiftColumnBody_${col.id}">
+                                    ${col.users.length === 0 ? `
+                                        <div class="empty-drop" id="emptyDrop_${col.id}">
+                                            Drag staff ke sini
+                                        </div>
+                                    ` : col.users.map(user => `
+                                        <div class="user-card-shift role-${user.role}" 
+                                             draggable="${canEdit}"
+                                             data-user-id="${user.id}"
+                                             data-source="column"
+                                             data-column-id="${col.id}"
+                                             ondragstart="onShiftDragStart(event, '${user.id}', 'column', '${col.id}')"
+                                             ondragend="onShiftDragEnd(event)">
+                                            <div class="avatar">${user.name.charAt(0)}</div>
+                                            <div class="user-info">
+                                                <div class="user-name">${user.name}</div>
+                                                <div class="user-role">${user.role}</div>
+                                            </div>
+                                            <span class="role-tag-shift ${user.role}">${user.role}</span>
+                                            <span class="drag-handle">⠿</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <!-- 🔥 END DROPZONE -->
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    updateShiftBadges();
+
+    document.querySelectorAll('.note-text').forEach(el => {
+        el.addEventListener('dblclick', function() {
+            const colId = this.closest('.shift-column').dataset.columnId;
+            editColumnNote(colId);
+        });
+    });
+}
 
         // ============================================================
         // SHIFT DRAG & DROP - STAFF
