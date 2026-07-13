@@ -9716,10 +9716,10 @@ function onStaffDrop(e, targetColumnId) {
     }
 
     try {
-        // 🔥 AMBIL DATA STAFF
+        // 🔥 AMBIL DATA STAFF - PRIORITAS 'staff-drag'
         let rawData = e.dataTransfer.getData('staff-drag');
         
-        // 🔥 FALLBACK: Jika tidak ada, coba ambil dari text/plain (untuk kompatibilitas)
+        // 🔥 FALLBACK: Jika tidak ada, coba dari 'text/plain' (untuk kompatibilitas)
         if (!rawData) {
             rawData = e.dataTransfer.getData('text/plain');
         }
@@ -9944,19 +9944,23 @@ function onColumnDrop(e, targetColumnId) {
     }
     
     try {
-        // 🔥 CEK: Apakah ini data kolom atau data staff?
+        // 🔥 CEK: Apakah ini data kolom? 
+        // HANYA ambil data 'column-drag', IGNORE data lain
         const rawData = e.dataTransfer.getData('column-drag');
         
-        // 🔥 JIKA TIDAK ADA DATA KOLOM, BERARTI INI DRAG STAFF → ABUIKAN
+        // 🔥 JIKA TIDAK ADA DATA 'column-drag', BERARTI INI DRAG STAFF → ABUIKAN
         if (!rawData) {
             // Ini adalah drag staff, biarkan onStaffDrop yang menangani
+            // JANGAN tampilkan error, cukup return
             return;
         }
 
         const data = JSON.parse(rawData);
         const { columnId: sourceColumnId } = data;
         
-        if (!sourceColumnId || sourceColumnId === targetColumnId) return;
+        if (!sourceColumnId || sourceColumnId === targetColumnId) {
+            return;
+        }
         
         // Cari index source dan target
         const sourceIndex = shiftColumns.findIndex(c => c.id === sourceColumnId);
