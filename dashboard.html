@@ -9441,7 +9441,7 @@
         };
 
         // ============================================================
-// 🔥 SHIFT KERJA - FUNCTIONS
+// 🔥 SHIFT KERJA - FUNCTIONS (VERSI FINAL)
 // ============================================================
 
 function canEditShift() {
@@ -9652,8 +9652,10 @@ function renderShiftPage() {
                              ondragleave="onColumnDragLeave(event)"
                              ondrop="onColumnDrop(event, '${col.id}')">
                             
+                            <!-- INI ADALAH DROPZONE UNTUK STAFF -->
                             <div class="shift-column-dropzone"
                                  id="columnDropzone_${col.id}"
+                                 style="display:flex;flex-direction:column;flex:1;min-height:0;"
                                  ondragover="onStaffDragOver(event)"
                                  ondragleave="onStaffDragLeave(event)"
                                  ondrop="onStaffDrop(event, '${col.id}')">
@@ -9706,6 +9708,7 @@ function renderShiftPage() {
                                     `).join('')}
                                 </div>
                             </div>
+                            <!-- END DROPZONE STAFF -->
                         </div>
                     `).join('')}
                 </div>
@@ -9724,7 +9727,7 @@ function renderShiftPage() {
 }
 
 // ============================================================
-// 🔥 DRAG & DROP STAFF
+// 🔥 DRAG & DROP STAFF - EVENT HANDLER
 // ============================================================
 
 let staffDragData = null;
@@ -9741,8 +9744,9 @@ function onStaffDragStart(e, userId, sourceType, columnId) {
         columnId: columnId || null
     };
 
+    // 🔥 GUNAKAN FORMAT YANG BERBEDA UNTUK STAFF
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', JSON.stringify(staffDragData));
+    e.dataTransfer.setData('staff-drag', JSON.stringify(staffDragData));
     
     setTimeout(() => {
         e.target.classList.add('dragging');
@@ -9792,9 +9796,10 @@ function onStaffDrop(e, targetColumnId) {
     }
 
     try {
-        const rawData = e.dataTransfer.getData('text/plain');
+        // 🔥 AMBIL DATA STAFF (bukan data kolom)
+        const rawData = e.dataTransfer.getData('staff-drag');
         if (!rawData) {
-            showShiftToast('❌ Data tidak valid', 'error');
+            showShiftToast('❌ Data staff tidak valid', 'error');
             return;
         }
 
@@ -9863,7 +9868,7 @@ function onStaffDrop(e, targetColumnId) {
         showShiftToast(`✅ ${user.name} dipindahkan`, 'success', 1200);
 
     } catch (err) {
-        console.error('❌ Drop error:', err);
+        console.error('❌ Drop staff error:', err);
         showShiftToast('❌ Gagal memindahkan staff', 'error');
     }
 }
@@ -9895,9 +9900,10 @@ function onAvailableDrop(e) {
     }
 
     try {
-        const rawData = e.dataTransfer.getData('text/plain');
+        // 🔥 AMBIL DATA STAFF (bukan data kolom)
+        const rawData = e.dataTransfer.getData('staff-drag');
         if (!rawData) {
-            showShiftToast('❌ Data tidak valid', 'error');
+            showShiftToast('❌ Data staff tidak valid', 'error');
             return;
         }
 
@@ -9935,13 +9941,13 @@ function onAvailableDrop(e) {
         showShiftToast(`✅ ${user.name} dikembalikan ke DATA STAFF`, 'success', 1200);
 
     } catch (err) {
-        console.error('❌ Drop error:', err);
+        console.error('❌ Drop available error:', err);
         showShiftToast('❌ Gagal mengembalikan staff', 'error');
     }
 }
 
 // ============================================================
-// 🔥 DRAG & DROP KOLOM SHIFT
+// 🔥 DRAG & DROP KOLOM SHIFT - EVENT HANDLER
 // ============================================================
 
 let columnDragData = null;
@@ -9956,8 +9962,9 @@ function onColumnDragStart(e, columnId) {
         columnId: columnId
     };
     
+    // 🔥 GUNAKAN FORMAT YANG BERBEDA UNTUK KOLOM
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', JSON.stringify(columnDragData));
+    e.dataTransfer.setData('column-drag', JSON.stringify(columnDragData));
     
     setTimeout(() => {
         e.target.classList.add('dragging-col');
@@ -9997,9 +10004,10 @@ function onColumnDrop(e, targetColumnId) {
     }
     
     try {
-        const rawData = e.dataTransfer.getData('text/plain');
+        // 🔥 AMBIL DATA KOLOM (bukan data staff)
+        const rawData = e.dataTransfer.getData('column-drag');
         if (!rawData) {
-            showShiftToast('❌ Data tidak valid', 'error');
+            showShiftToast('❌ Data kolom tidak valid', 'error');
             return;
         }
 
@@ -10017,7 +10025,7 @@ function onColumnDrop(e, targetColumnId) {
             return;
         }
         
-        // Pindahkan kolom
+        // Pindahkan kolom beserta semua staff di dalamnya
         const [movedColumn] = shiftColumns.splice(sourceIndex, 1);
         shiftColumns.splice(targetIndex, 0, movedColumn);
         
@@ -10031,9 +10039,6 @@ function onColumnDrop(e, targetColumnId) {
     }
 }
 
-        // ============================================================
-        // EDIT COLUMN NAME & NOTE
-        // ============================================================
         // ============================================================
 // EDIT COLUMN NAME & NOTE
 // ============================================================
@@ -10084,6 +10089,59 @@ function editColumnName(columnId) {
         }
         nameEl.classList.remove('editing');
         nameEl.contentEditable = false;
+        renderShiftPage();
+    };
+}
+
+function selectText(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
+function editColumnNote(columnId) {
+    if (!canEditShift()) return;
+
+    const col = shiftColumns.find(c => c.id === columnId);
+    if (!col) return;
+
+    const noteEl = document.querySelector(`.shift-column[data-column-id="${columnId}"] .note-text`);
+    if (!noteEl) return;
+
+    if (noteEl.classList.contains('editing')) {
+        const newNote = noteEl.textContent.trim();
+        col.note = newNote === 'Tambah note...' ? '' : newNote;
+        shiftIsDirty = true;
+        noteEl.classList.remove('editing');
+        noteEl.contentEditable = false;
+        renderShiftPage();
+        return;
+    }
+
+    noteEl.contentEditable = true;
+    noteEl.classList.add('editing');
+    noteEl.focus();
+    selectText(noteEl);
+
+    noteEl.onkeydown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            noteEl.blur();
+        }
+        if (e.key === 'Escape') {
+            noteEl.textContent = col.note || 'Tambah note...';
+            noteEl.blur();
+        }
+    };
+
+    noteEl.onblur = () => {
+        const newNote = noteEl.textContent.trim();
+        col.note = newNote === 'Tambah note...' ? '' : newNote;
+        shiftIsDirty = true;
+        noteEl.classList.remove('editing');
+        noteEl.contentEditable = false;
         renderShiftPage();
     };
 }
