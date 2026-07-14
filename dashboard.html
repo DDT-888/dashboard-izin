@@ -104,6 +104,100 @@
             --shift-column-border: #2a3a4a;
         }
 
+        /* ============================================================
+           PERBAIKAN SHIFT - TAMPILAN & PERFORMANCE
+           ============================================================ */
+
+        /* 1. PERBAIKAN TAMPILAN - Pastikan rounded konsisten */
+        .shift-column-wrapper {
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            border: 2px solid var(--shift-column-border);
+            background: var(--shift-column-bg);
+            position: relative;
+            min-width: 280px;
+            max-width: 420px;
+            flex: 1 1 auto;
+            transition: all 0.35s ease;
+        }
+
+        /* Pastikan semua child ikut rounded */
+        .shift-column-wrapper .shift-column {
+            border-radius: 0 !important;
+            overflow: hidden !important;
+            flex: 1;
+        }
+
+        .shift-column-wrapper .shift-note-panel {
+            border-radius: 0 !important;
+            background: var(--bg-secondary);
+            transition: all 0.35s ease;
+        }
+
+        /* Column body - pastikan scroll tidak merusak rounded */
+        .shift-column .column-body {
+            border-radius: 0 0 12px 12px !important;
+            overflow-y: auto;
+            padding: 4px 6px;
+            transition: all 0.3s ease;
+            max-height: 500px;
+            min-height: 60px;
+        }
+
+        /* Empty drop */
+        .shift-column .column-body .empty-drop {
+            border-radius: 8px !important;
+        }
+
+        /* User card di dalam column */
+        .shift-column .column-body .user-card-shift:last-child {
+            border-radius: 0 0 8px 8px !important;
+        }
+
+        /* 2. PERBAIKAN SCROLL - Agar tidak merusak rounded */
+        .shift-column .column-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .shift-column .column-body::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 0 0 12px 12px;
+        }
+        .shift-column .column-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        /* 3. PERBAIKAN RESPONSIVE - Tetap rapi di mobile */
+        @media (max-width: 768px) {
+            .shift-column-wrapper {
+                min-width: 100% !important;
+                max-width: 100% !important;
+                border-radius: 12px !important;
+            }
+            .shift-column .column-body {
+                max-height: 300px !important;
+                border-radius: 0 0 12px 12px !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .shift-column-wrapper {
+                flex-wrap: wrap !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+                border-radius: 12px !important;
+            }
+            .shift-column-wrapper:not(.has-note-open) {
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper.has-note-open {
+                max-width: 100% !important;
+            }
+            .shift-column .column-body {
+                max-height: 250px !important;
+            }
+        }
+
         *,
         *::before,
         *::after {
@@ -6775,7 +6869,7 @@
         }
 
         // ============================================================
-        // LOAD DATA DARI DATABASE (DENGAN PERFORMANCE)
+        // LOAD DATA DARI DATABASE (DENGAN PERFORMANCE) - DIPERBAIKI
         // ============================================================
         async function loadDataFromDatabase() {
             if (isLoading) return;
@@ -6962,7 +7056,7 @@
 
                 subscribeToIzinChanges();
 
-                // LOAD SHIFT - HANYA SEKALI
+                // LOAD SHIFT - HANYA SEKALI (DENGAN OPTIMASI)
                 if (!isShiftInitialized) {
                     await loadShiftActiveData();
                     isShiftInitialized = true;
@@ -6975,6 +7069,198 @@
             } finally {
                 isLoading = false;
                 isInitialLoad = false;
+            }
+        }
+
+        // ============================================================
+        // LOAD SHIFT AKTIF - OPTIMASI PERFORMANCE (DIPERBAIKI)
+        // ============================================================
+
+        async function loadShiftActiveData() {
+            // Cegah loading ganda
+            if (isShiftLoading) {
+                console.log('⏳ Shift loading already in progress, skipping...');
+                return { shiftColumns, availableUsers };
+            }
+            isShiftLoading = true;
+
+            try {
+                console.log('📋 Loading shift active data...');
+
+                // 🔥 OPTIMASI: Hanya select kolom yang diperlukan (id, name, role)
+                // Ini SOLUSI UTAMA untuk masalah timeout!
+                const { data: users, error: usersError } = await supabaseDashboard
+                    .from('users')
+                    .select('id, name, role')  // <-- HANYA 3 KOLOM, BUKAN SELECT *
+                    .in('role', ['csline', 'cs', 'kapten', 'kasir'])
+                    .order('role', { ascending: true })
+                    .order('name', { ascending: true });
+
+                if (usersError) {
+                    console.error('❌ Users query error:', usersError);
+                    throw usersError;
+                }
+
+                // Cache users di localStorage untuk fallback
+                try {
+                    localStorage.setItem('cachedUsers', JSON.stringify(users || []));
+                    localStorage.setItem('cachedUsersTime', Date.now().toString());
+                } catch (e) {
+                    console.log('⚠️ Cache save failed:', e);
+                }
+
+                availableUsers = (users || []).map(u => ({ ...u }));
+                sortAvailableUsers();
+
+                // 🔥 OPTIMASI: Tambahkan timeout handling
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Query timeout')), 15000)
+                );
+
+                const queryPromise = supabaseDashboard
+                    .from('shift_active')
+                    .select('*')
+                    .maybeSingle();
+
+                let result = null;
+                try {
+                    result = await Promise.race([queryPromise, timeoutPromise]);
+                } catch (err) {
+                    console.warn('⚠️ Shift query timeout, using cache...');
+                    result = { data: null, error: null };
+                }
+
+                const { data: activeData, error: activeError } = result;
+
+                let shiftData = null;
+
+                // Fallback: jika error, gunakan data dari cache
+                if (activeError) {
+                    console.warn('⚠️ Shift query error, trying cache...');
+                    const cached = localStorage.getItem('cachedShiftData');
+                    if (cached) {
+                        try {
+                            const parsed = JSON.parse(cached);
+                            shiftData = parsed;
+                            console.log('✅ Using cached shift data');
+                        } catch (e) {
+                            console.log('⚠️ Cache parse failed');
+                        }
+                    }
+                } else if (!activeData) {
+                    console.log('📋 No shift_active data found, creating default...');
+                    const defaultColumns = SHIFT_DEFAULT_COLUMNS.map(col => ({
+                        ...col,
+                        users: []
+                    }));
+
+                    const newData = {
+                        columns: defaultColumns
+                    };
+
+                    const { data: inserted, error: insertError } = await supabaseDashboard
+                        .from('shift_active')
+                        .insert({
+                            shift_data: newData,
+                            updated_by: 'System'
+                        })
+                        .select()
+                        .maybeSingle();
+
+                    if (insertError) throw insertError;
+                    shiftData = inserted;
+                    // Cache untuk fallback
+                    try {
+                        localStorage.setItem('cachedShiftData', JSON.stringify(shiftData));
+                    } catch (e) {}
+                    console.log('✅ Default shift_active created');
+                } else {
+                    shiftData = activeData;
+                    // Cache data untuk fallback
+                    try {
+                        localStorage.setItem('cachedShiftData', JSON.stringify(shiftData));
+                    } catch (e) {}
+                    console.log('✅ Shift_active data loaded');
+                }
+
+                if (!shiftData) {
+                    throw new Error('Failed to load shift data');
+                }
+
+                let parsedData = typeof shiftData.shift_data === 'string' ?
+                    JSON.parse(shiftData.shift_data) :
+                    shiftData.shift_data;
+
+                shiftActiveId = shiftData.id;
+
+                shiftColumns = parsedData.columns.map(col => ({
+                    id: col.id || `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                    name: col.name || 'SHIFT',
+                    note: col.note || '',
+                    users: []
+                }));
+
+                const userMap = {};
+                availableUsers.forEach(u => userMap[u.id] = u);
+
+                parsedData.columns.forEach((col, index) => {
+                    if (col.users && Array.isArray(col.users)) {
+                        col.users.forEach(u => {
+                            const user = userMap[u.id];
+                            if (user) {
+                                const userWithNote = { ...user, note: u.note || '' };
+                                shiftColumns[index].users.push(userWithNote);
+                                const idx = availableUsers.findIndex(av => av.id === user.id);
+                                if (idx !== -1) availableUsers.splice(idx, 1);
+                            }
+                        });
+                    }
+                });
+
+                shiftIsDirty = false;
+                renderShiftPage();
+
+                // Subscribe hanya sekali
+                if (!isShiftSubscribed) {
+                    subscribeShiftActive();
+                }
+
+                await loadShiftLogs();
+
+                // Tandai sudah diinisialisasi
+                isShiftInitialized = true;
+
+                return { shiftColumns, availableUsers };
+
+            } catch (err) {
+                console.error('❌ Error loading shift active data:', err);
+                showShiftToast('Gagal memuat data shift: ' + err.message, 'error');
+                
+                // Fallback: gunakan cache jika tersedia
+                try {
+                    const cached = localStorage.getItem('cachedShiftData');
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        console.log('✅ Using cached shift data as fallback');
+                        // Parse data dari cache...
+                        let parsedData = typeof parsed.shift_data === 'string' ?
+                            JSON.parse(parsed.shift_data) :
+                            parsed.shift_data;
+                        shiftActiveId = parsed.id;
+                        shiftColumns = parsedData.columns.map(col => ({
+                            id: col.id || `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                            name: col.name || 'SHIFT',
+                            note: col.note || '',
+                            users: []
+                        }));
+                        renderShiftPage();
+                        return { shiftColumns, availableUsers };
+                    }
+                } catch (e) {}
+                
+                return { shiftColumns, availableUsers };
+            } finally {
+                isShiftLoading = false;
             }
         }
 
@@ -9686,122 +9972,6 @@
                 if (orderA !== orderB) return orderA - orderB;
                 return a.name.localeCompare(b.name);
             });
-        }
-
-        async function loadShiftActiveData() {
-            // Cegah loading ganda
-            if (isShiftLoading) {
-                console.log('⏳ Shift loading already in progress, skipping...');
-                return { shiftColumns, availableUsers };
-            }
-            isShiftLoading = true;
-
-            try {
-                console.log('📋 Loading shift active data...');
-
-                const { data: users, error: usersError } = await supabaseDashboard
-                    .from('users')
-                    .select('*')
-                    .in('role', ['csline', 'cs', 'kapten', 'kasir'])
-                    .order('role', { ascending: true })
-                    .order('name', { ascending: true });
-
-                if (usersError) throw usersError;
-
-                availableUsers = (users || []).map(u => ({ ...u }));
-                sortAvailableUsers();
-
-                const { data: activeData, error: activeError } = await supabaseDashboard
-                    .from('shift_active')
-                    .select('*')
-                    .maybeSingle();
-
-                if (activeError) throw activeError;
-
-                let shiftData = null;
-
-                if (!activeData) {
-                    console.log('📋 No shift_active data found, creating default...');
-
-                    const defaultColumns = SHIFT_DEFAULT_COLUMNS.map(col => ({
-                        ...col,
-                        users: []
-                    }));
-
-                    const newData = {
-                        columns: defaultColumns
-                    };
-
-                    const { data: inserted, error: insertError } = await supabaseDashboard
-                        .from('shift_active')
-                        .insert({
-                            shift_data: newData,
-                            updated_by: 'System'
-                        })
-                        .select()
-                        .maybeSingle();
-
-                    if (insertError) throw insertError;
-
-                    shiftData = inserted;
-                    console.log('✅ Default shift_active created');
-                } else {
-                    shiftData = activeData;
-                    console.log('✅ Shift_active data loaded');
-                }
-
-                let parsedData = typeof shiftData.shift_data === 'string' ?
-                    JSON.parse(shiftData.shift_data) :
-                    shiftData.shift_data;
-
-                shiftActiveId = shiftData.id;
-
-                shiftColumns = parsedData.columns.map(col => ({
-                    id: col.id || `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-                    name: col.name || 'SHIFT',
-                    note: col.note || '',
-                    users: []
-                }));
-
-                const userMap = {};
-                availableUsers.forEach(u => userMap[u.id] = u);
-
-                parsedData.columns.forEach((col, index) => {
-                    if (col.users && Array.isArray(col.users)) {
-                        col.users.forEach(u => {
-                            const user = userMap[u.id];
-                            if (user) {
-                                const userWithNote = { ...user, note: u.note || '' };
-                                shiftColumns[index].users.push(userWithNote);
-                                const idx = availableUsers.findIndex(av => av.id === user.id);
-                                if (idx !== -1) availableUsers.splice(idx, 1);
-                            }
-                        });
-                    }
-                });
-
-                shiftIsDirty = false;
-                renderShiftPage();
-
-                // Subscribe hanya sekali
-                if (!isShiftSubscribed) {
-                    subscribeShiftActive();
-                }
-
-                await loadShiftLogs();
-
-                // Tandai sudah diinisialisasi
-                isShiftInitialized = true;
-
-                return { shiftColumns, availableUsers };
-
-            } catch (err) {
-                console.error('❌ Error loading shift active data:', err);
-                showShiftToast('Gagal memuat data shift: ' + err.message, 'error');
-                return { shiftColumns, availableUsers };
-            } finally {
-                isShiftLoading = false;
-            }
         }
 
         // ============================================================
