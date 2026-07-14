@@ -4054,47 +4054,6 @@
             flex-shrink: 0;
         }
 
-        /* Periode */
-        .periode-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--bg-input);
-            border: 2px solid var(--border-input);
-            border-radius: 8px;
-            padding: 4px 12px;
-            height: 38px;
-        }
-
-        .periode-wrapper span {
-            font-size: 11px;
-            color: var(--text-muted);
-            font-weight: 500;
-            flex-shrink: 0;
-        }
-
-        .periode-wrapper input[type="date"] {
-            border: none;
-            background: transparent;
-            padding: 2px 0;
-            font-size: 12px;
-            color: var(--text-primary);
-            outline: none;
-            width: 110px;
-            height: 28px;
-            cursor: pointer;
-        }
-
-        .periode-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
-            opacity: 0.4;
-            cursor: pointer;
-            padding: 2px;
-        }
-
-        .periode-wrapper input[type="date"]::-webkit-calendar-picker-indicator:hover {
-            opacity: 0.8;
-        }
-
         /* Tombol Shift - Lebih kecil */
         .btn-shift {
             padding: 6px 14px;
@@ -4707,6 +4666,126 @@
         }
 
         /* ============================================================
+           LOG AKTIVITAS SHIFT - CSS
+           ============================================================ */
+        .shift-log-container {
+            margin-top: 8px;
+            padding: 6px 12px 4px 12px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            flex-shrink: 0;
+        }
+
+        .shift-log-container .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .shift-log-container .log-header .log-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .shift-log-container .log-header .log-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .shift-log-container .log-header .log-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .shift-log-container .log-header .log-actions button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .shift-log-container .log-body {
+            max-height: 110px;
+            overflow-y: auto;
+            padding: 4px 0;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shift-log-container .log-body::-webkit-scrollbar {
+            width: 3px;
+        }
+        .shift-log-container .log-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-log-container .log-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .shift-log-container .log-body .log-entry {
+            padding: 1px 4px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            gap: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .shift-log-container .log-body .log-entry .log-time {
+            color: var(--text-muted);
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        .shift-log-container .log-body .log-entry .log-user {
+            font-weight: 600;
+            color: var(--text-primary);
+            flex-shrink: 0;
+        }
+
+        .shift-log-container .log-body .log-entry .log-action {
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .shift-log-container .log-body .log-entry .log-action .highlight {
+            color: var(--sidebar-text);
+            font-weight: 500;
+        }
+
+        .shift-log-container .log-empty {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 8px 0;
+        }
+
+        /* ============================================================
            RIWAYAT SHIFT - CSS
            ============================================================ */
 
@@ -5081,15 +5160,6 @@
                 flex-wrap: wrap;
             }
 
-            .periode-wrapper {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .periode-wrapper input[type="date"] {
-                width: 100px;
-            }
-
             .shift-column {
                 min-width: 160px;
                 flex: 1 1 180px;
@@ -5115,6 +5185,11 @@
             .history-table-wrap td,
             .history-table-wrap th {
                 padding: 8px 10px;
+            }
+
+            .shift-log-container .log-body {
+                max-height: 80px;
+                font-size: 10px;
             }
         }
     </style>
@@ -5601,6 +5676,19 @@
         <!-- ===== TAB SHIFT KERJA ===== -->
         <div class="tab-content" id="tab-shifts">
             <div id="shiftsContent"></div>
+            <!-- LOG AKTIVITAS SHIFT -->
+            <div class="shift-log-container" id="shiftLogContainer" style="display:none;">
+                <div class="log-header">
+                    <span class="log-title">📋 Log Aktivitas Shift</span>
+                    <div class="log-actions">
+                        <button onclick="refreshShiftLogs()" title="Refresh Log">🔄 Refresh</button>
+                        <button onclick="downloadShiftLogs()" title="Download CSV">📥 CSV</button>
+                    </div>
+                </div>
+                <div class="log-body" id="shiftLogBody">
+                    <div class="log-empty">Tidak ada log</div>
+                </div>
+            </div>
         </div>
 
         <!-- ===== TAB RIWAYAT SHIFT ===== -->
@@ -5655,6 +5743,35 @@
         <div class="tooltip-desc" id="voucherTooltipDesc">Kutip Sampah Office</div>
         <div class="tooltip-divider"></div>
         <div class="tooltip-status" id="voucherTooltipStatus">0 × Voucher tersedia</div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- POPUP SAVE SHIFT -->
+    <!-- ============================================================ -->
+    <div class="popup-overlay" id="saveShiftPopup">
+        <div class="popup-content" style="max-width:420px;">
+            <div class="popup-icon">💾</div>
+            <div class="popup-title" style="color:var(--sidebar-text);">Simpan Shift ke Riwayat</div>
+            <div class="popup-message" style="font-size:13px;">
+                Pilih periode shift yang akan disimpan ke riwayat.
+            </div>
+            <div style="margin:12px 0;text-align:left;">
+                <label style="font-weight:600;color:var(--text-secondary);font-size:13px;display:block;margin-bottom:4px;">📅 Tanggal Mulai</label>
+                <input type="date" id="saveShiftStart" value="${new Date().toISOString().split('T')[0]}" 
+                       style="width:100%;padding:8px 12px;border:2px solid var(--border-input);border-radius:8px;background:var(--bg-input);color:var(--text-primary);font-size:13px;margin-bottom:8px;" />
+                <label style="font-weight:600;color:var(--text-secondary);font-size:13px;display:block;margin-bottom:4px;">📅 Tanggal Akhir</label>
+                <input type="date" id="saveShiftEnd" value="${new Date().toISOString().split('T')[0]}" 
+                       style="width:100%;padding:8px 12px;border:2px solid var(--border-input);border-radius:8px;background:var(--bg-input);color:var(--text-primary);font-size:13px;" />
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+                💡 Data shift aktif <strong>tetap dipertahankan</strong> setelah disimpan.
+            </div>
+            <div class="popup-divider"></div>
+            <div style="display:flex;gap:10px;justify-content:center;margin-top:8px;">
+                <button class="popup-btn" onclick="confirmSaveShift()" style="background:var(--sidebar-text);">👍 Simpan</button>
+                <button class="popup-btn" onclick="closeSaveShiftPopup()" style="background:var(--bg-hover);color:var(--text-primary);">❌ Batal</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -5725,6 +5842,9 @@
                 canManageVoucher: true,
                 canViewVoucher: true,
                 canEditSettings: true,
+                canEditShift: true,
+                canOpenHistory: true,
+                canDeleteHistory: true,
                 label: 'Leader',
                 icon: '👑'
             },
@@ -5737,6 +5857,9 @@
                 canManageVoucher: true,
                 canViewVoucher: true,
                 canEditSettings: true,
+                canEditShift: true,
+                canOpenHistory: true,
+                canDeleteHistory: true,
                 label: 'CS Line',
                 icon: '⭐'
             },
@@ -5749,6 +5872,9 @@
                 canManageVoucher: false,
                 canViewVoucher: true,
                 canEditSettings: false,
+                canEditShift: false,
+                canOpenHistory: false,
+                canDeleteHistory: false,
                 label: 'CS',
                 icon: '💬'
             },
@@ -5761,6 +5887,9 @@
                 canManageVoucher: false,
                 canViewVoucher: true,
                 canEditSettings: false,
+                canEditShift: true,
+                canOpenHistory: true,
+                canDeleteHistory: true,
                 label: 'Kapten',
                 icon: '⚓'
             },
@@ -5773,6 +5902,9 @@
                 canManageVoucher: false,
                 canViewVoucher: true,
                 canEditSettings: false,
+                canEditShift: false,
+                canOpenHistory: false,
+                canDeleteHistory: false,
                 label: 'Kasir',
                 icon: '💰'
             },
@@ -5785,6 +5917,9 @@
                 canManageVoucher: true,
                 canViewVoucher: true,
                 canEditSettings: true,
+                canEditShift: true,
+                canOpenHistory: true,
+                canDeleteHistory: true,
                 label: 'Admin',
                 icon: '🔴'
             }
@@ -5832,7 +5967,7 @@
         let refreshInterval = null;
 
         // ============================================================
-        // SHIFT STATE
+        // SHIFT STATE (BARU - 1 Data Aktif)
         // ============================================================
         const SHIFT_DEFAULT_COLUMNS = [
             { id: 'shift_1', name: 'SHIFT PAGI', note: '', users: [] },
@@ -5842,11 +5977,12 @@
         let shiftColumns = [];
         let availableUsers = [];
         let shiftIsDirty = false;
-        let shiftPeriodeStart = new Date().toISOString().split('T')[0];
-        let shiftPeriodeEnd = new Date().toISOString().split('T')[0];
+        let shiftActiveId = null;
         let shiftHistoryData = [];
         let previewData = null;
         let columnDragData = null;
+        let shiftLogs = [];
+        let shiftRealtimeChannel = null;
 
         // ============================================================
         // THEME FUNCTIONS
@@ -5892,19 +6028,8 @@
             return listUsers.find(u => u.email === formattedEmail);
         }
 
-        function getUserNameByEmail(email) {
-            const user = getUserByEmail(email);
-            return user ? user.name : null;
-        }
-
         function getCurrentUserEmail() {
             return currentUser ? formatEmail(currentUser.email) : '';
-        }
-
-        function getCurrentUserNameFromDB() {
-            const email = getCurrentUserEmail();
-            const user = getUserByEmail(email);
-            return user ? formatName(user.name) : '';
         }
 
         function isUserCurrent(nama) {
@@ -5936,6 +6061,18 @@
         function getRoleForUser(nama) {
             const user = listUsers.find(u => u.name === formatName(nama));
             return user ? user.role : 'cs';
+        }
+
+        function canEditShift() {
+            return userPermissions.canEditShift || false;
+        }
+
+        function canOpenHistory() {
+            return userPermissions.canOpenHistory || false;
+        }
+
+        function canDeleteHistory() {
+            return userPermissions.canDeleteHistory || false;
         }
 
         // ============================================================
@@ -6307,6 +6444,49 @@
         }
 
         // ============================================================
+        // SUBSCRIBE SHIFT AKTIF (REALTIME)
+        // ============================================================
+        function subscribeShiftActive() {
+            if (shiftRealtimeChannel) {
+                supabaseDashboard.removeChannel(shiftRealtimeChannel);
+                shiftRealtimeChannel = null;
+            }
+
+            console.log('🔌 Subscribing to shift_active changes...');
+
+            shiftRealtimeChannel = supabaseDashboard
+                .channel('shift_active_changes')
+                .on(
+                    'postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'shift_active'
+                    },
+                    (payload) => {
+                        console.log('🔄 Shift realtime update received:', payload);
+                        
+                        if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+                            const newData = payload.new;
+                            if (newData && newData.shift_data) {
+                                // Hanya update jika bukan dari user sendiri (hindari loop)
+                                const updatedBy = newData.updated_by || '';
+                                const currentUser = getCurrentUserName();
+                                if (updatedBy !== currentUser) {
+                                    console.log(`📋 Shift updated by ${updatedBy}, reloading...`);
+                                    loadShiftActiveData();
+                                }
+                            }
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('📡 Shift subscription status:', status);
+                });
+
+            return shiftRealtimeChannel;
+        }
+
+        // ============================================================
         // FUNGSI TOOLTIP GLOBAL
         // ============================================================
         function showTooltip(btn, tooltipData) {
@@ -6648,6 +6828,9 @@
                 renderTicker();
 
                 subscribeToIzinChanges();
+
+                // Load shift data
+                await loadShiftActiveData();
 
             } catch (err) {
                 console.error('❌ Error loading data:', err);
@@ -9240,11 +9423,7 @@
                 }
                 renderHistory();
             } else if (tab === 'shifts') {
-                if (shiftColumns.length === 0) {
-                    loadShiftData(shiftPeriodeStart, shiftPeriodeEnd);
-                } else {
-                    renderShiftPage();
-                }
+                loadShiftActiveData();
             } else if (tab === 'historyshift') {
                 loadShiftHistory();
             } else if (tab === 'settings') {
@@ -9329,7 +9508,7 @@
             showToast('🔄 Memperbarui data...', 'info', 1500);
             loadDataFromDatabase();
             if (currentTab === 'shifts') {
-                loadShiftData(shiftPeriodeStart, shiftPeriodeEnd);
+                loadShiftActiveData();
             }
             if (currentTab === 'historyshift') {
                 loadShiftHistory();
@@ -9337,15 +9516,8 @@
         };
 
         // ============================================================
-        // SHIFT KERJA - FUNCTIONS (DIPERBAIKI - DATA STAFF TIDAK HILANG)
+        // SHIFT AKTIF - FUNCTIONS (1 Data Aktif)
         // ============================================================
-
-        function canEditShift() {
-            return currentUserRole === 'leader' || 
-                   currentUserRole === 'csline' || 
-                   currentUserRole === 'kapten' ||
-                   currentUserRole === 'admin';
-        }
 
         function sortAvailableUsers() {
             const rolePriority = { csline: 0, cs: 1, kapten: 2, kasir: 3 };
@@ -9367,11 +9539,10 @@
             });
         }
 
-        async function loadShiftData(startDate, endDate) {
-            if (!startDate) startDate = shiftPeriodeStart;
-            if (!endDate) endDate = shiftPeriodeEnd;
-
+        async function loadShiftActiveData() {
             try {
+                console.log('📋 Loading shift active data...');
+
                 // Ambil semua user dengan role yang relevan
                 const { data: users, error: usersError } = await supabaseDashboard
                     .from('users')
@@ -9386,103 +9557,91 @@
                 availableUsers = (users || []).map(u => ({ ...u }));
                 sortAvailableUsers();
 
-                // Coba ambil data dari shift_history berdasarkan range
-                const { data: history, error: histError } = await supabaseDashboard
-                    .from('shift_history')
+                // Cek apakah ada data di shift_active
+                const { data: activeData, error: activeError } = await supabaseDashboard
+                    .from('shift_active')
                     .select('*')
-                    .eq('periode_start', startDate)
-                    .eq('periode_end', endDate)
                     .maybeSingle();
 
-                // Load assignments berdasarkan tanggal start
-                const { data: assignments, error: assignError } = await supabaseDashboard
-                    .from('shift_assignments')
-                    .select('*')
-                    .eq('tanggal', startDate);
+                if (activeError) throw activeError;
 
-                if (!histError && history) {
-                    try {
-                        const savedData = JSON.parse(history.shift_data);
-                        
-                        // Buat kolom dari saved data
-                        shiftColumns = savedData.columns.map(col => ({
-                            id: col.id || `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-                            name: col.name,
-                            note: col.note || '',
-                            users: []
-                        }));
+                let shiftData = null;
 
-                        // Assign user ke kolom berdasarkan assignments
-                        if (assignments && !assignError) {
-                            const userMap = {};
-                            availableUsers.forEach(u => userMap[u.id] = u);
-
-                            shiftColumns.forEach(col => {
-                                const colAssignments = assignments.filter(a => a.shift_name === col.name);
-                                col.users = colAssignments
-                                    .map(a => {
-                                        const user = userMap[a.user_id];
-                                        if (user) {
-                                            // Hapus dari availableUsers
-                                            const idx = availableUsers.findIndex(av => av.id === user.id);
-                                            if (idx !== -1) availableUsers.splice(idx, 1);
-                                            return user;
-                                        }
-                                        return null;
-                                    })
-                                    .filter(Boolean);
-                            });
-                        }
-
-                        shiftIsDirty = false;
-                        renderShiftPage();
-                        return;
-                    } catch (e) {
-                        console.warn('⚠️ Gagal parse shift_data, menggunakan default:', e);
-                    }
-                }
-
-                // Jika ada assignments tapi tidak ada history
-                if (assignments && !assignError && assignments.length > 0) {
-                    const shiftNames = [...new Set(assignments.map(a => a.shift_name))];
-                    const userMap = {};
-                    availableUsers.forEach(u => userMap[u.id] = u);
-
-                    shiftColumns = shiftNames.map((name, index) => ({
-                        id: `shift_${index + 1}`,
-                        name: name,
-                        note: '',
-                        users: assignments
-                            .filter(a => a.shift_name === name)
-                            .map(a => {
-                                const user = userMap[a.user_id];
-                                if (user) {
-                                    const idx = availableUsers.findIndex(av => av.id === user.id);
-                                    if (idx !== -1) availableUsers.splice(idx, 1);
-                                    return user;
-                                }
-                                return null;
-                            })
-                            .filter(Boolean)
+                if (!activeData) {
+                    // TIDAK ADA DATA - Buat default
+                    console.log('📋 No shift_active data found, creating default...');
+                    
+                    const defaultColumns = SHIFT_DEFAULT_COLUMNS.map(col => ({
+                        ...col,
+                        users: []
                     }));
 
-                    shiftIsDirty = false;
-                    renderShiftPage();
-                    return;
+                    const newData = {
+                        columns: defaultColumns
+                    };
+
+                    const { data: inserted, error: insertError } = await supabaseDashboard
+                        .from('shift_active')
+                        .insert({
+                            shift_data: newData,
+                            updated_by: 'System'
+                        })
+                        .select()
+                        .maybeSingle();
+
+                    if (insertError) throw insertError;
+
+                    shiftData = inserted;
+                    console.log('✅ Default shift_active created');
+                } else {
+                    shiftData = activeData;
+                    console.log('✅ Shift_active data loaded');
                 }
 
-                // Default: 2 kolom kosong
-                shiftColumns = SHIFT_DEFAULT_COLUMNS.map(col => ({
-                    ...col,
+                // Parse shift data
+                let parsedData = typeof shiftData.shift_data === 'string' 
+                    ? JSON.parse(shiftData.shift_data) 
+                    : shiftData.shift_data;
+
+                shiftActiveId = shiftData.id;
+
+                // Rebuild shiftColumns dengan user yang valid
+                shiftColumns = parsedData.columns.map(col => ({
+                    id: col.id || `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                    name: col.name || 'SHIFT',
+                    note: col.note || '',
                     users: []
                 }));
 
+                // Assign user ke kolom berdasarkan data yang tersimpan
+                const userMap = {};
+                availableUsers.forEach(u => userMap[u.id] = u);
+
+                parsedData.columns.forEach((col, index) => {
+                    if (col.users && Array.isArray(col.users)) {
+                        col.users.forEach(u => {
+                            const user = userMap[u.id];
+                            if (user) {
+                                shiftColumns[index].users.push(user);
+                                // Hapus dari availableUsers
+                                const idx = availableUsers.findIndex(av => av.id === user.id);
+                                if (idx !== -1) availableUsers.splice(idx, 1);
+                            }
+                        });
+                    }
+                });
+
                 shiftIsDirty = false;
                 renderShiftPage();
-                updateShiftBadges();
+                
+                // Subscribe ke realtime shift_active
+                subscribeShiftActive();
+                
+                // Load logs
+                await loadShiftLogs();
 
             } catch (err) {
-                console.error('❌ Error loading shift data:', err);
+                console.error('❌ Error loading shift active data:', err);
                 showShiftToast('Gagal memuat data shift: ' + err.message, 'error');
             }
         }
@@ -9498,12 +9657,6 @@
             const canEdit = canEditShift();
             const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
 
-            // Update periode inputs
-            const dateStart = document.getElementById('shiftDateStart');
-            const dateEnd = document.getElementById('shiftDateEnd');
-            if (dateStart) dateStart.value = shiftPeriodeStart;
-            if (dateEnd) dateEnd.value = shiftPeriodeEnd;
-
             container.innerHTML = `
                 <div class="shift-container">
                     <div class="shift-header">
@@ -9518,14 +9671,8 @@
                             </div>
                         </div>
                         <div class="shift-header-right">
-                            <div class="periode-wrapper">
-                                <span>📅</span>
-                                <input type="date" id="shiftDateStart" value="${shiftPeriodeStart}" onchange="onShiftDateChange(this.value, 'start')" />
-                                <span>—</span>
-                                <input type="date" id="shiftDateEnd" value="${shiftPeriodeEnd}" onchange="onShiftDateChange(this.value, 'end')" />
-                            </div>
                             <button class="btn-shift preview" onclick="openShiftPreview()" style="padding:6px 14px;font-size:11px;height:32px;">👁️ Preview</button>
-                            <button class="btn-shift success" onclick="saveShift()" ${!canEdit ? 'disabled' : ''} style="padding:6px 14px;font-size:11px;height:32px;">💾 Simpan</button>
+                            <button class="btn-shift success" onclick="openSaveShiftPopup()" ${!canEdit ? 'disabled' : ''} style="padding:6px 14px;font-size:11px;height:32px;">💾 Simpan</button>
                             <button class="btn-shift danger" onclick="resetShift()" ${!canEdit ? 'disabled' : ''} style="padding:6px 14px;font-size:11px;height:32px;">↩️ Reset</button>
                             <button class="btn-shift primary" onclick="addShiftColumn()" ${!canEdit ? 'disabled' : ''} style="padding:6px 14px;font-size:11px;height:32px;">➕ Tambah</button>
                         </div>
@@ -9642,7 +9789,12 @@
                 </div>
             `;
 
-            updateShiftBadges();
+            // Tampilkan log container
+            const logContainer = document.getElementById('shiftLogContainer');
+            if (logContainer) logContainer.style.display = 'block';
+
+            // Render logs
+            renderShiftLogs();
 
             document.querySelectorAll('.note-text').forEach(el => {
                 el.addEventListener('dblclick', function() {
@@ -9736,8 +9888,6 @@
                 const data = JSON.parse(rawData);
                 const { userId, sourceType, columnId: sourceColumnId } = data;
 
-                console.log('📦 Staff Drop - Data:', { userId, sourceType, sourceColumnId, targetColumnId });
-
                 if (sourceType === 'column' && sourceColumnId === targetColumnId) {
                     showShiftToast('ℹ️ Staff sudah berada di kolom ini', 'info', 1500);
                     return;
@@ -9752,7 +9902,6 @@
                         return;
                     }
                     user = availableUsers.splice(idx, 1)[0];
-                    console.log('📦 User diambil dari DATA STAFF:', user?.name);
                 } else {
                     const sourceColumn = shiftColumns.find(c => c.id === sourceColumnId);
                     if (!sourceColumn) {
@@ -9765,7 +9914,6 @@
                         return;
                     }
                     user = sourceColumn.users.splice(idx, 1)[0];
-                    console.log('📦 User diambil dari kolom', sourceColumn.name, ':', user?.name);
                 }
 
                 if (!user) {
@@ -9777,13 +9925,11 @@
                 if (!targetCol) {
                     availableUsers.push(user);
                     sortAvailableUsers();
-                    console.log('📦 User dikembalikan ke DATA STAFF:', user.name);
                 } else {
                     const exists = targetCol.users.some(u => String(u.id) === String(user.id));
                     if (!exists) {
                         targetCol.users.push(user);
                         sortColumnUsers(targetCol);
-                        console.log('📦 User dipindahkan ke kolom', targetCol.name, ':', user.name);
                     } else {
                         availableUsers.push(user);
                         sortAvailableUsers();
@@ -9794,6 +9940,7 @@
                 }
 
                 shiftIsDirty = true;
+                updateShiftActive();
                 renderShiftPage();
                 showShiftToast(`✅ ${user.name} dipindahkan`, 'success', 1200);
 
@@ -9866,6 +10013,7 @@
                 sortAvailableUsers();
 
                 shiftIsDirty = true;
+                updateShiftActive();
                 renderShiftPage();
                 showShiftToast(`✅ ${user.name} dikembalikan ke DATA STAFF`, 'success', 1200);
 
@@ -9960,6 +10108,7 @@
                 shiftColumns.splice(targetIndex, 0, movedColumn);
                 
                 shiftIsDirty = true;
+                updateShiftActive();
                 renderShiftPage();
                 showShiftToast('✅ Kolom shift dipindahkan', 'success', 1200);
                 
@@ -9970,85 +10119,15 @@
         }
 
         // ============================================================
-        // SHIFT DATE CHANGE
+        // UPDATE SHIFT AKTIF KE DATABASE
         // ============================================================
 
-        function onShiftDateChange(date, type) {
-            if (type === 'start') {
-                shiftPeriodeStart = date;
-                // Jika start > end, set end = start
-                if (shiftPeriodeStart > shiftPeriodeEnd) {
-                    shiftPeriodeEnd = shiftPeriodeStart;
-                    const endInput = document.getElementById('shiftDateEnd');
-                    if (endInput) endInput.value = shiftPeriodeEnd;
-                }
-            } else {
-                shiftPeriodeEnd = date;
-                // Jika end < start, set start = end
-                if (shiftPeriodeEnd < shiftPeriodeStart) {
-                    shiftPeriodeStart = shiftPeriodeEnd;
-                    const startInput = document.getElementById('shiftDateStart');
-                    if (startInput) startInput.value = shiftPeriodeStart;
-                }
-            }
-            
-            // Perubahan tanggal = dirty
-            shiftIsDirty = true;
-            
-            // Load data dengan range baru
-            loadShiftData(shiftPeriodeStart, shiftPeriodeEnd);
-        }
+        async function updateShiftActive() {
+            if (!shiftActiveId) return;
 
-        // ============================================================
-        // SAVE SHIFT (DIPERBAIKI)
-        // ============================================================
-
-        async function saveShift() {
-            if (!canEditShift()) {
-                showShiftToast('❌ Anda tidak memiliki izin untuk menyimpan shift!', 'error');
-                return;
-            }
-
-            if (!shiftIsDirty) {
-                showShiftToast('ℹ️ Tidak ada perubahan yang perlu disimpan', 'info', 1500);
-                return;
-            }
-
-            const startDate = shiftPeriodeStart;
-            const endDate = shiftPeriodeEnd;
             const userName = getCurrentUserName() || 'System';
-
+            
             try {
-                // Hapus assignments untuk range tanggal
-                await supabaseDashboard
-                    .from('shift_assignments')
-                    .delete()
-                    .eq('tanggal', startDate);
-
-                // Insert assignments baru
-                const assignments = [];
-                shiftColumns.forEach(col => {
-                    col.users.forEach(user => {
-                        assignments.push({
-                            user_id: user.id,
-                            shift_name: col.name,
-                            tanggal: startDate,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString(),
-                            updated_by: userName
-                        });
-                    });
-                });
-
-                if (assignments.length > 0) {
-                    const { error: insertError } = await supabaseDashboard
-                        .from('shift_assignments')
-                        .insert(assignments);
-
-                    if (insertError) throw insertError;
-                }
-
-                // Simpan ke shift_history dengan range
                 const shiftData = {
                     columns: shiftColumns.map(col => ({
                         id: col.id,
@@ -10058,99 +10137,26 @@
                     }))
                 };
 
-                const { error: histError } = await supabaseDashboard
-                    .from('shift_history')
-                    .upsert({
-                        tanggal: startDate,
-                        periode_start: startDate,
-                        periode_end: endDate,
-                        shift_data: JSON.stringify(shiftData),
+                const { error } = await supabaseDashboard
+                    .from('shift_active')
+                    .update({
+                        shift_data: shiftData,
                         updated_at: new Date().toISOString(),
-                        updated_by: userName,
-                        notes: `Shift ${startDate} - ${endDate}`
-                    }, { onConflict: 'tanggal' });
+                        updated_by: userName
+                    })
+                    .eq('id', shiftActiveId);
 
-                if (histError) throw histError;
+                if (error) throw error;
 
-                shiftIsDirty = false;
-                renderShiftPage();
-                showShiftToast(`✅ Shift berhasil disimpan! Periode: ${startDate} - ${endDate}`, 'success', 3000);
+                // Insert log
+                await insertShiftLog('UPDATE', userName, 'Memperbarui shift aktif');
 
-                loadShiftHistory();
+                console.log('✅ Shift active updated');
 
             } catch (err) {
-                console.error('❌ Error saving shift:', err);
-                showShiftToast('❌ Gagal menyimpan shift: ' + err.message, 'error');
+                console.error('❌ Error updating shift active:', err);
+                showShiftToast('❌ Gagal menyimpan perubahan shift', 'error');
             }
-        }
-
-        // ============================================================
-        // RESET SHIFT
-        // ============================================================
-        function resetShift() {
-            if (!canEditShift()) return;
-
-            if (!confirm('⚠️ Yakin ingin mereset semua shift? Semua staff akan kembali ke DATA STAFF.')) return;
-
-            // Kembalikan semua user ke availableUsers
-            shiftColumns.forEach(col => {
-                col.users.forEach(user => {
-                    if (!availableUsers.some(u => u.id === user.id)) {
-                        availableUsers.push(user);
-                    }
-                });
-                col.users = [];
-            });
-
-            sortAvailableUsers();
-            shiftIsDirty = true;
-            renderShiftPage();
-            showShiftToast('✅ Shift di-reset', 'success', 1500);
-        }
-
-        // ============================================================
-        // ADD / DELETE COLUMN
-        // ============================================================
-        function addShiftColumn() {
-            if (!canEditShift()) return;
-
-            const newId = `shift_${Date.now()}`;
-            shiftColumns.push({
-                id: newId,
-                name: `SHIFT ${shiftColumns.length + 1}`,
-                note: '',
-                users: []
-            });
-
-            shiftIsDirty = true;
-            renderShiftPage();
-            showShiftToast('✅ Kolom shift ditambahkan', 'success', 1500);
-        }
-
-        function deleteShiftColumn(columnId) {
-            if (!canEditShift()) return;
-
-            if (shiftColumns.length <= 2) {
-                showShiftToast('⚠️ Minimal 2 kolom shift harus ada!', 'warning');
-                return;
-            }
-
-            if (!confirm(`Yakin ingin menghapus kolom ini? Staff akan kembali ke DATA STAFF.`)) return;
-
-            const col = shiftColumns.find(c => c.id === columnId);
-            if (!col) return;
-
-            col.users.forEach(user => {
-                if (!availableUsers.some(u => u.id === user.id)) {
-                    availableUsers.push(user);
-                }
-            });
-            
-            sortAvailableUsers();
-            shiftColumns = shiftColumns.filter(c => c.id !== columnId);
-            shiftIsDirty = true;
-            renderShiftPage();
-            showShiftToast('✅ Kolom shift dihapus', 'success', 1500);
         }
 
         // ============================================================
@@ -10167,9 +10173,10 @@
 
             if (nameEl.classList.contains('editing')) {
                 const newName = nameEl.textContent.trim();
-                if (newName && newName.length > 0) {
+                if (newName && newName.length > 0 && newName !== col.name) {
                     col.name = newName.toUpperCase();
                     shiftIsDirty = true;
+                    updateShiftActive();
                 }
                 nameEl.classList.remove('editing');
                 nameEl.contentEditable = false;
@@ -10198,6 +10205,7 @@
                 if (newName && newName.length > 0 && newName !== col.name) {
                     col.name = newName.toUpperCase();
                     shiftIsDirty = true;
+                    updateShiftActive();
                 } else {
                     nameEl.textContent = col.name;
                 }
@@ -10228,6 +10236,7 @@
                 const newNote = noteEl.textContent.trim();
                 col.note = newNote === 'Tambah note...' ? '' : newNote;
                 shiftIsDirty = true;
+                updateShiftActive();
                 noteEl.classList.remove('editing');
                 noteEl.contentEditable = false;
                 renderShiftPage();
@@ -10254,10 +10263,163 @@
                 const newNote = noteEl.textContent.trim();
                 col.note = newNote === 'Tambah note...' ? '' : newNote;
                 shiftIsDirty = true;
+                updateShiftActive();
                 noteEl.classList.remove('editing');
                 noteEl.contentEditable = false;
                 renderShiftPage();
             };
+        }
+
+        // ============================================================
+        // ADD / DELETE COLUMN
+        // ============================================================
+        function addShiftColumn() {
+            if (!canEditShift()) return;
+
+            const newId = `shift_${Date.now()}`;
+            shiftColumns.push({
+                id: newId,
+                name: `SHIFT ${shiftColumns.length + 1}`,
+                note: '',
+                users: []
+            });
+
+            shiftIsDirty = true;
+            updateShiftActive();
+            renderShiftPage();
+            showShiftToast('✅ Kolom shift ditambahkan', 'success', 1500);
+        }
+
+        function deleteShiftColumn(columnId) {
+            if (!canEditShift()) return;
+
+            if (shiftColumns.length <= 2) {
+                showShiftToast('⚠️ Minimal 2 kolom shift harus ada!', 'warning');
+                return;
+            }
+
+            if (!confirm(`Yakin ingin menghapus kolom ini? Staff akan kembali ke DATA STAFF.`)) return;
+
+            const col = shiftColumns.find(c => c.id === columnId);
+            if (!col) return;
+
+            col.users.forEach(user => {
+                if (!availableUsers.some(u => u.id === user.id)) {
+                    availableUsers.push(user);
+                }
+            });
+            
+            sortAvailableUsers();
+            shiftColumns = shiftColumns.filter(c => c.id !== columnId);
+            shiftIsDirty = true;
+            updateShiftActive();
+            renderShiftPage();
+            showShiftToast('✅ Kolom shift dihapus', 'success', 1500);
+        }
+
+        // ============================================================
+        // RESET SHIFT
+        // ============================================================
+        function resetShift() {
+            if (!canEditShift()) return;
+
+            if (!confirm('⚠️ Yakin ingin mereset semua shift? Semua staff akan kembali ke DATA STAFF.')) return;
+
+            shiftColumns.forEach(col => {
+                col.users.forEach(user => {
+                    if (!availableUsers.some(u => u.id === user.id)) {
+                        availableUsers.push(user);
+                    }
+                });
+                col.users = [];
+            });
+
+            sortAvailableUsers();
+            shiftIsDirty = true;
+            updateShiftActive();
+            renderShiftPage();
+            showShiftToast('✅ Shift di-reset', 'success', 1500);
+        }
+
+        // ============================================================
+        // SAVE SHIFT (Popup Periode)
+        // ============================================================
+
+        function openSaveShiftPopup() {
+            if (!canEditShift()) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('saveShiftStart').value = today;
+            document.getElementById('saveShiftEnd').value = today;
+            document.getElementById('saveShiftPopup').classList.add('show');
+        }
+
+        function closeSaveShiftPopup() {
+            document.getElementById('saveShiftPopup').classList.remove('show');
+        }
+
+        async function confirmSaveShift() {
+            const startInput = document.getElementById('saveShiftStart');
+            const endInput = document.getElementById('saveShiftEnd');
+            
+            if (!startInput || !endInput) return;
+
+            const startDate = startInput.value;
+            const endDate = endInput.value;
+            
+            if (!startDate || !endDate) {
+                showShiftToast('⚠️ Pilih tanggal terlebih dahulu!', 'warning');
+                return;
+            }
+
+            if (startDate > endDate) {
+                showShiftToast('⚠️ Tanggal mulai harus <= tanggal akhir!', 'warning');
+                return;
+            }
+
+            closeSaveShiftPopup();
+
+            const userName = getCurrentUserName() || 'System';
+
+            try {
+                const shiftData = {
+                    columns: shiftColumns.map(col => ({
+                        id: col.id,
+                        name: col.name,
+                        note: col.note,
+                        users: col.users.map(u => ({ id: u.id, name: u.name, role: u.role }))
+                    }))
+                };
+
+                const { error } = await supabaseDashboard
+                    .from('shift_history')
+                    .insert({
+                        tanggal: startDate,
+                        periode_start: startDate,
+                        periode_end: endDate,
+                        shift_data: JSON.stringify(shiftData),
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        created_by: userName,
+                        updated_by: userName,
+                        notes: `Shift ${startDate} - ${endDate}`,
+                        is_active: true
+                    });
+
+                if (error) throw error;
+
+                // Insert log
+                await insertShiftLog('SAVE', userName, `Menyimpan shift ke riwayat (${startDate} - ${endDate})`);
+
+                showShiftToast(`✅ Shift berhasil disimpan ke riwayat! Periode: ${startDate} - ${endDate}`, 'success', 3000);
+
+                // Refresh riwayat shift
+                loadShiftHistory();
+
+            } catch (err) {
+                console.error('❌ Error saving shift to history:', err);
+                showShiftToast('❌ Gagal menyimpan shift ke riwayat: ' + err.message, 'error');
+            }
         }
 
         // ============================================================
@@ -10267,13 +10429,7 @@
         function openShiftPreview() {
             const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
             
-            const startDate = document.getElementById('shiftDateStart')?.value || shiftPeriodeStart;
-            const endDate = document.getElementById('shiftDateEnd')?.value || shiftPeriodeEnd;
-            
             previewData = {
-                tanggal: shiftPeriodeStart,
-                periodeStart: startDate,
-                periodeEnd: endDate,
                 columns: shiftColumns.map(col => ({
                     ...col,
                     users: [...col.users]
@@ -10297,20 +10453,6 @@
             if (!modal) return;
             if (!previewData) return;
 
-            const formatDate = (dateStr) => {
-                if (!dateStr) return '-';
-                const d = new Date(dateStr);
-                return d.toLocaleDateString('id-ID', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric'
-                });
-            };
-
-            const periodeText = previewData.periodeStart && previewData.periodeEnd && previewData.periodeStart !== previewData.periodeEnd
-                ? `${formatDate(previewData.periodeStart)} - ${formatDate(previewData.periodeEnd)}`
-                : formatDate(previewData.periodeStart || previewData.tanggal);
-
             const roleLabels = {
                 csline: 'CS Line',
                 cs: 'CS',
@@ -10323,7 +10465,7 @@
                     <div class="preview-header">
                         <div>
                             <div class="title" style="font-size:20px;font-weight:700;color:var(--text-primary);">📋 SHIFT KERJA - PREVIEW</div>
-                            <div class="subtitle" style="font-size:14px;color:var(--text-muted);margin-top:4px;">📅 Periode: ${periodeText}</div>
+                            <div class="subtitle" style="font-size:14px;color:var(--text-muted);margin-top:4px;">📅 Shift Aktif Terakhir</div>
                         </div>
                         <button class="close-btn" onclick="closeShiftPreview()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);transition:0.2s;padding:4px 8px;border-radius:8px;">✕</button>
                     </div>
@@ -10417,7 +10559,7 @@
                 logging: false
             }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `shift-preview-${previewData?.tanggal || 'today'}.png`;
+                link.download = `shift-preview-${new Date().toISOString().split('T')[0]}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             }).catch(err => {
@@ -10426,6 +10568,9 @@
             });
         }
 
+        // ============================================================
+        // SHIFT TOAST
+        // ============================================================
         function showShiftToast(message, type = 'info', duration = 2000) {
             let toast = document.getElementById('shiftToast');
             if (!toast) {
@@ -10445,12 +10590,134 @@
             }, duration);
         }
 
-        function updateShiftBadges() {
-            // Shift badge dihapus
+        // ============================================================
+        // SHIFT LOGS - FUNCTIONS
+        // ============================================================
+
+        async function insertShiftLog(action, userName, details) {
+            try {
+                const { error } = await supabaseDashboard
+                    .from('shift_logs')
+                    .insert({
+                        action: action,
+                        user_name: userName,
+                        details: details,
+                        created_at: new Date().toISOString()
+                    });
+
+                if (error) throw error;
+
+                // Refresh logs
+                await loadShiftLogs();
+
+            } catch (err) {
+                console.error('❌ Error inserting shift log:', err);
+            }
+        }
+
+        async function loadShiftLogs() {
+            try {
+                const { data, error } = await supabaseDashboard
+                    .from('shift_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                shiftLogs = data || [];
+                renderShiftLogs();
+
+            } catch (err) {
+                console.error('❌ Error loading shift logs:', err);
+            }
+        }
+
+        function renderShiftLogs() {
+            const body = document.getElementById('shiftLogBody');
+            if (!body) return;
+
+            if (shiftLogs.length === 0) {
+                body.innerHTML = `<div class="log-empty">Tidak ada log aktivitas</div>`;
+                return;
+            }
+
+            const formatTime = (dateStr) => {
+                const d = new Date(dateStr);
+                return d.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            // Hanya tampilkan 3 baris pertama, sisanya scrollable
+            const displayLogs = shiftLogs.slice(0, 3);
+            const hiddenLogs = shiftLogs.slice(3);
+
+            body.innerHTML = `
+                ${displayLogs.map(log => `
+                    <div class="log-entry">
+                        <span class="log-time">${formatTime(log.created_at)}</span>
+                        <span class="log-user">${log.user_name}</span>
+                        <span class="log-action">${log.details || log.action}</span>
+                    </div>
+                `).join('')}
+                ${hiddenLogs.map(log => `
+                    <div class="log-entry">
+                        <span class="log-time">${formatTime(log.created_at)}</span>
+                        <span class="log-user">${log.user_name}</span>
+                        <span class="log-action">${log.details || log.action}</span>
+                    </div>
+                `).join('')}
+            `;
+
+            // Scroll ke bawah untuk melihat log terbaru (posisi atas)
+            body.scrollTop = 0;
+        }
+
+        function refreshShiftLogs() {
+            showShiftToast('🔄 Memuat ulang log...', 'info', 1000);
+            loadShiftLogs();
+        }
+
+        function downloadShiftLogs() {
+            if (shiftLogs.length === 0) {
+                showShiftToast('⚠️ Tidak ada log untuk didownload', 'warning');
+                return;
+            }
+
+            const formatTime = (dateStr) => {
+                const d = new Date(dateStr);
+                return d.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            let csv = 'Waktu,User,Aksi,Detail\n';
+            shiftLogs.forEach(log => {
+                csv += `${formatTime(log.created_at)},${log.user_name},${log.action},"${log.details || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `shift-logs-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            showShiftToast('✅ Log berhasil didownload!', 'success');
         }
 
         // ============================================================
-        // RIWAYAT SHIFT - FUNCTIONS (DIPERBAIKI - Dengan fitur Gunakan Lagi)
+        // RIWAYAT SHIFT - FUNCTIONS
         // ============================================================
 
         async function loadShiftHistory() {
@@ -10458,7 +10725,7 @@
                 const { data, error } = await supabaseDashboard
                     .from('shift_history')
                     .select('*')
-                    .order('tanggal', { ascending: false });
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
@@ -10472,7 +10739,7 @@
         }
 
         // ============================================================
-        // RENDER RIWAYAT SHIFT (DIPERBAIKI - Dengan tombol Gunakan Lagi)
+        // RENDER RIWAYAT SHIFT (DIPERBAIKI - Tanpa "Gunakan Lagi")
         // ============================================================
 
         function renderShiftHistory() {
@@ -10497,7 +10764,7 @@
                 const month = now.getMonth();
                 const year = now.getFullYear();
                 filtered = filtered.filter(h => {
-                    const d = new Date(h.tanggal);
+                    const d = new Date(h.created_at);
                     return d.getMonth() === month && d.getFullYear() === year;
                 });
             } else if (filterValue === 'last_month') {
@@ -10505,20 +10772,20 @@
                 const month = now.getMonth() - 1;
                 const year = now.getFullYear();
                 filtered = filtered.filter(h => {
-                    const d = new Date(h.tanggal);
+                    const d = new Date(h.created_at);
                     return d.getMonth() === month && d.getFullYear() === year;
                 });
             } else if (filterValue === 'last_3_months') {
                 const threeMonthsAgo = new Date();
                 threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
                 filtered = filtered.filter(h => {
-                    const d = new Date(h.tanggal);
+                    const d = new Date(h.created_at);
                     return d >= threeMonthsAgo;
                 });
             } else if (filterValue === 'this_year') {
                 const year = new Date().getFullYear();
                 filtered = filtered.filter(h => {
-                    const d = new Date(h.tanggal);
+                    const d = new Date(h.created_at);
                     return d.getFullYear() === year;
                 });
             }
@@ -10549,6 +10816,7 @@
             };
 
             const canEdit = canEditShift();
+            const canOpen = canOpenHistory();
 
             container.innerHTML = `
                 <div class="history-shift-container">
@@ -10595,15 +10863,16 @@
                                             </td>
                                             <td style="text-align:center;font-weight:600;">${item.totalStaff}</td>
                                             <td style="text-align:center;font-weight:600;">${item.shiftCount}</td>
-                                            <td>${item.updated_by || '-'}</td>
+                                            <td>${item.updated_by || item.created_by || '-'}</td>
                                             <td style="text-align:center;font-size:11px;color:var(--text-muted);">
-                                                ${dateFormat(item.tanggal)} ${timeFormat(item.created_at)}
+                                                ${dateFormat(item.created_at)} ${timeFormat(item.created_at)}
                                             </td>
                                             <td>
                                                 <div class="col-actions" style="justify-content:center;gap:4px;">
-                                                    <button class="action-btn open" onclick="openShiftFromHistory('${item.id}')" title="Buka" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">📂</button>
+                                                    ${canOpen ? `
+                                                        <button class="action-btn open" onclick="openShiftFromHistory('${item.id}')" title="Buka" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">📂</button>
+                                                    ` : ''}
                                                     <button class="action-btn preview" onclick="previewShiftFromHistory('${item.id}')" title="Preview" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">👁️</button>
-                                                    <button class="action-btn reuse" onclick="reuseShiftFromHistory('${item.id}')" title="Gunakan Lagi" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">🔄</button>
                                                     ${canEdit ? `
                                                         <button class="action-btn delete" onclick="deleteShiftHistory('${item.id}')" title="Hapus" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;border-radius:4px;transition:0.2s;color:var(--text-muted);">🗑️</button>
                                                     ` : ''}
@@ -10628,90 +10897,10 @@
         // ============================================================
 
         async function openShiftFromHistory(historyId) {
-            try {
-                const { data, error } = await supabaseDashboard
-                    .from('shift_history')
-                    .select('*')
-                    .eq('id', historyId)
-                    .maybeSingle();
-
-                if (error) throw error;
-                if (!data) {
-                    showShiftToast('❌ Data tidak ditemukan', 'error');
-                    return;
-                }
-
-                // Set periode dari data
-                shiftPeriodeStart = data.periode_start || data.tanggal;
-                shiftPeriodeEnd = data.periode_end || data.tanggal;
-                
-                document.getElementById('shiftDateStart').value = shiftPeriodeStart;
-                document.getElementById('shiftDateEnd').value = shiftPeriodeEnd;
-
-                await loadShiftData(shiftPeriodeStart, shiftPeriodeEnd);
-
-                switchTab('shifts');
-
-                showShiftToast(`✅ Shift ${shiftPeriodeStart} - ${shiftPeriodeEnd} dimuat`, 'success', 2000);
-
-            } catch (err) {
-                console.error('❌ Error opening shift:', err);
-                showShiftToast('❌ Gagal membuka shift: ' + err.message, 'error');
-            }
-        }
-
-        // ============================================================
-        // REUSE SHIFT (Gunakan Lagi)
-        // ============================================================
-
-        function reuseShiftFromHistory(historyId) {
-            const popup = document.createElement('div');
-            popup.className = 'popup-overlay show';
-            popup.id = 'reuseShiftPopup';
-            popup.innerHTML = `
-                <div class="popup-content" style="max-width:400px;">
-                    <div class="popup-icon">🔄</div>
-                    <div class="popup-title" style="color:var(--sidebar-text);">Gunakan Shift Lagi</div>
-                    <div class="popup-message">
-                        Pilih tanggal untuk shift ini.
-                    </div>
-                    <div style="margin:12px 0;">
-                        <label style="font-weight:600;color:var(--text-secondary);font-size:13px;display:block;margin-bottom:4px;">📅 Tanggal mulai</label>
-                        <input type="date" id="reuseShiftStart" value="${new Date().toISOString().split('T')[0]}" 
-                               style="width:100%;padding:8px 12px;border:2px solid var(--border-input);border-radius:8px;background:var(--bg-input);color:var(--text-primary);font-size:13px;margin-bottom:8px;" />
-                        <label style="font-weight:600;color:var(--text-secondary);font-size:13px;display:block;margin-bottom:4px;">📅 Tanggal akhir</label>
-                        <input type="date" id="reuseShiftEnd" value="${new Date().toISOString().split('T')[0]}" 
-                               style="width:100%;padding:8px 12px;border:2px solid var(--border-input);border-radius:8px;background:var(--bg-input);color:var(--text-primary);font-size:13px;" />
-                    </div>
-                    <div class="popup-divider"></div>
-                    <div style="display:flex;gap:10px;justify-content:center;margin-top:8px;">
-                        <button class="popup-btn" onclick="confirmReuseShift('${historyId}')" style="background:var(--sidebar-text);">👍 Gunakan</button>
-                        <button class="popup-btn" onclick="closeReusePopup()" style="background:var(--bg-hover);color:var(--text-primary);">❌ Batal</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(popup);
-        }
-
-        async function confirmReuseShift(historyId) {
-            const startInput = document.getElementById('reuseShiftStart');
-            const endInput = document.getElementById('reuseShiftEnd');
-            if (!startInput || !endInput) return;
-
-            const newStart = startInput.value;
-            const newEnd = endInput.value;
-            
-            if (!newStart || !newEnd) {
-                showShiftToast('⚠️ Pilih tanggal terlebih dahulu!', 'warning');
+            if (!canOpenHistory()) {
+                showShiftToast('❌ Anda tidak memiliki izin untuk membuka shift!', 'error');
                 return;
             }
-
-            if (newStart > newEnd) {
-                showShiftToast('⚠️ Tanggal mulai harus <= tanggal akhir!', 'warning');
-                return;
-            }
-
-            closeReusePopup();
 
             try {
                 const { data, error } = await supabaseDashboard
@@ -10726,22 +10915,18 @@
                     return;
                 }
 
-                shiftPeriodeStart = newStart;
-                shiftPeriodeEnd = newEnd;
-                
-                document.getElementById('shiftDateStart').value = newStart;
-                document.getElementById('shiftDateEnd').value = newEnd;
-
+                // Load data ke shift aktif
                 const shiftData = JSON.parse(data.shift_data);
                 
+                // Reset shiftColumns
                 shiftColumns = shiftData.columns.map(col => ({
-                    id: `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                    id: col.id || `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
                     name: col.name,
                     note: col.note || '',
                     users: []
                 }));
 
-                // Ambil semua user dan assign ulang
+                // Ambil semua user
                 const { data: users, error: usersError } = await supabaseDashboard
                     .from('users')
                     .select('*')
@@ -10753,10 +10938,11 @@
                 const userMap = {};
                 allUsers.forEach(u => userMap[u.id] = u);
 
-                // Set availableUsers dengan semua user
+                // Reset availableUsers
                 availableUsers = allUsers.map(u => ({ ...u }));
                 sortAvailableUsers();
 
+                // Assign user ke kolom
                 shiftData.columns.forEach((col, index) => {
                     if (col.users) {
                         col.users.forEach(u => {
@@ -10771,21 +10957,39 @@
                     }
                 });
 
-                shiftIsDirty = true;
+                shiftIsDirty = false;
+
+                // Update shift_active
+                const activeData = {
+                    columns: shiftColumns.map(col => ({
+                        id: col.id,
+                        name: col.name,
+                        note: col.note,
+                        users: col.users.map(u => ({ id: u.id, name: u.name, role: u.role }))
+                    }))
+                };
+
+                await supabaseDashboard
+                    .from('shift_active')
+                    .update({
+                        shift_data: activeData,
+                        updated_at: new Date().toISOString(),
+                        updated_by: getCurrentUserName() || 'System'
+                    })
+                    .eq('id', shiftActiveId);
+
+                // Insert log
+                await insertShiftLog('OPEN', getCurrentUserName() || 'System', `Membuka shift dari riwayat (${data.periode_start} - ${data.periode_end})`);
+
                 renderShiftPage();
                 switchTab('shifts');
 
-                showShiftToast(`✅ Shift berhasil digandakan ke ${newStart} - ${newEnd}`, 'success', 3000);
+                showShiftToast(`✅ Shift ${data.periode_start} - ${data.periode_end} dimuat`, 'success', 2000);
 
             } catch (err) {
-                console.error('❌ Error reusing shift:', err);
-                showShiftToast('❌ Gagal menggandakan shift: ' + err.message, 'error');
+                console.error('❌ Error opening shift:', err);
+                showShiftToast('❌ Gagal membuka shift: ' + err.message, 'error');
             }
-        }
-
-        function closeReusePopup() {
-            const popup = document.getElementById('reuseShiftPopup');
-            if (popup) popup.remove();
         }
 
         // ============================================================
@@ -10820,7 +11024,7 @@
                     periodeEnd: endDate,
                     columns: columns,
                     totalStaff: totalStaff,
-                    createdBy: item.updated_by || 'System',
+                    createdBy: item.updated_by || item.created_by || 'System',
                     createdAt: new Date(item.created_at).toLocaleString('id-ID')
                 };
 
@@ -10837,7 +11041,7 @@
         // ============================================================
 
         async function deleteShiftHistory(historyId) {
-            if (!canEditShift()) {
+            if (!canDeleteHistory()) {
                 showShiftToast('❌ Anda tidak memiliki izin untuk menghapus!', 'error');
                 return;
             }
@@ -10848,7 +11052,7 @@
                 return;
             }
 
-            if (!confirm(`⚠️ Yakin ingin menghapus riwayat shift untuk tanggal ${item.tanggal}?`)) {
+            if (!confirm(`⚠️ Yakin ingin menghapus riwayat shift untuk periode ${item.periode_start || item.tanggal} - ${item.periode_end || item.tanggal}?`)) {
                 return;
             }
 
@@ -10863,11 +11067,6 @@
                     showShiftToast('❌ Gagal menghapus: ' + error.message, 'error');
                     return;
                 }
-
-                await supabaseDashboard
-                    .from('shift_assignments')
-                    .delete()
-                    .eq('tanggal', item.tanggal);
 
                 shiftHistoryData = shiftHistoryData.filter(h => h.id !== historyId);
 
@@ -10900,14 +11099,6 @@
                 modal.className = 'shift-preview-modal';
                 document.body.appendChild(modal);
             }
-
-            // Inisialisasi shift columns
-            shiftColumns = SHIFT_DEFAULT_COLUMNS.map(col => ({
-                ...col,
-                users: []
-            }));
-            shiftPeriodeStart = new Date().toISOString().split('T')[0];
-            shiftPeriodeEnd = new Date().toISOString().split('T')[0];
 
             document.addEventListener('visibilitychange', function() {
                 if (document.visibilityState === 'visible') {
