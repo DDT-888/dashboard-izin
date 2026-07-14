@@ -121,7 +121,6 @@
             transition: all 0.35s ease;
         }
 
-        /* Pastikan semua child ikut rounded */
         .shift-column-wrapper .shift-column {
             border-radius: 0 !important;
             overflow: hidden !important;
@@ -134,7 +133,6 @@
             transition: all 0.35s ease;
         }
 
-        /* Column body - pastikan scroll tidak merusak rounded */
         .shift-column .column-body {
             border-radius: 0 0 12px 12px !important;
             overflow-y: auto;
@@ -144,17 +142,14 @@
             min-height: 60px;
         }
 
-        /* Empty drop */
         .shift-column .column-body .empty-drop {
             border-radius: 8px !important;
         }
 
-        /* User card di dalam column */
         .shift-column .column-body .user-card-shift:last-child {
             border-radius: 0 0 8px 8px !important;
         }
 
-        /* 2. PERBAIKAN SCROLL - Agar tidak merusak rounded */
         .shift-column .column-body::-webkit-scrollbar {
             width: 4px;
         }
@@ -167,25 +162,301 @@
             border-radius: 4px;
         }
 
-        /* 3. PERBAIKAN RESPONSIVE - Tetap rapi di mobile */
-        @media (max-width: 768px) {
-            .shift-column-wrapper {
-                min-width: 100% !important;
-                max-width: 100% !important;
-                border-radius: 12px !important;
+        /* ============================================================
+           PERBAIKAN TAMPILAN SHIFT KERJA - LOG & LAYOUT
+           ============================================================ */
+
+        /* 1. LOG AKTIVITAS - Lebih kecil & rapi */
+        .shift-log-container {
+            margin-top: 6px !important;
+            padding: 4px 12px 3px 12px !important;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            flex-shrink: 0;
+            max-height: 85px !important;
+            overflow: hidden !important;
+        }
+
+        .shift-log-container .log-header {
+            padding-bottom: 2px !important;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2px !important;
+        }
+
+        .shift-log-container .log-header .log-title {
+            font-size: 10px !important;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .shift-log-container .log-header .log-actions button {
+            font-size: 9px !important;
+            padding: 1px 6px !important;
+        }
+
+        .shift-log-container .log-body {
+            max-height: 50px !important;
+            overflow-y: auto;
+            padding: 2px 0 !important;
+            font-size: 10px !important;
+            font-family: 'Courier New', monospace;
+            color: var(--text-secondary);
+            line-height: 1.4 !important;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shift-log-container .log-body .log-entry {
+            padding: 1px 4px !important;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            gap: 4px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+            font-size: 9.5px !important;
+        }
+
+        .shift-log-container .log-body .log-entry .log-time {
+            font-size: 9px !important;
+            flex-shrink: 0;
+            min-width: 60px;
+        }
+
+        .shift-log-container .log-body .log-entry .log-user {
+            font-weight: 600;
+            font-size: 9.5px !important;
+            flex-shrink: 0;
+            min-width: 70px;
+        }
+
+        .shift-log-container .log-body .log-entry .log-action {
+            font-size: 9.5px !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .shift-log-container .log-empty {
+            font-size: 10px !important;
+            padding: 4px 0 !important;
+        }
+
+        /* 2. MAIN CONTENT - Layout agar konsisten */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 16px 28px;
+        }
+
+        /* 3. SHIFT CONTAINER - Tinggi dinamis */
+        .shift-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-height: 0;
+            height: auto;
+            max-height: none !important;
+        }
+
+        /* 4. SHIFT MAIN GRID - Ukuran konsisten */
+        .shift-main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 14px;
+            flex: 1;
+            min-height: 300px;
+            height: auto !important;
+            max-height: none !important;
+            margin-bottom: 6px;
+        }
+
+        /* 5. DATA STAFF & SHIFT COLUMN - Tinggi konsisten */
+        .shift-available {
+            min-height: 300px !important;
+            max-height: none !important;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shift-available-dropzone {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 10px;
+            min-height: 250px !important;
+        }
+
+        .shift-columns-wrapper {
+            flex: 1;
+            min-height: 300px !important;
+            max-height: none !important;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0 2px 4px 0;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .shift-column-wrapper {
+            flex: 1 1 auto;
+            min-width: 280px;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            min-height: 300px !important;
+        }
+
+        .shift-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 280px !important;
+        }
+
+        .shift-column .column-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 6px;
+            min-height: 200px !important;
+            max-height: none !important;
+        }
+
+        /* 6. RESPONSIVE - Tetap konsisten di zoom 80%-90% */
+        @media screen and (max-width: 1400px) {
+            .shift-main-grid {
+                grid-template-columns: 260px 1fr;
+                gap: 12px;
             }
-            .shift-column .column-body {
-                max-height: 300px !important;
-                border-radius: 0 0 12px 12px !important;
+            .shift-column-wrapper {
+                min-width: 240px;
+                max-width: 360px;
             }
         }
 
-        @media (max-width: 600px) {
+        @media screen and (max-width: 1200px) {
+            .shift-main-grid {
+                grid-template-columns: 240px 1fr;
+                gap: 10px;
+            }
             .shift-column-wrapper {
-                flex-wrap: wrap !important;
+                min-width: 220px;
+                max-width: 340px;
+            }
+        }
+
+        @media screen and (max-width: 992px) {
+            .shift-main-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                height: auto !important;
+                max-height: none !important;
+            }
+            .shift-available {
+                min-height: 250px !important;
+                max-height: 300px !important;
+            }
+            .shift-column-wrapper {
                 min-width: 100% !important;
                 max-width: 100% !important;
-                border-radius: 12px !important;
+                min-height: 250px !important;
+            }
+            .shift-column .column-body {
+                min-height: 180px !important;
+                max-height: 300px !important;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .shift-main-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .shift-available {
+                min-height: 200px !important;
+                max-height: 280px !important;
+            }
+            .shift-column .column-body {
+                min-height: 150px !important;
+                max-height: 250px !important;
+            }
+            .shift-log-container {
+                max-height: 75px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 40px !important;
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            .shift-log-container {
+                max-height: 65px !important;
+                padding: 3px 8px 2px 8px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 35px !important;
+                font-size: 9px !important;
+            }
+            .shift-log-container .log-body .log-entry {
+                font-size: 8.5px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-time {
+                min-width: 45px;
+                font-size: 8px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-user {
+                font-size: 8.5px !important;
+                min-width: 50px;
+            }
+            .shift-log-container .log-body .log-entry .log-action {
+                font-size: 8.5px !important;
+            }
+        }
+
+        /* 7. FOOTER - Jarak dengan log aktivitas */
+        .footer-premium {
+            margin-top: 6px !important;
+            padding: 8px 20px !important;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        /* 8. PREVIEW SHIFT - Perbaikan periode */
+        .shift-preview-modal .preview-header .subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* ============================================================
+           RESPONSIVE SHIFT - Mobile
+           ============================================================ */
+
+        @media (max-width: 992px) {
+            .shift-main-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+                max-height: none;
+            }
+            .shift-available {
+                max-height: 300px;
+                min-width: unset;
+                max-width: unset;
+            }
+            .shift-columns-wrapper {
+                flex-wrap: wrap;
+            }
+            .shift-column-wrapper {
+                max-width: none !important;
+                min-width: 280px;
             }
             .shift-column-wrapper:not(.has-note-open) {
                 max-width: 100% !important;
@@ -193,10 +464,78 @@
             .shift-column-wrapper.has-note-open {
                 max-width: 100% !important;
             }
+            .shift-column {
+                max-width: none;
+            }
+            .shift-note-panel.open {
+                max-width: 140px;
+                min-width: 100px;
+            }
+            .shift-preview-modal .preview-content {
+                padding: 20px;
+                max-width: 100%;
+            }
+            .shift-preview-modal .preview-grid {
+                grid-template-columns: 1fr 1fr;
+            }
             .shift-column .column-body {
-                max-height: 250px !important;
+                max-height: 400px;
             }
         }
+
+        @media (max-width: 600px) {
+            .shift-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .shift-header-right {
+                flex-wrap: wrap;
+            }
+            .shift-column-wrapper {
+                flex-wrap: wrap;
+                min-width: 100%;
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper:not(.has-note-open) {
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper.has-note-open {
+                max-width: 100% !important;
+            }
+            .shift-note-panel.open {
+                width: 100%;
+                max-width: 100%;
+                min-width: 100px;
+            }
+            .shift-preview-modal .preview-grid {
+                grid-template-columns: 1fr;
+            }
+            .shift-preview-modal .preview-content {
+                padding: 14px;
+            }
+            .history-table-wrap {
+                overflow-x: auto;
+            }
+            .history-table-wrap table {
+                min-width: 600px;
+                font-size: 12px;
+            }
+            .history-table-wrap td,
+            .history-table-wrap th {
+                padding: 8px 10px;
+            }
+            .shift-log-container .log-body {
+                max-height: 65px;
+                font-size: 10px;
+            }
+            .shift-column .column-body {
+                max-height: 300px;
+            }
+        }
+
+        /* ============================================================
+           CSS LAINNYA (SAMA SEPERTI SEBELUMNYA)
+           ============================================================ */
 
         *,
         *::before,
@@ -3323,10 +3662,11 @@
         }
 
         .footer-premium {
-            margin-top: 20px;
-            padding: 12px 24px;
-            background: var(--footer-bg);
+            margin-top: 6px !important;
+            padding: 8px 20px !important;
             border-radius: 10px;
+            flex-shrink: 0;
+            background: var(--footer-bg);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -3334,7 +3674,6 @@
             gap: 10px;
             border: 1px solid rgba(0, 229, 255, 0.06);
             box-shadow: var(--shadow-md);
-            flex-shrink: 0;
             transition: background var(--transition-speed) ease;
         }
 
@@ -3477,608 +3816,18 @@
             opacity: 0.3;
         }
 
-        @media (max-width: 992px) {
-            .live-izin-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .ticker-container { height: 38px;
-                padding: 4px 12px; }
-            .ticker-container .ticker-item { font-size: 12px; }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                width: 260px;
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-                padding: 12px 14px;
-            }
-            .live-izin-grid {
-                grid-template-columns: 1fr;
-            }
-            .live-izin-container { padding: 10px 14px 12px; }
-            .ticker-container { height: 36px;
-                padding: 4px 10px; }
-            .ticker-container .ticker-item { font-size: 11px;
-                padding: 0 20px; }
-            .ticker-container .ticker-wrapper { height: 100%; }
-            .hamburger { display: flex !important; }
-            .live-card-col .nama { max-width: 100px;
-                font-size: 11px; }
-            .live-card-col .timer-col { font-size: 11px; }
-            .welcome-banner { padding: 8px 14px; }
-            .welcome-banner .welcome-left .wave { font-size: 20px; }
-            .welcome-banner .welcome-left .text .username { font-size: 14px; }
-            .welcome-banner .welcome-right .quick-stats { padding-left: 10px;
-                gap: 10px; }
-            .welcome-banner .welcome-right .quick-stats .stat-item { font-size: 10px; }
-            .footer-premium { padding: 10px 16px;
-                flex-direction: column;
-                text-align: center; }
-            .table-dashboard-wrap {
-                overflow-x: auto;
-            }
-            .table-dashboard-wrap table {
-                min-width: 520px !important;
-                font-size: 12px !important;
-            }
-            .table-dashboard-wrap td,
-            .table-dashboard-wrap th {
-                padding: 8px 10px !important;
-            }
-            .table-dashboard-wrap .col-nama {
-                min-width: 60px !important;
-                max-width: 100px !important;
-            }
-            .table-dashboard-wrap .col-nama .nama-cell {
-                font-size: 11px !important;
-                white-space: normal !important;
-                word-break: break-word !important;
-                line-height: 1.2 !important;
-            }
-            .table-dashboard-wrap .col-status { min-width: 60px !important;
-                max-width: 75px !important; }
-            .table-dashboard-wrap .col-role { min-width: 60px !important;
-                max-width: 75px !important; }
-            .table-dashboard-wrap .col-quota { min-width: 50px !important;
-                max-width: 65px !important; }
-            .table-dashboard-wrap .col-voucher { min-width: 50px !important;
-                max-width: 65px !important; }
-            .table-dashboard-wrap .col-mulai { min-width: 50px !important;
-                max-width: 65px !important; }
-            .table-dashboard-wrap .col-progress { min-width: 110px !important;
-                max-width: 160px !important; }
-            .table-dashboard-wrap .col-aksi { min-width: 80px !important;
-                max-width: 110px !important; }
-            .nama-cell {
-                font-size: 11px !important;
-                white-space: normal !important;
-                word-break: break-word !important;
-            }
-            .btn-action {
-                padding: 10px 16px !important;
-                min-width: 75px !important;
-                height: 42px !important;
-                font-size: 11px !important;
-            }
-            .btn-action .icon {
-                font-size: 16px !important;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .ticker-container { height: 32px;
-                padding: 3px 8px; }
-            .ticker-container .ticker-item { font-size: 10px;
-                padding: 0 16px; }
-            .ticker-container .ticker-badge { font-size: 8px;
-                padding: 2px 10px; }
-            .ticker-container .ticker-icon { font-size: 14px; }
-            .live-izin-container { padding: 8px 10px 10px; }
-            .live-izin-header .count { font-size: 10px;
-                padding: 2px 10px; }
-            .live-role-column { padding: 6px 8px;
-                min-height: 50px; }
-            .live-card-col { padding: 4px 8px;
-                font-size: 10px; }
-            .live-card-col .nama { max-width: 70px;
-                font-size: 10px; }
-            .live-card-col .timer-col { font-size: 10px;
-                padding: 1px 6px; }
-            .live-card-col .visual-fun-col { font-size: 12px; }
-            .live-card-col .warning-badge-col { font-size: 7px;
-                padding: 1px 6px; }
-            .welcome-banner { padding: 8px 14px; }
-            .welcome-banner .welcome-left .wave { font-size: 18px; }
-            .welcome-banner .welcome-left .text .greeting { font-size: 10px; }
-            .welcome-banner .welcome-left .text .username { font-size: 12px; }
-            .welcome-banner .welcome-right .badge-role { font-size: 9px;
-                padding: 2px 12px; }
-            .welcome-banner .welcome-right .quick-stats { padding-left: 8px;
-                gap: 8px; }
-            .welcome-banner .welcome-right .quick-stats .stat-item { font-size: 9px; }
-            .welcome-banner .welcome-right .quick-stats .stat-item .stat-value { font-size: 10px; }
-            .footer-premium .footer-left { font-size: 11px; }
-            .footer-premium .footer-right { font-size: 11px; }
-            .topbar-left h1 { font-size: 16px; }
-            .topbar-left h1 small { font-size: 10px; }
-            .clock-container { font-size: 10px;
-                padding: 4px 10px;
-                height: 28px; }
-            .clock-container .date { font-size: 9px; }
-            .theme-toggle-wrapper { height: 28px;
-                padding: 3px 8px 3px 5px; }
-            .theme-toggle { width: 34px;
-                height: 18px; }
-            .theme-toggle .toggle-thumb { width: 12px;
-                height: 12px;
-                top: 2px;
-                left: 2px; }
-            [data-theme="dark"] .theme-toggle .toggle-thumb { left: 16px; }
-            .theme-toggle .toggle-icons { font-size: 8px; }
-            .theme-toggle-label { font-size: 10px; }
-            .profile-container .profile-avatar { width: 28px;
-                height: 28px; }
-            .footer-premium { flex-direction: column;
-                text-align: center;
-                gap: 6px; }
-            .footer-premium .footer-left .footer-divider { display: none; }
-            .table-dashboard-wrap table {
-                min-width: 420px !important;
-                font-size: 11px !important;
-            }
-            .table-dashboard-wrap td,
-            .table-dashboard-wrap th {
-                padding: 6px 8px !important;
-            }
-            .table-dashboard-wrap .col-nama {
-                min-width: 50px !important;
-                max-width: 70px !important;
-            }
-            .table-dashboard-wrap .col-nama .nama-cell {
-                font-size: 10px !important;
-                white-space: normal !important;
-                word-break: break-word !important;
-                line-height: 1.1 !important;
-            }
-            .nama-cell {
-                font-size: 10px !important;
-                white-space: normal !important;
-                word-break: break-word !important;
-            }
-            .quota-badge-modern {
-                font-size: 10px !important;
-                padding: 2px 5px !important;
-                min-width: 28px !important;
-            }
-            .role-tag {
-                font-size: 8px !important;
-                padding: 2px 6px !important;
-            }
-            .status-badge {
-                font-size: 9px !important;
-                padding: 2px 6px !important;
-            }
-            .timer-display {
-                font-size: 10px !important;
-                min-width: 35px !important;
-            }
-            .time-mulai {
-                font-size: 10px !important;
-            }
-            .btn-action {
-                padding: 8px 12px !important;
-                min-width: 65px !important;
-                height: 38px !important;
-                font-size: 10px !important;
-                border-radius: 6px !important;
-            }
-            .btn-action .icon {
-                font-size: 14px !important;
-            }
-            .progress-bar-wrap {
-                min-width: 30px !important;
-                max-width: 60px !important;
-            }
-            .progress-text {
-                font-size: 8px !important;
-                min-width: 20px !important;
-            }
-            .voucher-badge {
-                font-size: 10px !important;
-                padding: 2px 6px !important;
-            }
-            .table-dashboard-wrap .col-progress { min-width: 90px !important;
-                max-width: 130px !important; }
-            .table-dashboard-wrap .col-aksi { min-width: 70px !important;
-                max-width: 90px !important; }
-        }
-
-        @media (max-width: 400px) {
-            .table-dashboard-wrap table {
-                min-width: 350px !important;
-                font-size: 10px !important;
-            }
-            .table-dashboard-wrap td,
-            .table-dashboard-wrap th {
-                padding: 4px 6px !important;
-            }
-            .table-dashboard-wrap .col-nama {
-                min-width: 40px !important;
-                max-width: 55px !important;
-            }
-            .table-dashboard-wrap .col-nama .nama-cell {
-                font-size: 9px !important;
-                white-space: normal !important;
-                word-break: break-word !important;
-                line-height: 1 !important;
-            }
-            .nama-cell {
-                font-size: 9px !important;
-                white-space: normal !important;
-                word-break: break-word !important;
-            }
-            .table-dashboard-wrap .col-progress { min-width: 70px !important;
-                max-width: 100px !important; }
-            .table-dashboard-wrap .col-aksi { min-width: 60px !important;
-                max-width: 75px !important; }
-            .btn-action {
-                padding: 6px 10px !important;
-                min-width: 55px !important;
-                height: 34px !important;
-                font-size: 9px !important;
-            }
-            .btn-action .icon {
-                font-size: 12px !important;
-            }
-        }
-
-        .sidebar::-webkit-scrollbar {
-            width: 3px;
-        }
-        .sidebar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(0, 229, 255, 0.05);
-            border-radius: 4px;
-        }
-
-        .btn-refresh {
-            background: var(--info);
-            color: white;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 12px;
-            transition: 0.3s;
-        }
-        .btn-refresh:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-        .btn-refresh:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .time-detail {
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            color: var(--text-primary);
-        }
-
-        .toast-notification {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            padding: 12px 22px;
-            border-radius: 10px;
-            color: white;
-            font-weight: 600;
-            z-index: 9998;
-            max-width: 360px;
-            box-shadow: var(--shadow-xl);
-            animation: slideInRight 0.4s ease;
-            display: none;
-            font-size: 13px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .toast-notification.success {
-            background: var(--success);
-        }
-        .toast-notification.error {
-            background: var(--danger);
-        }
-        .toast-notification.warning {
-            background: var(--warning);
-        }
-        .toast-notification.info {
-            background: var(--info);
-        }
-        .toast-notification.jackpot {
-            background: var(--sidebar-bg);
-            border: 1px solid rgba(0, 229, 255, 0.1);
-            color: #00e5ff;
-            font-size: 13px;
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .access-denied {
-            text-align: center;
-            padding: 50px 20px;
-            color: var(--text-muted);
-        }
-        .access-denied .icon {
-            font-size: 56px;
-            margin-bottom: 12px;
-        }
-        .access-denied h3 {
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-        }
-
-        .not-registered-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 10000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            animation: fadeInModal 0.5s ease;
-        }
-
-        .not-registered-popup {
-            background: var(--sidebar-bg);
-            border-radius: 24px;
-            padding: 40px 45px;
-            max-width: 440px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 0 60px rgba(0, 229, 255, 0.08), 0 0 120px rgba(0, 229, 255, 0.03);
-            border: 1px solid rgba(0, 229, 255, 0.12);
-            position: relative;
-            animation: premiumBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow: hidden;
-        }
-
-        .not-registered-popup::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            right: -50%;
-            bottom: -50%;
-            background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.05) 0%, transparent 70%);
-            pointer-events: none;
-            animation: glowPulse 3s ease-in-out infinite;
-        }
-
-        .not-registered-popup .icon {
-            font-size: 56px;
-            margin-bottom: 8px;
-            display: inline-block;
-            animation: jackpotSpin 3s ease-in-out infinite;
-        }
-        .not-registered-popup h2 {
-            color: #00e5ff;
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            text-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
-            letter-spacing: 1px;
-        }
-        .not-registered-popup p {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-        .not-registered-popup p strong {
-            color: #ffd54f;
-        }
-        .not-registered-popup .info-box {
-            background: rgba(0, 229, 255, 0.05);
-            border-left: 3px solid #00e5ff;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin: 16px 0;
-            text-align: left;
-        }
-        .not-registered-popup .info-box p {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 13px;
-            margin-bottom: 0;
-        }
-        .not-registered-popup .info-box p strong {
-            color: #00e5ff;
-        }
-        .not-registered-popup .btn-logout-popup {
-            background: transparent;
-            color: #ff6b6b;
-            border: 2px solid rgba(255, 107, 107, 0.25);
-            padding: 12px 35px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 8px;
-            display: block;
-            width: 100%;
-        }
-        .not-registered-popup .btn-logout-popup:hover {
-            background: rgba(255, 107, 107, 0.1);
-            border-color: rgba(255, 107, 107, 0.5);
-            box-shadow: 0 0 30px rgba(255, 107, 107, 0.1);
-            transform: translateY(-2px);
-        }
-        .not-registered-popup .corner-deco {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-color: rgba(0, 229, 255, 0.08);
-            border-style: solid;
-            border-width: 0;
-        }
-        .not-registered-popup .corner-deco.tl {
-            top: 16px;
-            left: 16px;
-            border-top-width: 2px;
-            border-left-width: 2px;
-            border-radius: 4px 0 0 0;
-        }
-        .not-registered-popup .corner-deco.tr {
-            top: 16px;
-            right: 16px;
-            border-top-width: 2px;
-            border-right-width: 2px;
-            border-radius: 0 4px 0 0;
-        }
-        .not-registered-popup .corner-deco.bl {
-            bottom: 16px;
-            left: 16px;
-            border-bottom-width: 2px;
-            border-left-width: 2px;
-            border-radius: 0 0 0 4px;
-        }
-        .not-registered-popup .corner-deco.br {
-            bottom: 16px;
-            right: 16px;
-            border-bottom-width: 2px;
-            border-right-width: 2px;
-            border-radius: 0 0 4px 0;
-        }
-
-        .table-dashboard-wrap th:first-child,
-        .table-dashboard-wrap td:first-child {
-            padding-left: 12px;
-        }
-        .table-dashboard-wrap th:last-child,
-        .table-dashboard-wrap td:last-child {
-            padding-right: 12px;
-        }
-
-        .table-wrap th:first-child,
-        .table-wrap td:first-child {
-            padding-left: 16px;
-        }
-        .table-wrap th:last-child,
-        .table-wrap td:last-child {
-            padding-right: 16px;
-        }
-
-        .btn-hapus {
-            padding: 3px 12px;
-            border: none;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            background: var(--danger);
-            color: white;
-            transition: 0.2s;
-        }
-        .btn-hapus:hover:not(:disabled) {
-            opacity: 0.9;
-            transform: scale(1.05);
-        }
-        .btn-hapus:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-voucher {
-            padding: 3px 10px;
-            border: none;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            background: var(--warning);
-            color: white;
-            transition: 0.2s;
-        }
-        .btn-voucher:hover:not(:disabled) {
-            opacity: 0.9;
-            transform: scale(1.05);
-        }
-        .btn-voucher:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .role-summary {
-            display: flex;
-            gap: 14px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .role-summary span {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .role-summary span strong {
-            color: var(--text-primary);
-            font-weight: 700;
-        }
-        .role-summary .separator {
-            color: var(--border-color);
-            font-weight: 300;
-        }
-
-        .loading-flash {
-            opacity: 0 !important;
-            transition: opacity 0.15s ease;
-        }
-
-        .loading-flash-show {
-            opacity: 1 !important;
-            transition: opacity 0.3s ease;
-        }
-
         /* ============================================================
-           SHIFT KERJA - CSS (DIPERBAIKI - NOTE PANEL TERTUTUP RAPAT)
+           SHIFT KERJA - CSS
            ============================================================ */
 
         .shift-container {
             display: flex;
             flex-direction: column;
             gap: 6px;
-            height: 100%;
-            min-height: 400px;
-            max-height: calc(100vh - 200px);
+            flex: 1;
+            min-height: 0;
+            height: auto;
+            max-height: none !important;
         }
 
         .shift-header {
@@ -4122,7 +3871,6 @@
             flex-shrink: 0;
         }
 
-        /* Tombol Shift - Lebih kecil */
         .btn-shift {
             padding: 4px 12px;
             border: none;
@@ -4196,7 +3944,6 @@
             background: rgba(0, 229, 255, 0.04);
         }
 
-        /* Column Wrapper - untuk column + note panel */
         .shift-column-wrapper {
             display: flex;
             gap: 0;
@@ -4212,7 +3959,6 @@
             transition: all 0.35s ease;
         }
 
-        /* Saat note panel tertutup - TIDAK ADA KOLOM PUTIH */
         .shift-column-wrapper .shift-note-panel {
             width: 0 !important;
             min-width: 0 !important;
@@ -4224,7 +3970,6 @@
             flex: 0 0 0 !important;
         }
 
-        /* Saat note panel terbuka */
         .shift-column-wrapper.has-note-open .shift-note-panel {
             width: 140px !important;
             min-width: 120px !important;
@@ -4236,12 +3981,10 @@
             flex: 0 0 140px !important;
         }
 
-        /* Wrapper tidak boleh melebar saat note panel tertutup */
         .shift-column-wrapper:not(.has-note-open) {
             max-width: 280px !important;
         }
 
-        /* Wrapper melebar saat note panel terbuka */
         .shift-column-wrapper.has-note-open {
             max-width: 420px !important;
         }
@@ -4269,7 +4012,6 @@
             flex-direction: column;
         }
 
-        /* Note Panel - CSS dasar */
         .shift-note-panel {
             background: var(--bg-secondary);
             display: flex;
@@ -4369,7 +4111,6 @@
             background: var(--bg-hover);
         }
 
-        /* Note Badge di Header */
         .note-badge {
             display: inline-flex;
             align-items: center;
@@ -4427,7 +4168,6 @@
             }
         }
 
-        /* Note Indicator di User Card */
         .note-indicator {
             display: inline-block;
             width: 6px;
@@ -4445,7 +4185,6 @@
             animation: pulse-note 2s ease-in-out infinite;
         }
 
-        /* DATA STAFF */
         .shift-available {
             background: var(--shift-available-bg);
             border-radius: 12px;
@@ -4457,6 +4196,9 @@
             min-width: 280px;
             max-width: 320px;
             transition: all 0.3s ease;
+            min-height: 300px !important;
+            max-height: none !important;
+            flex: 1;
         }
 
         .shift-available .header {
@@ -4492,6 +4234,7 @@
             padding: 8px 10px;
             transition: all 0.3s ease;
             border-radius: 0 0 12px 12px;
+            min-height: 250px !important;
         }
 
         .shift-available-dropzone.drag-over {
@@ -4499,7 +4242,6 @@
             box-shadow: inset 0 0 30px rgba(74, 122, 181, 0.08);
         }
 
-        /* SHIFT COLUMNS WRAPPER */
         .shift-columns-wrapper {
             display: flex;
             gap: 14px;
@@ -4507,7 +4249,9 @@
             overflow-y: hidden;
             padding: 0 2px 4px 0;
             flex: 1;
-            align-items: flex-start;
+            align-items: stretch;
+            min-height: 300px !important;
+            max-height: none !important;
         }
 
         .shift-columns-wrapper::-webkit-scrollbar {
@@ -4611,14 +4355,13 @@
             background: var(--danger-bg);
         }
 
-        /* COLUMN BODY - Scrollable */
         .shift-column .column-body {
             flex: 1;
             overflow-y: auto;
             padding: 4px 6px;
             transition: all 0.3s ease;
-            max-height: 500px;
-            min-height: 60px;
+            min-height: 200px !important;
+            max-height: none !important;
         }
 
         .shift-column .column-body::-webkit-scrollbar {
@@ -4651,7 +4394,6 @@
             color: var(--sidebar-text) !important;
         }
 
-        /* User Card */
         .user-card-shift {
             display: flex;
             align-items: center;
@@ -4812,7 +4554,6 @@
             opacity: 0.7;
         }
 
-        /* Toast Shift */
         .shift-toast {
             position: fixed;
             bottom: 80px;
@@ -4856,135 +4597,19 @@
                 transform: translateX(-50%) translateY(0); }
         }
 
-        /* LOG AKTIVITAS SHIFT */
-        .shift-log-container {
-            margin-top: 8px;
-            padding: 6px 12px 4px 12px;
-            background: var(--bg-card);
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
-            flex-shrink: 0;
-        }
-
-        .shift-log-container .log-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding-bottom: 4px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .shift-log-container .log-header .log-title {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .shift-log-container .log-header .log-actions {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .shift-log-container .log-header .log-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 11px;
-            color: var(--text-muted);
-            padding: 2px 8px;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-
-        .shift-log-container .log-header .log-actions button:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .shift-log-container .log-body {
-            max-height: 75px;
-            overflow-y: auto;
-            padding: 4px 0;
-            font-size: 11px;
-            font-family: 'Courier New', monospace;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-        }
-
-        .shift-log-container .log-body::-webkit-scrollbar {
-            width: 3px;
-        }
-        .shift-log-container .log-body::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .shift-log-container .log-body::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-        }
-
-        .shift-log-container .log-body .log-entry {
-            padding: 1px 4px;
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            gap: 6px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex-shrink: 0;
-            transition: all 0.2s ease;
-        }
-
-        .shift-log-container .log-body .log-entry .log-time {
-            color: var(--text-muted);
-            font-size: 10px;
-            flex-shrink: 0;
-        }
-
-        .shift-log-container .log-body .log-entry .log-user {
-            font-weight: 600;
-            color: var(--text-primary);
-            flex-shrink: 0;
-        }
-
-        .shift-log-container .log-body .log-entry .log-action {
-            color: var(--text-secondary);
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .shift-log-container .log-empty {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 11px;
-            padding: 8px 0;
-        }
-
-        /* Main Grid */
         .shift-main-grid {
             display: grid;
             grid-template-columns: 280px 1fr;
             gap: 14px;
             flex: 1;
             min-height: 300px;
-            height: calc(100vh - 380px);
-            max-height: 580px;
+            height: auto !important;
+            max-height: none !important;
+            margin-bottom: 6px;
         }
 
         /* ============================================================
-           RIWAYAT SHIFT - CSS (DIPERBAIKI)
+           RIWAYAT SHIFT - CSS
            ============================================================ */
 
         .history-shift-container {
@@ -5185,6 +4810,7 @@
             font-size: 14px;
             color: var(--text-muted);
             margin-top: 4px;
+            font-weight: 500;
         }
         .shift-preview-modal .preview-header .close-btn {
             background: none;
@@ -5328,36 +4954,47 @@
            RESPONSIVE
            ============================================================ */
 
+        @media screen and (max-width: 1400px) {
+            .shift-main-grid {
+                grid-template-columns: 260px 1fr;
+                gap: 12px;
+            }
+            .shift-column-wrapper {
+                min-width: 240px;
+                max-width: 360px;
+            }
+        }
+
+        @media screen and (max-width: 1200px) {
+            .shift-main-grid {
+                grid-template-columns: 240px 1fr;
+                gap: 10px;
+            }
+            .shift-column-wrapper {
+                min-width: 220px;
+                max-width: 340px;
+            }
+        }
+
         @media (max-width: 992px) {
             .shift-main-grid {
                 grid-template-columns: 1fr;
-                height: auto;
-                max-height: none;
+                gap: 12px;
+                height: auto !important;
+                max-height: none !important;
             }
             .shift-available {
-                max-height: 300px;
-                min-width: unset;
-                max-width: unset;
-            }
-            .shift-columns-wrapper {
-                flex-wrap: wrap;
+                min-height: 250px !important;
+                max-height: 300px !important;
             }
             .shift-column-wrapper {
-                max-width: none !important;
-                min-width: 280px;
-            }
-            .shift-column-wrapper:not(.has-note-open) {
+                min-width: 100% !important;
                 max-width: 100% !important;
+                min-height: 250px !important;
             }
-            .shift-column-wrapper.has-note-open {
-                max-width: 100% !important;
-            }
-            .shift-column {
-                max-width: none;
-            }
-            .shift-note-panel.open {
-                max-width: 140px;
-                min-width: 100px;
+            .shift-column .column-body {
+                min-height: 180px !important;
+                max-height: 300px !important;
             }
             .shift-preview-modal .preview-content {
                 padding: 20px;
@@ -5366,8 +5003,43 @@
             .shift-preview-modal .preview-grid {
                 grid-template-columns: 1fr 1fr;
             }
+        }
+
+        @media (max-width: 768px) {
+            .shift-main-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .shift-available {
+                min-height: 200px !important;
+                max-height: 280px !important;
+            }
             .shift-column .column-body {
-                max-height: 400px;
+                min-height: 150px !important;
+                max-height: 250px !important;
+            }
+            .shift-log-container {
+                max-height: 75px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 40px !important;
+            }
+            .shift-preview-modal .preview-grid {
+                grid-template-columns: 1fr;
+            }
+            .shift-preview-modal .preview-content {
+                padding: 14px;
+            }
+            .history-table-wrap {
+                overflow-x: auto;
+            }
+            .history-table-wrap table {
+                min-width: 600px;
+                font-size: 12px;
+            }
+            .history-table-wrap td,
+            .history-table-wrap th {
+                padding: 8px 10px;
             }
         }
 
@@ -5395,6 +5067,28 @@
                 max-width: 100%;
                 min-width: 100px;
             }
+            .shift-log-container {
+                max-height: 65px !important;
+                padding: 3px 8px 2px 8px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 35px !important;
+                font-size: 9px !important;
+            }
+            .shift-log-container .log-body .log-entry {
+                font-size: 8.5px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-time {
+                min-width: 45px;
+                font-size: 8px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-user {
+                font-size: 8.5px !important;
+                min-width: 50px;
+            }
+            .shift-log-container .log-body .log-entry .log-action {
+                font-size: 8.5px !important;
+            }
             .shift-preview-modal .preview-grid {
                 grid-template-columns: 1fr;
             }
@@ -5412,12 +5106,34 @@
             .history-table-wrap th {
                 padding: 8px 10px;
             }
-            .shift-log-container .log-body {
-                max-height: 65px;
-                font-size: 10px;
-            }
             .shift-column .column-body {
                 max-height: 300px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .shift-log-container {
+                max-height: 55px !important;
+                padding: 2px 6px 2px 6px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 30px !important;
+                font-size: 8px !important;
+            }
+            .shift-log-container .log-body .log-entry {
+                font-size: 7.5px !important;
+                padding: 0px 2px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-time {
+                min-width: 35px;
+                font-size: 7px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-user {
+                font-size: 7.5px !important;
+                min-width: 40px;
+            }
+            .shift-log-container .log-body .log-entry .log-action {
+                font-size: 7.5px !important;
             }
         }
     </style>
@@ -6706,7 +6422,6 @@
                                 if (updatedBy !== currentUser && currentUser) {
                                     console.log(`📋 Shift updated by ${updatedBy}, reloading...`);
                                     try {
-                                        // Cegah reload ganda
                                         if (isShiftLoading) {
                                             console.log('⏳ Shift loading already in progress, skipping...');
                                             return;
@@ -6884,7 +6599,6 @@
             try {
                 console.log('📥 Loading data from database...');
 
-                // PARALLEL QUERY - Lebih cepat!
                 const [usersResult, historyResult, izinResult, voucherResult, settingsResult] = await Promise.all([
                     supabaseDashboard.from('users').select('*'),
                     supabaseDashboard.from('history').select('*').order('mulai', { ascending: false }),
@@ -6893,7 +6607,6 @@
                     supabaseDashboard.from('settings').select('*')
                 ]);
 
-                // Users
                 if (!usersResult.error && usersResult.data && usersResult.data.length > 0) {
                     listUsers = usersResult.data;
                     daftarAnggota = usersResult.data.map(u => u.name);
@@ -6917,7 +6630,6 @@
                     console.log('⚠️ No users found in database');
                 }
 
-                // History
                 if (!historyResult.error && historyResult.data) {
                     historyData = historyResult.data.map(h => ({
                         nama: h.nama,
@@ -6935,7 +6647,6 @@
                     historyData = [];
                 }
 
-                // Izin
                 if (!izinResult.error && izinResult.data) {
                     console.log(`📋 Found ${izinResult.data.length} izin records in database`);
 
@@ -6974,7 +6685,6 @@
                     console.log('⚠️ Izin table error:', izinResult.error);
                 }
 
-                // Vouchers
                 if (!voucherResult.error && voucherResult.data) {
                     voucherData = {};
                     voucherResult.data.forEach(v => {
@@ -6986,7 +6696,6 @@
                     voucherData = {};
                 }
 
-                // Settings
                 if (!settingsResult.error && settingsResult.data && settingsResult.data.length > 0) {
                     settingsResult.data.forEach(setting => {
                         if (setting.key === 'role_limits') {
@@ -7056,7 +6765,6 @@
 
                 subscribeToIzinChanges();
 
-                // LOAD SHIFT - HANYA SEKALI (DENGAN OPTIMASI)
                 if (!isShiftInitialized) {
                     await loadShiftActiveData();
                     isShiftInitialized = true;
@@ -7077,7 +6785,6 @@
         // ============================================================
 
         async function loadShiftActiveData() {
-            // Cegah loading ganda
             if (isShiftLoading) {
                 console.log('⏳ Shift loading already in progress, skipping...');
                 return { shiftColumns, availableUsers };
@@ -7087,11 +6794,9 @@
             try {
                 console.log('📋 Loading shift active data...');
 
-                // 🔥 OPTIMASI: Hanya select kolom yang diperlukan (id, name, role)
-                // Ini SOLUSI UTAMA untuk masalah timeout!
                 const { data: users, error: usersError } = await supabaseDashboard
                     .from('users')
-                    .select('id, name, role')  // <-- HANYA 3 KOLOM, BUKAN SELECT *
+                    .select('id, name, role')
                     .in('role', ['csline', 'cs', 'kapten', 'kasir'])
                     .order('role', { ascending: true })
                     .order('name', { ascending: true });
@@ -7101,7 +6806,6 @@
                     throw usersError;
                 }
 
-                // Cache users di localStorage untuk fallback
                 try {
                     localStorage.setItem('cachedUsers', JSON.stringify(users || []));
                     localStorage.setItem('cachedUsersTime', Date.now().toString());
@@ -7112,8 +6816,7 @@
                 availableUsers = (users || []).map(u => ({ ...u }));
                 sortAvailableUsers();
 
-                // 🔥 OPTIMASI: Tambahkan timeout handling
-                const timeoutPromise = new Promise((_, reject) => 
+                const timeoutPromise = new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('Query timeout')), 15000)
                 );
 
@@ -7134,7 +6837,6 @@
 
                 let shiftData = null;
 
-                // Fallback: jika error, gunakan data dari cache
                 if (activeError) {
                     console.warn('⚠️ Shift query error, trying cache...');
                     const cached = localStorage.getItem('cachedShiftData');
@@ -7169,14 +6871,12 @@
 
                     if (insertError) throw insertError;
                     shiftData = inserted;
-                    // Cache untuk fallback
                     try {
                         localStorage.setItem('cachedShiftData', JSON.stringify(shiftData));
                     } catch (e) {}
                     console.log('✅ Default shift_active created');
                 } else {
                     shiftData = activeData;
-                    // Cache data untuk fallback
                     try {
                         localStorage.setItem('cachedShiftData', JSON.stringify(shiftData));
                     } catch (e) {}
@@ -7220,14 +6920,12 @@
                 shiftIsDirty = false;
                 renderShiftPage();
 
-                // Subscribe hanya sekali
                 if (!isShiftSubscribed) {
                     subscribeShiftActive();
                 }
 
                 await loadShiftLogs();
 
-                // Tandai sudah diinisialisasi
                 isShiftInitialized = true;
 
                 return { shiftColumns, availableUsers };
@@ -7235,14 +6933,12 @@
             } catch (err) {
                 console.error('❌ Error loading shift active data:', err);
                 showShiftToast('Gagal memuat data shift: ' + err.message, 'error');
-                
-                // Fallback: gunakan cache jika tersedia
+
                 try {
                     const cached = localStorage.getItem('cachedShiftData');
                     if (cached) {
                         const parsed = JSON.parse(cached);
                         console.log('✅ Using cached shift data as fallback');
-                        // Parse data dari cache...
                         let parsedData = typeof parsed.shift_data === 'string' ?
                             JSON.parse(parsed.shift_data) :
                             parsed.shift_data;
@@ -7257,7 +6953,7 @@
                         return { shiftColumns, availableUsers };
                     }
                 } catch (e) {}
-                
+
                 return { shiftColumns, availableUsers };
             } finally {
                 isShiftLoading = false;
@@ -9850,13 +9546,11 @@
                 }
                 renderHistory();
             } else if (tab === 'shifts') {
-                // Cegah duplikat load shift - hanya load jika belum diinisialisasi
                 if (!isShiftInitialized) {
                     loadShiftActiveData();
                     isShiftInitialized = true;
                 } else {
                     console.log('⏩ Shift already initialized, skipping switchTab load...');
-                    // Tapi tetap render halaman dengan data yang ada
                     renderShiftPage();
                 }
             } else if (tab === 'historyshift') {
@@ -10136,7 +9830,6 @@
 
             renderShiftLogs();
 
-            // Sinkronkan tinggi textarea dengan card user
             setTimeout(() => {
                 document.querySelectorAll('.shift-column-wrapper').forEach(wrapper => {
                     const colId = wrapper.dataset.columnId;
@@ -10177,11 +9870,9 @@
             const isOpen = panel.classList.contains('open');
 
             if (isOpen) {
-                // Tutup panel
                 panel.classList.remove('open');
                 wrapper.classList.remove('has-note-open');
             } else {
-                // Buka panel
                 panel.classList.add('open');
                 wrapper.classList.add('has-note-open');
                 setTimeout(() => {
@@ -10200,7 +9891,6 @@
             user.note = value;
             shiftIsDirty = true;
 
-            // Update indicator di user card
             const indicator = document.querySelector(
                 `.shift-column-wrapper[data-column-id="${columnId}"] .user-card-shift[data-user-id="${userId}"] .note-indicator`
                 );
@@ -10212,7 +9902,6 @@
                 }
             }
 
-            // Update badge note di header
             const badge = document.querySelector(`.shift-column-wrapper[data-column-id="${columnId}"] .note-badge`);
             if (badge) {
                 const hasAnyNote = col.users.some(u => u.note && u.note.trim() !== '');
@@ -10230,14 +9919,12 @@
                 }
             }
 
-            // Debounce save
             const key = `${columnId}_${userId}`;
             if (noteDebounceTimers[key]) {
                 clearTimeout(noteDebounceTimers[key]);
             }
 
             noteDebounceTimers[key] = setTimeout(() => {
-                // Insert log untuk note update
                 const detail = user.note && user.note.trim() !== '' ?
                     `Menambahkan note untuk ${user.name}: "${user.note}"` :
                     `Menghapus note untuk ${user.name}`;
@@ -10319,7 +10006,6 @@
                 }, 10);
             }
 
-            // Set drag image
             if (e.target.closest('.user-card-shift')) {
                 const rect = target.getBoundingClientRect();
                 const dragImage = target.cloneNode(true);
@@ -10358,7 +10044,6 @@
             });
         }
 
-        // Drag over untuk seluruh kolom (Opsi C)
         function onStaffDragOver(e) {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
@@ -10403,7 +10088,6 @@
         function onStaffDrop(e, targetColumnId) {
             e.preventDefault();
 
-            // Clean up drag states
             document.querySelectorAll('.shift-column-wrapper.drag-over-col').forEach(el => {
                 el.classList.remove('drag-over-col');
             });
@@ -10921,11 +10605,28 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT
+        // PREVIEW SHIFT - DIPERBAIKI (Periode benar)
         // ============================================================
 
         function openShiftPreview() {
             const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
+
+            let periodeStart = '';
+            let periodeEnd = '';
+            
+            if (shiftActiveId) {
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                periodeStart = firstDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                periodeEnd = lastDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            } else {
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                periodeStart = firstDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                periodeEnd = lastDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
 
             previewData = {
                 columns: shiftColumns.map(col => ({
@@ -10934,16 +10635,12 @@
                 })),
                 totalStaff: totalStaff,
                 createdBy: getCurrentUserName() || 'System',
-                createdAt: new Date().toLocaleString('id-ID')
+                createdAt: new Date().toLocaleString('id-ID'),
+                periodeStart: periodeStart,
+                periodeEnd: periodeEnd
             };
 
             renderShiftPreview();
-        }
-
-        function closeShiftPreview() {
-            const modal = document.getElementById('shiftPreviewModal');
-            if (modal) modal.classList.remove('show');
-            previewData = null;
         }
 
         function renderShiftPreview() {
@@ -10958,12 +10655,16 @@
                 kasir: 'Kasir'
             };
 
+            const periodeText = previewData.periodeStart && previewData.periodeEnd 
+                ? `Periode: ${previewData.periodeStart} - ${previewData.periodeEnd}`
+                : `📅 Shift Aktif Terakhir`;
+
             modal.innerHTML = `
                 <div class="preview-content">
                     <div class="preview-header">
                         <div>
                             <div class="title">📋 SHIFT KERJA - PREVIEW</div>
-                            <div class="subtitle">📅 Shift Aktif Terakhir</div>
+                            <div class="subtitle">${periodeText}</div>
                         </div>
                         <button class="close-btn" onclick="closeShiftPreview()">✕</button>
                     </div>
@@ -11145,7 +10846,6 @@
                 });
             };
 
-            // Hanya tampilkan 3 log terakhir
             const displayLogs = shiftLogs.slice(0, 3);
             const hiddenLogs = shiftLogs.slice(3);
 
@@ -11483,7 +11183,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT FROM HISTORY (DIPERBAIKI)
+        // PREVIEW SHIFT FROM HISTORY (DIPERBAIKI - Periode Benar)
         // ============================================================
 
         function previewShiftFromHistory(historyId) {
@@ -11505,13 +11205,32 @@
                     };
                 });
 
-                const startDate = item.periode_start || item.tanggal;
-                const endDate = item.periode_end || item.tanggal;
+                let periodeStart = '';
+                let periodeEnd = '';
+                
+                if (item.periode_start && item.periode_end) {
+                    const start = new Date(item.periode_start);
+                    const end = new Date(item.periode_end);
+                    periodeStart = start.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    periodeEnd = end.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                } else if (item.tanggal) {
+                    const date = new Date(item.tanggal);
+                    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+                    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                    periodeStart = firstDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    periodeEnd = lastDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                } else {
+                    const now = new Date();
+                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    periodeStart = firstDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    periodeEnd = lastDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
 
                 previewData = {
                     tanggal: item.tanggal,
-                    periodeStart: startDate,
-                    periodeEnd: endDate,
+                    periodeStart: periodeStart,
+                    periodeEnd: periodeEnd,
                     columns: columns,
                     totalStaff: totalStaff,
                     createdBy: item.updated_by || item.created_by || 'System',
@@ -11576,7 +11295,6 @@
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
                 const now = Date.now();
-                // Cooldown 15 detik untuk mencegah reload berlebihan
                 if (now - lastVisibilityLoad > 15000) {
                     console.log('👁️ Tab became visible, checking data...');
                     lastVisibilityLoad = now;
