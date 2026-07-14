@@ -108,7 +108,6 @@
            PERBAIKAN SHIFT - TAMPILAN & PERFORMANCE
            ============================================================ */
 
-        /* 1. PERBAIKAN TAMPILAN - Pastikan rounded konsisten */
         .shift-column-wrapper {
             border-radius: 12px !important;
             overflow: hidden !important;
@@ -163,10 +162,9 @@
         }
 
         /* ============================================================
-           PERBAIKAN TAMPILAN SHIFT KERJA - LOG & LAYOUT
+           PERBAIKAN TAMPILAN SHIFT KERJA - LOG & LAYOUT FIX
            ============================================================ */
 
-        /* 1. LOG AKTIVITAS - Lebih kecil & rapi */
         .shift-log-container {
             margin-top: 6px !important;
             padding: 4px 12px 3px 12px !important;
@@ -175,33 +173,107 @@
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-sm);
             flex-shrink: 0;
-            max-height: 85px !important;
+            max-height: 80px !important;
             overflow: hidden !important;
+            position: relative;
+            margin-bottom: 0 !important;
         }
 
         .shift-log-container .log-header {
-            padding-bottom: 2px !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 2px 0 3px 0 !important;
             border-bottom: 1px solid var(--border-color);
-            margin-bottom: 2px !important;
+            margin-bottom: 3px !important;
+            flex-wrap: nowrap !important;
         }
 
         .shift-log-container .log-header .log-title {
             font-size: 10px !important;
-            font-weight: 600;
+            font-weight: 700 !important;
             color: var(--text-secondary);
             display: flex;
             align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .shift-log-container .log-header .log-title .title-icon {
+            font-size: 12px;
+        }
+
+        .shift-log-container .log-header .log-actions {
+            display: flex;
             gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
         }
 
         .shift-log-container .log-header .log-actions button {
+            background: transparent !important;
+            border: none !important;
+            cursor: pointer;
             font-size: 9px !important;
-            padding: 1px 6px !important;
+            padding: 3px 10px !important;
+            border-radius: 6px !important;
+            transition: all 0.25s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.3px !important;
+            font-family: 'Segoe UI', sans-serif !important;
+            border: 1px solid var(--border-color) !important;
+            background: var(--bg-hover) !important;
+            color: var(--text-secondary) !important;
+            height: 22px !important;
+            line-height: 1 !important;
+        }
+
+        .shift-log-container .log-header .log-actions button:hover {
+            background: var(--bg-input) !important;
+            border-color: var(--sidebar-text) !important;
+            color: var(--sidebar-text) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(0, 229, 255, 0.08) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button:active {
+            transform: scale(0.95) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button .btn-icon {
+            font-size: 10px;
+        }
+
+        .shift-log-container .log-header .log-actions button.refresh-btn {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.04), rgba(0, 229, 255, 0.01)) !important;
+            border-color: rgba(0, 229, 255, 0.12) !important;
+            color: var(--sidebar-text) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button.refresh-btn:hover {
+            background: rgba(0, 229, 255, 0.08) !important;
+            border-color: var(--sidebar-text) !important;
+            box-shadow: 0 2px 12px rgba(0, 229, 255, 0.15) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button.csv-btn {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.04), rgba(76, 175, 80, 0.01)) !important;
+            border-color: rgba(76, 175, 80, 0.12) !important;
+            color: var(--success) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button.csv-btn:hover {
+            background: rgba(76, 175, 80, 0.08) !important;
+            border-color: var(--success) !important;
+            box-shadow: 0 2px 12px rgba(76, 175, 80, 0.15) !important;
         }
 
         .shift-log-container .log-body {
-            max-height: 50px !important;
-            overflow-y: auto;
+            max-height: 42px !important;
+            overflow-y: auto !important;
             padding: 2px 0 !important;
             font-size: 10px !important;
             font-family: 'Courier New', monospace;
@@ -209,6 +281,17 @@
             line-height: 1.4 !important;
             display: flex;
             flex-direction: column;
+        }
+
+        .shift-log-container .log-body::-webkit-scrollbar {
+            width: 3px;
+        }
+        .shift-log-container .log-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-log-container .log-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
         }
 
         .shift-log-container .log-body .log-entry {
@@ -227,6 +310,7 @@
             font-size: 9px !important;
             flex-shrink: 0;
             min-width: 60px;
+            color: var(--text-muted);
         }
 
         .shift-log-container .log-body .log-entry .log-user {
@@ -234,123 +318,270 @@
             font-size: 9.5px !important;
             flex-shrink: 0;
             min-width: 70px;
+            color: var(--sidebar-text);
         }
 
         .shift-log-container .log-body .log-entry .log-action {
             font-size: 9.5px !important;
             overflow: hidden;
             text-overflow: ellipsis;
+            color: var(--text-secondary);
         }
 
         .shift-log-container .log-empty {
             font-size: 10px !important;
             padding: 4px 0 !important;
+            color: var(--text-muted);
+            text-align: center;
         }
 
-        /* 2. MAIN CONTENT - Layout agar konsisten */
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            padding: 16px 28px;
-        }
-
-        /* 3. SHIFT CONTAINER - Tinggi dinamis */
-        .shift-container {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex: 1;
-            min-height: 0;
-            height: auto;
-            max-height: none !important;
-        }
-
-        /* 4. SHIFT MAIN GRID - Ukuran konsisten */
         .shift-main-grid {
             display: grid;
             grid-template-columns: 280px 1fr;
             gap: 14px;
             flex: 1;
-            min-height: 300px;
+            min-height: 200px;
             height: auto !important;
             max-height: none !important;
             margin-bottom: 6px;
+            overflow: hidden;
         }
 
-        /* 5. DATA STAFF & SHIFT COLUMN - Tinggi konsisten */
         .shift-available {
-            min-height: 300px !important;
-            max-height: none !important;
-            flex: 1;
+            background: var(--shift-available-bg);
+            border-radius: 12px;
+            border: 2px solid var(--shift-available-border);
+            overflow: hidden;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            min-width: 280px;
+            max-width: 320px;
+            transition: all 0.3s ease;
+            min-height: 200px !important;
+            max-height: 100% !important;
+            flex: 1;
         }
 
         .shift-available-dropzone {
             flex: 1;
-            overflow-y: auto;
+            overflow-y: auto !important;
             padding: 8px 10px;
-            min-height: 250px !important;
+            border-radius: 0 0 12px 12px;
+            min-height: 150px !important;
+            max-height: 100% !important;
+        }
+
+        .shift-available-dropzone::-webkit-scrollbar {
+            width: 4px;
+        }
+        .shift-available-dropzone::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-available-dropzone::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
         }
 
         .shift-columns-wrapper {
             flex: 1;
-            min-height: 300px !important;
-            max-height: none !important;
+            min-height: 200px !important;
+            max-height: 100% !important;
             overflow-x: auto;
             overflow-y: hidden;
             padding: 0 2px 4px 0;
             display: flex;
             align-items: stretch;
+            gap: 14px;
         }
 
         .shift-column-wrapper {
             flex: 1 1 auto;
-            min-width: 280px;
-            max-width: 420px;
+            min-width: 220px;
+            max-width: 380px;
             display: flex;
             flex-direction: column;
-            min-height: 300px !important;
+            min-height: 200px !important;
+            max-height: 100% !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            border: 2px solid var(--shift-column-border);
+            background: var(--shift-column-bg);
+            transition: all 0.35s ease;
         }
 
         .shift-column {
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 280px !important;
+            min-height: 180px !important;
+            max-height: 100% !important;
+            overflow: hidden;
         }
 
         .shift-column .column-body {
             flex: 1;
-            overflow-y: auto;
+            overflow-y: auto !important;
             padding: 4px 6px;
-            min-height: 200px !important;
-            max-height: none !important;
+            min-height: 120px !important;
+            max-height: 100% !important;
         }
 
-        /* 6. RESPONSIVE - Tetap konsisten di zoom 80%-90% */
-        @media screen and (max-width: 1400px) {
-            .shift-main-grid {
-                grid-template-columns: 260px 1fr;
-                gap: 12px;
+        .shift-column .column-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .shift-column .column-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-column .column-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .shift-note-panel {
+            background: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.35s ease;
+            overflow: hidden;
+        }
+
+        .shift-note-panel .note-panel-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 2px 0;
+            overflow-y: auto;
+        }
+
+        .shift-note-panel .note-panel-body::-webkit-scrollbar {
+            width: 3px;
+        }
+        .shift-note-panel .note-panel-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-note-panel .note-panel-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .shift-note-panel .note-user-item {
+            flex: 1;
+            min-height: 24px;
+            max-height: 50px;
+            transition: all 0.3s ease;
+        }
+
+        .shift-note-panel .note-user-item textarea {
+            width: 100%;
+            height: 100%;
+            min-height: 24px;
+            max-height: 50px;
+            padding: 2px 5px;
+            border: 1px solid var(--border-input);
+            border-radius: 4px;
+            font-size: 9px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            resize: none;
+            font-family: 'Segoe UI', sans-serif;
+            transition: all 0.2s ease;
+            line-height: 1.3;
+            display: block;
+        }
+
+        .shift-note-panel .note-user-item textarea:focus {
+            border-color: var(--sidebar-text);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.05);
+        }
+
+        .shift-note-panel .note-user-item textarea::placeholder {
+            color: var(--text-muted);
+            font-size: 8px;
+            font-style: italic;
+            opacity: 0.4;
+        }
+
+        .shift-note-panel .note-user-item textarea:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: var(--bg-hover);
+        }
+
+        .note-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 8px;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: lowercase;
+            letter-spacing: 0.3px;
+            height: 18px;
+            font-family: 'Segoe UI', sans-serif;
+            margin-right: 2px;
+        }
+
+        .note-badge:hover {
+            background: var(--bg-input);
+            color: var(--sidebar-text);
+            border-color: var(--sidebar-text);
+        }
+
+        .note-badge.has-note {
+            color: var(--sidebar-text);
+            border-color: var(--sidebar-text);
+            background: rgba(0, 229, 255, 0.06);
+        }
+
+        .note-badge .badge-dot {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--sidebar-text);
+            margin-right: 3px;
+            animation: pulse-note 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-note {
+            0%, 100% {
+                box-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
+                opacity: 1;
             }
-            .shift-column-wrapper {
-                min-width: 240px;
-                max-width: 360px;
+            50% {
+                box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
+                opacity: 0.7;
             }
         }
 
-        @media screen and (max-width: 1200px) {
-            .shift-main-grid {
-                grid-template-columns: 240px 1fr;
-                gap: 10px;
-            }
-            .shift-column-wrapper {
-                min-width: 220px;
-                max-width: 340px;
-            }
+        .note-indicator {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: transparent;
+            margin-left: 4px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
         }
+
+        .note-indicator.has-note {
+            background: #00e5ff;
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+            animation: pulse-note 2s ease-in-out infinite;
+        }
+
+        /* ============================================================
+           RESPONSIVE SHIFT
+           ============================================================ */
 
         @media screen and (max-width: 992px) {
             .shift-main-grid {
@@ -360,28 +591,14 @@
                 max-height: none !important;
             }
             .shift-available {
-                min-height: 250px !important;
-                max-height: 300px !important;
+                min-height: 200px !important;
+                max-height: 280px !important;
             }
             .shift-column-wrapper {
                 min-width: 100% !important;
                 max-width: 100% !important;
-                min-height: 250px !important;
-            }
-            .shift-column .column-body {
-                min-height: 180px !important;
-                max-height: 300px !important;
-            }
-        }
-
-        @media screen and (max-width: 768px) {
-            .shift-main-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            .shift-available {
                 min-height: 200px !important;
-                max-height: 280px !important;
+                max-height: 350px !important;
             }
             .shift-column .column-body {
                 min-height: 150px !important;
@@ -391,7 +608,35 @@
                 max-height: 75px !important;
             }
             .shift-log-container .log-body {
-                max-height: 40px !important;
+                max-height: 38px !important;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .shift-main-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .shift-available {
+                min-height: 180px !important;
+                max-height: 250px !important;
+            }
+            .shift-column .column-body {
+                min-height: 120px !important;
+                max-height: 200px !important;
+            }
+            .shift-log-container {
+                max-height: 70px !important;
+                padding: 3px 10px 2px 10px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 35px !important;
+                font-size: 9px !important;
+            }
+            .shift-log-container .log-header .log-actions button {
+                font-size: 8px !important;
+                padding: 2px 8px !important;
+                height: 20px !important;
             }
         }
 
@@ -401,135 +646,39 @@
                 padding: 3px 8px 2px 8px !important;
             }
             .shift-log-container .log-body {
-                max-height: 35px !important;
-                font-size: 9px !important;
+                max-height: 32px !important;
+                font-size: 8.5px !important;
             }
             .shift-log-container .log-body .log-entry {
-                font-size: 8.5px !important;
+                font-size: 8px !important;
             }
             .shift-log-container .log-body .log-entry .log-time {
                 min-width: 45px;
-                font-size: 8px !important;
+                font-size: 7.5px !important;
             }
             .shift-log-container .log-body .log-entry .log-user {
-                font-size: 8.5px !important;
+                font-size: 8px !important;
                 min-width: 50px;
             }
             .shift-log-container .log-body .log-entry .log-action {
-                font-size: 8.5px !important;
+                font-size: 8px !important;
             }
-        }
-
-        /* 7. FOOTER - Jarak dengan log aktivitas */
-        .footer-premium {
-            margin-top: 6px !important;
-            padding: 8px 20px !important;
-            border-radius: 10px;
-            flex-shrink: 0;
-        }
-
-        /* 8. PREVIEW SHIFT - Perbaikan periode */
-        .shift-preview-modal .preview-header .subtitle {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-top: 4px;
-            font-weight: 500;
-        }
-
-        /* ============================================================
-           RESPONSIVE SHIFT - Mobile
-           ============================================================ */
-
-        @media (max-width: 992px) {
-            .shift-main-grid {
-                grid-template-columns: 1fr;
-                height: auto;
-                max-height: none;
+            .shift-log-container .log-header .log-actions button {
+                font-size: 7.5px !important;
+                padding: 2px 6px !important;
+                height: 18px !important;
+                gap: 2px !important;
             }
-            .shift-available {
-                max-height: 300px;
-                min-width: unset;
-                max-width: unset;
-            }
-            .shift-columns-wrapper {
-                flex-wrap: wrap;
+            .shift-log-container .log-header .log-actions button .btn-icon {
+                font-size: 8px !important;
             }
             .shift-column-wrapper {
-                max-width: none !important;
-                min-width: 280px;
-            }
-            .shift-column-wrapper:not(.has-note-open) {
-                max-width: 100% !important;
-            }
-            .shift-column-wrapper.has-note-open {
-                max-width: 100% !important;
-            }
-            .shift-column {
-                max-width: none;
-            }
-            .shift-note-panel.open {
-                max-width: 140px;
-                min-width: 100px;
-            }
-            .shift-preview-modal .preview-content {
-                padding: 20px;
-                max-width: 100%;
-            }
-            .shift-preview-modal .preview-grid {
-                grid-template-columns: 1fr 1fr;
+                min-height: 180px !important;
+                max-height: 300px !important;
             }
             .shift-column .column-body {
-                max-height: 400px;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .shift-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .shift-header-right {
-                flex-wrap: wrap;
-            }
-            .shift-column-wrapper {
-                flex-wrap: wrap;
-                min-width: 100%;
-                max-width: 100% !important;
-            }
-            .shift-column-wrapper:not(.has-note-open) {
-                max-width: 100% !important;
-            }
-            .shift-column-wrapper.has-note-open {
-                max-width: 100% !important;
-            }
-            .shift-note-panel.open {
-                width: 100%;
-                max-width: 100%;
-                min-width: 100px;
-            }
-            .shift-preview-modal .preview-grid {
-                grid-template-columns: 1fr;
-            }
-            .shift-preview-modal .preview-content {
-                padding: 14px;
-            }
-            .history-table-wrap {
-                overflow-x: auto;
-            }
-            .history-table-wrap table {
-                min-width: 600px;
-                font-size: 12px;
-            }
-            .history-table-wrap td,
-            .history-table-wrap th {
-                padding: 8px 10px;
-            }
-            .shift-log-container .log-body {
-                max-height: 65px;
-                font-size: 10px;
-            }
-            .shift-column .column-body {
-                max-height: 300px;
+                min-height: 100px !important;
+                max-height: 180px !important;
             }
         }
 
@@ -5621,10 +5770,16 @@
             <!-- LOG AKTIVITAS SHIFT -->
             <div class="shift-log-container" id="shiftLogContainer" style="display:none;">
                 <div class="log-header">
-                    <span class="log-title">📋 Log Aktivitas Shift</span>
+                    <span class="log-title">
+                        <span class="title-icon">📋</span> Log Aktivitas Shift
+                    </span>
                     <div class="log-actions">
-                        <button onclick="refreshShiftLogs()" title="Refresh Log">🔄 Refresh</button>
-                        <button onclick="downloadShiftLogs()" title="Download CSV">📥 CSV</button>
+                        <button class="refresh-btn" onclick="refreshShiftLogs()" title="Refresh Log">
+                            <span class="btn-icon">🔄</span> Refresh
+                        </button>
+                        <button class="csv-btn" onclick="downloadShiftLogs()" title="Download CSV">
+                            <span class="btn-icon">📥</span> CSV
+                        </button>
                     </div>
                 </div>
                 <div class="log-body" id="shiftLogBody">
@@ -6389,7 +6544,6 @@
         // SUBSCRIBE SHIFT AKTIF (REALTIME) - DIPERBAIKI (HANYA 1x)
         // ============================================================
         function subscribeShiftActive() {
-            // Cegah duplikat subscription
             if (isShiftSubscribed) {
                 console.log('⚠️ Shift subscription already active, skipping...');
                 return shiftRealtimeChannel;
@@ -6553,7 +6707,7 @@
         }
 
         // ============================================================
-        // PERIODIC REFRESH
+        // PERIODIC REFRESH - OPTIMASI (120 detik)
         // ============================================================
         function startPeriodicRefresh() {
             if (refreshInterval) {
@@ -6561,18 +6715,18 @@
                 refreshInterval = null;
             }
 
-            console.log('🔄 Periodic refresh started (60s interval)');
+            console.log('🔄 Periodic refresh started (120s interval)');
 
             refreshInterval = setInterval(() => {
                 if (!isLoading && document.visibilityState === 'visible' && isDataReady) {
-                    console.log('🔄 Periodic refresh (60s): syncing data...');
+                    console.log('🔄 Periodic refresh (120s): syncing data...');
                     loadDataFromDatabase();
                 } else if (document.visibilityState === 'hidden') {
                     console.log('⏸️ Skip periodic refresh: tab inactive');
                 } else if (isLoading) {
                     console.log('⏸️ Skip periodic refresh: already loading');
                 }
-            }, 60000);
+            }, 120000); // 120 detik
         }
 
         function stopPeriodicRefresh() {
@@ -6584,7 +6738,7 @@
         }
 
         // ============================================================
-        // LOAD DATA DARI DATABASE (DENGAN PERFORMANCE) - DIPERBAIKI
+        // LOAD DATA DARI DATABASE - OPTIMASI
         // ============================================================
         async function loadDataFromDatabase() {
             if (isLoading) return;
@@ -6599,9 +6753,22 @@
             try {
                 console.log('📥 Loading data from database...');
 
+                // 🔥 OPTIMASI 1: Users - Hanya kolom yang dibutuhkan
+                const usersPromise = supabaseDashboard
+                    .from('users')
+                    .select('id, name, role, email, created_at, picture')
+                    .limit(100);
+
+                // 🔥 OPTIMASI 2: History - Hanya 100 data terakhir
+                const historyPromise = supabaseDashboard
+                    .from('history')
+                    .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
+                    .order('mulai', { ascending: false })
+                    .limit(100);
+
                 const [usersResult, historyResult, izinResult, voucherResult, settingsResult] = await Promise.all([
-                    supabaseDashboard.from('users').select('*'),
-                    supabaseDashboard.from('history').select('*').order('mulai', { ascending: false }),
+                    usersPromise,
+                    historyPromise,
                     supabaseDashboard.from('izin_anggota').select('*'),
                     supabaseDashboard.from('vouchers').select('*'),
                     supabaseDashboard.from('settings').select('*')
@@ -6625,7 +6792,7 @@
                             dataIzin[nama].role = user.role;
                         }
                     });
-                    console.log(`✅ ${usersResult.data.length} users loaded`);
+                    console.log(`✅ ${usersResult.data.length} users loaded (optimized)`);
                 } else {
                     console.log('⚠️ No users found in database');
                 }
@@ -6641,7 +6808,7 @@
                         durasiDetik: h.durasi_detik || 0,
                         isQuotaValid: h.is_quota_valid !== undefined ? h.is_quota_valid : true
                     }));
-                    console.log(`✅ ${historyResult.data.length} history loaded`);
+                    console.log(`✅ ${historyResult.data.length} history loaded (last 100)`);
                 } else {
                     console.log('⚠️ No history found');
                     historyData = [];
@@ -6755,7 +6922,7 @@
 
                 renderAll();
                 updateQuickStats();
-                console.log('✅ All data loaded successfully!');
+                console.log('✅ All data loaded successfully! (optimized)');
 
                 isDataReady = true;
                 enableStartButtons();
@@ -10846,25 +11013,13 @@
                 });
             };
 
-            const displayLogs = shiftLogs.slice(0, 3);
-            const hiddenLogs = shiftLogs.slice(3);
-
-            body.innerHTML = `
-                ${displayLogs.map(log => `
-                    <div class="log-entry">
-                        <span class="log-time">${formatTime(log.created_at)}</span>
-                        <span class="log-user">${log.user_name}</span>
-                        <span class="log-action">${log.details || log.action}</span>
-                    </div>
-                `).join('')}
-                ${hiddenLogs.map(log => `
-                    <div class="log-entry">
-                        <span class="log-time">${formatTime(log.created_at)}</span>
-                        <span class="log-user">${log.user_name}</span>
-                        <span class="log-action">${log.details || log.action}</span>
-                    </div>
-                `).join('')}
-            `;
+            body.innerHTML = shiftLogs.map(log => `
+                <div class="log-entry">
+                    <span class="log-time">${formatTime(log.created_at)}</span>
+                    <span class="log-user">${log.user_name}</span>
+                    <span class="log-action">${log.details || log.action}</span>
+                </div>
+            `).join('');
 
             body.scrollTop = 0;
         }
