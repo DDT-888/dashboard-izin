@@ -6466,17 +6466,24 @@
                         console.log('🔄 Shift realtime update received:', payload);
                         
                         if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-                            const newData = payload.new;
-                            if (newData && newData.shift_data) {
-                                // Hanya update jika bukan dari user sendiri (hindari loop)
-                                const updatedBy = newData.updated_by || '';
-                                const currentUser = getCurrentUserName();
-                                if (updatedBy !== currentUser) {
-                                    console.log(`📋 Shift updated by ${updatedBy}, reloading...`);
-                                    loadShiftActiveData();
-                                }
-                            }
-                        }
+    const newData = payload.new;
+    if (newData && newData.shift_data) {
+        const updatedBy = newData.updated_by || '';
+        const currentUser = getCurrentUserName();
+        // Hanya reload jika bukan dari user sendiri (hindari loop)
+        if (updatedBy !== currentUser) {
+            console.log(`📋 Shift updated by ${updatedBy}, reloading and rendering...`);
+            // Reload data dan render ulang
+            loadShiftActiveData().then(() => {
+                renderShiftPage();
+                showShiftToast(`🔄 Shift diperbarui oleh ${updatedBy}`, 'info', 2000);
+            });
+        } else {
+            // Update dari user sendiri, tidak perlu reload (sudah terupdate di lokal)
+            console.log('✅ Shift updated by self, no reload needed');
+        }
+    }
+}
                     }
                 )
                 .subscribe((status) => {
@@ -9640,9 +9647,14 @@
                 // Load logs
                 await loadShiftLogs();
 
+        	// Kembalikan data yang sudah diload
+        	return { shiftColumns, availableUsers };
+
             } catch (err) {
                 console.error('❌ Error loading shift active data:', err);
                 showShiftToast('Gagal memuat data shift: ' + err.message, 'error');
+		return { shiftColumns, availableUsers };
+
             }
         }
 
