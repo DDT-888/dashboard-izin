@@ -3975,7 +3975,7 @@
         }
 
         /* ============================================================
-           SHIFT KERJA - CSS (DIPERBAIKI)
+           SHIFT KERJA - CSS (DIPERBAIKI - NOTE PANEL TERTUTUP RAPAT)
            ============================================================ */
 
         .shift-container {
@@ -4115,11 +4115,43 @@
             min-width: 280px;
             max-width: 420px;
             flex: 1 1 auto;
-            transition: all 0.3s ease;
-            cursor: default;
+            transition: all 0.35s ease;
         }
 
-        /* Area drop full kolom - Opsi C */
+        /* Saat note panel tertutup - TIDAK ADA KOLOM PUTIH */
+        .shift-column-wrapper .shift-note-panel {
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            padding: 0 !important;
+            border-left: none !important;
+            opacity: 0 !important;
+            overflow: hidden !important;
+            flex: 0 0 0 !important;
+        }
+
+        /* Saat note panel terbuka */
+        .shift-column-wrapper.has-note-open .shift-note-panel {
+            width: 140px !important;
+            min-width: 120px !important;
+            max-width: 180px !important;
+            padding: 6px 6px 6px 8px !important;
+            border-left: 1px solid var(--border-color) !important;
+            opacity: 1 !important;
+            overflow-y: auto !important;
+            flex: 0 0 140px !important;
+        }
+
+        /* Wrapper tidak boleh melebar saat note panel tertutup */
+        .shift-column-wrapper:not(.has-note-open) {
+            max-width: 280px !important;
+        }
+
+        /* Wrapper melebar saat note panel terbuka */
+        .shift-column-wrapper.has-note-open {
+            max-width: 420px !important;
+        }
+
         .shift-column-wrapper.drag-over-col {
             border-color: var(--sidebar-text);
             background: var(--bg-hover);
@@ -4139,36 +4171,16 @@
             flex: 1;
             border: none;
             border-radius: 0;
-            transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
         }
 
-        /* NOTE PANEL - Tertutup rapat saat minimize */
+        /* Note Panel - CSS dasar */
         .shift-note-panel {
-            width: 0;
-            min-width: 0;
-            max-width: 0;
-            overflow: hidden;
             background: var(--bg-secondary);
-            border-left: 1px solid var(--border-color);
-            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.35s ease;
-            flex-shrink: 0;
-            opacity: 0;
             display: flex;
             flex-direction: column;
-        }
-
-        .shift-note-panel.open {
-            width: 140px;
-            min-width: 120px;
-            max-width: 180px;
-            padding: 6px 6px 6px 8px;
-            opacity: 1;
-            overflow-y: auto;
+            transition: all 0.35s ease;
         }
 
         .shift-note-panel::-webkit-scrollbar {
@@ -5237,8 +5249,14 @@
                 flex-wrap: wrap;
             }
             .shift-column-wrapper {
-                max-width: none;
+                max-width: none !important;
                 min-width: 280px;
+            }
+            .shift-column-wrapper:not(.has-note-open) {
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper.has-note-open {
+                max-width: 100% !important;
             }
             .shift-column {
                 max-width: none;
@@ -5270,6 +5288,13 @@
             .shift-column-wrapper {
                 flex-wrap: wrap;
                 min-width: 100%;
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper:not(.has-note-open) {
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper.has-note-open {
+                max-width: 100% !important;
             }
             .shift-note-panel.open {
                 width: 100%;
@@ -6084,12 +6109,13 @@
         let noteDebounceTimers = {};
 
         // ============================================================
-        // PERFORMANCE FLAGS
+        // PERFORMANCE FLAGS (DIPERBAIKI)
         // ============================================================
         let isShiftLoading = false;
         let isShiftSubscribed = false;
         let visibilityCooldown = false;
         let lastVisibilityLoad = 0;
+        let isShiftInitialized = false;
 
         // ============================================================
         // THEME FUNCTIONS
@@ -6749,7 +6775,7 @@
         }
 
         // ============================================================
-        // LOAD DATA DARI DATABASE (DENGAN CACHE & PERFORMANCE)
+        // LOAD DATA DARI DATABASE (DENGAN PERFORMANCE)
         // ============================================================
         async function loadDataFromDatabase() {
             if (isLoading) return;
@@ -6935,7 +6961,14 @@
                 renderTicker();
 
                 subscribeToIzinChanges();
-                await loadShiftActiveData();
+
+                // LOAD SHIFT - HANYA SEKALI
+                if (!isShiftInitialized) {
+                    await loadShiftActiveData();
+                    isShiftInitialized = true;
+                } else {
+                    console.log('⏩ Shift already initialized, skipping...');
+                }
 
             } catch (err) {
                 console.error('❌ Error loading data:', err);
@@ -9531,7 +9564,15 @@
                 }
                 renderHistory();
             } else if (tab === 'shifts') {
-                loadShiftActiveData();
+                // Cegah duplikat load shift - hanya load jika belum diinisialisasi
+                if (!isShiftInitialized) {
+                    loadShiftActiveData();
+                    isShiftInitialized = true;
+                } else {
+                    console.log('⏩ Shift already initialized, skipping switchTab load...');
+                    // Tapi tetap render halaman dengan data yang ada
+                    renderShiftPage();
+                }
             } else if (tab === 'historyshift') {
                 loadShiftHistory();
             } else if (tab === 'settings') {
@@ -9749,6 +9790,9 @@
 
                 await loadShiftLogs();
 
+                // Tandai sudah diinisialisasi
+                isShiftInitialized = true;
+
                 return { shiftColumns, availableUsers };
 
             } catch (err) {
@@ -9761,7 +9805,7 @@
         }
 
         // ============================================================
-        // RENDER SHIFT PAGE (DIPERBAIKI)
+        // RENDER SHIFT PAGE (DIPERBAIKI - NOTE PANEL RAPAT)
         // ============================================================
 
         function renderShiftPage() {
@@ -9831,7 +9875,7 @@
                         <!-- SHIFT COLUMNS -->
                         <div class="shift-columns-wrapper" id="shiftColumnsWrapper" style="flex:1;min-width:0;">
                             ${shiftColumns.map((col, index) => `
-                                <div class="shift-column-wrapper" data-column-id="${col.id}">
+                                <div class="shift-column-wrapper" data-column-id="${col.id}" id="wrapper_${col.id}">
                                     <div class="shift-column">
                                         <div class="column-header"
                                              draggable="${canEdit}"
@@ -9922,6 +9966,7 @@
 
             renderShiftLogs();
 
+            // Sinkronkan tinggi textarea dengan card user
             setTimeout(() => {
                 document.querySelectorAll('.shift-column-wrapper').forEach(wrapper => {
                     const colId = wrapper.dataset.columnId;
@@ -9951,19 +9996,27 @@
         }
 
         // ============================================================
-        // NOTE PANEL - FUNCTIONS
+        // NOTE PANEL - FUNCTIONS (DIPERBAIKI - TERTUTUP RAPAT)
         // ============================================================
 
         function toggleNotePanel(columnId) {
+            const wrapper = document.querySelector(`.shift-column-wrapper[data-column-id="${columnId}"]`);
             const panel = document.getElementById(`notePanel_${columnId}`);
-            if (!panel) return;
+            if (!panel || !wrapper) return;
 
-            panel.classList.toggle('open');
+            const isOpen = panel.classList.contains('open');
 
-            if (panel.classList.contains('open')) {
+            if (isOpen) {
+                // Tutup panel
+                panel.classList.remove('open');
+                wrapper.classList.remove('has-note-open');
+            } else {
+                // Buka panel
+                panel.classList.add('open');
+                wrapper.classList.add('has-note-open');
                 setTimeout(() => {
                     syncNoteHeight(columnId);
-                }, 300);
+                }, 350);
             }
         }
 
@@ -10072,7 +10125,6 @@
         // ============================================================
 
         let staffDragData = null;
-        let dragTimeout = null;
 
         function onStaffDragStart(e, userId, sourceType, columnId) {
             if (!canEditShift()) {
@@ -10144,7 +10196,6 @@
             const wrapper = e.currentTarget.closest('.shift-column-wrapper');
             if (wrapper) {
                 wrapper.classList.add('drag-over-col');
-                // Cari dropzone di dalam wrapper
                 const dropzone = wrapper.querySelector('.shift-column-dropzone');
                 if (dropzone) {
                     dropzone.classList.add('drag-over');
@@ -10152,7 +10203,6 @@
                     if (emptyDrop) emptyDrop.classList.add('drag-over');
                 }
             } else {
-                // Untuk DATA STAFF
                 const target = e.currentTarget;
                 const dropzone = target.closest('.shift-available-dropzone');
                 if (dropzone) {
@@ -11356,8 +11406,8 @@
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
                 const now = Date.now();
-                // Cooldown 10 detik untuk mencegah reload berlebihan
-                if (now - lastVisibilityLoad > 10000) {
+                // Cooldown 15 detik untuk mencegah reload berlebihan
+                if (now - lastVisibilityLoad > 15000) {
                     console.log('👁️ Tab became visible, checking data...');
                     lastVisibilityLoad = now;
                     if (!isLoading && isDataReady) {
