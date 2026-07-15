@@ -6461,9 +6461,13 @@
         const TEST_MODE = false;
 
         // ============================================================
-        // 🔥 RANDOM EMOJI UNTUK LIVE IZIN
+        // 🔥 RANDOM EMOJI UNTUK LIVE IZIN - HEWAN + UNICORN + NAGA
         // ============================================================
-        const RANDOM_EMOJIS = ['😎', '🤓', '😄', '🥳', '😆', '😴', '🤭', '🫡', '🫠', '🙃', '🔥', '⚡', '🌟', '💪', '🚀', '🎯', '👾', '🤖', '👻', '🎃'];
+        const RANDOM_EMOJIS = [
+            '🐧', '🐼', '🐨', '🐹', '🐱', '🐶', '🐰', '🐥', '🦭',
+            '🐻', '🦊', '🐸', '🦁', '🐯', '🐮', '🐺', '🦝', '🐿️',
+            '🦄', '🐉'
+        ];
 
         // ============================================================
         // KONFIGURASI SUPABASE
@@ -7139,10 +7143,11 @@
 
                                 dataIzin[nama].tanggal = newRecord.tanggal;
                                 dataIzin[nama].selesai = newRecord.selesai;
+                                dataIzin[nama].emoticon = newRecord.emoticon || null;
 
                                 console.log(
-                                    `✅ Updated ${nama}: status=${newRecord.status}, mulai=${dataIzin[nama].mulai}`
-                                    );
+                                    `✅ Updated ${nama}: status=${newRecord.status}, emoticon=${dataIzin[nama].emoticon || '😎'}`
+                                );
                             }
                         } else if (eventType === 'DELETE') {
                             const nama = oldRecord.nama;
@@ -7151,6 +7156,7 @@
                                 dataIzin[nama].mulai = null;
                                 dataIzin[nama].tanggal = null;
                                 dataIzin[nama].selesai = null;
+                                dataIzin[nama].emoticon = null;
                                 console.log(`✅ Removed ${nama} from izin list`);
                             }
                         }
@@ -7384,6 +7390,7 @@
                             dataIzin[nama].mulai = null;
                             dataIzin[nama].tanggal = null;
                             dataIzin[nama].selesai = null;
+                            dataIzin[nama].emoticon = null;
                         }
                     });
 
@@ -7391,20 +7398,13 @@
                     izinResult.data.forEach(item => {
                         if (dataIzin[item.nama]) {
                             dataIzin[item.nama].status = item.status || 'none';
-                            if (item.mulai) {
-                                let mulaiStr = item.mulai;
-                                if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
-                                    mulaiStr = mulaiStr + 'Z';
-                                }
-                                dataIzin[item.nama].mulai = mulaiStr;
-                            } else {
-                                dataIzin[item.nama].mulai = null;
-                            }
+                            dataIzin[item.nama].mulai = item.mulai;
                             dataIzin[item.nama].tanggal = item.tanggal;
                             dataIzin[item.nama].selesai = item.selesai;
+                            dataIzin[item.nama].emoticon = item.emoticon || null;
                             if (item.status === 'izin' && item.mulai) {
                                 aktifCount++;
-                                console.log(`✅ User ${item.nama} sedang izin sejak ${item.mulai}`);
+                                console.log(`✅ User ${item.nama} sedang izin dengan emoji ${item.emoticon || '😎'}`);
                             }
                         }
                     });
@@ -7725,7 +7725,7 @@
         }
 
         // ============================================================
-        // SHIFT LOGS - FUNCTIONS (DIPERBAIKI)
+        // SHIFT LOGS - FUNCTIONS
         // ============================================================
 
         async function insertShiftLog(action, userName, details) {
@@ -8454,12 +8454,11 @@
         }
 
         // ============================================================
-        // FUNGSI IZIN
+        // FUNGSI IZIN - MULAI (DENGAN EMOTICON)
         // ============================================================
         window.mulaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
-                'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
@@ -8470,8 +8469,7 @@
             if (!canIzinByDailyLimit(formattedNama)) {
                 const used = getUsedIzinToday(formattedNama);
                 const maxQuota = getMaxQuota(formattedNama);
-                showToast(`${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`,
-                    'error');
+                showToast(`${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`, 'error');
                 return;
             }
 
@@ -8484,7 +8482,7 @@
                 return;
             }
 
-            // 🔥 PERBAIKAN D: Random emoji untuk live izin (tetap sama selama izin)
+            // 🔥 PERBAIKAN D: Random emoji hewan
             const randomEmoji = RANDOM_EMOJIS[Math.floor(Math.random() * RANDOM_EMOJIS.length)];
             data.emoticon = randomEmoji;
 
@@ -8536,9 +8534,21 @@
                     data.emoticon = randomEmoji;
                     dataIzin[formattedNama] = data;
 
+                    // 🔥 Simpan emoticon ke database
+                    await supabaseDashboard
+                        .from('izin_anggota')
+                        .upsert({
+                            nama: formattedNama,
+                            status: 'izin',
+                            mulai: mulaiISO,
+                            selesai: null,
+                            tanggal: today,
+                            role: getRoleForUser(formattedNama),
+                            emoticon: randomEmoji
+                        }, { onConflict: 'nama' });
+
                     renderAll();
                     updateCurrentCounts();
-                    // 🔥 PERBAIKAN A: Hapus hardcoded emoticon ▶️
                     showToast(`${formattedNama} mulai izin!`, 'info');
 
                     await loadDataFromDatabase();
@@ -8551,6 +8561,7 @@
                 return;
             }
 
+            // TEST MODE
             isJackpotShown[formattedNama] = false;
             data.status = 'izin';
             data.mulai = now.toISOString();
@@ -8561,12 +8572,11 @@
 
             renderAll();
             updateCurrentCounts();
-            // 🔥 PERBAIKAN A: Hapus hardcoded emoticon ▶️
             showToast(`${formattedNama} mulai izin!`, 'info');
         };
 
         // ============================================================
-        // FUNGSI SELESAI IZIN
+        // FUNGSI SELESAI IZIN - DENGAN TOAST RAPI
         // ============================================================
         window.selesaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
@@ -8576,8 +8586,7 @@
                 return;
             }
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
-                'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
@@ -8610,7 +8619,7 @@
 
                 data.status = 'selesai';
                 data.selesai = selesaiTime;
-                data.emoticon = null; // Reset emoticon saat selesai
+                data.emoticon = null;
 
                 const isQuotaValid = durasiDetik >= MIN_IZIN_DURATION_SECONDS;
 
@@ -8663,7 +8672,8 @@
                                 mulai: data.mulai,
                                 selesai: data.selesai,
                                 tanggal: data.tanggal,
-                                role: getRoleForUser(formattedNama)
+                                role: getRoleForUser(formattedNama),
+                                emoticon: null
                             }, { onConflict: 'nama' });
 
                         await supabaseDashboard
@@ -8693,14 +8703,17 @@
                 const used = getUsedIzinToday(formattedNama);
                 const maxQuota = getMaxQuota(formattedNama);
 
-                // 🔥 PERBAIKAN A: Hapus hardcoded emoticon ⏹️ dan ✅
-                let pesan = `Izin selesai! Durasi: ${menit}m ${detik}s`;
+                // 🔥 TOAST RAPI 2 BARIS
+                const durasiText = `${menit}m ${detik}s`;
 
                 if (!isQuotaValid) {
-                    pesan += ` ⚠️ (Di bawah 2 menit, tidak mengurangi quota)`;
-                    showToast(pesan, 'warning', 4000);
+                    showToast(
+                        `⏱️ ${durasiText}<br><span style="font-size:11px;opacity:0.8;">⚠️ Di bawah 2 menit, quota tetap</span>`,
+                        'warning',
+                        4000
+                    );
                 } else {
-                    pesan += ` ✅ Quota: ${used}/${maxQuota}`;
+                    let pesan = `⏱️ ${durasiText} | Quota: ${used}/${maxQuota}`;
                     if (isOverLimit) {
                         pesan += ` 🎫 +1 Voucher!`;
                     }
@@ -8806,7 +8819,7 @@
                     nama: formatName(nama),
                     mulai: dataIzin[nama].mulai,
                     role: getRoleForUser(nama),
-                    emoticon: dataIzin[nama].emoticon || '😎' // fallback
+                    emoticon: dataIzin[nama].emoticon || '🐧'
                 }))
                 .sort((a, b) => new Date(a.mulai) - new Date(b.mulai));
 
@@ -8840,8 +8853,10 @@
                     const diff = Math.floor((now - startTime) / 1000);
                     const menit = Math.floor(diff / 60);
                     const detik = diff % 60;
-                    // 🔥 PERBAIKAN D: Gunakan emoticon yang sudah disimpan (tetap)
-                    const visual = item.emoticon || '😎';
+                    
+                    // 🔥 PAKAI EMOTICON DARI STATE
+                    const visual = item.emoticon || '🐧';
+                    
                     const batasDetik = (jackpotLimitMinutes * 60) - 1;
                     const isOverLimit = diff > batasDetik;
 
@@ -8923,8 +8938,7 @@
                 kasir: 'Kasir'
             };
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
-                'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
 
             tbody.innerHTML = filtered.map(nama => {
                 const data = dataIzin[nama];
@@ -9475,7 +9489,7 @@
             const filterRole = document.getElementById('filterRole');
             const filterBulan = document.getElementById('filterBulan');
 
-            // 🔥 SET DEFAULT TANGGAL = HARI INI
+            // SET DEFAULT TANGGAL = HARI INI
             if (filterTanggal && !filterTanggal.value) {
                 const today = new Date();
                 const year = today.getFullYear();
@@ -9491,7 +9505,6 @@
 
             let filtered = [...historyData];
 
-            // Filter berdasarkan tanggal
             if (tanggalValue) {
                 const selectedDate = new Date(tanggalValue + 'T00:00:00');
                 const dateStr = selectedDate.toDateString();
@@ -9501,7 +9514,6 @@
                 });
             }
 
-            // Filter nama & role
             if (namaValue) {
                 filtered = filtered.filter(h => h.nama === formatName(namaValue));
             }
@@ -10047,7 +10059,8 @@
                                     mulai: null,
                                     selesai: null,
                                     tanggal: null,
-                                    role: getRoleForUser(nama)
+                                    role: getRoleForUser(nama),
+                                    emoticon: null
                                 }, { onConflict: 'nama' });
                         }
                     }
@@ -10607,7 +10620,7 @@
         }
 
         // ============================================================
-        // RENDER SHIFT PAGE - DENGAN NOTE SINKRON
+        // RENDER SHIFT PAGE
         // ============================================================
 
         function renderShiftPage() {
@@ -10823,7 +10836,7 @@
         window.refreshShiftData = refreshShiftData;
 
         // ============================================================
-        // NOTE PANEL - FUNCTIONS (DENGAN AUTO-SAVE)
+        // NOTE PANEL - FUNCTIONS
         // ============================================================
 
         function toggleNotePanel(columnId) {
@@ -10883,7 +10896,6 @@
                 }
             }
 
-            // 🔥 SAVE NOTE KE DATABASE (dengan debounce)
             const key = `${columnId}_${userId}`;
             if (noteDebounceTimers[key]) {
                 clearTimeout(noteDebounceTimers[key]);
@@ -10909,7 +10921,6 @@
             }, 800);
         }
 
-        // Auto-save sebelum page unload
         window.addEventListener('beforeunload', function() {
             Object.keys(noteDebounceTimers).forEach(key => {
                 clearTimeout(noteDebounceTimers[key]);
@@ -11599,7 +11610,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT - DIPERBAIKI
+        // PREVIEW SHIFT
         // ============================================================
 
         function openShiftPreview() {
@@ -11642,7 +11653,6 @@
             if (!modal) return;
             if (!previewData) return;
 
-            // Reset modal sebelum render
             modal.style.display = 'flex';
             modal.classList.remove('show');
 
@@ -11664,7 +11674,6 @@
                             <div class="title">📋 SHIFT KERJA - PREVIEW</div>
                             <div class="subtitle">${periodeText}</div>
                         </div>
-                        <!-- TOMBOL X DIHAPUS -->
                     </div>
 
                     <div class="preview-grid">
@@ -11720,7 +11729,6 @@
                 </div>
             `;
 
-            // Tampilkan modal setelah konten siap
             setTimeout(() => {
                 modal.classList.add('show');
             }, 50);
@@ -11829,14 +11837,8 @@
             const container = document.getElementById('historyShiftContent');
             if (!container) return;
 
-            // 🔥 PERBAIKAN C: Pastikan search input dan filter sudah ada
             let searchInput = document.getElementById('historyShiftSearch');
             let filterSelect = document.getElementById('historyShiftFilter');
-
-            // Buat default jika belum ada
-            if (!searchInput) {
-                // Filter bar akan dibuat di HTML
-            }
 
             const searchValue = searchInput?.value?.toLowerCase() || '';
             const filterValue = filterSelect?.value || 'all';
