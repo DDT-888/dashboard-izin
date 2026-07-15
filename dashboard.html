@@ -1073,6 +1073,7 @@
             letter-spacing: 0.3px;
             line-height: 1.5;
             transform-origin: top right;
+            overflow: hidden;
         }
 
         .toast-notification.success {
@@ -1107,6 +1108,7 @@
             border: 1px solid rgba(255, 215, 0, 0.15);
         }
 
+        /* 🔥 PERBAIKAN: Cahaya berjalan di dalam box toast */
         .toast-notification::before {
             content: '';
             position: absolute;
@@ -1114,8 +1116,11 @@
             left: 0;
             right: 0;
             height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
             animation: toastShimmer 2s ease-in-out infinite;
+            border-radius: 12px 12px 0 0;
+            z-index: 1;
+            pointer-events: none;
         }
 
         @keyframes toastShimmer {
@@ -1127,6 +1132,12 @@
             margin-right: 10px;
             font-size: 18px;
             display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .toast-notification .toast-message {
+            display: inline-block;
+            vertical-align: middle;
         }
 
         @keyframes toastSlideIn {
@@ -1167,6 +1178,7 @@
             transition: all 0.2s ease;
             padding: 4px;
             line-height: 1;
+            z-index: 2;
         }
 
         .toast-notification .toast-close:hover {
@@ -1183,6 +1195,7 @@
             background: rgba(255, 255, 255, 0.2);
             animation: toastProgress 3s linear forwards;
             width: 100%;
+            z-index: 1;
         }
 
         @keyframes toastProgress {
@@ -4859,11 +4872,16 @@
             border-radius: 50%;
             background: var(--sidebar-text);
             margin-right: 3px;
+        }
+
+        .note-badge.has-note .badge-dot {
+            background: #00e5ff;
             animation: pulse-note 2s ease-in-out infinite;
         }
 
         @keyframes pulse-note {
-            0%, 100% {
+            0%,
+            100% {
                 box-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
                 opacity: 1;
             }
@@ -6655,6 +6673,11 @@
         let logBatchTimer = null;
 
         // ============================================================
+        // LIVE IZIN ICONS (BARU)
+        // ============================================================
+        const LIVE_ICONS = ['😎', '🤓', '😄', '🥳', '😆', '😴', '🤭', '🫡', '🫠', '🙃'];
+
+        // ============================================================
         // THEME FUNCTIONS
         // ============================================================
         function toggleTheme() {
@@ -7817,6 +7840,7 @@
             toast.id = 'toastNotification';
             toast.className = `toast-notification ${type}`;
             
+            // 🔥 HANYA 1 EMOTICON
             const icons = {
                 success: '✅',
                 error: '❌',
@@ -7835,7 +7859,6 @@
             
             document.body.appendChild(toast);
             
-            // Force reflow for animation
             void toast.offsetHeight;
             toast.style.display = 'block';
             
@@ -8744,7 +8767,7 @@
         }
 
         // ============================================================
-        // RENDER LIVE IZIN
+        // RENDER LIVE IZIN - DENGAN EMOTICON BARU
         // ============================================================
         function renderLiveIzin() {
             const roleMap = {
@@ -8760,8 +8783,6 @@
                 kapten: document.getElementById('countKapten'),
                 kasir: document.getElementById('countKasir')
             };
-
-            const visualIcons = ['🏃', '🚶', '🏊', '🧘', '🤸', '🏋️', '🧗', '🚴', '🕺', '💃'];
 
             Object.keys(roleMap).forEach(role => {
                 if (roleMap[role]) roleMap[role].innerHTML = '';
@@ -8807,7 +8828,8 @@
                     const diff = Math.floor((now - startTime) / 1000);
                     const menit = Math.floor(diff / 60);
                     const detik = diff % 60;
-                    const visual = visualIcons[index % visualIcons.length];
+                    // 🔥 EMOTICON BARU
+                    const visual = LIVE_ICONS[index % LIVE_ICONS.length];
                     const batasDetik = (jackpotLimitMinutes * 60) - 1;
                     const isOverLimit = diff > batasDetik;
 
@@ -9430,7 +9452,7 @@
         }
 
         // ============================================================
-        // RENDER HISTORY
+        // RENDER HISTORY - DEFAULT HARI INI (FILTER BEBAS)
         // ============================================================
         window.renderHistory = function() {
             const tbody = document.getElementById('historyBody');
@@ -9441,6 +9463,7 @@
             const filterRole = document.getElementById('filterRole');
             const filterBulan = document.getElementById('filterBulan');
 
+            // 🔥 SET DEFAULT TANGGAL = HARI INI (tanpa batas)
             if (filterTanggal && !filterTanggal.value) {
                 const today = new Date();
                 const year = today.getFullYear();
@@ -9456,9 +9479,7 @@
 
             let filtered = [...historyData];
 
-            if (namaValue) {
-                filtered = filtered.filter(h => h.nama === formatName(namaValue));
-            }
+            // 🔥 FILTER BERDASARKAN TANGGAL (BEBAS)
             if (tanggalValue) {
                 const selectedDate = new Date(tanggalValue + 'T00:00:00');
                 const dateStr = selectedDate.toDateString();
@@ -9466,6 +9487,11 @@
                     const historyDate = new Date(h.mulai);
                     return historyDate.toDateString() === dateStr;
                 });
+            }
+
+            // Filter nama & role
+            if (namaValue) {
+                filtered = filtered.filter(h => h.nama === formatName(namaValue));
             }
             if (roleValue) {
                 filtered = filtered.filter(h => h.role === roleValue);
@@ -9485,7 +9511,7 @@
 
             if (filtered.length === 0) {
                 tbody.innerHTML =
-                    `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Belum ada data history</td></tr>`;
+                    `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Tidak ada data history untuk tanggal yang dipilih</td></tr>`;
                 return;
             }
 
