@@ -1049,6 +1049,175 @@
         }
 
         /* ============================================================
+           TOAST NOTIFICATION - PREMIUM & POSITION FIX
+           ============================================================ */
+
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 99999;
+            max-width: 420px;
+            min-width: 280px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.06);
+            animation: toastSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: none;
+            font-size: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            letter-spacing: 0.3px;
+            line-height: 1.5;
+            transform-origin: top right;
+        }
+
+        .toast-notification.success {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            border-left: 4px solid #66bb6a;
+            box-shadow: 0 12px 48px rgba(46, 125, 50, 0.25);
+        }
+
+        .toast-notification.error {
+            background: linear-gradient(135deg, #c62828, #b71c1c);
+            border-left: 4px solid #ef5350;
+            box-shadow: 0 12px 48px rgba(198, 40, 40, 0.25);
+        }
+
+        .toast-notification.warning {
+            background: linear-gradient(135deg, #e65100, #bf360c);
+            border-left: 4px solid #ffa726;
+            box-shadow: 0 12px 48px rgba(230, 81, 0, 0.25);
+        }
+
+        .toast-notification.info {
+            background: linear-gradient(135deg, #1a2a4a, #2a3a5a);
+            border-left: 4px solid #00e5ff;
+            box-shadow: 0 12px 48px rgba(0, 229, 255, 0.15);
+        }
+
+        .toast-notification.jackpot {
+            background: linear-gradient(135deg, #1a0a2e, #2a1a4a);
+            border-left: 4px solid #ffd700;
+            box-shadow: 0 12px 48px rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            border: 1px solid rgba(255, 215, 0, 0.15);
+        }
+
+        .toast-notification::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: toastShimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes toastShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .toast-notification .toast-icon {
+            margin-right: 10px;
+            font-size: 18px;
+            display: inline-block;
+        }
+
+        @keyframes toastSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateX(60px) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @keyframes toastSlideOut {
+            0% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(60px) scale(0.9);
+            }
+        }
+
+        .toast-notification.hiding {
+            animation: toastSlideOut 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .toast-notification .toast-close {
+            position: absolute;
+            top: 6px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .toast-notification .toast-close:hover {
+            color: rgba(255, 255, 255, 0.8);
+            transform: rotate(90deg);
+        }
+
+        .toast-notification .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            border-radius: 0 0 12px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            animation: toastProgress 3s linear forwards;
+            width: 100%;
+        }
+
+        @keyframes toastProgress {
+            0% { width: 100%; }
+            100% { width: 0%; }
+        }
+
+        @media (max-width: 768px) {
+            .toast-notification {
+                top: 12px;
+                right: 12px;
+                left: 12px;
+                max-width: none;
+                min-width: unset;
+                padding: 12px 18px;
+                font-size: 12px;
+                border-radius: 10px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .toast-notification {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                padding: 10px 14px;
+                font-size: 11px;
+                border-radius: 8px;
+            }
+            .toast-notification .toast-icon {
+                font-size: 15px;
+            }
+        }
+
+        /* ============================================================
            CSS LAINNYA
            ============================================================ */
 
@@ -7630,6 +7799,95 @@
         }
 
         // ============================================================
+        // TOAST NOTIFICATION - PREMIUM (DIPERBAIKI)
+        // ============================================================
+
+        function showToast(message, type = 'info', duration = 3000) {
+            // Hapus toast lama jika ada
+            const oldToast = document.getElementById('toastNotification');
+            if (oldToast) {
+                oldToast.classList.add('hiding');
+                setTimeout(() => {
+                    if (oldToast.parentNode) oldToast.remove();
+                }, 400);
+            }
+
+            // Buat toast baru
+            const toast = document.createElement('div');
+            toast.id = 'toastNotification';
+            toast.className = `toast-notification ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️',
+                jackpot: '🎰'
+            };
+            const icon = icons[type] || 'ℹ️';
+            
+            toast.innerHTML = `
+                <button class="toast-close" onclick="closeToast(this)">✕</button>
+                <span class="toast-icon">${icon}</span>
+                <span class="toast-message">${message}</span>
+                <div class="toast-progress"></div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Force reflow for animation
+            void toast.offsetHeight;
+            toast.style.display = 'block';
+            
+            const timeoutId = setTimeout(() => {
+                closeToast(toast);
+            }, duration);
+            
+            toast.dataset.timeoutId = timeoutId;
+            
+            toast.addEventListener('mouseenter', () => {
+                clearTimeout(parseInt(toast.dataset.timeoutId));
+                const progress = toast.querySelector('.toast-progress');
+                if (progress) {
+                    progress.style.animationPlayState = 'paused';
+                }
+            });
+            
+            toast.addEventListener('mouseleave', () => {
+                const remaining = duration;
+                const newTimeout = setTimeout(() => {
+                    closeToast(toast);
+                }, remaining);
+                toast.dataset.timeoutId = newTimeout;
+                const progress = toast.querySelector('.toast-progress');
+                if (progress) {
+                    progress.style.animationPlayState = 'running';
+                }
+            });
+        }
+
+        function closeToast(element) {
+            if (element && element.classList && element.classList.contains('toast-close')) {
+                element = element.closest('.toast-notification');
+            }
+            
+            if (!element || !element.classList) return;
+            
+            if (element.dataset.timeoutId) {
+                clearTimeout(parseInt(element.dataset.timeoutId));
+            }
+            
+            element.classList.add('hiding');
+            setTimeout(() => {
+                if (element.parentNode) {
+                    element.remove();
+                }
+            }, 400);
+        }
+
+        window.closeToast = closeToast;
+
+        // ============================================================
         // UPDATE PROFILE DROPDOWN
         // ============================================================
         function updateProfileDropdown() {
@@ -9473,14 +9731,7 @@
         // ============================================================
         // TOAST
         // ============================================================
-        function showToast(message, type = 'info', duration = 3000) {
-            const toast = document.getElementById('toastNotification');
-            if (!toast) return;
-            toast.textContent = message;
-            toast.className = `toast-notification ${type}`;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, duration);
-        }
+        // Fungsi showToast sudah didefinisikan di atas
 
         // ============================================================
         // PROFILE DROPDOWN
@@ -10536,7 +10787,7 @@
         window.refreshShiftData = refreshShiftData;
 
         // ============================================================
-        // NOTE PANEL - FUNCTIONS
+        // NOTE PANEL - FUNCTIONS (DENGAN AUTO-SAVE)
         // ============================================================
 
         function toggleNotePanel(columnId) {
@@ -10570,7 +10821,7 @@
 
             const indicator = document.querySelector(
                 `.shift-column-wrapper[data-column-id="${columnId}"] .user-card-shift[data-user-id="${userId}"] .note-indicator`
-                );
+            );
             if (indicator) {
                 if (value && value.trim() !== '') {
                     indicator.classList.add('has-note');
@@ -10596,27 +10847,55 @@
                 }
             }
 
+            // 🔥 SAVE NOTE KE DATABASE (dengan debounce)
             const key = `${columnId}_${userId}`;
             if (noteDebounceTimers[key]) {
                 clearTimeout(noteDebounceTimers[key]);
             }
 
-            noteDebounceTimers[key] = setTimeout(() => {
-                const detail = user.note && user.note.trim() !== '' ?
-                    `Menambahkan note untuk ${user.name}: "${user.note}"` :
-                    `Menghapus note untuk ${user.name}`;
-                insertShiftLog('EDIT_NOTE', getCurrentUserName(), detail);
-                updateShiftActive();
-                delete noteDebounceTimers[key];
-            }, 500);
+            noteDebounceTimers[key] = setTimeout(async () => {
+                try {
+                    await updateShiftActive();
+                    
+                    const detail = user.note && user.note.trim() !== '' ?
+                        `Menambahkan note untuk ${user.name}: "${user.note}"` :
+                        `Menghapus note untuk ${user.name}`;
+                    
+                    insertShiftLog('EDIT_NOTE', getCurrentUserName(), detail);
+                    console.log(`✅ Note saved for ${user.name}: "${user.note}"`);
+                    
+                } catch (err) {
+                    console.error('❌ Error saving note:', err);
+                    showShiftToast('❌ Gagal menyimpan note', 'error');
+                } finally {
+                    delete noteDebounceTimers[key];
+                }
+            }, 800);
         }
+
+        // Auto-save sebelum page unload
+        window.addEventListener('beforeunload', function() {
+            Object.keys(noteDebounceTimers).forEach(key => {
+                clearTimeout(noteDebounceTimers[key]);
+                delete noteDebounceTimers[key];
+            });
+            
+            flushShiftLogs();
+            
+            if (shiftIsDirty && shiftActiveId) {
+                updateShiftActive();
+            }
+        });
 
         // ============================================================
         // UPDATE SHIFT AKTIF KE DATABASE
         // ============================================================
 
         async function updateShiftActive() {
-            if (!shiftActiveId) return;
+            if (!shiftActiveId) {
+                console.warn('⚠️ No shiftActiveId, skipping update');
+                return;
+            }
 
             const userName = getCurrentUserName() || 'System';
 
@@ -10646,11 +10925,13 @@
 
                 if (error) throw error;
 
-                console.log('✅ Shift active updated');
+                shiftIsDirty = false;
+                console.log('✅ Shift active updated successfully');
 
             } catch (err) {
                 console.error('❌ Error updating shift active:', err);
                 showShiftToast('❌ Gagal menyimpan perubahan shift', 'error');
+                throw err;
             }
         }
 
@@ -11282,7 +11563,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT
+        // PREVIEW SHIFT - DIPERBAIKI
         // ============================================================
 
         function openShiftPreview() {
@@ -11324,6 +11605,10 @@
             const modal = document.getElementById('shiftPreviewModal');
             if (!modal) return;
             if (!previewData) return;
+
+            // Reset modal sebelum render
+            modal.style.display = 'flex';
+            modal.classList.remove('show');
 
             const roleLabels = {
                 csline: 'CS Line',
@@ -11399,7 +11684,10 @@
                 </div>
             `;
 
-            modal.classList.add('show');
+            // Tampilkan modal setelah konten siap
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 50);
         }
 
         function closeShiftPreview() {
@@ -11407,6 +11695,7 @@
             if (modal) {
                 modal.classList.remove('show');
                 modal.style.display = 'none';
+                modal.innerHTML = '';
             }
             previewData = null;
             document.body.style.overflow = '';
