@@ -6461,15 +6461,6 @@
         const TEST_MODE = false;
 
         // ============================================================
-        // 🔥 RANDOM EMOJI UNTUK LIVE IZIN - HEWAN + UNICORN + NAGA
-        // ============================================================
-        const RANDOM_EMOJIS = [
-            '🐧', '🐼', '🐨', '🐹', '🐱', '🐶', '🐰', '🐥', '🦭',
-            '🐻', '🦊', '🐸', '🦁', '🐯', '🐮', '🐺', '🦝', '🐿️',
-            '🦄', '🐉'
-        ];
-
-        // ============================================================
         // KONFIGURASI SUPABASE
         // ============================================================
         const SUPABASE_URL = 'https://kdmxjficzigsumvcsrtn.supabase.co';
@@ -6680,6 +6671,11 @@
         // ============================================================
         let pendingLogs = [];
         let logBatchTimer = null;
+
+        // ============================================================
+        // LIVE IZIN ICONS (BARU)
+        // ============================================================
+        const LIVE_ICONS = ['😎', '🤓', '😄', '🥳', '😆', '😴', '🤭', '🫡', '🫠', '🙃'];
 
         // ============================================================
         // THEME FUNCTIONS
@@ -6945,7 +6941,7 @@
         function showJackpot() {
             const modal = document.getElementById('jackpotModal');
             if (modal) modal.classList.add('show');
-            showToast('JACKPOT!', 'jackpot', 5000);
+            showToast('🎰 JACKPOT!', 'jackpot', 5000);
         }
 
         function closeJackpot() {
@@ -6956,7 +6952,7 @@
                     showClaimPopup(pendingVoucherClaim);
                 }, 300);
             }
-            showToast('Selamat! Anda mendapatkan 1× Voucher Kutip Sampah Office! 🎉', 'success', 3000);
+            showToast('🎯 Selamat! Anda mendapatkan 1× Voucher Kutip Sampah Office! 🎉', 'success', 3000);
         }
 
         // ============================================================
@@ -7143,11 +7139,10 @@
 
                                 dataIzin[nama].tanggal = newRecord.tanggal;
                                 dataIzin[nama].selesai = newRecord.selesai;
-                                dataIzin[nama].emoticon = newRecord.emoticon || null;
 
                                 console.log(
-                                    `✅ Updated ${nama}: status=${newRecord.status}, emoticon=${dataIzin[nama].emoticon || '😎'}`
-                                );
+                                    `✅ Updated ${nama}: status=${newRecord.status}, mulai=${dataIzin[nama].mulai}`
+                                    );
                             }
                         } else if (eventType === 'DELETE') {
                             const nama = oldRecord.nama;
@@ -7156,7 +7151,6 @@
                                 dataIzin[nama].mulai = null;
                                 dataIzin[nama].tanggal = null;
                                 dataIzin[nama].selesai = null;
-                                dataIzin[nama].emoticon = null;
                                 console.log(`✅ Removed ${nama} from izin list`);
                             }
                         }
@@ -7326,11 +7320,11 @@
                     .select('id, name, role, email, created_at')
                     .limit(100);
 
-                // 🔥 PERBAIKAN B: Hapus .limit(100) - ambil semua history
                 const historyPromise = supabaseDashboard
                     .from('history')
                     .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
-                    .order('mulai', { ascending: false });
+                    .order('mulai', { ascending: false })
+                    .limit(100);
 
                 const [usersResult, historyResult, izinResult, voucherResult, settingsResult] = await Promise.all([
                     usersPromise,
@@ -7352,8 +7346,7 @@
                                 mulai: null,
                                 selesai: null,
                                 tanggal: null,
-                                role: user.role,
-                                emoticon: null
+                                role: user.role
                             };
                         } else {
                             dataIzin[nama].role = user.role;
@@ -7375,7 +7368,7 @@
                         durasiDetik: h.durasi_detik || 0,
                         isQuotaValid: h.is_quota_valid !== undefined ? h.is_quota_valid : true
                     }));
-                    console.log(`✅ ${historyResult.data.length} history loaded (semua data)`);
+                    console.log(`✅ ${historyResult.data.length} history loaded (last 100)`);
                 } else {
                     console.log('⚠️ No history found');
                     historyData = [];
@@ -7390,7 +7383,6 @@
                             dataIzin[nama].mulai = null;
                             dataIzin[nama].tanggal = null;
                             dataIzin[nama].selesai = null;
-                            dataIzin[nama].emoticon = null;
                         }
                     });
 
@@ -7398,13 +7390,20 @@
                     izinResult.data.forEach(item => {
                         if (dataIzin[item.nama]) {
                             dataIzin[item.nama].status = item.status || 'none';
-                            dataIzin[item.nama].mulai = item.mulai;
+                            if (item.mulai) {
+                                let mulaiStr = item.mulai;
+                                if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
+                                    mulaiStr = mulaiStr + 'Z';
+                                }
+                                dataIzin[item.nama].mulai = mulaiStr;
+                            } else {
+                                dataIzin[item.nama].mulai = null;
+                            }
                             dataIzin[item.nama].tanggal = item.tanggal;
                             dataIzin[item.nama].selesai = item.selesai;
-                            dataIzin[item.nama].emoticon = item.emoticon || null;
                             if (item.status === 'izin' && item.mulai) {
                                 aktifCount++;
-                                console.log(`✅ User ${item.nama} sedang izin dengan emoji ${item.emoticon || '😎'}`);
+                                console.log(`✅ User ${item.nama} sedang izin sejak ${item.mulai}`);
                             }
                         }
                     });
@@ -7650,6 +7649,9 @@
                 shiftIsDirty = false;
                 renderShiftPage();
 
+                // 🔥 REALTIME SHIFT DINONAKTIFKAN - HEMAT EGRESS!
+                // Tidak ada subscription shift_active
+
                 await loadShiftLogs();
 
                 isShiftInitialized = true;
@@ -7725,7 +7727,7 @@
         }
 
         // ============================================================
-        // SHIFT LOGS - FUNCTIONS
+        // SHIFT LOGS - FUNCTIONS (DIPERBAIKI)
         // ============================================================
 
         async function insertShiftLog(action, userName, details) {
@@ -7823,7 +7825,6 @@
         // TOAST NOTIFICATION - PREMIUM (DIPERBAIKI)
         // ============================================================
 
-        // 🔥 PERBAIKAN A: HANYA 1 EMOTICON DI TOAST
         function showToast(message, type = 'info', duration = 3000) {
             // Hapus toast lama jika ada
             const oldToast = document.getElementById('toastNotification');
@@ -8153,7 +8154,7 @@
 
                 if (error) {
                     console.error('❌ Session error:', error);
-                    showToast('Error session: ' + error.message, 'error', 5000);
+                    showToast('❌ Error session: ' + error.message, 'error', 5000);
                     return;
                 }
 
@@ -8191,7 +8192,7 @@
 
             } catch (err) {
                 console.error('❌ Error checkAuth:', err);
-                showToast('Error: ' + err.message, 'error', 5000);
+                showToast('❌ Error: ' + err.message, 'error', 5000);
             }
         }
 
@@ -8244,8 +8245,7 @@
                                 mulai: null,
                                 selesai: null,
                                 tanggal: null,
-                                role: userData.role,
-                                emoticon: null
+                                role: userData.role
                             };
                         }
                     } else {
@@ -8400,8 +8400,7 @@
                     mulai: null,
                     selesai: null,
                     tanggal: null,
-                    role: user.role,
-                    emoticon: null
+                    role: user.role
                 };
                 quotaData[nama] = { count: 0, date: new Date().toDateString() };
                 voucherData[nama] = 0;
@@ -8454,22 +8453,24 @@
         }
 
         // ============================================================
-        // FUNGSI IZIN - MULAI (DENGAN EMOTICON)
+        // FUNGSI IZIN
         // ============================================================
         window.mulaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
+                'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
-                showToast(`Anda hanya bisa mengklik START untuk diri Anda sendiri!`, 'warning');
+                showToast(`⚠️ Anda hanya bisa mengklik START untuk diri Anda sendiri!`, 'warning');
                 return;
             }
 
             if (!canIzinByDailyLimit(formattedNama)) {
                 const used = getUsedIzinToday(formattedNama);
                 const maxQuota = getMaxQuota(formattedNama);
-                showToast(`${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`, 'error');
+                showToast(`⚠️ ${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`,
+                    'error');
                 return;
             }
 
@@ -8478,13 +8479,9 @@
             const today = now.toDateString();
 
             if (data.status === 'izin') {
-                showToast('User sedang dalam izin! Klik END terlebih dahulu.', 'warning');
+                showToast('⚠️ User sedang dalam izin! Klik END terlebih dahulu.', 'warning');
                 return;
             }
-
-            // 🔥 PERBAIKAN D: Random emoji hewan
-            const randomEmoji = RANDOM_EMOJIS[Math.floor(Math.random() * RANDOM_EMOJIS.length)];
-            data.emoticon = randomEmoji;
 
             if (!TEST_MODE) {
                 try {
@@ -8502,14 +8499,14 @@
 
                     if (rpcError) {
                         console.error('❌ RPC Error:', rpcError);
-                        showToast(`Gagal memulai izin: ${rpcError.message}`, 'error');
+                        showToast(`❌ Gagal memulai izin: ${rpcError.message}`, 'error');
                         return;
                     }
 
                     const resultData = typeof result === 'string' ? JSON.parse(result) : result;
 
                     if (!resultData.success) {
-                        showToast(`${resultData.message}`, 'warning', 4000);
+                        showToast(`⚠️ ${resultData.message}`, 'warning', 4000);
 
                         if (resultData.message && resultData.message.includes('Kuota penuh')) {
                             const roleLabel = ROLE_LABELS[role] || role;
@@ -8531,73 +8528,58 @@
                     data.mulai = mulaiISO;
                     data.selesai = null;
                     data.tanggal = today;
-                    data.emoticon = randomEmoji;
                     dataIzin[formattedNama] = data;
-
-                    // 🔥 Simpan emoticon ke database
-                    await supabaseDashboard
-                        .from('izin_anggota')
-                        .upsert({
-                            nama: formattedNama,
-                            status: 'izin',
-                            mulai: mulaiISO,
-                            selesai: null,
-                            tanggal: today,
-                            role: getRoleForUser(formattedNama),
-                            emoticon: randomEmoji
-                        }, { onConflict: 'nama' });
 
                     renderAll();
                     updateCurrentCounts();
-                    showToast(`${formattedNama} mulai izin!`, 'info');
+                    showToast(`▶️ ${formattedNama} mulai izin!`, 'info');
 
                     await loadDataFromDatabase();
                     renderAll();
 
                 } catch (err) {
                     console.error('❌ Error:', err);
-                    showToast('Gagal memulai izin: ' + err.message, 'error');
+                    showToast('❌ Gagal memulai izin: ' + err.message, 'error');
                 }
                 return;
             }
 
-            // TEST MODE
             isJackpotShown[formattedNama] = false;
             data.status = 'izin';
             data.mulai = now.toISOString();
             data.selesai = null;
             data.tanggal = today;
-            data.emoticon = randomEmoji;
             dataIzin[formattedNama] = data;
 
             renderAll();
             updateCurrentCounts();
-            showToast(`${formattedNama} mulai izin!`, 'info');
+            showToast(`▶️ ${formattedNama} mulai izin!`, 'info');
         };
 
         // ============================================================
-        // FUNGSI SELESAI IZIN - DENGAN TOAST RAPI
+        // FUNGSI SELESAI IZIN
         // ============================================================
         window.selesaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
 
             if (endLock[formattedNama]) {
-                showToast(`${formattedNama} sedang diproses, mohon tunggu...`, 'warning', 1500);
+                showToast(`⏳ ${formattedNama} sedang diproses, mohon tunggu...`, 'warning', 1500);
                 return;
             }
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
+                'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
-                showToast(`Anda hanya bisa mengklik END untuk diri Anda sendiri!`, 'warning');
+                showToast(`⚠️ Anda hanya bisa mengklik END untuk diri Anda sendiri!`, 'warning');
                 return;
             }
 
             const now = new Date();
             const data = dataIzin[formattedNama];
             if (data.status !== 'izin') {
-                showToast('User belum dalam status izin!', 'warning');
+                showToast('⚠️ User belum dalam status izin!', 'warning');
                 return;
             }
 
@@ -8619,7 +8601,6 @@
 
                 data.status = 'selesai';
                 data.selesai = selesaiTime;
-                data.emoticon = null;
 
                 const isQuotaValid = durasiDetik >= MIN_IZIN_DURATION_SECONDS;
 
@@ -8672,8 +8653,7 @@
                                 mulai: data.mulai,
                                 selesai: data.selesai,
                                 tanggal: data.tanggal,
-                                role: getRoleForUser(formattedNama),
-                                emoticon: null
+                                role: getRoleForUser(formattedNama)
                             }, { onConflict: 'nama' });
 
                         await supabaseDashboard
@@ -8703,17 +8683,13 @@
                 const used = getUsedIzinToday(formattedNama);
                 const maxQuota = getMaxQuota(formattedNama);
 
-                // 🔥 TOAST RAPI 2 BARIS
-                const durasiText = `${menit}m ${detik}s`;
+                let pesan = `⏹️ Izin selesai! Durasi: ${menit}m ${detik}s`;
 
                 if (!isQuotaValid) {
-                    showToast(
-                        `⏱️ ${durasiText}<br><span style="font-size:11px;opacity:0.8;">⚠️ Di bawah 2 menit, quota tetap</span>`,
-                        'warning',
-                        4000
-                    );
+                    pesan += ` ⚠️ (Di bawah 2 menit, tidak mengurangi quota)`;
+                    showToast(pesan, 'warning', 4000);
                 } else {
-                    let pesan = `⏱️ ${durasiText} | Quota: ${used}/${maxQuota}`;
+                    pesan += ` ✅ Quota: ${used}/${maxQuota}`;
                     if (isOverLimit) {
                         pesan += ` 🎫 +1 Voucher!`;
                     }
@@ -8729,7 +8705,7 @@
 
             } catch (err) {
                 console.error('❌ Error selesai izin:', err);
-                showToast('Gagal menyelesaikan izin: ' + err.message, 'error');
+                showToast('❌ Gagal menyelesaikan izin: ' + err.message, 'error');
             } finally {
                 setTimeout(() => {
                     endLock[formattedNama] = false;
@@ -8791,7 +8767,7 @@
         }
 
         // ============================================================
-        // RENDER LIVE IZIN - DENGAN RANDOM EMOJI (TETAP)
+        // RENDER LIVE IZIN - DENGAN EMOTICON BARU
         // ============================================================
         function renderLiveIzin() {
             const roleMap = {
@@ -8818,8 +8794,7 @@
                 .map(nama => ({
                     nama: formatName(nama),
                     mulai: dataIzin[nama].mulai,
-                    role: getRoleForUser(nama),
-                    emoticon: dataIzin[nama].emoticon || '🐧'
+                    role: getRoleForUser(nama)
                 }))
                 .sort((a, b) => new Date(a.mulai) - new Date(b.mulai));
 
@@ -8853,10 +8828,8 @@
                     const diff = Math.floor((now - startTime) / 1000);
                     const menit = Math.floor(diff / 60);
                     const detik = diff % 60;
-                    
-                    // 🔥 PAKAI EMOTICON DARI STATE
-                    const visual = item.emoticon || '🐧';
-                    
+                    // 🔥 EMOTICON BARU
+                    const visual = LIVE_ICONS[index % LIVE_ICONS.length];
                     const batasDetik = (jackpotLimitMinutes * 60) - 1;
                     const isOverLimit = diff > batasDetik;
 
@@ -8938,7 +8911,8 @@
                 kasir: 'Kasir'
             };
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
+                'admin';
 
             tbody.innerHTML = filtered.map(nama => {
                 const data = dataIzin[nama];
@@ -9489,7 +9463,7 @@
             const filterRole = document.getElementById('filterRole');
             const filterBulan = document.getElementById('filterBulan');
 
-            // SET DEFAULT TANGGAL = HARI INI
+            // 🔥 SET DEFAULT TANGGAL = HARI INI (tanpa batas)
             if (filterTanggal && !filterTanggal.value) {
                 const today = new Date();
                 const year = today.getFullYear();
@@ -9505,6 +9479,7 @@
 
             let filtered = [...historyData];
 
+            // 🔥 FILTER BERDASARKAN TANGGAL (BEBAS)
             if (tanggalValue) {
                 const selectedDate = new Date(tanggalValue + 'T00:00:00');
                 const dateStr = selectedDate.toDateString();
@@ -9514,6 +9489,7 @@
                 });
             }
 
+            // Filter nama & role
             if (namaValue) {
                 filtered = filtered.filter(h => h.nama === formatName(namaValue));
             }
@@ -9640,7 +9616,7 @@
                 const dateDisplay = selectedDate ?
                     new Date(selectedDate).toLocaleDateString('id-ID') :
                     'Semua data';
-                showToast(`Tidak ada data untuk tanggal ${dateDisplay}!`, 'warning');
+                showToast(`⚠️ Tidak ada data untuk tanggal ${dateDisplay}!`, 'warning');
                 return;
             }
 
@@ -9684,19 +9660,19 @@
             const dateDisplay = selectedDate ?
                 new Date(selectedDate).toLocaleDateString('id-ID') :
                 'Semua data';
-            showToast(`Export ${dateDisplay} berhasil! (${dataToExport.length} data)`, 'success');
+            showToast(`✅ Export ${dateDisplay} berhasil! (${dataToExport.length} data)`, 'success');
         };
 
         window.exportHistoryBulanan = function() {
             const filterBulan = document.getElementById('filterBulan');
             if (!filterBulan) {
-                showToast('Pilih bulan terlebih dahulu!', 'warning');
+                showToast('⚠️ Pilih bulan terlebih dahulu!', 'warning');
                 return;
             }
 
             const bulanValue = filterBulan.value;
             if (!bulanValue) {
-                showToast('Pilih bulan terlebih dahulu!', 'warning');
+                showToast('⚠️ Pilih bulan terlebih dahulu!', 'warning');
                 return;
             }
 
@@ -9709,7 +9685,7 @@
             });
 
             if (filtered.length === 0) {
-                showToast(`Tidak ada data untuk bulan ${monthName}`, 'warning');
+                showToast(`⚠️ Tidak ada data untuk bulan ${monthName}`, 'warning');
                 return;
             }
 
@@ -9743,7 +9719,7 @@
                 `history-izin-${year}-${String(month).padStart(2, '0')}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
-            showToast(`Export bulan ${monthName} berhasil!`, 'success');
+            showToast(`✅ Export bulan ${monthName} berhasil!`, 'success');
         };
 
         // ============================================================
@@ -9777,6 +9753,11 @@
 
             updateGreeting();
         }
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+        // Fungsi showToast sudah didefinisikan di atas
 
         // ============================================================
         // PROFILE DROPDOWN
@@ -9843,7 +9824,7 @@
         // ============================================================
         window.tambahUser = async function() {
             if (!userPermissions.canManage) {
-                showToast('Hanya Leader & CS Line yang dapat menambah user!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat menambah user!', 'error');
                 return;
             }
 
@@ -9852,11 +9833,11 @@
             const role = document.getElementById('inputUserRole').value;
 
             if (!email || !name) {
-                showToast('Email dan Nama harus diisi!', 'warning');
+                showToast('⚠️ Email dan Nama harus diisi!', 'warning');
                 return;
             }
             if (!email.includes('@')) {
-                showToast('Email tidak valid!', 'warning');
+                showToast('⚠️ Email tidak valid!', 'warning');
                 return;
             }
 
@@ -9864,7 +9845,7 @@
             const formattedName = formatName(name);
 
             if (listUsers.some(u => u.email === formattedEmail)) {
-                showToast(`User dengan email "${formattedEmail}" sudah terdaftar!`, 'warning');
+                showToast(`⚠️ User dengan email "${formattedEmail}" sudah terdaftar!`, 'warning');
                 return;
             }
 
@@ -9879,11 +9860,11 @@
                         }, { onConflict: 'email' });
 
                     if (error) {
-                        showToast('Gagal tambah user: ' + error.message, 'error');
+                        showToast('❌ Gagal tambah user: ' + error.message, 'error');
                         return;
                     }
                 } catch (err) {
-                    showToast('Gagal tambah user: ' + err.message, 'error');
+                    showToast('❌ Gagal tambah user: ' + err.message, 'error');
                     return;
                 }
             }
@@ -9902,9 +9883,7 @@
                     status: 'none',
                     mulai: null,
                     selesai: null,
-                    tanggal: null,
-                    role: role,
-                    emoticon: null
+                    tanggal: null
                 };
                 const today = new Date().toDateString();
                 quotaData[formattedName] = { count: 0, date: today };
@@ -9915,17 +9894,17 @@
             renderUsers();
             renderAll();
             updateQuickStats();
-            showToast(`User "${formattedName}" berhasil ditambahkan!`, 'success');
+            showToast(`✅ User "${formattedName}" berhasil ditambahkan!`, 'success');
         };
 
         window.hapusUser = async function(userId, userEmail) {
             if (!userPermissions.canManage) {
-                showToast('Hanya Leader & CS Line yang dapat menghapus user!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat menghapus user!', 'error');
                 return;
             }
 
             if (!userEmail) {
-                showToast('Email tidak valid!', 'error');
+                showToast('❌ Email tidak valid!', 'error');
                 return;
             }
 
@@ -9938,7 +9917,7 @@
             try {
                 const userToDelete = listUsers.find(u => u.email === formattedEmail);
                 if (!userToDelete) {
-                    showToast('User tidak ditemukan!', 'error');
+                    showToast('❌ User tidak ditemukan!', 'error');
                     return;
                 }
 
@@ -9984,17 +9963,17 @@
                 renderUsers();
                 renderAll();
                 updateQuickStats();
-                showToast(`User "${formattedEmail}" berhasil dihapus!`, 'success');
+                showToast(`✅ User "${formattedEmail}" berhasil dihapus!`, 'success');
 
             } catch (err) {
                 console.error('❌ Gagal hapus user:', err);
-                showToast('Gagal menghapus user: ' + err.message, 'error');
+                showToast('❌ Gagal menghapus user: ' + err.message, 'error');
             }
         };
 
         window.kurangiVoucher = function(nama) {
             if (!userPermissions.canManageVoucher) {
-                showToast('Hanya Leader & CS Line yang dapat mengurangi voucher!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat mengurangi voucher!', 'error');
                 return;
             }
 
@@ -10002,7 +9981,7 @@
             const currentVoucher = getVoucherCount(formattedNama);
 
             if (currentVoucher <= 0) {
-                showToast(`${formattedNama} tidak memiliki voucher!`, 'warning');
+                showToast(`⚠️ ${formattedNama} tidak memiliki voucher!`, 'warning');
                 return;
             }
 
@@ -10011,20 +9990,20 @@
             }
 
             if (removeVoucher(formattedNama)) {
-                showToast(`1 voucher ${formattedNama} berhasil dikurangi! Sisa: ${getVoucherCount(formattedNama)}`,
+                showToast(`✅ 1 voucher ${formattedNama} berhasil dikurangi! Sisa: ${getVoucherCount(formattedNama)}`,
                     'success');
                 renderVoucherPage();
                 renderDashboardTable();
                 updateSidebarBadge();
                 updateQuickStats();
             } else {
-                showToast('Gagal mengurangi voucher!', 'error');
+                showToast('❌ Gagal mengurangi voucher!', 'error');
             }
         };
 
         window.hapusSemuaHistory = async function() {
             if (!userPermissions.canDeleteData) {
-                showToast('Hanya Leader & CS Line yang dapat menghapus history!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat menghapus history!', 'error');
                 return;
             }
 
@@ -10048,7 +10027,6 @@
                         data.mulai = null;
                         data.selesai = null;
                         data.tanggal = null;
-                        data.emoticon = null;
 
                         if (!TEST_MODE) {
                             await supabaseDashboard
@@ -10059,8 +10037,7 @@
                                     mulai: null,
                                     selesai: null,
                                     tanggal: null,
-                                    role: getRoleForUser(nama),
-                                    emoticon: null
+                                    role: getRoleForUser(nama)
                                 }, { onConflict: 'nama' });
                         }
                     }
@@ -10074,10 +10051,10 @@
                 });
 
                 renderAll();
-                showToast('Semua history berhasil dihapus!', 'success');
+                showToast('✅ Semua history berhasil dihapus!', 'success');
             } catch (err) {
                 console.error('Gagal hapus history:', err);
-                showToast('Gagal menghapus history: ' + err.message, 'error');
+                showToast('❌ Gagal menghapus history: ' + err.message, 'error');
             }
         };
 
@@ -10086,7 +10063,7 @@
         // ============================================================
         window.saveIPWhitelist = async function() {
             if (!userPermissions.canManageIP) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
             }
 
@@ -10094,7 +10071,7 @@
             if (!input) return;
             const ipValue = input.value.trim();
             if (!ipValue) {
-                showToast('Masukkan minimal 1 IP!', 'warning');
+                showToast('⚠️ Masukkan minimal 1 IP!', 'warning');
                 return;
             }
             if (!confirm('Simpan IP whitelist: ' + ipValue + '?')) return;
@@ -10113,16 +10090,16 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('IP whitelist berhasil disimpan!', 'success');
+                showToast('✅ IP whitelist berhasil disimpan!', 'success');
             } catch (err) {
                 console.error('Gagal save IP whitelist:', err);
-                showToast('Gagal menyimpan IP whitelist: ' + err.message, 'error');
+                showToast('❌ Gagal menyimpan IP whitelist: ' + err.message, 'error');
             }
         };
 
         window.saveLimits = function() {
             if (!userPermissions.canManageLimits) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah batas izin!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat mengubah batas izin!', 'error');
                 return;
             }
 
@@ -10153,12 +10130,12 @@
                             notice.style.display = 'block';
                             setTimeout(() => { notice.style.display = 'none'; }, 3000);
                         }
-                        showToast('Batas izin berhasil disimpan!', 'success');
+                        showToast('✅ Batas izin berhasil disimpan!', 'success');
                         updateCurrentCounts();
                     })
                     .catch(err => {
                         console.error('Gagal simpan limits:', err);
-                        showToast('Gagal menyimpan batas izin', 'error');
+                        showToast('❌ Gagal menyimpan batas izin', 'error');
                     });
             } else {
                 const notice = document.getElementById('limitSavedNotice');
@@ -10166,21 +10143,21 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('Batas izin berhasil disimpan!', 'success');
+                showToast('✅ Batas izin berhasil disimpan!', 'success');
                 updateCurrentCounts();
             }
         };
 
         window.saveLimitSettings = function() {
             if (!userPermissions.canManageLimits) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
             }
 
             const durasiInput = document.getElementById('limitDurasi');
             const durasi = parseInt(durasiInput ? durasiInput.value : 15) || 15;
             if (durasi < 1) {
-                showToast('Durasi minimal 1 menit!', 'warning');
+                showToast('⚠️ Durasi minimal 1 menit!', 'warning');
                 return;
             }
 
@@ -10217,12 +10194,12 @@
                             notice.style.display = 'block';
                             setTimeout(() => { notice.style.display = 'none'; }, 3000);
                         }
-                        showToast('Pengaturan berhasil disimpan!', 'success');
+                        showToast('✅ Pengaturan berhasil disimpan!', 'success');
                         renderAll();
                     })
                     .catch(err => {
                         console.error('Gagal simpan settings:', err);
-                        showToast('Gagal menyimpan pengaturan', 'error');
+                        showToast('❌ Gagal menyimpan pengaturan', 'error');
                     });
             } else {
                 const notice = document.getElementById('limitSettingsSaved');
@@ -10230,7 +10207,7 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('Pengaturan berhasil disimpan!', 'success');
+                showToast('✅ Pengaturan berhasil disimpan!', 'success');
                 renderAll();
             }
         };
@@ -10271,7 +10248,7 @@
 
         window.saveTickerSettings = function() {
             if (!userPermissions.canEditSettings) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
             }
 
@@ -10280,7 +10257,7 @@
 
             const lines = textarea.value.split('\n').filter(line => line.trim() !== '');
             if (lines.length === 0) {
-                showToast('Masukkan minimal 1 baris teks!', 'warning');
+                showToast('⚠️ Masukkan minimal 1 baris teks!', 'warning');
                 return;
             }
 
@@ -10288,11 +10265,11 @@
             if (speedInput) {
                 const speed = parseInt(speedInput.value) || 30;
                 if (speed < 5) {
-                    showToast('Kecepatan minimal 5 detik!', 'warning');
+                    showToast('⚠️ Kecepatan minimal 5 detik!', 'warning');
                     return;
                 }
                 if (speed > 120) {
-                    showToast('Kecepatan maksimal 120 detik!', 'warning');
+                    showToast('⚠️ Kecepatan maksimal 120 detik!', 'warning');
                     return;
                 }
                 tickerSpeed = speed;
@@ -10317,12 +10294,12 @@
                             notice.style.display = 'block';
                             setTimeout(() => { notice.style.display = 'none'; }, 3000);
                         }
-                        showToast('Ticker berhasil disimpan ke database!', 'success');
+                        showToast('✅ Ticker berhasil disimpan ke database!', 'success');
                         renderTicker();
                     })
                     .catch(err => {
                         console.error('Gagal simpan ticker:', err);
-                        showToast('Gagal menyimpan ticker: ' + err.message, 'error');
+                        showToast('❌ Gagal menyimpan ticker: ' + err.message, 'error');
                     });
             } else {
                 localStorage.setItem('tickerItems', JSON.stringify(tickerItems));
@@ -10337,13 +10314,13 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('Ticker berhasil diperbarui (TEST MODE)!', 'success');
+                showToast('✅ Ticker berhasil diperbarui (TEST MODE)!', 'success');
             }
         };
 
         window.resetTickerSettings = function() {
             if (!userPermissions.canEditSettings) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('❌ Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
             }
 
@@ -10372,11 +10349,11 @@
                             notice.style.display = 'block';
                             setTimeout(() => { notice.style.display = 'none'; }, 3000);
                         }
-                        showToast('Ticker di-reset ke default!', 'success');
+                        showToast('✅ Ticker di-reset ke default!', 'success');
                     })
                     .catch(err => {
                         console.error('Gagal reset ticker:', err);
-                        showToast('Gagal reset ticker: ' + err.message, 'error');
+                        showToast('❌ Gagal reset ticker: ' + err.message, 'error');
                     });
             } else {
                 localStorage.setItem('tickerItems', JSON.stringify(tickerItems));
@@ -10393,7 +10370,7 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('Ticker di-reset ke default!', 'success');
+                showToast('✅ Ticker di-reset ke default!', 'success');
             }
         };
 
@@ -10403,7 +10380,7 @@
 
             const lines = textarea.value.split('\n').filter(line => line.trim() !== '');
             if (lines.length === 0) {
-                showToast('Masukkan minimal 1 baris teks!', 'warning');
+                showToast('⚠️ Masukkan minimal 1 baris teks!', 'warning');
                 return;
             }
 
@@ -10429,7 +10406,7 @@
             track.style.opacity = '1';
             track.style.visibility = 'visible';
 
-            showToast(`Preview ticker dengan kecepatan ${speed} detik!`, 'success', 2000);
+            showToast(`👁️ Preview ticker dengan kecepatan ${speed} detik!`, 'success', 2000);
 
             setTimeout(() => {
                 renderTicker();
@@ -10585,7 +10562,7 @@
         }
 
         window.refreshAllData = function() {
-            showToast('Memperbarui data...', 'info', 1500);
+            showToast('🔄 Memperbarui data...', 'info', 1500);
             loadDataFromDatabase();
             if (currentTab === 'shifts') {
                 loadShiftActiveData();
@@ -10620,7 +10597,7 @@
         }
 
         // ============================================================
-        // RENDER SHIFT PAGE
+        // RENDER SHIFT PAGE - DENGAN NOTE SINKRON
         // ============================================================
 
         function renderShiftPage() {
@@ -10836,7 +10813,7 @@
         window.refreshShiftData = refreshShiftData;
 
         // ============================================================
-        // NOTE PANEL - FUNCTIONS
+        // NOTE PANEL - FUNCTIONS (DENGAN AUTO-SAVE)
         // ============================================================
 
         function toggleNotePanel(columnId) {
@@ -10896,6 +10873,7 @@
                 }
             }
 
+            // 🔥 SAVE NOTE KE DATABASE (dengan debounce)
             const key = `${columnId}_${userId}`;
             if (noteDebounceTimers[key]) {
                 clearTimeout(noteDebounceTimers[key]);
@@ -10921,6 +10899,7 @@
             }, 800);
         }
 
+        // Auto-save sebelum page unload
         window.addEventListener('beforeunload', function() {
             Object.keys(noteDebounceTimers).forEach(key => {
                 clearTimeout(noteDebounceTimers[key]);
@@ -11610,7 +11589,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT
+        // PREVIEW SHIFT - DIPERBAIKI
         // ============================================================
 
         function openShiftPreview() {
@@ -11653,6 +11632,7 @@
             if (!modal) return;
             if (!previewData) return;
 
+            // Reset modal sebelum render
             modal.style.display = 'flex';
             modal.classList.remove('show');
 
@@ -11674,6 +11654,7 @@
                             <div class="title">📋 SHIFT KERJA - PREVIEW</div>
                             <div class="subtitle">${periodeText}</div>
                         </div>
+                        <!-- TOMBOL X DIHAPUS -->
                     </div>
 
                     <div class="preview-grid">
@@ -11729,6 +11710,7 @@
                 </div>
             `;
 
+            // Tampilkan modal setelah konten siap
             setTimeout(() => {
                 modal.classList.add('show');
             }, 50);
@@ -11830,22 +11812,21 @@
         }
 
         // ============================================================
-        // RENDER RIWAYAT SHIFT - DENGAN SEARCH FIX
+        // RENDER RIWAYAT SHIFT
         // ============================================================
 
         function renderShiftHistory() {
             const container = document.getElementById('historyShiftContent');
             if (!container) return;
 
-            let searchInput = document.getElementById('historyShiftSearch');
-            let filterSelect = document.getElementById('historyShiftFilter');
+            const searchInput = document.getElementById('historyShiftSearch');
+            const filterSelect = document.getElementById('historyShiftFilter');
 
             const searchValue = searchInput?.value?.toLowerCase() || '';
             const filterValue = filterSelect?.value || 'all';
 
             let filtered = [...shiftHistoryData];
 
-            // 🔥 PERBAIKAN C: Search berfungsi untuk periode dan pembuat
             if (searchValue) {
                 filtered = filtered.filter(h => {
                     const periodStr = `${h.periode_start || ''} ${h.periode_end || ''}`.toLowerCase();
