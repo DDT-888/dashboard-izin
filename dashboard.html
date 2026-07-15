@@ -130,6 +130,7 @@
             border-radius: 0 !important;
             background: var(--bg-secondary);
             transition: all 0.35s ease;
+            overflow: hidden;
         }
 
         .shift-column .column-body {
@@ -159,6 +160,70 @@
         .shift-column .column-body::-webkit-scrollbar-thumb {
             background: var(--border-color);
             border-radius: 4px;
+        }
+
+        /* ============================================================
+           PERBAIKAN NOTE PANEL - SINKRON DENGAN USER CARD
+           ============================================================ */
+
+        .shift-note-panel .note-panel-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 2px 0;
+            overflow-y: auto;
+        }
+
+        .shift-note-panel .note-user-item {
+            flex: 0 0 auto !important;
+            min-height: 28px !important;
+            max-height: 60px !important;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .shift-note-panel .note-user-item textarea {
+            width: 100%;
+            height: 100% !important;
+            min-height: 28px !important;
+            max-height: 60px !important;
+            padding: 3px 5px;
+            border: 1px solid var(--border-input);
+            border-radius: 4px;
+            font-size: 10px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            resize: none;
+            font-family: 'Segoe UI', sans-serif;
+            transition: all 0.2s ease;
+            line-height: 1.3;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .shift-note-panel .note-user-item textarea:focus {
+            border-color: var(--sidebar-text);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.05);
+        }
+
+        .shift-note-panel .note-user-item textarea::placeholder {
+            color: var(--text-muted);
+            font-size: 9px;
+            font-style: italic;
+            opacity: 0.4;
+        }
+
+        .shift-note-panel .note-user-item textarea:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: var(--bg-hover);
+        }
+
+        /* Sync note height dengan user card */
+        .shift-column-wrapper .note-user-item {
+            height: auto !important;
         }
 
         /* ============================================================
@@ -467,21 +532,22 @@
         }
 
         .shift-note-panel .note-user-item {
-            flex: 1;
-            min-height: 24px;
-            max-height: 50px;
+            flex: 0 0 auto !important;
+            min-height: 28px !important;
+            max-height: 60px !important;
             transition: all 0.3s ease;
+            width: 100%;
         }
 
         .shift-note-panel .note-user-item textarea {
             width: 100%;
-            height: 100%;
-            min-height: 24px;
-            max-height: 50px;
-            padding: 2px 5px;
+            height: 100% !important;
+            min-height: 28px !important;
+            max-height: 60px !important;
+            padding: 3px 5px;
             border: 1px solid var(--border-input);
             border-radius: 4px;
-            font-size: 9px;
+            font-size: 10px;
             background: var(--bg-input);
             color: var(--text-primary);
             resize: none;
@@ -489,6 +555,7 @@
             transition: all 0.2s ease;
             line-height: 1.3;
             display: block;
+            box-sizing: border-box;
         }
 
         .shift-note-panel .note-user-item textarea:focus {
@@ -499,7 +566,7 @@
 
         .shift-note-panel .note-user-item textarea::placeholder {
             color: var(--text-muted);
-            font-size: 8px;
+            font-size: 9px;
             font-style: italic;
             opacity: 0.4;
         }
@@ -580,113 +647,9 @@
         }
 
         /* ============================================================
-           RESPONSIVE SHIFT
-           ============================================================ */
-
-        @media screen and (max-width: 992px) {
-            .shift-main-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-                height: auto !important;
-                max-height: none !important;
-            }
-            .shift-available {
-                min-height: 200px !important;
-                max-height: 280px !important;
-            }
-            .shift-column-wrapper {
-                min-width: 100% !important;
-                max-width: 100% !important;
-                min-height: 200px !important;
-                max-height: 350px !important;
-            }
-            .shift-column .column-body {
-                min-height: 150px !important;
-                max-height: 250px !important;
-            }
-            .shift-log-container {
-                max-height: 75px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 38px !important;
-            }
-        }
-
-        @media screen and (max-width: 768px) {
-            .shift-main-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            .shift-available {
-                min-height: 180px !important;
-                max-height: 250px !important;
-            }
-            .shift-column .column-body {
-                min-height: 120px !important;
-                max-height: 200px !important;
-            }
-            .shift-log-container {
-                max-height: 70px !important;
-                padding: 3px 10px 2px 10px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 35px !important;
-                font-size: 9px !important;
-            }
-            .shift-log-container .log-header .log-actions button {
-                font-size: 8px !important;
-                padding: 2px 8px !important;
-                height: 20px !important;
-            }
-        }
-
-        @media screen and (max-width: 600px) {
-            .shift-log-container {
-                max-height: 65px !important;
-                padding: 3px 8px 2px 8px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 32px !important;
-                font-size: 8.5px !important;
-            }
-            .shift-log-container .log-body .log-entry {
-                font-size: 8px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-time {
-                min-width: 45px;
-                font-size: 7.5px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-user {
-                font-size: 8px !important;
-                min-width: 50px;
-            }
-            .shift-log-container .log-body .log-entry .log-action {
-                font-size: 8px !important;
-            }
-            .shift-log-container .log-header .log-actions button {
-                font-size: 7.5px !important;
-                padding: 2px 6px !important;
-                height: 18px !important;
-                gap: 2px !important;
-            }
-            .shift-log-container .log-header .log-actions button .btn-icon {
-                font-size: 8px !important;
-            }
-            .shift-column-wrapper {
-                min-height: 180px !important;
-                max-height: 300px !important;
-            }
-            .shift-column .column-body {
-                min-height: 100px !important;
-                max-height: 180px !important;
-            }
-        }
-
-        /* ============================================================
            PERBAIKAN TAMPILAN - Role Summary & Tombol
            ============================================================ */
 
-        /* 1. ROLE SUMMARY - Lebih kecil dan rapi */
         .role-summary {
             display: flex;
             gap: 12px;
@@ -740,75 +703,53 @@
             font-size: 12px;
         }
 
-        /* ============================================================
-   TOMBOL HAPUS - Lebih kecil & Premium
-   ============================================================ */
-.btn-hapus {
-    padding: 3px 10px !important;
-    border: none !important;
-    border-radius: 6px !important;
-    font-size: 10px !important;
-    font-weight: 600 !important;
-    cursor: pointer;
-    background: linear-gradient(135deg, #c62828, #b71c1c) !important;
-    color: white !important;
-    transition: all 0.3s ease !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 3px !important;
-    box-shadow: 0 2px 6px rgba(198, 40, 40, 0.12) !important;
-    letter-spacing: 0.2px !important;
-    font-family: 'Segoe UI', sans-serif !important;
-    height: 26px !important;
-    line-height: 1 !important;
-    min-width: 60px !important;
-    justify-content: center !important;
-}
+        /* TOMBOL HAPUS - Lebih kecil & Premium */
+        .btn-hapus {
+            padding: 3px 10px !important;
+            border: none !important;
+            border-radius: 6px !important;
+            font-size: 10px !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            background: linear-gradient(135deg, #c62828, #b71c1c) !important;
+            color: white !important;
+            transition: all 0.3s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 3px !important;
+            box-shadow: 0 2px 6px rgba(198, 40, 40, 0.12) !important;
+            letter-spacing: 0.2px !important;
+            font-family: 'Segoe UI', sans-serif !important;
+            height: 26px !important;
+            line-height: 1 !important;
+            min-width: 60px !important;
+            justify-content: center !important;
+        }
 
-.btn-hapus:hover:not(:disabled) {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(198, 40, 40, 0.25) !important;
-    background: linear-gradient(135deg, #d32f2f, #c62828) !important;
-}
+        .btn-hapus:hover:not(:disabled) {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(198, 40, 40, 0.25) !important;
+            background: linear-gradient(135deg, #d32f2f, #c62828) !important;
+        }
 
-.btn-hapus:active:not(:disabled) {
-    transform: scale(0.95) !important;
-}
+        .btn-hapus:active:not(:disabled) {
+            transform: scale(0.95) !important;
+        }
 
-.btn-hapus:disabled {
-    opacity: 0.4 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
-    box-shadow: none !important;
-    background: var(--bg-hover) !important;
-    color: var(--text-muted) !important;
-}
+        .btn-hapus:disabled {
+            opacity: 0.4 !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+            box-shadow: none !important;
+            background: var(--bg-hover) !important;
+            color: var(--text-muted) !important;
+        }
 
-.btn-hapus .icon {
-    font-size: 11px !important;
-}
+        .btn-hapus .icon {
+            font-size: 11px !important;
+        }
 
-/* Responsive - Lebih kecil di mobile */
-@media (max-width: 768px) {
-    .btn-hapus {
-        padding: 2px 8px !important;
-        font-size: 9px !important;
-        height: 24px !important;
-        min-width: 50px !important;
-    }
-}
-
-@media (max-width: 600px) {
-    .btn-hapus {
-        padding: 2px 6px !important;
-        font-size: 8px !important;
-        height: 22px !important;
-        min-width: 40px !important;
-        border-radius: 4px !important;
-    }
-}
-
-        /* 3. TOMBOL VOUCHER - Premium Style */
+        /* TOMBOL VOUCHER - Premium Style */
         .btn-voucher {
             padding: 5px 14px !important;
             border: none !important;
@@ -852,7 +793,7 @@
             font-size: 13px;
         }
 
-        /* 4. RESPONSIVE - Role Summary di mobile */
+        /* RESPONSIVE - Role Summary di mobile */
         @media (max-width: 768px) {
             .role-summary {
                 font-size: 10px !important;
@@ -868,9 +809,10 @@
                 padding: 1px 8px;
             }
             .btn-hapus {
-                padding: 4px 10px !important;
-                font-size: 10px !important;
-                height: 28px !important;
+                padding: 2px 8px !important;
+                font-size: 9px !important;
+                height: 24px !important;
+                min-width: 50px !important;
             }
             .btn-voucher {
                 padding: 4px 10px !important;
@@ -892,6 +834,13 @@
             }
             .role-summary .role-item {
                 padding: 1px 6px;
+            }
+            .btn-hapus {
+                padding: 2px 6px !important;
+                font-size: 8px !important;
+                height: 22px !important;
+                min-width: 40px !important;
+                border-radius: 4px !important;
             }
         }
 
@@ -4430,17 +4379,18 @@
         }
 
         .shift-note-panel .note-user-item {
-            flex: 1;
-            min-height: 28px;
-            max-height: 60px;
+            flex: 0 0 auto !important;
+            min-height: 28px !important;
+            max-height: 60px !important;
             transition: all 0.3s ease;
+            width: 100%;
         }
 
         .shift-note-panel .note-user-item textarea {
             width: 100%;
-            height: 100%;
-            min-height: 28px;
-            max-height: 60px;
+            height: 100% !important;
+            min-height: 28px !important;
+            max-height: 60px !important;
             padding: 3px 5px;
             border: 1px solid var(--border-input);
             border-radius: 4px;
@@ -4450,8 +4400,9 @@
             resize: none;
             font-family: 'Segoe UI', sans-serif;
             transition: all 0.2s ease;
-            line-height: 1.4;
+            line-height: 1.3;
             display: block;
+            box-sizing: border-box;
         }
 
         .shift-note-panel .note-user-item textarea:focus {
@@ -6274,17 +6225,22 @@
         let previewData = null;
         let columnDragData = null;
         let shiftLogs = [];
-        let shiftRealtimeChannel = null;
         let noteDebounceTimers = {};
 
         // ============================================================
-        // PERFORMANCE FLAGS (DIPERBAIKI)
+        // PERFORMANCE FLAGS
         // ============================================================
         let isShiftLoading = false;
-        let isShiftSubscribed = false;
         let visibilityCooldown = false;
         let lastVisibilityLoad = 0;
         let isShiftInitialized = false;
+        let lastDataLoad = Date.now();
+
+        // ============================================================
+        // SHIFT LOG BATCH
+        // ============================================================
+        let pendingLogs = [];
+        let logBatchTimer = null;
 
         // ============================================================
         // THEME FUNCTIONS
@@ -6708,7 +6664,7 @@
         }
 
         // ============================================================
-        // REALTIME SUBSCRIPTION (IZIN)
+        // REALTIME SUBSCRIPTION (IZIN - TETAP AKTIF)
         // ============================================================
         function subscribeToIzinChanges() {
             if (realtimeChannel) {
@@ -6774,71 +6730,6 @@
                 });
 
             return realtimeChannel;
-        }
-
-        // ============================================================
-        // SUBSCRIBE SHIFT AKTIF (REALTIME) - DIPERBAIKI (HANYA 1x)
-        // ============================================================
-        function subscribeShiftActive() {
-            if (isShiftSubscribed) {
-                console.log('⚠️ Shift subscription already active, skipping...');
-                return shiftRealtimeChannel;
-            }
-
-            if (shiftRealtimeChannel) {
-                supabaseDashboard.removeChannel(shiftRealtimeChannel);
-                shiftRealtimeChannel = null;
-            }
-
-            console.log('🔌 Subscribing to shift_active changes...');
-
-            shiftRealtimeChannel = supabaseDashboard
-                .channel('shift_active_changes')
-                .on(
-                    'postgres_changes', {
-                        event: '*',
-                        schema: 'public',
-                        table: 'shift_active'
-                    },
-                    async (payload) => {
-                        console.log('🔄 Shift realtime update received:', payload);
-
-                        if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-                            const newData = payload.new;
-                            if (newData && newData.shift_data) {
-                                const updatedBy = newData.updated_by || '';
-                                const currentUser = getCurrentUserName();
-
-                                if (updatedBy !== currentUser && currentUser) {
-                                    console.log(`📋 Shift updated by ${updatedBy}, reloading...`);
-                                    try {
-                                        if (isShiftLoading) {
-                                            console.log('⏳ Shift loading already in progress, skipping...');
-                                            return;
-                                        }
-                                        await loadShiftActiveData();
-                                        renderShiftPage();
-                                        showShiftToast(`🔄 Shift diperbarui oleh ${updatedBy}`, 'info', 2000);
-                                    } catch (err) {
-                                        console.error('❌ Error reloading shift:', err);
-                                    }
-                                } else if (updatedBy === currentUser) {
-                                    console.log('✅ Shift updated by self, no reload needed');
-                                }
-                            }
-                        }
-                    }
-                )
-                .subscribe((status) => {
-                    console.log('📡 Shift subscription status:', status);
-                    if (status === 'SUBSCRIBED') {
-                        isShiftSubscribed = true;
-                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                        isShiftSubscribed = false;
-                    }
-                });
-
-            return shiftRealtimeChannel;
         }
 
         // ============================================================
@@ -6943,7 +6834,7 @@
         }
 
         // ============================================================
-        // PERIODIC REFRESH - OPTIMASI (120 detik)
+        // PERIODIC REFRESH - OPTIMASI (300 detik = 5 menit)
         // ============================================================
         function startPeriodicRefresh() {
             if (refreshInterval) {
@@ -6951,18 +6842,18 @@
                 refreshInterval = null;
             }
 
-            console.log('🔄 Periodic refresh started (120s interval)');
+            console.log('🔄 Periodic refresh started (300s interval)');
 
             refreshInterval = setInterval(() => {
                 if (!isLoading && document.visibilityState === 'visible' && isDataReady) {
-                    console.log('🔄 Periodic refresh (120s): syncing data...');
+                    console.log('🔄 Periodic refresh (300s): syncing data...');
                     loadDataFromDatabase();
                 } else if (document.visibilityState === 'hidden') {
                     console.log('⏸️ Skip periodic refresh: tab inactive');
                 } else if (isLoading) {
                     console.log('⏸️ Skip periodic refresh: already loading');
                 }
-            }, 120000);
+            }, 300000); // 5 menit
         }
 
         function stopPeriodicRefresh() {
@@ -7173,6 +7064,8 @@
                     console.log('⏩ Shift already initialized, skipping...');
                 }
 
+                lastDataLoad = Date.now();
+
             } catch (err) {
                 console.error('❌ Error loading data:', err);
             } finally {
@@ -7182,7 +7075,7 @@
         }
 
         // ============================================================
-        // LOAD SHIFT AKTIF - OPTIMASI PERFORMANCE (DIPERBAIKI)
+        // LOAD SHIFT AKTIF - TANPA REALTIME SUBSCRIPTION
         // ============================================================
 
         async function loadShiftActiveData() {
@@ -7321,9 +7214,8 @@
                 shiftIsDirty = false;
                 renderShiftPage();
 
-                if (!isShiftSubscribed) {
-                    subscribeShiftActive();
-                }
+                // 🔥 REALTIME SHIFT DINONAKTIFKAN - HEMAT EGRESS!
+                // Tidak ada subscription shift_active
 
                 await loadShiftLogs();
 
@@ -7359,6 +7251,140 @@
             } finally {
                 isShiftLoading = false;
             }
+        }
+
+        // ============================================================
+        // SHIFT LOGS - BATCH INSERT (HEMAT REQUEST)
+        // ============================================================
+
+        function queueShiftLog(action, userName, details) {
+            pendingLogs.push({ 
+                action: action, 
+                user_name: userName, 
+                details: details, 
+                created_at: new Date().toISOString() 
+            });
+            
+            if (pendingLogs.length >= 5) {
+                flushShiftLogs();
+                return;
+            }
+            
+            clearTimeout(logBatchTimer);
+            logBatchTimer = setTimeout(flushShiftLogs, 10000); // 10 detik
+        }
+
+        async function flushShiftLogs() {
+            if (pendingLogs.length === 0) return;
+            
+            const logs = [...pendingLogs];
+            pendingLogs = [];
+            
+            try {
+                const { error } = await supabaseDashboard
+                    .from('shift_logs')
+                    .insert(logs);
+                    
+                if (error) console.error('❌ Error inserting shift logs batch:', error);
+            } catch (err) {
+                console.error('❌ Error flushing shift logs:', err);
+            }
+        }
+
+        // ============================================================
+        // SHIFT LOGS - FUNCTIONS (DIPERBAIKI)
+        // ============================================================
+
+        async function insertShiftLog(action, userName, details) {
+            // Gunakan batch insert
+            queueShiftLog(action, userName, details);
+        }
+
+        async function loadShiftLogs() {
+            try {
+                const { data, error } = await supabaseDashboard
+                    .from('shift_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                shiftLogs = data || [];
+                renderShiftLogs();
+
+            } catch (err) {
+                console.error('❌ Error loading shift logs:', err);
+            }
+        }
+
+        function renderShiftLogs() {
+            const body = document.getElementById('shiftLogBody');
+            if (!body) return;
+
+            if (shiftLogs.length === 0) {
+                body.innerHTML = `<div class="log-empty">Tidak ada log aktivitas</div>`;
+                return;
+            }
+
+            const formatTime = (dateStr) => {
+                const d = new Date(dateStr);
+                return d.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            body.innerHTML = shiftLogs.map(log => `
+                <div class="log-entry">
+                    <span class="log-time">${formatTime(log.created_at)}</span>
+                    <span class="log-user">${log.user_name}</span>
+                    <span class="log-action">${log.details || log.action}</span>
+                </div>
+            `).join('');
+
+            body.scrollTop = 0;
+        }
+
+        function refreshShiftLogs() {
+            showShiftToast('🔄 Memuat ulang log...', 'info', 1000);
+            loadShiftLogs();
+        }
+
+        function downloadShiftLogs() {
+            if (shiftLogs.length === 0) {
+                showShiftToast('⚠️ Tidak ada log untuk didownload', 'warning');
+                return;
+            }
+
+            const formatTime = (dateStr) => {
+                const d = new Date(dateStr);
+                return d.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            let csv = 'Waktu,User,Aksi,Detail\n';
+            shiftLogs.forEach(log => {
+                csv += `${formatTime(log.created_at)},${log.user_name},${log.action},"${log.details || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `shift-logs-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            showShiftToast('✅ Log berhasil didownload!', 'success');
         }
 
         // ============================================================
@@ -8702,7 +8728,7 @@
                                 <td>
                                     <button class="btn-hapus" onclick="hapusUser('${user.id}', '${user.email}')" 
                                         ${!canManage || isCurrentUser ? 'disabled' : ''}>
-                                        <span class="icon">🗑️</span> Hapus
+                                        🗑️ Hapus
                                     </button>
                                 </td>
                             </tr>
@@ -9869,7 +9895,7 @@
         };
 
         // ============================================================
-        // FUNGSI GLOBAL
+        // FUNGSI GLOBAL - SWITCH TAB DENGAN REFRESH
         // ============================================================
         function switchTab(tab) {
             localStorage.setItem('lastTab', tab);
@@ -9904,10 +9930,20 @@
 
             closeSidebar();
 
-            if (tab === 'dashboard') renderDashboardTable();
-            else if (tab === 'users') renderUsersPage();
-            else if (tab === 'voucher') renderVoucherPage();
-            else if (tab === 'history') {
+            if (tab === 'dashboard') {
+                const now = Date.now();
+                // Refresh jika data lebih dari 60 detik
+                if (now - lastDataLoad > 60000) {
+                    console.log('🔄 Data expired, refreshing...');
+                    loadDataFromDatabase();
+                } else {
+                    renderDashboardTable();
+                }
+            } else if (tab === 'users') {
+                renderUsersPage();
+            } else if (tab === 'voucher') {
+                renderVoucherPage();
+            } else if (tab === 'history') {
                 const filterTanggal = document.getElementById('filterTanggal');
                 if (filterTanggal) {
                     const today = new Date();
@@ -9922,7 +9958,7 @@
                     loadShiftActiveData();
                     isShiftInitialized = true;
                 } else {
-                    console.log('⏩ Shift already initialized, skipping switchTab load...');
+                    console.log('⏩ Shift already initialized, rendering...');
                     renderShiftPage();
                 }
             } else if (tab === 'historyshift') {
@@ -9964,6 +10000,9 @@
 
         window.logout = async function() {
             stopPeriodicRefresh();
+
+            // Flush pending logs sebelum logout
+            await flushShiftLogs();
 
             if (TEST_MODE) {
                 showToast('🧪 TEST MODE: Logout tidak tersedia. Refresh halaman untuk reset.', 'warning');
@@ -10017,7 +10056,7 @@
         };
 
         // ============================================================
-        // SHIFT AKTIF - FUNCTIONS (DIPERBAIKI - CEGAH DUPLIKAT)
+        // SHIFT AKTIF - FUNCTIONS
         // ============================================================
 
         function sortAvailableUsers() {
@@ -10041,7 +10080,7 @@
         }
 
         // ============================================================
-        // RENDER SHIFT PAGE (DIPERBAIKI - NOTE PANEL RAPAT)
+        // RENDER SHIFT PAGE
         // ============================================================
 
         function renderShiftPage() {
@@ -10065,6 +10104,9 @@
                             </div>
                         </div>
                         <div class="shift-header-right">
+                            <button class="btn-shift primary" onclick="refreshShiftData()">
+                                🔄 Refresh Shift
+                            </button>
                             <button class="btn-shift preview" onclick="openShiftPreview()">👁️ Preview</button>
                             <button class="btn-shift success" onclick="openSaveShiftPopup()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
                             <button class="btn-shift danger" onclick="resetShift()" ${!canEdit ? 'disabled' : ''}>↩️ Reset</button>
@@ -10231,7 +10273,21 @@
         }
 
         // ============================================================
-        // NOTE PANEL - FUNCTIONS (DIPERBAIKI - TERTUTUP RAPAT)
+        // REFRESH SHIFT MANUAL
+        // ============================================================
+
+        function refreshShiftData() {
+            showShiftToast('🔄 Memuat ulang shift...', 'info', 1500);
+            loadShiftActiveData().then(() => {
+                renderShiftPage();
+                showShiftToast('✅ Shift berhasil di-refresh!', 'success', 1500);
+            });
+        }
+
+        window.refreshShiftData = refreshShiftData;
+
+        // ============================================================
+        // NOTE PANEL - FUNCTIONS
         // ============================================================
 
         function toggleNotePanel(columnId) {
@@ -10350,7 +10406,7 @@
         }
 
         // ============================================================
-        // DRAG & DROP STAFF - EVENT HANDLER (DIPERBAIKI - FULL AREA)
+        // DRAG & DROP STAFF - EVENT HANDLER
         // ============================================================
 
         let staffDragData = null;
@@ -10977,7 +11033,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT - DIPERBAIKI (Periode benar)
+        // PREVIEW SHIFT
         // ============================================================
 
         function openShiftPreview() {
@@ -11158,116 +11214,6 @@
         }
 
         // ============================================================
-        // SHIFT LOGS - FUNCTIONS
-        // ============================================================
-
-        async function insertShiftLog(action, userName, details) {
-            try {
-                const { error } = await supabaseDashboard
-                    .from('shift_logs')
-                    .insert({
-                        action: action,
-                        user_name: userName,
-                        details: details,
-                        created_at: new Date().toISOString()
-                    });
-
-                if (error) throw error;
-                await loadShiftLogs();
-
-            } catch (err) {
-                console.error('❌ Error inserting shift log:', err);
-            }
-        }
-
-        async function loadShiftLogs() {
-            try {
-                const { data, error } = await supabaseDashboard
-                    .from('shift_logs')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(50);
-
-                if (error) throw error;
-
-                shiftLogs = data || [];
-                renderShiftLogs();
-
-            } catch (err) {
-                console.error('❌ Error loading shift logs:', err);
-            }
-        }
-
-        function renderShiftLogs() {
-            const body = document.getElementById('shiftLogBody');
-            if (!body) return;
-
-            if (shiftLogs.length === 0) {
-                body.innerHTML = `<div class="log-empty">Tidak ada log aktivitas</div>`;
-                return;
-            }
-
-            const formatTime = (dateStr) => {
-                const d = new Date(dateStr);
-                return d.toLocaleString('id-ID', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            };
-
-            body.innerHTML = shiftLogs.map(log => `
-                <div class="log-entry">
-                    <span class="log-time">${formatTime(log.created_at)}</span>
-                    <span class="log-user">${log.user_name}</span>
-                    <span class="log-action">${log.details || log.action}</span>
-                </div>
-            `).join('');
-
-            body.scrollTop = 0;
-        }
-
-        function refreshShiftLogs() {
-            showShiftToast('🔄 Memuat ulang log...', 'info', 1000);
-            loadShiftLogs();
-        }
-
-        function downloadShiftLogs() {
-            if (shiftLogs.length === 0) {
-                showShiftToast('⚠️ Tidak ada log untuk didownload', 'warning');
-                return;
-            }
-
-            const formatTime = (dateStr) => {
-                const d = new Date(dateStr);
-                return d.toLocaleString('id-ID', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            };
-
-            let csv = 'Waktu,User,Aksi,Detail\n';
-            shiftLogs.forEach(log => {
-                csv += `${formatTime(log.created_at)},${log.user_name},${log.action},"${log.details || ''}"\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `shift-logs-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-
-            showShiftToast('✅ Log berhasil didownload!', 'success');
-        }
-
-        // ============================================================
         // RIWAYAT SHIFT - FUNCTIONS
         // ============================================================
 
@@ -11290,7 +11236,7 @@
         }
 
         // ============================================================
-        // RENDER RIWAYAT SHIFT (DIPERBAIKI - Filter Berfungsi)
+        // RENDER RIWAYAT SHIFT
         // ============================================================
 
         function renderShiftHistory() {
@@ -11543,7 +11489,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT FROM HISTORY (DIPERBAIKI - Periode Benar)
+        // PREVIEW SHIFT FROM HISTORY
         // ============================================================
 
         function previewShiftFromHistory(historyId) {
@@ -11606,7 +11552,7 @@
         }
 
         // ============================================================
-        // DELETE SHIFT HISTORY (DIPERBAIKI)
+        // DELETE SHIFT HISTORY
         // ============================================================
 
         async function deleteShiftHistory(historyId) {
@@ -11650,7 +11596,7 @@
         }
 
         // ============================================================
-        // VISIBILITY CHANGE HANDLER (DIPERBAIKI - DENGAN COOLDOWN)
+        // VISIBILITY CHANGE HANDLER
         // ============================================================
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
