@@ -1108,7 +1108,6 @@
             border: 1px solid rgba(255, 215, 0, 0.15);
         }
 
-        /* 🔥 PERBAIKAN: Cahaya berjalan di dalam box toast */
         .toast-notification::before {
             content: '';
             position: absolute;
@@ -6461,6 +6460,26 @@
         const TEST_MODE = false;
 
         // ============================================================
+        // 🔥 RANDOM EMOJI UNTUK LIVE IZIN - HEWAN + UNICORN + NAGA
+        // ============================================================
+        const RANDOM_EMOJIS = [
+            '🐧', '🐼', '🐨', '🐹', '🐱', '🐶', '🐰', '🐥', '🦭',
+            '🐻', '🦊', '🐸', '🦁', '🐯', '🐮', '🐺', '🦝', '🐿️',
+            '🦄', '🐉'
+        ];
+
+        // ============================================================
+        // 🔥 FUNGSI PARSER TIMEZONE - FIX DURASI 420m
+        // ============================================================
+        function parseTimeFromDB(timeStr) {
+            if (!timeStr) return null;
+            if (timeStr.endsWith('Z') || timeStr.includes('+')) {
+                return new Date(timeStr);
+            }
+            return new Date(timeStr + 'Z');
+        }
+
+        // ============================================================
         // KONFIGURASI SUPABASE
         // ============================================================
         const SUPABASE_URL = 'https://kdmxjficzigsumvcsrtn.supabase.co';
@@ -6671,11 +6690,6 @@
         // ============================================================
         let pendingLogs = [];
         let logBatchTimer = null;
-
-        // ============================================================
-        // LIVE IZIN ICONS (BARU)
-        // ============================================================
-        const LIVE_ICONS = ['😎', '🤓', '😄', '🥳', '😆', '😴', '🤭', '🫡', '🫠', '🙃'];
 
         // ============================================================
         // THEME FUNCTIONS
@@ -6941,7 +6955,7 @@
         function showJackpot() {
             const modal = document.getElementById('jackpotModal');
             if (modal) modal.classList.add('show');
-            showToast('🎰 JACKPOT!', 'jackpot', 5000);
+            showToast('JACKPOT!', 'jackpot', 5000);
         }
 
         function closeJackpot() {
@@ -6952,7 +6966,7 @@
                     showClaimPopup(pendingVoucherClaim);
                 }, 300);
             }
-            showToast('🎯 Selamat! Anda mendapatkan 1× Voucher Kutip Sampah Office! 🎉', 'success', 3000);
+            showToast('Selamat! Anda mendapatkan 1× Voucher Kutip Sampah Office! 🎉', 'success', 3000);
         }
 
         // ============================================================
@@ -7139,10 +7153,11 @@
 
                                 dataIzin[nama].tanggal = newRecord.tanggal;
                                 dataIzin[nama].selesai = newRecord.selesai;
+                                dataIzin[nama].emoticon = newRecord.emoticon || null;
 
                                 console.log(
-                                    `✅ Updated ${nama}: status=${newRecord.status}, mulai=${dataIzin[nama].mulai}`
-                                    );
+                                    `✅ Updated ${nama}: status=${newRecord.status}, emoticon=${dataIzin[nama].emoticon || '🐧'}`
+                                );
                             }
                         } else if (eventType === 'DELETE') {
                             const nama = oldRecord.nama;
@@ -7151,6 +7166,7 @@
                                 dataIzin[nama].mulai = null;
                                 dataIzin[nama].tanggal = null;
                                 dataIzin[nama].selesai = null;
+                                dataIzin[nama].emoticon = null;
                                 console.log(`✅ Removed ${nama} from izin list`);
                             }
                         }
@@ -7320,11 +7336,11 @@
                     .select('id, name, role, email, created_at')
                     .limit(100);
 
+                // 🔥 PERBAIKAN B: Hapus .limit(100) - ambil semua history
                 const historyPromise = supabaseDashboard
                     .from('history')
                     .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
-                    .order('mulai', { ascending: false })
-                    .limit(100);
+                    .order('mulai', { ascending: false });
 
                 const [usersResult, historyResult, izinResult, voucherResult, settingsResult] = await Promise.all([
                     usersPromise,
@@ -7346,7 +7362,8 @@
                                 mulai: null,
                                 selesai: null,
                                 tanggal: null,
-                                role: user.role
+                                role: user.role,
+                                emoticon: null
                             };
                         } else {
                             dataIzin[nama].role = user.role;
@@ -7368,7 +7385,7 @@
                         durasiDetik: h.durasi_detik || 0,
                         isQuotaValid: h.is_quota_valid !== undefined ? h.is_quota_valid : true
                     }));
-                    console.log(`✅ ${historyResult.data.length} history loaded (last 100)`);
+                    console.log(`✅ ${historyResult.data.length} history loaded (semua data)`);
                 } else {
                     console.log('⚠️ No history found');
                     historyData = [];
@@ -7383,6 +7400,7 @@
                             dataIzin[nama].mulai = null;
                             dataIzin[nama].tanggal = null;
                             dataIzin[nama].selesai = null;
+                            dataIzin[nama].emoticon = null;
                         }
                     });
 
@@ -7390,20 +7408,18 @@
                     izinResult.data.forEach(item => {
                         if (dataIzin[item.nama]) {
                             dataIzin[item.nama].status = item.status || 'none';
-                            if (item.mulai) {
-                                let mulaiStr = item.mulai;
-                                if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
-                                    mulaiStr = mulaiStr + 'Z';
-                                }
-                                dataIzin[item.nama].mulai = mulaiStr;
-                            } else {
-                                dataIzin[item.nama].mulai = null;
+                            // 🔥 PERBAIKAN: Pastikan format UTC
+                            let mulai = item.mulai;
+                            if (mulai && !mulai.endsWith('Z') && !mulai.includes('+')) {
+                                mulai = mulai + 'Z';
                             }
+                            dataIzin[item.nama].mulai = mulai;
                             dataIzin[item.nama].tanggal = item.tanggal;
                             dataIzin[item.nama].selesai = item.selesai;
+                            dataIzin[item.nama].emoticon = item.emoticon || null;
                             if (item.status === 'izin' && item.mulai) {
                                 aktifCount++;
-                                console.log(`✅ User ${item.nama} sedang izin sejak ${item.mulai}`);
+                                console.log(`✅ User ${item.nama} sedang izin dengan emoji ${item.emoticon || '🐧'}`);
                             }
                         }
                     });
@@ -7510,9 +7526,8 @@
         }
 
         // ============================================================
-        // LOAD SHIFT AKTIF - TANPA REALTIME SUBSCRIPTION
+        // LOAD SHIFT AKTIF
         // ============================================================
-
         async function loadShiftActiveData() {
             if (isShiftLoading) {
                 console.log('⏳ Shift loading already in progress, skipping...');
@@ -7649,9 +7664,6 @@
                 shiftIsDirty = false;
                 renderShiftPage();
 
-                // 🔥 REALTIME SHIFT DINONAKTIFKAN - HEMAT EGRESS!
-                // Tidak ada subscription shift_active
-
                 await loadShiftLogs();
 
                 isShiftInitialized = true;
@@ -7689,9 +7701,8 @@
         }
 
         // ============================================================
-        // SHIFT LOGS - BATCH INSERT (HEMAT REQUEST)
+        // SHIFT LOGS - BATCH INSERT
         // ============================================================
-
         function queueShiftLog(action, userName, details) {
             pendingLogs.push({ 
                 action: action, 
@@ -7725,10 +7736,6 @@
                 console.error('❌ Error flushing shift logs:', err);
             }
         }
-
-        // ============================================================
-        // SHIFT LOGS - FUNCTIONS (DIPERBAIKI)
-        // ============================================================
 
         async function insertShiftLog(action, userName, details) {
             queueShiftLog(action, userName, details);
@@ -7825,8 +7832,8 @@
         // TOAST NOTIFICATION - PREMIUM (DIPERBAIKI)
         // ============================================================
 
+        // 🔥 PERBAIKAN A: HANYA 1 EMOTICON DI TOAST
         function showToast(message, type = 'info', duration = 3000) {
-            // Hapus toast lama jika ada
             const oldToast = document.getElementById('toastNotification');
             if (oldToast) {
                 oldToast.classList.add('hiding');
@@ -7835,12 +7842,10 @@
                 }, 400);
             }
 
-            // Buat toast baru
             const toast = document.createElement('div');
             toast.id = 'toastNotification';
             toast.className = `toast-notification ${type}`;
             
-            // 🔥 HANYA 1 EMOTICON
             const icons = {
                 success: '✅',
                 error: '❌',
@@ -8154,7 +8159,7 @@
 
                 if (error) {
                     console.error('❌ Session error:', error);
-                    showToast('❌ Error session: ' + error.message, 'error', 5000);
+                    showToast('Error session: ' + error.message, 'error', 5000);
                     return;
                 }
 
@@ -8192,7 +8197,7 @@
 
             } catch (err) {
                 console.error('❌ Error checkAuth:', err);
-                showToast('❌ Error: ' + err.message, 'error', 5000);
+                showToast('Error: ' + err.message, 'error', 5000);
             }
         }
 
@@ -8245,7 +8250,8 @@
                                 mulai: null,
                                 selesai: null,
                                 tanggal: null,
-                                role: userData.role
+                                role: userData.role,
+                                emoticon: null
                             };
                         }
                     } else {
@@ -8400,7 +8406,8 @@
                     mulai: null,
                     selesai: null,
                     tanggal: null,
-                    role: user.role
+                    role: user.role,
+                    emoticon: null
                 };
                 quotaData[nama] = { count: 0, date: new Date().toDateString() };
                 voucherData[nama] = 0;
@@ -8453,24 +8460,22 @@
         }
 
         // ============================================================
-        // FUNGSI IZIN
+        // FUNGSI IZIN - MULAI (DENGAN EMOTICON)
         // ============================================================
         window.mulaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
-                'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
-                showToast(`⚠️ Anda hanya bisa mengklik START untuk diri Anda sendiri!`, 'warning');
+                showToast(`Anda hanya bisa mengklik START untuk diri Anda sendiri!`, 'warning');
                 return;
             }
 
             if (!canIzinByDailyLimit(formattedNama)) {
                 const used = getUsedIzinToday(formattedNama);
                 const maxQuota = getMaxQuota(formattedNama);
-                showToast(`⚠️ ${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`,
-                    'error');
+                showToast(`${formattedNama} sudah mencapai batas maksimum izin hari ini (${used}/${maxQuota})!`, 'error');
                 return;
             }
 
@@ -8479,9 +8484,13 @@
             const today = now.toDateString();
 
             if (data.status === 'izin') {
-                showToast('⚠️ User sedang dalam izin! Klik END terlebih dahulu.', 'warning');
+                showToast('User sedang dalam izin! Klik END terlebih dahulu.', 'warning');
                 return;
             }
+
+            // 🔥 PERBAIKAN D: Random emoji hewan
+            const randomEmoji = RANDOM_EMOJIS[Math.floor(Math.random() * RANDOM_EMOJIS.length)];
+            data.emoticon = randomEmoji;
 
             if (!TEST_MODE) {
                 try {
@@ -8499,14 +8508,14 @@
 
                     if (rpcError) {
                         console.error('❌ RPC Error:', rpcError);
-                        showToast(`❌ Gagal memulai izin: ${rpcError.message}`, 'error');
+                        showToast(`Gagal memulai izin: ${rpcError.message}`, 'error');
                         return;
                     }
 
                     const resultData = typeof result === 'string' ? JSON.parse(result) : result;
 
                     if (!resultData.success) {
-                        showToast(`⚠️ ${resultData.message}`, 'warning', 4000);
+                        showToast(`${resultData.message}`, 'warning', 4000);
 
                         if (resultData.message && resultData.message.includes('Kuota penuh')) {
                             const roleLabel = ROLE_LABELS[role] || role;
@@ -8528,58 +8537,73 @@
                     data.mulai = mulaiISO;
                     data.selesai = null;
                     data.tanggal = today;
+                    data.emoticon = randomEmoji;
                     dataIzin[formattedNama] = data;
+
+                    // 🔥 Simpan emoticon ke database
+                    await supabaseDashboard
+                        .from('izin_anggota')
+                        .upsert({
+                            nama: formattedNama,
+                            status: 'izin',
+                            mulai: mulaiISO,
+                            selesai: null,
+                            tanggal: today,
+                            role: getRoleForUser(formattedNama),
+                            emoticon: randomEmoji
+                        }, { onConflict: 'nama' });
 
                     renderAll();
                     updateCurrentCounts();
-                    showToast(`▶️ ${formattedNama} mulai izin!`, 'info');
+                    showToast(`${formattedNama} mulai izin!`, 'info');
 
                     await loadDataFromDatabase();
                     renderAll();
 
                 } catch (err) {
                     console.error('❌ Error:', err);
-                    showToast('❌ Gagal memulai izin: ' + err.message, 'error');
+                    showToast('Gagal memulai izin: ' + err.message, 'error');
                 }
                 return;
             }
 
+            // TEST MODE
             isJackpotShown[formattedNama] = false;
             data.status = 'izin';
             data.mulai = now.toISOString();
             data.selesai = null;
             data.tanggal = today;
+            data.emoticon = randomEmoji;
             dataIzin[formattedNama] = data;
 
             renderAll();
             updateCurrentCounts();
-            showToast(`▶️ ${formattedNama} mulai izin!`, 'info');
+            showToast(`${formattedNama} mulai izin!`, 'info');
         };
 
         // ============================================================
-        // FUNGSI SELESAI IZIN
+        // FUNGSI SELESAI IZIN - DENGAN TOAST RAPI
         // ============================================================
         window.selesaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
 
             if (endLock[formattedNama]) {
-                showToast(`⏳ ${formattedNama} sedang diproses, mohon tunggu...`, 'warning', 1500);
+                showToast(`${formattedNama} sedang diproses, mohon tunggu...`, 'warning', 1500);
                 return;
             }
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
-                'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
-                showToast(`⚠️ Anda hanya bisa mengklik END untuk diri Anda sendiri!`, 'warning');
+                showToast(`Anda hanya bisa mengklik END untuk diri Anda sendiri!`, 'warning');
                 return;
             }
 
             const now = new Date();
             const data = dataIzin[formattedNama];
             if (data.status !== 'izin') {
-                showToast('⚠️ User belum dalam status izin!', 'warning');
+                showToast('User belum dalam status izin!', 'warning');
                 return;
             }
 
@@ -8601,6 +8625,7 @@
 
                 data.status = 'selesai';
                 data.selesai = selesaiTime;
+                data.emoticon = null;
 
                 const isQuotaValid = durasiDetik >= MIN_IZIN_DURATION_SECONDS;
 
@@ -8653,7 +8678,8 @@
                                 mulai: data.mulai,
                                 selesai: data.selesai,
                                 tanggal: data.tanggal,
-                                role: getRoleForUser(formattedNama)
+                                role: getRoleForUser(formattedNama),
+                                emoticon: null
                             }, { onConflict: 'nama' });
 
                         await supabaseDashboard
@@ -8683,13 +8709,17 @@
                 const used = getUsedIzinToday(formattedNama);
                 const maxQuota = getMaxQuota(formattedNama);
 
-                let pesan = `⏹️ Izin selesai! Durasi: ${menit}m ${detik}s`;
+                // 🔥 TOAST RAPI 2 BARIS
+                const durasiText = `${menit}m ${detik}s`;
 
                 if (!isQuotaValid) {
-                    pesan += ` ⚠️ (Di bawah 2 menit, tidak mengurangi quota)`;
-                    showToast(pesan, 'warning', 4000);
+                    showToast(
+                        `⏱️ ${durasiText}<br><span style="font-size:11px;opacity:0.8;">⚠️ Di bawah 2 menit, quota tetap</span>`,
+                        'warning',
+                        4000
+                    );
                 } else {
-                    pesan += ` ✅ Quota: ${used}/${maxQuota}`;
+                    let pesan = `⏱️ ${durasiText} | Quota: ${used}/${maxQuota}`;
                     if (isOverLimit) {
                         pesan += ` 🎫 +1 Voucher!`;
                     }
@@ -8705,7 +8735,7 @@
 
             } catch (err) {
                 console.error('❌ Error selesai izin:', err);
-                showToast('❌ Gagal menyelesaikan izin: ' + err.message, 'error');
+                showToast('Gagal menyelesaikan izin: ' + err.message, 'error');
             } finally {
                 setTimeout(() => {
                     endLock[formattedNama] = false;
@@ -8767,7 +8797,7 @@
         }
 
         // ============================================================
-        // RENDER LIVE IZIN - DENGAN EMOTICON BARU
+        // RENDER LIVE IZIN - KEMBALI KE VERSI LAMA (NORMAL)
         // ============================================================
         function renderLiveIzin() {
             const roleMap = {
@@ -8794,7 +8824,8 @@
                 .map(nama => ({
                     nama: formatName(nama),
                     mulai: dataIzin[nama].mulai,
-                    role: getRoleForUser(nama)
+                    role: getRoleForUser(nama),
+                    emoticon: dataIzin[nama].emoticon || '🐧'
                 }))
                 .sort((a, b) => new Date(a.mulai) - new Date(b.mulai));
 
@@ -8823,13 +8854,18 @@
                 }
 
                 container.innerHTML = items.map((item, index) => {
-                    const startTime = new Date(item.mulai);
+                    // 🔥 PAKAI PARSER TIMEZONE
+                    const startTime = parseTimeFromDB(item.mulai);
                     const now = new Date();
-                    const diff = Math.floor((now - startTime) / 1000);
+                    let diff = 0;
+                    if (startTime) {
+                        diff = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+                        if (diff < 0) diff = 0;
+                    }
                     const menit = Math.floor(diff / 60);
                     const detik = diff % 60;
-                    // 🔥 EMOTICON BARU
-                    const visual = LIVE_ICONS[index % LIVE_ICONS.length];
+                    
+                    const visual = item.emoticon || '🐧';
                     const batasDetik = (jackpotLimitMinutes * 60) - 1;
                     const isOverLimit = diff > batasDetik;
 
@@ -8840,17 +8876,16 @@
                         '';
 
                     return `
-                            <div class="live-card-col ${overLimitClass}" data-nama="${item.nama}">
-                                <div>
-                                    <span class="visual-fun-col">${visual}</span>
-                                    <span class="nama" title="${item.nama}">${item.nama}</span>
-                                    ${warningBadge}
-                                </div>
-                                <div class="timer-col ${timerClass}" data-start="${item.mulai}">
-                                    ${menit}m ${detik}s
-                                </div>
+                        <div class="live-card-col ${overLimitClass}" data-nama="${item.nama}">
+                            <div>
+                                <span class="visual-fun-col">${visual}</span>
+                                <span class="nama" title="${item.nama}">${item.nama}</span>
+                                ${warningBadge}
                             </div>
-                        `;
+                            <div class="timer-col ${timerClass}" data-start="${item.mulai}">
+                                ${menit}m ${detik}s                            </div>
+                        </div>
+                    `;
                 }).join('');
             });
 
@@ -8859,7 +8894,41 @@
         }
 
         // ============================================================
-        // RENDER DASHBOARD TABLE
+        // UPDATE LIVE TIMERS - KEMBALI KE VERSI LAMA
+        // ============================================================
+        function updateLiveTimers() {
+            const now = new Date();
+            const liveCards = document.querySelectorAll('.live-card-col .timer-col');
+
+            liveCards.forEach((el) => {
+                const startTimeStr = el.dataset.start;
+                if (startTimeStr) {
+                    const startTime = parseTimeFromDB(startTimeStr);
+                    let diff = 0;
+                    if (startTime) {
+                        diff = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+                        if (diff < 0) diff = 0;
+                    }
+                    const menit = Math.floor(diff / 60);
+                    const detik = diff % 60;
+                    const batasDetik = (jackpotLimitMinutes * 60) - 1;
+                    const isOverLimit = diff > batasDetik;
+
+                    if (isOverLimit) {
+                        el.classList.add('over-limit');
+                        el.closest('.live-card-col')?.classList.add('over-limit');
+                    } else {
+                        el.classList.remove('over-limit');
+                        el.closest('.live-card-col')?.classList.remove('over-limit');
+                    }
+
+                    el.textContent = `${menit}m ${detik}s`;
+                }
+            });
+        }
+
+        // ============================================================
+        // RENDER DASHBOARD TABLE - TIMER KEMBALI KE VERSI LAMA
         // ============================================================
         window.renderDashboardTable = function() {
             const tbody = document.getElementById('dashboardTableBody');
@@ -8911,8 +8980,7 @@
                 kasir: 'Kasir'
             };
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole ===
-                'admin';
+            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
 
             tbody.innerHTML = filtered.map(nama => {
                 const data = dataIzin[nama];
@@ -8951,16 +9019,15 @@
                         console.warn(`⚠️ User ${nama} status izin tapi tidak ada mulai`);
                         timerHTML = '0m 0s';
                     } else {
-                        let mulaiStr = data.mulai;
-                        if (!mulaiStr.endsWith('Z')) {
-                            mulaiStr = mulaiStr + 'Z';
-                        }
-
-                        const tMulai = new Date(mulaiStr);
+                        // 🔥 PAKAI PARSER TIMEZONE
+                        const startTime = parseTimeFromDB(data.mulai);
                         const now = new Date();
-                        const diffMs = now.getTime() - tMulai.getTime();
-                        const diff = Math.floor(diffMs / 1000);
-                        const validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
+                        let validDiff = 0;
+                        if (startTime) {
+                            const diffMs = now.getTime() - startTime.getTime();
+                            validDiff = Math.floor(diffMs / 1000);
+                            if (validDiff < 0) validDiff = 0;
+                        }
 
                         const menit = Math.floor(validDiff / 60);
                         const detik = validDiff % 60;
@@ -8990,18 +9057,18 @@
                             `<div class="progress-bar-fill ${progressClass}" style="width: ${progressPercent}%;"></div>`;
 
                         progressHTML = `
-                                <div class="progress-container">
-                                    <div class="progress-bar-wrap">
-                                        ${progressFill}
-                                    </div>
-                                    <span class="progress-text ${textClass}">${Math.round(progressPercent)}%</span>
+                            <div class="progress-container">
+                                <div class="progress-bar-wrap">
+                                    ${progressFill}
                                 </div>
-                            `;
+                                <span class="progress-text ${textClass}">${Math.round(progressPercent)}%</span>
+                            </div>
+                        `;
 
-                        const jamMulai = tMulai.toLocaleTimeString('id-ID', {
+                        const jamMulai = startTime ? startTime.toLocaleTimeString('id-ID', {
                             hour: '2-digit',
                             minute: '2-digit'
-                        });
+                        }) : '-';
                         mulaiHTML = `<span class="time-mulai">${jamMulai}</span>`;
 
                         statusHTML =
@@ -9012,10 +9079,10 @@
 
                     const canEnd = isLeaderOrCsLine || isCurrentUser;
                     actionHTML = `
-                            <button class="btn-action end" onclick="selesaiIzin('${nama}')" ${!canEnd ? 'disabled' : ''}>
-                                <span class="icon">■</span> END
-                            </button>
-                        `;
+                        <button class="btn-action end" onclick="selesaiIzin('${nama}')" ${!canEnd ? 'disabled' : ''}>
+                            <span class="icon">■</span> END
+                        </button>
+                    `;
                 } else {
                     rowClass = 'row-offline';
                     statusHTML =
@@ -9071,56 +9138,56 @@
                     ` : '';
 
                     actionHTML = `
-                            <button class="btn-action start ${loadingClass}" 
-                                    onclick="mulaiIzin('${nama}')" 
-                                    data-nama="${nama}"
-                                    ${tooltipAttrs}
-                                    ${!canStart || !isDataReady ? 'disabled' : ''}
-                                    style="position:relative;">
-                                <span class="icon">▶</span> START
-                            </button>
-                        `;
+                        <button class="btn-action start ${loadingClass}" 
+                                onclick="mulaiIzin('${nama}')" 
+                                data-nama="${nama}"
+                                ${tooltipAttrs}
+                                ${!canStart || !isDataReady ? 'disabled' : ''}
+                                style="position:relative;">
+                            <span class="icon">▶</span> START
+                        </button>
+                    `;
 
                     progressHTML = `
-                            <div class="progress-container" style="justify-content:center;">
-                                <span style="color:var(--text-muted);font-size:11px;font-weight:300;">-</span>
-                            </div>
-                        `;
+                        <div class="progress-container" style="justify-content:center;">
+                            <span style="color:var(--text-muted);font-size:11px;font-weight:300;">-</span>
+                        </div>
+                    `;
                     mulaiHTML = `<span style="color:var(--text-muted);font-size:11px;">-</span>`;
                 }
 
                 let voucherDisplay = '-';
                 if (voucher > 0) {
                     voucherDisplay = `<span class="voucher-badge" data-voucher="${voucher}" style="cursor:pointer;">
-                                            <span class="icon">🎫</span> ${voucher}
-                                        </span>`;
+                        <span class="icon">🎫</span> ${voucher}
+                    </span>`;
                 }
 
                 return `
-                        <tr class="${rowClass}">
-                            <td class="col-status">${statusHTML}</td>
-                            <td class="col-nama"><span class="nama-cell">${nama}</span></td>
-                            <td class="col-role" style="text-align:center;"><span class="role-tag ${role}">${roleLabel}</span></td>
-                            <td class="col-quota" style="text-align:center;">
-                                <span class="quota-badge-modern ${quotaClass}">
-                                    <span class="used">${used}</span>
-                                    <span class="separator">/</span>
-                                    <span class="total">${maxQuota}</span>
-                                </span>
-                            </td>
-                            <td class="col-voucher" style="text-align:center;">${voucherDisplay}</td>
-                            <td class="col-mulai" style="text-align:center;">${mulaiHTML}</td>
-                            <td class="col-progress" style="text-align:center;">
-                                <div style="display:flex;flex-direction:column;gap:2px;width:100%;align-items:center;">
-                                    <div style="display:flex;align-items:center;gap:6px;width:100%;justify-content:center;">
-                                        <span style="font-size:11px;color:var(--text-muted);min-width:45px;font-family:'Courier New',monospace;text-align:right;">${timerHTML}</span>
-                                        ${progressHTML}
-                                    </div>
+                    <tr class="${rowClass}">
+                        <td class="col-status">${statusHTML}</td>
+                        <td class="col-nama"><span class="nama-cell">${nama}</span></td>
+                        <td class="col-role" style="text-align:center;"><span class="role-tag ${role}">${roleLabel}</span></td>
+                        <td class="col-quota" style="text-align:center;">
+                            <span class="quota-badge-modern ${quotaClass}">
+                                <span class="used">${used}</span>
+                                <span class="separator">/</span>
+                                <span class="total">${maxQuota}</span>
+                            </span>
+                        </td>
+                        <td class="col-voucher" style="text-align:center;">${voucherDisplay}</td>
+                        <td class="col-mulai" style="text-align:center;">${mulaiHTML}</td>
+                        <td class="col-progress" style="text-align:center;">
+                            <div style="display:flex;flex-direction:column;gap:2px;width:100%;align-items:center;">
+                                <div style="display:flex;align-items:center;gap:6px;width:100%;justify-content:center;">
+                                    <span style="font-size:11px;color:var(--text-muted);min-width:45px;font-family:'Courier New',monospace;text-align:right;">${timerHTML}</span>
+                                    ${progressHTML}
                                 </div>
-                            </td>
-                            <td class="col-aksi" style="text-align:center;">${actionHTML}</td>
-                        </tr>
-                    `;
+                            </div>
+                        </td>
+                        <td class="col-aksi" style="text-align:center;">${actionHTML}</td>
+                    </tr>
+                `;
             }).join('');
 
             document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
@@ -9238,23 +9305,23 @@
                     const isCurrentUser = getCurrentUserEmail() === user.email;
 
                     return `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>
-                                    <span class="nama-cell">${user.name}</span>
-                                    ${isCurrentUser ? '<span style="font-size:10px;color:var(--text-muted);margin-left:4px;">(Anda)</span>' : ''}
-                                </td>
-                                <td style="text-transform:lowercase;font-size:12px;color:var(--text-secondary);">${user.email}</td>
-                                <td><span class="badge ${roleClass}">${roleLabel}</span></td>
-                                <td style="font-size:12px;color:var(--text-secondary);">${tanggal}</td>
-                                <td>
-                                    <button class="btn-hapus" onclick="hapusUser('${user.id}', '${user.email}')" 
-                                        ${!canManage || isCurrentUser ? 'disabled' : ''}>
-                                        🗑️ Hapus
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>
+                                <span class="nama-cell">${user.name}</span>
+                                ${isCurrentUser ? '<span style="font-size:10px;color:var(--text-muted);margin-left:4px;">(Anda)</span>' : ''}
+                            </td>
+                            <td style="text-transform:lowercase;font-size:12px;color:var(--text-secondary);">${user.email}</td>
+                            <td><span class="badge ${roleClass}">${roleLabel}</span></td>
+                            <td style="font-size:12px;color:var(--text-secondary);">${tanggal}</td>
+                            <td>
+                                <button class="btn-hapus" onclick="hapusUser('${user.id}', '${user.email}')" 
+                                    ${!canManage || isCurrentUser ? 'disabled' : ''}>
+                                    🗑️ Hapus
+                                </button>
+                            </td>
+                        </tr>
+                    `;
                 }).join('');
             }
 
@@ -9262,65 +9329,65 @@
                 '<span style="font-size:11px;color:var(--text-muted);margin-left:10px;">👁️ View Only</span>' : '';
 
             container.innerHTML = `
-                    <h2 style="margin:16px 0 12px;color:var(--text-primary);font-size:18px;">📝 Register User</h2>
+                <h2 style="margin:16px 0 12px;color:var(--text-primary);font-size:18px;">📝 Register User</h2>
 
-                    <div class="form-anggota">
-                        <div class="group">
-                            <label>📧 Email User</label>
-                            <input type="email" id="inputUserEmail" placeholder="user@email.com" style="text-transform:lowercase;" ${!canManage ? 'disabled' : ''} />
-                        </div>
-                        <div class="group">
-                            <label>👤 Nama User</label>
-                            <input type="text" id="inputUserName" placeholder="Nama User" style="text-transform:uppercase;" ${!canManage ? 'disabled' : ''} />
-                        </div>
-                        <div class="group">
-                            <label>🎭 Role</label>
-                            <select id="inputUserRole" ${!canManage ? 'disabled' : ''}>
-                                <option value="leader">👑 Leader</option>
-                                <option value="csline">⭐ CS Line</option>
-                                <option value="cs">💬 CS</option>
-                                <option value="kapten">⚓ Kapten</option>
-                                <option value="kasir">💰 Kasir</option>
-                            </select>
-                        </div>
-                        <button onclick="tambahUser()" id="btnTambahUser" ${!canManage ? 'disabled' : ''}>➕ Tambah User</button>
-                        ${viewOnlyText}
+                <div class="form-anggota">
+                    <div class="group">
+                        <label>📧 Email User</label>
+                        <input type="email" id="inputUserEmail" placeholder="user@email.com" style="text-transform:lowercase;" ${!canManage ? 'disabled' : ''} />
                     </div>
+                    <div class="group">
+                        <label>👤 Nama User</label>
+                        <input type="text" id="inputUserName" placeholder="Nama User" style="text-transform:uppercase;" ${!canManage ? 'disabled' : ''} />
+                    </div>
+                    <div class="group">
+                        <label>🎭 Role</label>
+                        <select id="inputUserRole" ${!canManage ? 'disabled' : ''}>
+                            <option value="leader">👑 Leader</option>
+                            <option value="csline">⭐ CS Line</option>
+                            <option value="cs">💬 CS</option>
+                            <option value="kapten">⚓ Kapten</option>
+                            <option value="kasir">💰 Kasir</option>
+                        </select>
+                    </div>
+                    <button onclick="tambahUser()" id="btnTambahUser" ${!canManage ? 'disabled' : ''}>➕ Tambah User</button>
+                    ${viewOnlyText}
+                </div>
 
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 12px;flex-wrap:wrap;gap:8px;">
-                        <h3 style="color:var(--text-primary);font-size:17px;margin:0;">📋 List User</h3>
-                        <div class="role-summary">
-                            <span class="role-item"><span class="role-emoji">👑</span> Leader: <strong class="role-count" id="countLeader">${roleCounts.leader}</strong></span>
-                            <span class="separator">|</span>
-                            <span class="role-item"><span class="role-emoji">⭐</span> CS Line: <strong class="role-count" id="countCsline">${roleCounts.csline}</strong></span>
-                            <span class="separator">|</span>
-                            <span class="role-item"><span class="role-emoji">💬</span> CS: <strong class="role-count" id="countCs">${roleCounts.cs}</strong></span>
-                            <span class="separator">|</span>
-                            <span class="role-item"><span class="role-emoji">⚓</span> Kapten: <strong class="role-count" id="countKapten">${roleCounts.kapten}</strong></span>
-                            <span class="separator">|</span>
-                            <span class="role-item"><span class="role-emoji">💰</span> Kasir: <strong class="role-count" id="countKasir">${roleCounts.kasir}</strong></span>
-                        </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 12px;flex-wrap:wrap;gap:8px;">
+                    <h3 style="color:var(--text-primary);font-size:17px;margin:0;">📋 List User</h3>
+                    <div class="role-summary">
+                        <span class="role-item"><span class="role-emoji">👑</span> Leader: <strong class="role-count" id="countLeader">${roleCounts.leader}</strong></span>
+                        <span class="separator">|</span>
+                        <span class="role-item"><span class="role-emoji">⭐</span> CS Line: <strong class="role-count" id="countCsline">${roleCounts.csline}</strong></span>
+                        <span class="separator">|</span>
+                        <span class="role-item"><span class="role-emoji">💬</span> CS: <strong class="role-count" id="countCs">${roleCounts.cs}</strong></span>
+                        <span class="separator">|</span>
+                        <span class="role-item"><span class="role-emoji">⚓</span> Kapten: <strong class="role-count" id="countKapten">${roleCounts.kapten}</strong></span>
+                        <span class="separator">|</span>
+                        <span class="role-item"><span class="role-emoji">💰</span> Kasir: <strong class="role-count" id="countKasir">${roleCounts.kasir}</strong></span>
                     </div>
+                </div>
 
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Nama</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Dibuat</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="userTableBody">
-                                ${userRows}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="history-count">Total User: <span id="userCount">${sortedUsers.length}</span></div>
-                `;
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nama</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Dibuat</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            ${userRows}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="history-count">Total User: <span id="userCount">${sortedUsers.length}</span></div>
+            `;
 
             const userCount = document.getElementById('userCount');
             if (userCount) userCount.textContent = sortedUsers.length;
@@ -9337,12 +9404,12 @@
 
             if (!userPermissions.canViewVoucher) {
                 container.innerHTML = `
-                        <div class="access-denied">
-                            <div class="icon">🔒</div>
-                            <h3>Akses Ditolak</h3>
-                            <p>Anda tidak memiliki izin untuk mengakses halaman ini.</p>
-                        </div>
-                    `;
+                    <div class="access-denied">
+                        <div class="icon">🔒</div>
+                        <h3>Akses Ditolak</h3>
+                        <p>Anda tidak memiliki izin untuk mengakses halaman ini.</p>
+                    </div>
+                `;
                 return;
             }
 
@@ -9357,13 +9424,13 @@
             let rows = '';
             if (voucherList.length === 0) {
                 rows = `
-                        <tr>
-                            <td colspan="${userPermissions.canManageVoucher ? 5 : 4}" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px;">
-                                <div style="font-size:40px;margin-bottom:8px;">🎫</div>
-                                Belum ada anggota yang memiliki voucher
-                            </td>
-                        </tr>
-                    `;
+                    <tr>
+                        <td colspan="${userPermissions.canManageVoucher ? 5 : 4}" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px;">
+                            <div style="font-size:40px;margin-bottom:8px;">🎫</div>
+                            Belum ada anggota yang memiliki voucher
+                        </td>
+                    </tr>
+                `;
             } else {
                 rows = voucherList.map((user, index) => {
                     const roleClass = `role-${user.role}`;
@@ -9378,26 +9445,26 @@
                     const canRemove = userPermissions.canManageVoucher && user.voucher > 0;
 
                     const actionColumn = userPermissions.canManageVoucher ? `
-                            <td>
-                                <button class="btn-voucher" onclick="kurangiVoucher('${user.name}')" ${!canRemove ? 'disabled' : ''}>
-                                    <span class="icon">➖</span> Kurangi 1
-                                </button>
-                            </td>
-                        ` : '';
+                        <td>
+                            <button class="btn-voucher" onclick="kurangiVoucher('${user.name}')" ${!canRemove ? 'disabled' : ''}>
+                                <span class="icon">➖</span> Kurangi 1
+                            </button>
+                        </td>
+                    ` : '';
 
                     return `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td><span class="nama-cell">${user.name}</span></td>
-                                <td><span class="badge ${roleClass}">${roleLabel}</span></td>
-                                <td>
-                                    <span class="voucher-badge" style="font-size:14px;padding:4px 14px;cursor:pointer;" data-voucher="${user.voucher}">
-                                        <span class="icon">🎫</span> ${user.voucher}
-                                    </span>
-                                </td>
-                                ${actionColumn}
-                            </tr>
-                        `;
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td><span class="nama-cell">${user.name}</span></td>
+                            <td><span class="badge ${roleClass}">${roleLabel}</span></td>
+                            <td>
+                                <span class="voucher-badge" style="font-size:14px;padding:4px 14px;cursor:pointer;" data-voucher="${user.voucher}">
+                                    <span class="icon">🎫</span> ${user.voucher}
+                                </span>
+                            </td>
+                            ${actionColumn}
+                        </tr>
+                    `;
                 }).join('');
             }
 
@@ -9414,33 +9481,33 @@
                 '👀 Mode Lihat - Hanya Leader & CS Line yang dapat mengurangi voucher';
 
             container.innerHTML = `
-                    <h2 style="margin:16px 0 12px;color:var(--text-primary);font-size:18px;">🎫 Manajemen Voucher</h2>
-                    <div style="background:var(--bg-card);border-radius:8px;padding:12px 16px;margin-bottom:16px;box-shadow:var(--shadow-md);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border:1px solid var(--border-color);">
-                        <div>
-                            <span style="font-weight:600;color:var(--text-primary);font-size:14px;">Total Voucher:</span>
-                            <span class="voucher-badge" style="font-size:14px;padding:4px 14px;margin-left:8px;cursor:pointer;" data-voucher="${totalVoucher}">
-                                <span class="icon">🎫</span> ${totalVoucher}
-                            </span>
-                        </div>
-                        <div style="font-size:12px;color:var(--text-muted);">
-                            ${infoText}
-                        </div>
+                <h2 style="margin:16px 0 12px;color:var(--text-primary);font-size:18px;">🎫 Manajemen Voucher</h2>
+                <div style="background:var(--bg-card);border-radius:8px;padding:12px 16px;margin-bottom:16px;box-shadow:var(--shadow-md);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border:1px solid var(--border-color);">
+                    <div>
+                        <span style="font-weight:600;color:var(--text-primary);font-size:14px;">Total Voucher:</span>
+                        <span class="voucher-badge" style="font-size:14px;padding:4px 14px;margin-left:8px;cursor:pointer;" data-voucher="${totalVoucher}">
+                            <span class="icon">🎫</span> ${totalVoucher}
+                        </span>
                     </div>
+                    <div style="font-size:12px;color:var(--text-muted);">
+                        ${infoText}
+                    </div>
+                </div>
 
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    ${headerRow}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${rows}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="history-count">Total User dengan Voucher: <strong>${voucherList.length}</strong> user</div>
-                `;
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                ${headerRow}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="history-count">Total User dengan Voucher: <strong>${voucherList.length}</strong> user</div>
+            `;
 
             document.querySelectorAll('.voucher-badge').forEach(function(el) {
                 el.removeEventListener('mouseenter', handleVoucherMouseEnter);
@@ -9452,7 +9519,7 @@
         }
 
         // ============================================================
-        // RENDER HISTORY - DEFAULT HARI INI (FILTER BEBAS)
+        // RENDER HISTORY
         // ============================================================
         window.renderHistory = function() {
             const tbody = document.getElementById('historyBody');
@@ -9463,7 +9530,6 @@
             const filterRole = document.getElementById('filterRole');
             const filterBulan = document.getElementById('filterBulan');
 
-            // 🔥 SET DEFAULT TANGGAL = HARI INI (tanpa batas)
             if (filterTanggal && !filterTanggal.value) {
                 const today = new Date();
                 const year = today.getFullYear();
@@ -9479,7 +9545,6 @@
 
             let filtered = [...historyData];
 
-            // 🔥 FILTER BERDASARKAN TANGGAL (BEBAS)
             if (tanggalValue) {
                 const selectedDate = new Date(tanggalValue + 'T00:00:00');
                 const dateStr = selectedDate.toDateString();
@@ -9489,7 +9554,6 @@
                 });
             }
 
-            // Filter nama & role
             if (namaValue) {
                 filtered = filtered.filter(h => h.nama === formatName(namaValue));
             }
@@ -9563,17 +9627,17 @@
                     `<span class="badge selesai">✅ Selesai</span>`;
 
                 return `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td><span class="nama-cell">${item.nama}</span></td>
-                            <td><span class="role-tag ${item.role}">${roleLabel}</span></td>
-                            <td style="font-size:12px;color:var(--text-secondary);">${tanggal}</td>
-                            <td class="time-detail">${waktuMulai}</td>
-                            <td class="time-detail">${waktuSelesai}</td>
-                            <td class="time-detail"><span class="${durasiClass}">${durasiText}</span></td>
-                            <td>${statusBadge}</td>
-                        </tr>
-                    `;
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><span class="nama-cell">${item.nama}</span></td>
+                        <td><span class="role-tag ${item.role}">${roleLabel}</span></td>
+                        <td style="font-size:12px;color:var(--text-secondary);">${tanggal}</td>
+                        <td class="time-detail">${waktuMulai}</td>
+                        <td class="time-detail">${waktuSelesai}</td>
+                        <td class="time-detail"><span class="${durasiClass}">${durasiText}</span></td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `;
             }).join('');
         };
 
@@ -9616,7 +9680,7 @@
                 const dateDisplay = selectedDate ?
                     new Date(selectedDate).toLocaleDateString('id-ID') :
                     'Semua data';
-                showToast(`⚠️ Tidak ada data untuk tanggal ${dateDisplay}!`, 'warning');
+                showToast(`Tidak ada data untuk tanggal ${dateDisplay}!`, 'warning');
                 return;
             }
 
@@ -9660,19 +9724,19 @@
             const dateDisplay = selectedDate ?
                 new Date(selectedDate).toLocaleDateString('id-ID') :
                 'Semua data';
-            showToast(`✅ Export ${dateDisplay} berhasil! (${dataToExport.length} data)`, 'success');
+            showToast(`Export ${dateDisplay} berhasil! (${dataToExport.length} data)`, 'success');
         };
 
         window.exportHistoryBulanan = function() {
             const filterBulan = document.getElementById('filterBulan');
             if (!filterBulan) {
-                showToast('⚠️ Pilih bulan terlebih dahulu!', 'warning');
+                showToast('Pilih bulan terlebih dahulu!', 'warning');
                 return;
             }
 
             const bulanValue = filterBulan.value;
             if (!bulanValue) {
-                showToast('⚠️ Pilih bulan terlebih dahulu!', 'warning');
+                showToast('Pilih bulan terlebih dahulu!', 'warning');
                 return;
             }
 
@@ -9685,7 +9749,7 @@
             });
 
             if (filtered.length === 0) {
-                showToast(`⚠️ Tidak ada data untuk bulan ${monthName}`, 'warning');
+                showToast(`Tidak ada data untuk bulan ${monthName}`, 'warning');
                 return;
             }
 
@@ -9719,7 +9783,7 @@
                 `history-izin-${year}-${String(month).padStart(2, '0')}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
-            showToast(`✅ Export bulan ${monthName} berhasil!`, 'success');
+            showToast(`Export bulan ${monthName} berhasil!`, 'success');
         };
 
         // ============================================================
@@ -9755,11 +9819,6 @@
         }
 
         // ============================================================
-        // TOAST
-        // ============================================================
-        // Fungsi showToast sudah didefinisikan di atas
-
-        // ============================================================
         // PROFILE DROPDOWN
         // ============================================================
         function toggleDropdown() {
@@ -9793,38 +9852,12 @@
             startPeriodicRefresh();
         }
 
-        function updateLiveTimers() {
-            const now = new Date();
-            const liveCards = document.querySelectorAll('.live-card-col .timer-col');
-
-            liveCards.forEach((el) => {
-                const startTime = el.dataset.start;
-                if (startTime) {
-                    const diff = Math.floor((now - new Date(startTime)) / 1000);
-                    const menit = Math.floor(diff / 60);
-                    const detik = diff % 60;
-                    const batasDetik = (jackpotLimitMinutes * 60) - 1;
-                    const isOverLimit = diff > batasDetik;
-
-                    if (isOverLimit) {
-                        el.classList.add('over-limit');
-                        el.closest('.live-card-col')?.classList.add('over-limit');
-                    } else {
-                        el.classList.remove('over-limit');
-                        el.closest('.live-card-col')?.classList.remove('over-limit');
-                    }
-
-                    el.textContent = `${menit}m ${detik}s`;
-                }
-            });
-        }
-
         // ============================================================
         // FUNGSI USERS
         // ============================================================
         window.tambahUser = async function() {
             if (!userPermissions.canManage) {
-                showToast('❌ Hanya Leader & CS Line yang dapat menambah user!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat menambah user!', 'error');
                 return;
             }
 
@@ -9833,11 +9866,11 @@
             const role = document.getElementById('inputUserRole').value;
 
             if (!email || !name) {
-                showToast('⚠️ Email dan Nama harus diisi!', 'warning');
+                showToast('Email dan Nama harus diisi!', 'warning');
                 return;
             }
             if (!email.includes('@')) {
-                showToast('⚠️ Email tidak valid!', 'warning');
+                showToast('Email tidak valid!', 'warning');
                 return;
             }
 
@@ -9845,7 +9878,7 @@
             const formattedName = formatName(name);
 
             if (listUsers.some(u => u.email === formattedEmail)) {
-                showToast(`⚠️ User dengan email "${formattedEmail}" sudah terdaftar!`, 'warning');
+                showToast(`User dengan email "${formattedEmail}" sudah terdaftar!`, 'warning');
                 return;
             }
 
@@ -9860,11 +9893,11 @@
                         }, { onConflict: 'email' });
 
                     if (error) {
-                        showToast('❌ Gagal tambah user: ' + error.message, 'error');
+                        showToast('Gagal tambah user: ' + error.message, 'error');
                         return;
                     }
                 } catch (err) {
-                    showToast('❌ Gagal tambah user: ' + err.message, 'error');
+                    showToast('Gagal tambah user: ' + err.message, 'error');
                     return;
                 }
             }
@@ -9883,7 +9916,9 @@
                     status: 'none',
                     mulai: null,
                     selesai: null,
-                    tanggal: null
+                    tanggal: null,
+                    role: role,
+                    emoticon: null
                 };
                 const today = new Date().toDateString();
                 quotaData[formattedName] = { count: 0, date: today };
@@ -9894,17 +9929,17 @@
             renderUsers();
             renderAll();
             updateQuickStats();
-            showToast(`✅ User "${formattedName}" berhasil ditambahkan!`, 'success');
+            showToast(`User "${formattedName}" berhasil ditambahkan!`, 'success');
         };
 
         window.hapusUser = async function(userId, userEmail) {
             if (!userPermissions.canManage) {
-                showToast('❌ Hanya Leader & CS Line yang dapat menghapus user!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat menghapus user!', 'error');
                 return;
             }
 
             if (!userEmail) {
-                showToast('❌ Email tidak valid!', 'error');
+                showToast('Email tidak valid!', 'error');
                 return;
             }
 
@@ -9917,7 +9952,7 @@
             try {
                 const userToDelete = listUsers.find(u => u.email === formattedEmail);
                 if (!userToDelete) {
-                    showToast('❌ User tidak ditemukan!', 'error');
+                    showToast('User tidak ditemukan!', 'error');
                     return;
                 }
 
@@ -9963,17 +9998,17 @@
                 renderUsers();
                 renderAll();
                 updateQuickStats();
-                showToast(`✅ User "${formattedEmail}" berhasil dihapus!`, 'success');
+                showToast(`User "${formattedEmail}" berhasil dihapus!`, 'success');
 
             } catch (err) {
                 console.error('❌ Gagal hapus user:', err);
-                showToast('❌ Gagal menghapus user: ' + err.message, 'error');
+                showToast('Gagal menghapus user: ' + err.message, 'error');
             }
         };
 
         window.kurangiVoucher = function(nama) {
             if (!userPermissions.canManageVoucher) {
-                showToast('❌ Hanya Leader & CS Line yang dapat mengurangi voucher!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat mengurangi voucher!', 'error');
                 return;
             }
 
@@ -9981,7 +10016,7 @@
             const currentVoucher = getVoucherCount(formattedNama);
 
             if (currentVoucher <= 0) {
-                showToast(`⚠️ ${formattedNama} tidak memiliki voucher!`, 'warning');
+                showToast(`${formattedNama} tidak memiliki voucher!`, 'warning');
                 return;
             }
 
@@ -9990,20 +10025,20 @@
             }
 
             if (removeVoucher(formattedNama)) {
-                showToast(`✅ 1 voucher ${formattedNama} berhasil dikurangi! Sisa: ${getVoucherCount(formattedNama)}`,
+                showToast(`1 voucher ${formattedNama} berhasil dikurangi! Sisa: ${getVoucherCount(formattedNama)}`,
                     'success');
                 renderVoucherPage();
                 renderDashboardTable();
                 updateSidebarBadge();
                 updateQuickStats();
             } else {
-                showToast('❌ Gagal mengurangi voucher!', 'error');
+                showToast('Gagal mengurangi voucher!', 'error');
             }
         };
 
         window.hapusSemuaHistory = async function() {
             if (!userPermissions.canDeleteData) {
-                showToast('❌ Hanya Leader & CS Line yang dapat menghapus history!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat menghapus history!', 'error');
                 return;
             }
 
@@ -10027,6 +10062,7 @@
                         data.mulai = null;
                         data.selesai = null;
                         data.tanggal = null;
+                        data.emoticon = null;
 
                         if (!TEST_MODE) {
                             await supabaseDashboard
@@ -10037,7 +10073,8 @@
                                     mulai: null,
                                     selesai: null,
                                     tanggal: null,
-                                    role: getRoleForUser(nama)
+                                    role: getRoleForUser(nama),
+                                    emoticon: null
                                 }, { onConflict: 'nama' });
                         }
                     }
@@ -10051,10 +10088,10 @@
                 });
 
                 renderAll();
-                showToast('✅ Semua history berhasil dihapus!', 'success');
+                showToast('Semua history berhasil dihapus!', 'success');
             } catch (err) {
                 console.error('Gagal hapus history:', err);
-                showToast('❌ Gagal menghapus history: ' + err.message, 'error');
+                showToast('Gagal menghapus history: ' + err.message, 'error');
             }
         };
 
@@ -10063,7 +10100,7 @@
         // ============================================================
         window.saveIPWhitelist = async function() {
             if (!userPermissions.canManageIP) {
-                showToast('❌ Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
             }
 
@@ -10071,7 +10108,7 @@
             if (!input) return;
             const ipValue = input.value.trim();
             if (!ipValue) {
-                showToast('⚠️ Masukkan minimal 1 IP!', 'warning');
+                showToast('Masukkan minimal 1 IP!', 'warning');
                 return;
             }
             if (!confirm('Simpan IP whitelist: ' + ipValue + '?')) return;
@@ -10090,16 +10127,16 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('✅ IP whitelist berhasil disimpan!', 'success');
+                showToast('IP whitelist berhasil disimpan!', 'success');
             } catch (err) {
                 console.error('Gagal save IP whitelist:', err);
-                showToast('❌ Gagal menyimpan IP whitelist: ' + err.message, 'error');
+                showToast('Gagal menyimpan IP whitelist: ' + err.message, 'error');
             }
         };
 
         window.saveLimits = function() {
             if (!userPermissions.canManageLimits) {
-                showToast('❌ Hanya Leader & CS Line yang dapat mengubah batas izin!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat mengubah batas izin!', 'error');
                 return;
             }
 
@@ -10130,12 +10167,12 @@
                             notice.style.display = 'block';
                             setTimeout(() => { notice.style.display = 'none'; }, 3000);
                         }
-                        showToast('✅ Batas izin berhasil disimpan!', 'success');
+                        showToast('Batas izin berhasil disimpan!', 'success');
                         updateCurrentCounts();
                     })
                     .catch(err => {
                         console.error('Gagal simpan limits:', err);
-                        showToast('❌ Gagal menyimpan batas izin', 'error');
+                        showToast('Gagal menyimpan batas izin', 'error');
                     });
             } else {
                 const notice = document.getElementById('limitSavedNotice');
@@ -10143,21 +10180,21 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('✅ Batas izin berhasil disimpan!', 'success');
+                showToast('Batas izin berhasil disimpan!', 'success');
                 updateCurrentCounts();
             }
         };
 
         window.saveLimitSettings = function() {
             if (!userPermissions.canManageLimits) {
-                showToast('❌ Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
             }
 
             const durasiInput = document.getElementById('limitDurasi');
             const durasi = parseInt(durasiInput ? durasiInput.value : 15) || 15;
             if (durasi < 1) {
-                showToast('⚠️ Durasi minimal 1 menit!', 'warning');
+                showToast('Durasi minimal 1 menit!', 'warning');
                 return;
             }
 
@@ -10194,12 +10231,12 @@
                             notice.style.display = 'block';
                             setTimeout(() => { notice.style.display = 'none'; }, 3000);
                         }
-                        showToast('✅ Pengaturan berhasil disimpan!', 'success');
+                        showToast('Pengaturan berhasil disimpan!', 'success');
                         renderAll();
                     })
                     .catch(err => {
                         console.error('Gagal simpan settings:', err);
-                        showToast('❌ Gagal menyimpan pengaturan', 'error');
+                        showToast('Gagal menyimpan pengaturan', 'error');
                     });
             } else {
                 const notice = document.getElementById('limitSettingsSaved');
@@ -10207,7 +10244,7 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('✅ Pengaturan berhasil disimpan!', 'success');
+                showToast('Pengaturan berhasil disimpan!', 'success');
                 renderAll();
             }
         };
@@ -10248,7 +10285,7 @@
 
         window.saveTickerSettings = function() {
             if (!userPermissions.canEditSettings) {
-                showToast('❌ Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
             }
 
@@ -10257,7 +10294,7 @@
 
             const lines = textarea.value.split('\n').filter(line => line.trim() !== '');
             if (lines.length === 0) {
-                showToast('⚠️ Masukkan minimal 1 baris teks!', 'warning');
+                showToast('Masukkan minimal 1 baris teks!', 'warning');
                 return;
             }
 
@@ -10265,11 +10302,11 @@
             if (speedInput) {
                 const speed = parseInt(speedInput.value) || 30;
                 if (speed < 5) {
-                    showToast('⚠️ Kecepatan minimal 5 detik!', 'warning');
+                    showToast('Kecepatan minimal 5 detik!', 'warning');
                     return;
                 }
                 if (speed > 120) {
-                    showToast('⚠️ Kecepatan maksimal 120 detik!', 'warning');
+                    showToast('Kecepatan maksimal 120 detik!', 'warning');
                     return;
                 }
                 tickerSpeed = speed;
@@ -10294,12 +10331,12 @@
                             notice.style.display = 'block';
                             setTimeout(() => { notice.style.display = 'none'; }, 3000);
                         }
-                        showToast('✅ Ticker berhasil disimpan ke database!', 'success');
+                        showToast('Ticker berhasil disimpan ke database!', 'success');
                         renderTicker();
                     })
                     .catch(err => {
                         console.error('Gagal simpan ticker:', err);
-                        showToast('❌ Gagal menyimpan ticker: ' + err.message, 'error');
+                        showToast('Gagal menyimpan ticker: ' + err.message, 'error');
                     });
             } else {
                 localStorage.setItem('tickerItems', JSON.stringify(tickerItems));
@@ -10314,13 +10351,13 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('✅ Ticker berhasil diperbarui (TEST MODE)!', 'success');
+                showToast('Ticker berhasil diperbarui (TEST MODE)!', 'success');
             }
         };
 
         window.resetTickerSettings = function() {
             if (!userPermissions.canEditSettings) {
-                showToast('❌ Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
             }
 
@@ -10349,11 +10386,11 @@
                             notice.style.display = 'block';
                             setTimeout(() => { notice.style.display = 'none'; }, 3000);
                         }
-                        showToast('✅ Ticker di-reset ke default!', 'success');
+                        showToast('Ticker di-reset ke default!', 'success');
                     })
                     .catch(err => {
                         console.error('Gagal reset ticker:', err);
-                        showToast('❌ Gagal reset ticker: ' + err.message, 'error');
+                        showToast('Gagal reset ticker: ' + err.message, 'error');
                     });
             } else {
                 localStorage.setItem('tickerItems', JSON.stringify(tickerItems));
@@ -10370,7 +10407,7 @@
                     notice.style.display = 'block';
                     setTimeout(() => { notice.style.display = 'none'; }, 3000);
                 }
-                showToast('✅ Ticker di-reset ke default!', 'success');
+                showToast('Ticker di-reset ke default!', 'success');
             }
         };
 
@@ -10380,7 +10417,7 @@
 
             const lines = textarea.value.split('\n').filter(line => line.trim() !== '');
             if (lines.length === 0) {
-                showToast('⚠️ Masukkan minimal 1 baris teks!', 'warning');
+                showToast('Masukkan minimal 1 baris teks!', 'warning');
                 return;
             }
 
@@ -10406,7 +10443,7 @@
             track.style.opacity = '1';
             track.style.visibility = 'visible';
 
-            showToast(`👁️ Preview ticker dengan kecepatan ${speed} detik!`, 'success', 2000);
+            showToast(`Preview ticker dengan kecepatan ${speed} detik!`, 'success', 2000);
 
             setTimeout(() => {
                 renderTicker();
@@ -10414,7 +10451,7 @@
         };
 
         // ============================================================
-        // FUNGSI GLOBAL - SWITCH TAB DENGAN REFRESH
+        // FUNGSI GLOBAL - SWITCH TAB
         // ============================================================
         function switchTab(tab) {
             localStorage.setItem('lastTab', tab);
@@ -10472,6 +10509,7 @@
                 }
                 renderHistory();
             } else if (tab === 'shifts') {
+                // 🔥 PERBAIKAN: Pastikan shift dimuat
                 if (!isShiftInitialized) {
                     loadShiftActiveData();
                     isShiftInitialized = true;
@@ -10480,6 +10518,7 @@
                     renderShiftPage();
                 }
             } else if (tab === 'historyshift') {
+                // 🔥 PERBAIKAN: Pastikan riwayat shift dimuat
                 loadShiftHistory();
             } else if (tab === 'settings') {
                 loadIPWhitelist();
@@ -10562,7 +10601,7 @@
         }
 
         window.refreshAllData = function() {
-            showToast('🔄 Memperbarui data...', 'info', 1500);
+            showToast('Memperbarui data...', 'info', 1500);
             loadDataFromDatabase();
             if (currentTab === 'shifts') {
                 loadShiftActiveData();
@@ -10575,7 +10614,6 @@
         // ============================================================
         // SHIFT AKTIF - FUNCTIONS
         // ============================================================
-
         function sortAvailableUsers() {
             const rolePriority = { csline: 0, cs: 1, kapten: 2, kasir: 3 };
             availableUsers.sort((a, b) => {
@@ -10597,9 +10635,8 @@
         }
 
         // ============================================================
-        // RENDER SHIFT PAGE - DENGAN NOTE SINKRON
+        // RENDER SHIFT PAGE
         // ============================================================
-
         function renderShiftPage() {
             const container = document.getElementById('shiftsContent');
             if (!container) return;
@@ -10801,7 +10838,6 @@
         // ============================================================
         // REFRESH SHIFT MANUAL
         // ============================================================
-
         function refreshShiftData() {
             showShiftToast('🔄 Memuat ulang shift...', 'info', 1500);
             loadShiftActiveData().then(() => {
@@ -10813,9 +10849,8 @@
         window.refreshShiftData = refreshShiftData;
 
         // ============================================================
-        // NOTE PANEL - FUNCTIONS (DENGAN AUTO-SAVE)
+        // NOTE PANEL - FUNCTIONS
         // ============================================================
-
         function toggleNotePanel(columnId) {
             const wrapper = document.querySelector(`.shift-column-wrapper[data-column-id="${columnId}"]`);
             const panel = document.getElementById(`notePanel_${columnId}`);
@@ -10873,7 +10908,6 @@
                 }
             }
 
-            // 🔥 SAVE NOTE KE DATABASE (dengan debounce)
             const key = `${columnId}_${userId}`;
             if (noteDebounceTimers[key]) {
                 clearTimeout(noteDebounceTimers[key]);
@@ -10899,7 +10933,6 @@
             }, 800);
         }
 
-        // Auto-save sebelum page unload
         window.addEventListener('beforeunload', function() {
             Object.keys(noteDebounceTimers).forEach(key => {
                 clearTimeout(noteDebounceTimers[key]);
@@ -10916,7 +10949,6 @@
         // ============================================================
         // UPDATE SHIFT AKTIF KE DATABASE
         // ============================================================
-
         async function updateShiftActive() {
             if (!shiftActiveId) {
                 console.warn('⚠️ No shiftActiveId, skipping update');
@@ -10964,7 +10996,6 @@
         // ============================================================
         // DRAG & DROP STAFF - EVENT HANDLER
         // ============================================================
-
         let staffDragData = null;
 
         function onStaffDragStart(e, userId, sourceType, columnId) {
@@ -11180,7 +11211,6 @@
         // ============================================================
         // DATA STAFF - DROP ZONE
         // ============================================================
-
         function onAvailableDragOver(e) {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
@@ -11253,7 +11283,6 @@
         // ============================================================
         // DRAG & DROP KOLOM SHIFT
         // ============================================================
-
         function onColumnDragStart(e, columnId) {
             const target = e.target.closest('.column-header');
             if (!target) {
@@ -11508,7 +11537,6 @@
         // ============================================================
         // SAVE SHIFT (Popup Periode)
         // ============================================================
-
         function openSaveShiftPopup() {
             if (!canEditShift()) return;
 
@@ -11589,9 +11617,8 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT - DIPERBAIKI
+        // PREVIEW SHIFT
         // ============================================================
-
         function openShiftPreview() {
             const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
 
@@ -11632,7 +11659,6 @@
             if (!modal) return;
             if (!previewData) return;
 
-            // Reset modal sebelum render
             modal.style.display = 'flex';
             modal.classList.remove('show');
 
@@ -11654,7 +11680,6 @@
                             <div class="title">📋 SHIFT KERJA - PREVIEW</div>
                             <div class="subtitle">${periodeText}</div>
                         </div>
-                        <!-- TOMBOL X DIHAPUS -->
                     </div>
 
                     <div class="preview-grid">
@@ -11710,7 +11735,6 @@
                 </div>
             `;
 
-            // Tampilkan modal setelah konten siap
             setTimeout(() => {
                 modal.classList.add('show');
             }, 50);
@@ -11792,7 +11816,6 @@
         // ============================================================
         // RIWAYAT SHIFT - FUNCTIONS
         // ============================================================
-
         async function loadShiftHistory() {
             try {
                 const { data, error } = await supabaseDashboard
@@ -11812,21 +11835,21 @@
         }
 
         // ============================================================
-        // RENDER RIWAYAT SHIFT
+        // RENDER RIWAYAT SHIFT - DENGAN SEARCH FIX
         // ============================================================
-
         function renderShiftHistory() {
             const container = document.getElementById('historyShiftContent');
             if (!container) return;
 
-            const searchInput = document.getElementById('historyShiftSearch');
-            const filterSelect = document.getElementById('historyShiftFilter');
+            let searchInput = document.getElementById('historyShiftSearch');
+            let filterSelect = document.getElementById('historyShiftFilter');
 
             const searchValue = searchInput?.value?.toLowerCase() || '';
             const filterValue = filterSelect?.value || 'all';
 
             let filtered = [...shiftHistoryData];
 
+            // 🔥 PERBAIKAN C: Search berfungsi untuk periode dan pembuat
             if (searchValue) {
                 filtered = filtered.filter(h => {
                     const periodStr = `${h.periode_start || ''} ${h.periode_end || ''}`.toLowerCase();
@@ -11970,7 +11993,6 @@
         // ============================================================
         // OPEN SHIFT FROM HISTORY
         // ============================================================
-
         async function openShiftFromHistory(historyId) {
             if (!canOpenHistory()) {
                 showShiftToast('❌ Anda tidak memiliki izin untuk membuka shift!', 'error');
@@ -12067,7 +12089,6 @@
         // ============================================================
         // PREVIEW SHIFT FROM HISTORY
         // ============================================================
-
         function previewShiftFromHistory(historyId) {
             const item = shiftHistoryData.find(h => String(h.id) === String(historyId));
             if (!item) {
@@ -12130,7 +12151,6 @@
         // ============================================================
         // DELETE SHIFT HISTORY
         // ============================================================
-
         async function deleteShiftHistory(historyId) {
             if (!canDeleteHistory()) {
                 showShiftToast('❌ Anda tidak memiliki izin untuk menghapus!', 'error');
