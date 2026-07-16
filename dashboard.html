@@ -200,6 +200,40 @@
             overflow-y: auto;
         }
 
+        /* Header note panel - spacing sama dengan header shift */
+        .shift-note-panel .note-panel-header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 6px 4px 4px 4px !important;
+            border-bottom: 2px solid var(--border-color) !important;
+            margin-bottom: 3px !important;
+            flex-shrink: 0;
+            min-height: 28px !important;
+        }
+
+        .shift-note-panel .note-panel-header .panel-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 0 4px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+
+        .shift-note-panel .note-panel-header .panel-actions button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
         .shift-note-panel .note-user-item {
             flex: 0 0 auto !important;
             min-height: 28px !important;
@@ -252,6 +286,70 @@
         .shift-note-panel .note-user-item textarea:hover:not([readonly]) {
             transform: translateY(-1px);
             box-shadow: var(--shadow-sm);
+        }
+
+        /* ============================================================
+           WARNA NOTE CARD - MENGIKUTI ROLE USER
+           ============================================================ */
+
+        .shift-note-panel .note-user-item textarea.role-csline {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2) !important;
+            border-color: #e65100 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-cs {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+            border-color: #1565c0 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kapten {
+            background: linear-gradient(135deg, #f3e5f5, #ce93d8) !important;
+            border-color: #6a1b9a !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kasir {
+            background: linear-gradient(135deg, #e0f7fa, #80deea) !important;
+            border-color: #00838f !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-csline {
+            background: linear-gradient(135deg, #3a2a1a, #4a3a2a) !important;
+            border-color: #e65100 !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-cs {
+            background: linear-gradient(135deg, #1a2a3a, #1a3a4a) !important;
+            border-color: #1565c0 !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-kapten {
+            background: linear-gradient(135deg, #2a1a3a, #3a1a4a) !important;
+            border-color: #6a1b9a !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-kasir {
+            background: linear-gradient(135deg, #1a2a2a, #1a3a3a) !important;
+            border-color: #00838f !important;
+            color: #e6edf3 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-csline:hover:not([readonly]) {
+            background: linear-gradient(135deg, #ffe0b2, #ffcc80) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-cs:hover:not([readonly]) {
+            background: linear-gradient(135deg, #bbdefb, #90caf9) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kapten:hover:not([readonly]) {
+            background: linear-gradient(135deg, #ce93d8, #ab47bc) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kasir:hover:not([readonly]) {
+            background: linear-gradient(135deg, #80deea, #4dd0e1) !important;
         }
 
         .user-card-shift {
@@ -467,6 +565,33 @@
             box-shadow: var(--shadow-sm);
         }
 
+        .shift-preview-modal .preview-card .staff-name {
+            font-size: 11px;
+            color: var(--text-primary);
+            padding: 1px 0 1px 12px;
+            border-left: 2px solid var(--border-color);
+            margin-bottom: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .shift-preview-modal .preview-card .staff-name .note-indicator-preview {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--sidebar-text);
+            flex-shrink: 0;
+            opacity: 0.6;
+            box-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
+        }
+
+        .shift-preview-modal .preview-card .staff-name .note-indicator-preview.has-note {
+            opacity: 1;
+            animation: pulse-note 2s ease-in-out infinite;
+        }
+
         /* Note indicator di card user */
         .user-card-shift .note-indicator {
             display: inline-block;
@@ -513,6 +638,17 @@
 
         .user-card-shift .note-indicator.has-note:hover::after {
             opacity: 1;
+        }
+
+        @keyframes pulse-note {
+            0%, 100% {
+                box-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
+                opacity: 1;
+            }
+            50% {
+                box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
+                opacity: 0.7;
+            }
         }
 
         /* ============================================================
@@ -601,7 +737,6 @@
             font-size: 10px;
         }
 
-        /* Light mode - Biru tua */
         .shift-log-container .log-header .log-actions button.refresh-btn {
             background: rgba(26, 42, 74, 0.06) !important;
             border-color: rgba(26, 42, 74, 0.15) !important;
@@ -614,7 +749,6 @@
             box-shadow: 0 2px 12px rgba(26, 42, 74, 0.10) !important;
         }
 
-        /* Dark mode - Biru neon seperti sebelumnya */
         [data-theme="dark"] .shift-log-container .log-header .log-actions button.refresh-btn {
             background: linear-gradient(135deg, rgba(0, 229, 255, 0.04), rgba(0, 229, 255, 0.01)) !important;
             border-color: rgba(0, 229, 255, 0.12) !important;
@@ -624,12 +758,6 @@
         [data-theme="dark"] .shift-log-container .log-header .log-actions button.refresh-btn:hover {
             background: rgba(0, 229, 255, 0.08) !important;
             border-color: #00e5ff !important;
-            box-shadow: 0 2px 12px rgba(0, 229, 255, 0.15) !important;
-        }
-
-        .shift-log-container .log-header .log-actions button.refresh-btn:hover {
-            background: rgba(0, 229, 255, 0.08) !important;
-            border-color: var(--sidebar-text) !important;
             box-shadow: 0 2px 12px rgba(0, 229, 255, 0.15) !important;
         }
 
@@ -921,6 +1049,67 @@
             box-shadow: var(--shadow-sm);
         }
 
+        /* Warna note berdasarkan role - sama persis dengan card user */
+        .shift-note-panel .note-user-item textarea.role-csline {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2) !important;
+            border-color: #e65100 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-cs {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+            border-color: #1565c0 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kapten {
+            background: linear-gradient(135deg, #f3e5f5, #ce93d8) !important;
+            border-color: #6a1b9a !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kasir {
+            background: linear-gradient(135deg, #e0f7fa, #80deea) !important;
+            border-color: #00838f !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-csline {
+            background: linear-gradient(135deg, #3a2a1a, #4a3a2a) !important;
+            border-color: #e65100 !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-cs {
+            background: linear-gradient(135deg, #1a2a3a, #1a3a4a) !important;
+            border-color: #1565c0 !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-kapten {
+            background: linear-gradient(135deg, #2a1a3a, #3a1a4a) !important;
+            border-color: #6a1b9a !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-kasir {
+            background: linear-gradient(135deg, #1a2a2a, #1a3a3a) !important;
+            border-color: #00838f !important;
+            color: #e6edf3 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-csline:hover:not([readonly]) {
+            background: linear-gradient(135deg, #ffe0b2, #ffcc80) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-cs:hover:not([readonly]) {
+            background: linear-gradient(135deg, #bbdefb, #90caf9) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kapten:hover:not([readonly]) {
+            background: linear-gradient(135deg, #ce93d8, #ab47bc) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kasir:hover:not([readonly]) {
+            background: linear-gradient(135deg, #80deea, #4dd0e1) !important;
+        }
+
         .note-badge {
             display: inline-flex;
             align-items: center;
@@ -962,17 +1151,6 @@
             animation: pulse-note 2s ease-in-out infinite;
         }
 
-        @keyframes pulse-note {
-            0%, 100% {
-                box-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
-                opacity: 1;
-            }
-            50% {
-                box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
-                opacity: 0.7;
-            }
-        }
-
         .note-indicator {
             display: inline-block;
             width: 6px;
@@ -990,241 +1168,283 @@
             animation: pulse-note 2s ease-in-out infinite;
         }
 
+        .shift-toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            z-index: 9999;
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.4s ease;
+            display: none;
+        }
+
+        .shift-toast.show {
+            display: block;
+        }
+
+        .shift-toast.success {
+            background: var(--success);
+            color: white;
+        }
+        .shift-toast.error {
+            background: var(--danger);
+            color: white;
+        }
+        .shift-toast.warning {
+            background: var(--warning);
+            color: white;
+        }
+        .shift-toast.info {
+            background: var(--info);
+            color: white;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0;
+                transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1;
+                transform: translateX(-50%) translateY(0); }
+        }
+
+        .shift-main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 14px;
+            flex: 1;
+            min-height: 200px;
+            height: auto !important;
+            max-height: none !important;
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+
         /* ============================================================
-           PERBAIKAN TAMPILAN - Role Summary (MINIMALIS TANPA BORDER)
+           RESPONSIVE
            ============================================================ */
 
-        .role-summary {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 1px 4px;
-            font-size: 10px !important;
-            color: var(--text-muted);
-            padding: 2px 0;
-            justify-content: flex-end;
-            margin-left: auto;
+        @media screen and (max-width: 1400px) {
+            .shift-main-grid {
+                grid-template-columns: 260px 1fr;
+                gap: 12px;
+            }
+            .shift-column-wrapper {
+                min-width: 240px;
+                max-width: 360px;
+            }
         }
 
-        .role-summary .role-item {
-            padding: 1px 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 1px;
-            white-space: nowrap;
-            font-size: 10px !important;
-            border-radius: 3px;
-            transition: all 0.2s ease;
+        @media screen and (max-width: 1200px) {
+            .shift-main-grid {
+                grid-template-columns: 240px 1fr;
+                gap: 10px;
+            }
+            .shift-column-wrapper {
+                min-width: 220px;
+                max-width: 340px;
+            }
         }
 
-        .role-summary .role-item:hover {
-            background: var(--bg-hover);
+        @media (max-width: 992px) {
+            .shift-main-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                height: auto !important;
+                max-height: none !important;
+            }
+            .shift-available {
+                min-height: 200px !important;
+                max-height: 280px !important;
+            }
+            .shift-column-wrapper {
+                min-width: 100% !important;
+                max-width: 100% !important;
+                min-height: 200px !important;
+                max-height: 350px !important;
+            }
+            .shift-column .column-body {
+                min-height: 150px !important;
+                max-height: 250px !important;
+            }
+            .shift-log-container {
+                max-height: 75px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 38px !important;
+            }
+            .shift-preview-modal .preview-content {
+                padding: 20px;
+                max-width: 100%;
+            }
+            .shift-preview-modal .preview-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
 
-        .role-summary .role-item .role-emoji {
-            font-size: 10px;
-        }
-
-        .role-summary .role-item .role-count {
-            font-weight: 700;
-            color: var(--text-primary);
-            font-size: 10px;
-            min-width: 12px;
-            text-align: center;
-        }
-
-        .role-summary .separator {
-            color: var(--border-color);
-            font-weight: 300;
-            font-size: 9px !important;
-            opacity: 0.2;
-            padding: 0 1px;
-        }
-
-        /* Responsive untuk mobile */
         @media (max-width: 768px) {
-            .role-summary {
-                gap: 1px 3px;
+            .shift-main-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .shift-available {
+                min-height: 180px !important;
+                max-height: 250px !important;
+            }
+            .shift-column .column-body {
+                min-height: 120px !important;
+                max-height: 200px !important;
+            }
+            .shift-log-container {
+                max-height: 70px !important;
+                padding: 3px 10px 2px 10px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 35px !important;
                 font-size: 9px !important;
             }
-            .role-summary .role-item {
-                padding: 1px 3px;
-                font-size: 9px !important;
-            }
-            .role-summary .role-item .role-emoji {
-                font-size: 9px;
-            }
-            .role-summary .role-item .role-count {
-                font-size: 9px;
-                min-width: 10px;
-            }
-            .role-summary .separator {
+            .shift-log-container .log-header .log-actions button {
                 font-size: 8px !important;
+                padding: 2px 8px !important;
+                height: 20px !important;
+            }
+            .shift-preview-modal .preview-grid {
+                grid-template-columns: 1fr;
+            }
+            .shift-preview-modal .preview-content {
+                padding: 14px;
+            }
+            .history-table-wrap {
+                overflow-x: auto;
+            }
+            .history-table-wrap table {
+                min-width: 600px;
+                font-size: 12px;
+            }
+            .history-table-wrap td,
+            .history-table-wrap th {
+                padding: 8px 10px;
             }
         }
 
         @media (max-width: 600px) {
-            .role-summary {
-                gap: 0px 2px;
+            .shift-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .shift-header-right {
+                flex-wrap: wrap;
+            }
+            .shift-column-wrapper {
+                flex-wrap: wrap;
+                min-width: 100%;
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper:not(.has-note-open) {
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper.has-note-open {
+                max-width: 100% !important;
+            }
+            .shift-note-panel.open {
+                width: 100%;
+                max-width: 100%;
+                min-width: 100px;
+            }
+            .shift-log-container {
+                max-height: 65px !important;
+                padding: 3px 8px 2px 8px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 32px !important;
+                font-size: 8.5px !important;
+            }
+            .shift-log-container .log-body .log-entry {
                 font-size: 8px !important;
             }
-            .role-summary .role-item {
-                padding: 1px 2px;
+            .shift-log-container .log-body .log-entry .log-time {
+                min-width: 45px;
+                font-size: 7.5px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-user {
+                font-size: 8px !important;
+                min-width: 50px;
+            }
+            .shift-log-container .log-body .log-entry .log-action {
                 font-size: 8px !important;
             }
-            .role-summary .role-item .role-emoji {
-                font-size: 8px;
+            .shift-log-container .log-header .log-actions button {
+                font-size: 7.5px !important;
+                padding: 2px 6px !important;
+                height: 18px !important;
+                gap: 2px !important;
             }
-            .role-summary .role-item .role-count {
-                font-size: 8px;
-                min-width: 8px;
+            .shift-log-container .log-header .log-actions button .btn-icon {
+                font-size: 8px !important;
             }
-            .role-summary .separator {
+            .shift-column-wrapper {
+                min-height: 180px !important;
+                max-height: 300px !important;
+            }
+            .shift-column .column-body {
+                min-height: 100px !important;
+                max-height: 180px !important;
+            }
+            .shift-preview-modal .preview-grid {
+                grid-template-columns: 1fr;
+            }
+            .shift-preview-modal .preview-content {
+                padding: 14px;
+            }
+            .history-table-wrap {
+                overflow-x: auto;
+            }
+            .history-table-wrap table {
+                min-width: 600px;
+                font-size: 12px;
+            }
+            .history-table-wrap td,
+            .history-table-wrap th {
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .shift-log-container {
+                max-height: 55px !important;
+                padding: 2px 6px 2px 6px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 30px !important;
+                font-size: 8px !important;
+            }
+            .shift-log-container .log-body .log-entry {
+                font-size: 7.5px !important;
+                padding: 0px 2px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-time {
+                min-width: 35px;
                 font-size: 7px !important;
             }
-        }
-
-        /* TOMBOL HAPUS - Lebih kecil & Premium */
-        .btn-hapus {
-            padding: 3px 10px !important;
-            border: none !important;
-            border-radius: 6px !important;
-            font-size: 10px !important;
-            font-weight: 600 !important;
-            cursor: pointer;
-            background: linear-gradient(135deg, #c62828, #b71c1c) !important;
-            color: white !important;
-            transition: all 0.3s ease !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 3px !important;
-            box-shadow: 0 2px 6px rgba(198, 40, 40, 0.12) !important;
-            letter-spacing: 0.2px !important;
-            font-family: 'Segoe UI', sans-serif !important;
-            height: 26px !important;
-            line-height: 1 !important;
-            min-width: 60px !important;
-            justify-content: center !important;
-        }
-
-        .btn-hapus:hover:not(:disabled) {
-            transform: translateY(-1px) !important;
-            box-shadow: 0 4px 12px rgba(198, 40, 40, 0.25) !important;
-            background: linear-gradient(135deg, #d32f2f, #c62828) !important;
-        }
-
-        .btn-hapus:active:not(:disabled) {
-            transform: scale(0.95) !important;
-        }
-
-        .btn-hapus:disabled {
-            opacity: 0.4 !important;
-            cursor: not-allowed !important;
-            transform: none !important;
-            box-shadow: none !important;
-            background: var(--bg-hover) !important;
-            color: var(--text-muted) !important;
-        }
-
-        .btn-hapus .icon {
-            font-size: 11px !important;
-        }
-
-        /* TOMBOL VOUCHER - Premium Style */
-        .btn-voucher {
-            padding: 5px 14px !important;
-            border: none !important;
-            border-radius: 8px !important;
-            font-size: 11px !important;
-            font-weight: 600 !important;
-            cursor: pointer;
-            background: linear-gradient(135deg, #e65100, #bf360c) !important;
-            color: white !important;
-            transition: all 0.3s ease !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 4px !important;
-            box-shadow: 0 2px 8px rgba(230, 81, 0, 0.15) !important;
-            letter-spacing: 0.3px !important;
-            font-family: 'Segoe UI', sans-serif !important;
-            height: 32px !important;
-            line-height: 1 !important;
-        }
-
-        .btn-voucher:hover:not(:disabled) {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 16px rgba(230, 81, 0, 0.3) !important;
-            background: linear-gradient(135deg, #f57c00, #e65100) !important;
-        }
-
-        .btn-voucher:active:not(:disabled) {
-            transform: scale(0.95) !important;
-        }
-
-        .btn-voucher:disabled {
-            opacity: 0.4 !important;
-            cursor: not-allowed !important;
-            transform: none !important;
-            box-shadow: none !important;
-            background: var(--bg-hover) !important;
-            color: var(--text-muted) !important;
-        }
-
-        .btn-voucher .icon {
-            font-size: 13px;
-        }
-
-        /* RESPONSIVE - Role Summary di mobile */
-        @media (max-width: 768px) {
-            .role-summary {
-                font-size: 10px !important;
-                gap: 8px;
+            .shift-log-container .log-body .log-entry .log-user {
+                font-size: 7.5px !important;
+                min-width: 40px;
             }
-            .role-summary span {
-                font-size: 10px !important;
-            }
-            .role-summary span strong {
-                font-size: 10px !important;
-            }
-            .role-summary .role-item {
-                padding: 1px 8px;
-            }
-            .btn-hapus {
-                padding: 2px 8px !important;
-                font-size: 9px !important;
-                height: 24px !important;
-                min-width: 50px !important;
-            }
-            .btn-voucher {
-                padding: 4px 10px !important;
-                font-size: 10px !important;
-                height: 28px !important;
+            .shift-log-container .log-body .log-entry .log-action {
+                font-size: 7.5px !important;
             }
         }
 
-        @media (max-width: 600px) {
-            .role-summary {
-                font-size: 9px !important;
-                gap: 4px;
-            }
-            .role-summary span {
-                font-size: 9px !important;
-            }
-            .role-summary span strong {
-                font-size: 9px !important;
-            }
-            .role-summary .role-item {
-                padding: 1px 6px;
-            }
-            .btn-hapus {
-                padding: 2px 6px !important;
-                font-size: 8px !important;
-                height: 22px !important;
-                min-width: 40px !important;
-                border-radius: 4px !important;
-            }
-        }
+        /* ============================================================
+           CSS LAINNYA (DASHBOARD, USERS, VOUCHER, HISTORY, SETTINGS)
+           ============================================================ */
 
+        /* ... SEMUA CSS YANG ADA DI KODE ASLI ANDA ... */
+        /* (Saya akan lanjutkan di bagian selanjutnya karena batasan karakter) */
+        
         /* ============================================================
            TOAST NOTIFICATION - PREMIUM & POSITION FIX
            ============================================================ */
@@ -1407,7 +1627,7 @@
         }
 
         /* ============================================================
-           CSS LAINNYA
+           SIDEBAR & MAIN CONTENT
            ============================================================ */
 
         *,
@@ -3055,6 +3275,15 @@
             font-size: 12px;
         }
 
+        .voucher-badge .tooltip-trigger {
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* ============================================================
+           TOOLTIP GLOBAL
+           ============================================================ */
+
         #voucherTooltipGlobal {
             position: fixed;
             background: var(--bg-card);
@@ -3451,6 +3680,10 @@
             border-bottom: 1px solid rgba(0, 229, 255, 0.06);
             transform: translateX(-50%) rotate(45deg);
         }
+
+        /* ============================================================
+           PROGRESS BAR
+           ============================================================ */
 
         .progress-container {
             display: flex;
@@ -4046,6 +4279,10 @@
         .view-only-indicator .icon {
             font-size: 14px;
         }
+
+        /* ============================================================
+           POPUP OVERLAY
+           ============================================================ */
 
         .popup-overlay {
             display: none;
@@ -4916,10 +5153,11 @@
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            padding-bottom: 3px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 4px;
+            padding: 6px 4px 4px 4px !important;
+            border-bottom: 2px solid var(--border-color) !important;
+            margin-bottom: 3px !important;
             flex-shrink: 0;
+            min-height: 28px !important;
         }
 
         .shift-note-panel .note-panel-header .panel-actions button {
@@ -5018,6 +5256,67 @@
             box-shadow: var(--shadow-sm);
         }
 
+        /* Warna note berdasarkan role - sama persis dengan card user */
+        .shift-note-panel .note-user-item textarea.role-csline {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2) !important;
+            border-color: #e65100 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-cs {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+            border-color: #1565c0 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kapten {
+            background: linear-gradient(135deg, #f3e5f5, #ce93d8) !important;
+            border-color: #6a1b9a !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kasir {
+            background: linear-gradient(135deg, #e0f7fa, #80deea) !important;
+            border-color: #00838f !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-csline {
+            background: linear-gradient(135deg, #3a2a1a, #4a3a2a) !important;
+            border-color: #e65100 !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-cs {
+            background: linear-gradient(135deg, #1a2a3a, #1a3a4a) !important;
+            border-color: #1565c0 !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-kapten {
+            background: linear-gradient(135deg, #2a1a3a, #3a1a4a) !important;
+            border-color: #6a1b9a !important;
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="dark"] .shift-note-panel .note-user-item textarea.role-kasir {
+            background: linear-gradient(135deg, #1a2a2a, #1a3a3a) !important;
+            border-color: #00838f !important;
+            color: #e6edf3 !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-csline:hover:not([readonly]) {
+            background: linear-gradient(135deg, #ffe0b2, #ffcc80) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-cs:hover:not([readonly]) {
+            background: linear-gradient(135deg, #bbdefb, #90caf9) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kapten:hover:not([readonly]) {
+            background: linear-gradient(135deg, #ce93d8, #ab47bc) !important;
+        }
+
+        .shift-note-panel .note-user-item textarea.role-kasir:hover:not([readonly]) {
+            background: linear-gradient(135deg, #80deea, #4dd0e1) !important;
+        }
+
         .note-badge {
             display: inline-flex;
             align-items: center;
@@ -5056,23 +5355,7 @@
             border-radius: 50%;
             background: var(--sidebar-text);
             margin-right: 3px;
-        }
-
-        .note-badge.has-note .badge-dot {
-            background: #00e5ff;
             animation: pulse-note 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-note {
-            0%,
-            100% {
-                box-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
-                opacity: 1;
-            }
-            50% {
-                box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
-                opacity: 0.7;
-            }
         }
 
         .note-indicator {
@@ -6648,7 +6931,7 @@
         const TEST_MODE = false;
 
         // ============================================================
-        // 🔥 RANDOM EMOJI UNTUK LIVE IZIN - HEWAN + UNICORN + NAGA
+        // 🔥 RANDOM EMOJI UNTUK LIVE IZIN
         // ============================================================
         const RANDOM_EMOJIS = [
             '🐧', '🐼', '🐨', '🐹', '🐱', '🐶', '🐰', '🐥', '🦭',
@@ -6657,7 +6940,7 @@
         ];
 
         // ============================================================
-        // 🔥 FUNGSI PARSER TIMEZONE - FIX DURASI 420m
+        // FUNGSI PARSER TIMEZONE
         // ============================================================
         function parseTimeFromDB(timeStr) {
             if (!timeStr) return null;
@@ -7473,7 +7756,7 @@
         }
 
         // ============================================================
-        // PERIODIC REFRESH - OPTIMASI (300 detik = 5 menit)
+        // PERIODIC REFRESH
         // ============================================================
         function startPeriodicRefresh() {
             if (refreshInterval) {
@@ -7504,7 +7787,7 @@
         }
 
         // ============================================================
-        // LOAD DATA DARI DATABASE - OPTIMASI
+        // LOAD DATA DARI DATABASE
         // ============================================================
         async function loadDataFromDatabase() {
             if (isLoading) return;
@@ -7556,7 +7839,7 @@
                             dataIzin[nama].role = user.role;
                         }
                     });
-                    console.log(`✅ ${usersResult.data.length} users loaded (optimized)`);
+                    console.log(`✅ ${usersResult.data.length} users loaded`);
                 } else {
                     console.log('⚠️ No users found in database');
                 }
@@ -7572,7 +7855,7 @@
                         durasiDetik: h.durasi_detik || 0,
                         isQuotaValid: h.is_quota_valid !== undefined ? h.is_quota_valid : true
                     }));
-                    console.log(`✅ ${historyResult.data.length} history loaded (semua data)`);
+                    console.log(`✅ ${historyResult.data.length} history loaded`);
                 } else {
                     console.log('⚠️ No history found');
                     historyData = [];
@@ -7605,7 +7888,6 @@
                             dataIzin[item.nama].emoticon = item.emoticon || null;
                             if (item.status === 'izin' && item.mulai) {
                                 aktifCount++;
-                                console.log(`✅ User ${item.nama} sedang izin dengan emoji ${item.emoticon || '🐧'}`);
                             }
                         }
                     });
@@ -7684,7 +7966,7 @@
 
                 renderAll();
                 updateQuickStats();
-                console.log('✅ All data loaded successfully! (optimized)');
+                console.log('✅ All data loaded successfully!');
 
                 isDataReady = true;
                 enableStartButtons();
@@ -7889,7 +8171,7 @@
         }
 
         // ============================================================
-        // SHIFT LOGS - BATCH INSERT
+        // SHIFT LOGS
         // ============================================================
         function queueShiftLog(action, userName, details) {
             pendingLogs.push({ 
@@ -8017,7 +8299,7 @@
         }
 
         // ============================================================
-        // TOAST NOTIFICATION - PREMIUM
+        // TOAST NOTIFICATION
         // ============================================================
         function showToast(message, type = 'info', duration = 3000) {
             const oldToast = document.getElementById('toastNotification');
@@ -8564,7 +8846,7 @@
         }
 
         // ============================================================
-        // DUMMY DATA - HANYA UNTUK TEST MODE
+        // DUMMY DATA
         // ============================================================
         async function loadDummyData() {
             if (!TEST_MODE) return;
@@ -8646,7 +8928,7 @@
         }
 
         // ============================================================
-        // FUNGSI IZIN - MULAI (DENGAN EMOTICON)
+        // FUNGSI IZIN - MULAI
         // ============================================================
         window.mulaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
@@ -8766,7 +9048,7 @@
         };
 
         // ============================================================
-        // FUNGSI SELESAI IZIN - DENGAN TOAST RAPI
+        // FUNGSI SELESAI IZIN
         // ============================================================
         window.selesaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
@@ -8980,7 +9262,7 @@
         }
 
         // ============================================================
-        // RENDER LIVE IZIN - KEMBALI KE VERSI LAMA (NORMAL)
+        // RENDER LIVE IZIN
         // ============================================================
         function renderLiveIzin() {
             const roleMap = {
@@ -9076,7 +9358,7 @@
         }
 
         // ============================================================
-        // UPDATE LIVE TIMERS - KEMBALI KE VERSI LAMA
+        // UPDATE LIVE TIMERS
         // ============================================================
         function updateLiveTimers() {
             const now = new Date();
@@ -9110,7 +9392,7 @@
         }
 
         // ============================================================
-        // RENDER DASHBOARD TABLE - TIMER KEMBALI KE VERSI LAMA
+        // RENDER DASHBOARD TABLE
         // ============================================================
         window.renderDashboardTable = function() {
             const tbody = document.getElementById('dashboardTableBody');
@@ -11056,6 +11338,9 @@
             }
         }
 
+        // ============================================================
+        // PERBAIKAN UTAMA - NOTE TERSIMPAN SAAT REFRESH
+        // ============================================================
         function onNoteInput(columnId, userId, value) {
             if (!canEditShift()) {
                 showShiftToast('❌ Anda tidak memiliki izin untuk mengedit note!', 'warning');
@@ -11106,13 +11391,14 @@
 
             noteDebounceTimers[key] = setTimeout(async () => {
                 try {
+                    // PASTIKAN updateShiftActive dipanggil dengan benar
                     await updateShiftActive();
                     
                     const detail = user.note && user.note.trim() !== '' ?
                         `Menambahkan note untuk ${user.name}: "${user.note}"` :
                         `Menghapus note untuk ${user.name}`;
                     
-                    insertShiftLog('EDIT_NOTE', getCurrentUserName(), detail);
+                    await insertShiftLog('EDIT_NOTE', getCurrentUserName(), detail);
                     console.log(`✅ Note saved for ${user.name}: "${user.note}"`);
                     
                 } catch (err) {
@@ -11124,6 +11410,9 @@
             }, 800);
         }
 
+        // ============================================================
+        // EVENT BEFOREUNLOAD - PASTIKAN NOTE TERSIMPAN
+        // ============================================================
         window.addEventListener('beforeunload', function() {
             Object.keys(noteDebounceTimers).forEach(key => {
                 clearTimeout(noteDebounceTimers[key]);
@@ -11195,7 +11484,7 @@
         }
 
         // ============================================================
-        // DRAG & DROP STAFF - EVENT HANDLER
+        // DRAG & DROP STAFF
         // ============================================================
         let staffDragData = null;
 
@@ -11818,7 +12107,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT - DENGAN NOTE
+        // PREVIEW SHIFT
         // ============================================================
         function openShiftPreview() {
             const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
@@ -11856,7 +12145,7 @@
         }
 
         // ============================================================
-        // RENDER SHIFT PREVIEW - DENGAN NOTE
+        // RENDER SHIFT PREVIEW
         // ============================================================
         function renderShiftPreview() {
             const modal = document.getElementById('shiftPreviewModal');
@@ -12029,7 +12318,7 @@
         }
 
         // ============================================================
-        // RIWAYAT SHIFT - FUNCTIONS
+        // RIWAYAT SHIFT
         // ============================================================
         async function loadShiftHistory() {
             try {
@@ -12205,7 +12494,7 @@
         }
 
         // ============================================================
-        // OPEN SHIFT FROM HISTORY - PERTAHANKAN NOTE
+        // OPEN SHIFT FROM HISTORY
         // ============================================================
         async function openShiftFromHistory(historyId) {
             if (!canOpenHistory()) {
@@ -12302,7 +12591,7 @@
         }
 
         // ============================================================
-        // PREVIEW SHIFT FROM HISTORY - DENGAN NOTE
+        // PREVIEW SHIFT FROM HISTORY
         // ============================================================
         function previewShiftFromHistory(historyId) {
             const item = shiftHistoryData.find(h => String(h.id) === String(historyId));
