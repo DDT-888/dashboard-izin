@@ -105,22 +105,152 @@
         }
 
         /* ============================================================
-           PERBAIKAN SHIFT - TAMPILAN & PERFORMANCE
+           PERBAIKAN SHIFT - LAYOUT HORIZONTAL
+           ============================================================ */
+
+        .shift-main-grid {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 14px;
+            flex: 1;
+            min-height: 200px;
+            height: auto !important;
+            max-height: none !important;
+            margin-bottom: 6px;
+            overflow: visible !important;
+            align-items: stretch !important;
+            width: 100% !important;
+        }
+
+        .shift-available {
+            background: var(--shift-available-bg);
+            border-radius: 12px;
+            border: 2px solid var(--shift-available-border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            min-width: 250px !important;
+            max-width: 300px !important;
+            transition: all 0.3s ease;
+            min-height: 200px !important;
+            max-height: 100% !important;
+            flex: 0 0 auto !important;
+        }
+
+        .shift-available .header {
+            padding: 8px 14px;
+            background: rgba(74, 122, 181, 0.08);
+            border-bottom: 2px solid var(--shift-available-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .shift-available .header .title {
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .shift-available .header .count {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--shift-available-border);
+        }
+
+        .shift-available-dropzone {
+            flex: 1;
+            overflow-y: auto !important;
+            padding: 8px 10px;
+            border-radius: 0 0 12px 12px;
+            min-height: 150px !important;
+            max-height: 100% !important;
+        }
+
+        .shift-available-dropzone::-webkit-scrollbar {
+            width: 4px;
+        }
+        .shift-available-dropzone::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-available-dropzone::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .shift-available-dropzone.drag-over {
+            background: rgba(74, 122, 181, 0.10);
+            box-shadow: inset 0 0 30px rgba(74, 122, 181, 0.08);
+        }
+
+        .shift-available-dropzone .body {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        /* ============================================================
+           SHIFT COLUMNS WRAPPER - SISI KANAN
+           ============================================================ */
+
+        .shift-columns-wrapper {
+            flex: 1 !important;
+            min-height: 200px !important;
+            max-height: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            padding: 0 2px 4px 0 !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+            min-width: 0 !important;
+        }
+
+        .shift-columns-wrapper::-webkit-scrollbar {
+            height: 4px;
+        }
+        .shift-columns-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-columns-wrapper::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        /* ============================================================
+           SHIFT COLUMN WRAPPER
            ============================================================ */
 
         .shift-column-wrapper {
-            display: flex;
+            flex: 1 1 auto !important;
+            min-width: 280px !important;
+            max-width: 420px !important;
+            display: flex !important;
             flex-direction: row !important;
-            align-items: stretch;
+            align-items: stretch !important;
+            min-height: 200px !important;
+            max-height: 100% !important;
             border-radius: 12px !important;
             overflow: hidden !important;
             border: 2px solid var(--shift-column-border);
             background: var(--shift-column-bg);
-            position: relative;
-            min-width: 280px;
-            max-width: 420px;
-            flex: 1 1 auto;
             transition: all 0.35s ease;
+        }
+
+        .shift-column-wrapper:not(.has-note-open) {
+            max-width: 320px !important;
+        }
+
+        .shift-column-wrapper.has-note-open {
+            max-width: 460px !important;
         }
 
         .shift-column-wrapper .shift-column {
@@ -155,7 +285,7 @@
         }
 
         /* ============================================================
-           HEADER SHIFT
+           SHIFT COLUMN - HEADER
            ============================================================ */
 
         .shift-column .column-header {
@@ -252,6 +382,63 @@
         }
 
         /* ============================================================
+           SHIFT COLUMN - BODY
+           ============================================================ */
+
+        .shift-column .column-body {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            padding: 4px 6px !important;
+            min-height: 120px !important;
+            max-height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 3px !important;
+            background: var(--shift-column-bg);
+        }
+
+        .shift-column .column-body::-webkit-scrollbar {
+            width: 4px;
+        }
+        .shift-column .column-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-column .column-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .shift-column .column-body .empty-drop {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 50px;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .shift-column .column-body .empty-drop.drag-over {
+            border-color: var(--sidebar-text) !important;
+            background: rgba(0, 229, 255, 0.06) !important;
+            color: var(--sidebar-text) !important;
+        }
+
+        .shift-column-dropzone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .shift-column-dropzone.drag-over {
+            background: rgba(0, 229, 255, 0.04);
+        }
+
+        /* ============================================================
            HEADER NOTE - SAMA PERSIS DENGAN HEADER SHIFT
            ============================================================ */
 
@@ -300,52 +487,6 @@
         .shift-note-panel .note-panel-header .panel-actions button:hover {
             background: var(--bg-input);
             color: var(--text-primary);
-        }
-
-        /* ============================================================
-           BODY SHIFT
-           ============================================================ */
-
-        .shift-column .column-body {
-            flex: 1;
-            overflow-y: auto !important;
-            padding: 4px 6px !important;
-            min-height: 120px !important;
-            max-height: 100% !important;
-            display: flex;
-            flex-direction: column;
-            gap: 3px !important;
-            background: var(--shift-column-bg);
-        }
-
-        .shift-column .column-body::-webkit-scrollbar {
-            width: 4px;
-        }
-        .shift-column .column-body::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .shift-column .column-body::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-        }
-
-        .shift-column .column-body .empty-drop {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            min-height: 50px;
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            color: var(--text-muted);
-            font-size: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .shift-column .column-body .empty-drop.drag-over {
-            border-color: var(--sidebar-text) !important;
-            background: rgba(0, 229, 255, 0.06) !important;
-            color: var(--sidebar-text) !important;
         }
 
         /* ============================================================
@@ -681,6 +822,34 @@
         }
 
         /* ============================================================
+           NOTE SAVING INDICATOR
+           ============================================================ */
+
+        .note-user-item textarea.saving {
+            border-color: #ffd54f !important;
+            background: rgba(255, 215, 0, 0.08) !important;
+            transition: all 0.3s ease;
+        }
+
+        .note-user-item textarea.saved {
+            border-color: #4caf50 !important;
+            background: rgba(76, 175, 80, 0.05) !important;
+            transition: all 0.3s ease;
+        }
+
+        .note-user-item textarea.error {
+            border-color: #f44336 !important;
+            background: rgba(244, 67, 54, 0.08) !important;
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* ============================================================
            NOTE BADGE
            ============================================================ */
 
@@ -755,6 +924,244 @@
                 box-shadow: 0 0 14px rgba(0, 229, 255, 0.5);
                 opacity: 0.7;
             }
+        }
+
+        /* ============================================================
+           LOG AKTIVITAS SHIFT
+           ============================================================ */
+
+        .shift-log-container {
+            margin-top: 6px !important;
+            padding: 4px 12px 3px 12px !important;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            flex-shrink: 0;
+            max-height: 80px !important;
+            overflow: hidden !important;
+            position: relative;
+            margin-bottom: 0 !important;
+            width: 100% !important;
+        }
+
+        .shift-log-container .log-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 2px 0 3px 0 !important;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3px !important;
+            flex-wrap: nowrap !important;
+        }
+
+        .shift-log-container .log-header .log-title {
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .shift-log-container .log-header .log-title .title-icon {
+            font-size: 12px;
+        }
+
+        .shift-log-container .log-header .log-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .shift-log-container .log-header .log-actions button {
+            background: transparent !important;
+            border: none !important;
+            cursor: pointer;
+            font-size: 9px !important;
+            padding: 3px 10px !important;
+            border-radius: 6px !important;
+            transition: all 0.25s ease !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.3px !important;
+            font-family: 'Segoe UI', sans-serif !important;
+            border: 1px solid var(--border-color) !important;
+            background: var(--bg-hover) !important;
+            color: var(--text-secondary) !important;
+            height: 22px !important;
+            line-height: 1 !important;
+        }
+
+        .shift-log-container .log-header .log-actions button:hover {
+            background: var(--bg-input) !important;
+            border-color: var(--sidebar-text) !important;
+            color: var(--sidebar-text) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(0, 229, 255, 0.08) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button:active {
+            transform: scale(0.95) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button .btn-icon {
+            font-size: 10px;
+        }
+
+        .shift-log-container .log-header .log-actions button.refresh-btn {
+            background: rgba(26, 42, 74, 0.06) !important;
+            border-color: rgba(26, 42, 74, 0.15) !important;
+            color: #1a2a4a !important;
+        }
+
+        .shift-log-container .log-header .log-actions button.refresh-btn:hover {
+            background: rgba(26, 42, 74, 0.10) !important;
+            border-color: #1a2a4a !important;
+            box-shadow: 0 2px 12px rgba(26, 42, 74, 0.10) !important;
+        }
+
+        [data-theme="dark"] .shift-log-container .log-header .log-actions button.refresh-btn {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.04), rgba(0, 229, 255, 0.01)) !important;
+            border-color: rgba(0, 229, 255, 0.12) !important;
+            color: #00e5ff !important;
+        }
+
+        [data-theme="dark"] .shift-log-container .log-header .log-actions button.refresh-btn:hover {
+            background: rgba(0, 229, 255, 0.08) !important;
+            border-color: #00e5ff !important;
+            box-shadow: 0 2px 12px rgba(0, 229, 255, 0.15) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button.csv-btn {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.04), rgba(76, 175, 80, 0.01)) !important;
+            border-color: rgba(76, 175, 80, 0.12) !important;
+            color: var(--success) !important;
+        }
+
+        .shift-log-container .log-header .log-actions button.csv-btn:hover {
+            background: rgba(76, 175, 80, 0.08) !important;
+            border-color: var(--success) !important;
+            box-shadow: 0 2px 12px rgba(76, 175, 80, 0.15) !important;
+        }
+
+        .shift-log-container .log-body {
+            max-height: 42px !important;
+            overflow-y: auto !important;
+            padding: 2px 0 !important;
+            font-size: 10px !important;
+            font-family: 'Courier New', monospace;
+            color: var(--text-secondary);
+            line-height: 1.4 !important;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shift-log-container .log-body::-webkit-scrollbar {
+            width: 3px;
+        }
+        .shift-log-container .log-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .shift-log-container .log-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .shift-log-container .log-body .log-entry {
+            padding: 1px 4px !important;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            gap: 4px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+            font-size: 9.5px !important;
+        }
+
+        .shift-log-container .log-body .log-entry .log-time {
+            font-size: 9px !important;
+            flex-shrink: 0;
+            min-width: 60px;
+            color: var(--text-muted);
+        }
+
+        .shift-log-container .log-body .log-entry .log-user {
+            font-weight: 600;
+            font-size: 9.5px !important;
+            flex-shrink: 0;
+            min-width: 70px;
+            color: #1a2a4a;
+        }
+
+        [data-theme="dark"] .shift-log-container .log-body .log-entry .log-user {
+            color: #00e5ff;
+        }
+
+        .shift-log-container .log-body .log-entry .log-action {
+            font-size: 9.5px !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-secondary);
+        }
+
+        .shift-log-container .log-empty {
+            font-size: 10px !important;
+            padding: 4px 0 !important;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* ============================================================
+           SHIFT TOAST
+           ============================================================ */
+
+        .shift-toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            z-index: 9999;
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.4s ease;
+            display: none;
+        }
+
+        .shift-toast.show {
+            display: block;
+        }
+
+        .shift-toast.success {
+            background: var(--success);
+            color: white;
+        }
+        .shift-toast.error {
+            background: var(--danger);
+            color: white;
+        }
+        .shift-toast.warning {
+            background: var(--warning);
+            color: white;
+        }
+        .shift-toast.info {
+            background: var(--info);
+            color: white;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0;
+                transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1;
+                transform: translateX(-50%) translateY(0); }
         }
 
         /* ============================================================
@@ -965,6 +1372,208 @@
                 font-size: 8px !important;
                 min-width: 10px;
                 padding: 0 3px;
+            }
+        }
+
+        /* ============================================================
+           RESPONSIVE - SHIFT
+           ============================================================ */
+
+        @media screen and (max-width: 1400px) {
+            .shift-main-grid {
+                gap: 12px;
+            }
+            .shift-available {
+                min-width: 220px !important;
+                max-width: 260px !important;
+            }
+            .shift-column-wrapper {
+                min-width: 240px !important;
+                max-width: 380px !important;
+            }
+        }
+
+        @media screen and (max-width: 1200px) {
+            .shift-main-grid {
+                gap: 10px;
+            }
+            .shift-available {
+                min-width: 200px !important;
+                max-width: 230px !important;
+            }
+            .shift-column-wrapper {
+                min-width: 220px !important;
+                max-width: 340px !important;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .shift-main-grid {
+                flex-direction: column !important;
+                gap: 12px;
+                height: auto !important;
+                max-height: none !important;
+            }
+            .shift-available {
+                min-height: 200px !important;
+                max-height: 280px !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+            }
+            .shift-columns-wrapper {
+                min-height: 200px !important;
+                max-height: 350px !important;
+                overflow-x: auto !important;
+            }
+            .shift-column-wrapper {
+                min-width: 280px !important;
+                max-width: 380px !important;
+                min-height: 200px !important;
+                max-height: 350px !important;
+            }
+            .shift-column .column-body {
+                min-height: 150px !important;
+                max-height: 250px !important;
+            }
+            .shift-log-container {
+                max-height: 75px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 38px !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .shift-main-grid {
+                flex-direction: column !important;
+                gap: 10px;
+            }
+            .shift-available {
+                min-height: 180px !important;
+                max-height: 250px !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+            }
+            .shift-columns-wrapper {
+                min-height: 180px !important;
+                max-height: 300px !important;
+            }
+            .shift-column-wrapper {
+                min-width: 260px !important;
+                max-width: 100% !important;
+                min-height: 180px !important;
+                max-height: 300px !important;
+            }
+            .shift-column .column-body {
+                min-height: 120px !important;
+                max-height: 200px !important;
+            }
+            .shift-log-container {
+                max-height: 70px !important;
+                padding: 3px 10px 2px 10px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 35px !important;
+                font-size: 9px !important;
+            }
+            .shift-log-container .log-header .log-actions button {
+                font-size: 8px !important;
+                padding: 2px 8px !important;
+                height: 20px !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .shift-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .shift-header-right {
+                flex-wrap: wrap;
+            }
+            .shift-main-grid {
+                flex-direction: column !important;
+            }
+            .shift-available {
+                min-width: 100% !important;
+                max-width: 100% !important;
+            }
+            .shift-columns-wrapper {
+                overflow-x: auto !important;
+                padding: 0 2px 4px 0 !important;
+            }
+            .shift-column-wrapper {
+                min-width: 260px !important;
+                max-width: 100% !important;
+                flex-wrap: nowrap !important;
+            }
+            .shift-column-wrapper:not(.has-note-open) {
+                max-width: 100% !important;
+            }
+            .shift-column-wrapper.has-note-open {
+                max-width: 100% !important;
+            }
+            .shift-note-panel.open {
+                width: 100%;
+                max-width: 100%;
+                min-width: 100px;
+            }
+            .shift-log-container {
+                max-height: 65px !important;
+                padding: 3px 8px 2px 8px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 32px !important;
+                font-size: 8.5px !important;
+            }
+            .shift-log-container .log-body .log-entry {
+                font-size: 8px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-time {
+                min-width: 45px;
+                font-size: 7.5px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-user {
+                font-size: 8px !important;
+                min-width: 50px;
+            }
+            .shift-log-container .log-body .log-entry .log-action {
+                font-size: 8px !important;
+            }
+            .shift-log-container .log-header .log-actions button {
+                font-size: 7.5px !important;
+                padding: 2px 6px !important;
+                height: 18px !important;
+                gap: 2px !important;
+            }
+            .shift-log-container .log-header .log-actions button .btn-icon {
+                font-size: 8px !important;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .shift-log-container {
+                max-height: 55px !important;
+                padding: 2px 6px 2px 6px !important;
+            }
+            .shift-log-container .log-body {
+                max-height: 30px !important;
+                font-size: 8px !important;
+            }
+            .shift-log-container .log-body .log-entry {
+                font-size: 7.5px !important;
+                padding: 0px 2px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-time {
+                min-width: 35px;
+                font-size: 7px !important;
+            }
+            .shift-log-container .log-body .log-entry .log-user {
+                font-size: 7.5px !important;
+                min-width: 40px;
+            }
+            .shift-log-container .log-body .log-entry .log-action {
+                font-size: 7.5px !important;
             }
         }
 
@@ -4447,892 +5056,6 @@
 
         .btn-action.start.loading-state .icon {
             opacity: 0.3;
-        }
-
-        /* ============================================================
-           SHIFT KERJA - CSS
-           ============================================================ */
-
-        .shift-container {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex: 1;
-            min-height: 0;
-            height: auto;
-            max-height: none !important;
-        }
-
-        .shift-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 4px 0 6px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .shift-header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            flex: 1;
-        }
-
-        .shift-stats-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            font-size: 12px;
-            color: var(--text-muted);
-            padding: 2px 0;
-            flex-wrap: wrap;
-            cursor: default;
-        }
-
-        .shift-stats-wrapper strong {
-            color: var(--text-primary);
-        }
-
-        .shift-header-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            flex-shrink: 0;
-        }
-
-        .btn-shift {
-            padding: 4px 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            height: 28px;
-            font-family: 'Segoe UI', sans-serif;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-
-        .btn-shift:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-        }
-
-        .btn-shift:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-shift.primary {
-            background: linear-gradient(135deg, #1a2a4a, #2a3a5a);
-            color: white;
-        }
-        .btn-shift.primary:hover:not(:disabled) {
-            box-shadow: 0 4px 20px rgba(26, 42, 74, 0.3);
-        }
-
-        .btn-shift.success {
-            background: linear-gradient(135deg, #2e7d32, #1b5e20);
-            color: white;
-        }
-        .btn-shift.success:hover:not(:disabled) {
-            box-shadow: 0 4px 20px rgba(46, 125, 50, 0.3);
-        }
-
-        .btn-shift.danger {
-            background: linear-gradient(135deg, #c62828, #b71c1c);
-            color: white;
-        }
-        .btn-shift.danger:hover:not(:disabled) {
-            box-shadow: 0 4px 20px rgba(198, 40, 40, 0.3);
-        }
-
-        .btn-shift.preview {
-            background: linear-gradient(135deg, #6a1b9a, #4a148c);
-            color: white;
-        }
-        .btn-shift.preview:hover:not(:disabled) {
-            box-shadow: 0 4px 20px rgba(106, 27, 154, 0.35);
-        }
-
-        .btn-shift.outline {
-            background: transparent;
-            color: var(--text-primary);
-            border: 2px solid var(--border-color);
-        }
-        .btn-shift.outline:hover:not(:disabled) {
-            border-color: var(--sidebar-text);
-            color: var(--sidebar-text);
-            background: rgba(0, 229, 255, 0.04);
-        }
-
-        /* ============================================================
-           RESPONSIVE - SHIFT
-           ============================================================ */
-
-        @media screen and (max-width: 1400px) {
-            .shift-main-grid {
-                grid-template-columns: 260px 1fr;
-                gap: 12px;
-            }
-            .shift-column-wrapper {
-                min-width: 240px;
-                max-width: 360px;
-            }
-        }
-
-        @media screen and (max-width: 1200px) {
-            .shift-main-grid {
-                grid-template-columns: 240px 1fr;
-                gap: 10px;
-            }
-            .shift-column-wrapper {
-                min-width: 220px;
-                max-width: 340px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .shift-main-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-                height: auto !important;
-                max-height: none !important;
-            }
-            .shift-available {
-                min-height: 200px !important;
-                max-height: 280px !important;
-            }
-            .shift-column-wrapper {
-                min-width: 100% !important;
-                max-width: 100% !important;
-                min-height: 200px !important;
-                max-height: 350px !important;
-            }
-            .shift-column .column-body {
-                min-height: 150px !important;
-                max-height: 250px !important;
-            }
-            .shift-log-container {
-                max-height: 75px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 38px !important;
-            }
-            .shift-preview-modal .preview-content {
-                padding: 20px;
-                max-width: 100%;
-            }
-            .shift-preview-modal .preview-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .shift-main-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            .shift-available {
-                min-height: 180px !important;
-                max-height: 250px !important;
-            }
-            .shift-column .column-body {
-                min-height: 120px !important;
-                max-height: 200px !important;
-            }
-            .shift-log-container {
-                max-height: 70px !important;
-                padding: 3px 10px 2px 10px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 35px !important;
-                font-size: 9px !important;
-            }
-            .shift-log-container .log-header .log-actions button {
-                font-size: 8px !important;
-                padding: 2px 8px !important;
-                height: 20px !important;
-            }
-            .shift-preview-modal .preview-grid {
-                grid-template-columns: 1fr;
-            }
-            .shift-preview-modal .preview-content {
-                padding: 14px;
-            }
-            .history-table-wrap {
-                overflow-x: auto;
-            }
-            .history-table-wrap table {
-                min-width: 600px;
-                font-size: 12px;
-            }
-            .history-table-wrap td,
-            .history-table-wrap th {
-                padding: 8px 10px;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .shift-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .shift-header-right {
-                flex-wrap: wrap;
-            }
-            .shift-column-wrapper {
-                flex-wrap: wrap;
-                min-width: 100%;
-                max-width: 100% !important;
-            }
-            .shift-column-wrapper:not(.has-note-open) {
-                max-width: 100% !important;
-            }
-            .shift-column-wrapper.has-note-open {
-                max-width: 100% !important;
-            }
-            .shift-note-panel.open {
-                width: 100%;
-                max-width: 100%;
-                min-width: 100px;
-            }
-            .shift-log-container {
-                max-height: 65px !important;
-                padding: 3px 8px 2px 8px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 32px !important;
-                font-size: 8.5px !important;
-            }
-            .shift-log-container .log-body .log-entry {
-                font-size: 8px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-time {
-                min-width: 45px;
-                font-size: 7.5px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-user {
-                font-size: 8px !important;
-                min-width: 50px;
-            }
-            .shift-log-container .log-body .log-entry .log-action {
-                font-size: 8px !important;
-            }
-            .shift-log-container .log-header .log-actions button {
-                font-size: 7.5px !important;
-                padding: 2px 6px !important;
-                height: 18px !important;
-                gap: 2px !important;
-            }
-            .shift-log-container .log-header .log-actions button .btn-icon {
-                font-size: 8px !important;
-            }
-            .shift-column-wrapper {
-                min-height: 180px !important;
-                max-height: 300px !important;
-            }
-            .shift-column .column-body {
-                min-height: 100px !important;
-                max-height: 180px !important;
-            }
-            .shift-preview-modal .preview-grid {
-                grid-template-columns: 1fr;
-            }
-            .shift-preview-modal .preview-content {
-                padding: 14px;
-            }
-            .history-table-wrap {
-                overflow-x: auto;
-            }
-            .history-table-wrap table {
-                min-width: 600px;
-                font-size: 12px;
-            }
-            .history-table-wrap td,
-            .history-table-wrap th {
-                padding: 8px 10px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .shift-log-container {
-                max-height: 55px !important;
-                padding: 2px 6px 2px 6px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 30px !important;
-                font-size: 8px !important;
-            }
-            .shift-log-container .log-body .log-entry {
-                font-size: 7.5px !important;
-                padding: 0px 2px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-time {
-                min-width: 35px;
-                font-size: 7px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-user {
-                font-size: 7.5px !important;
-                min-width: 40px;
-            }
-            .shift-log-container .log-body .log-entry .log-action {
-                font-size: 7.5px !important;
-            }
-        }
-
-        /* ============================================================
-           RIWAYAT SHIFT - CSS
-           ============================================================ */
-
-        .history-shift-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            height: 100%;
-            min-height: 400px;
-        }
-
-        .history-shift-container .filter-bar {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            padding: 4px 0 8px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .history-shift-container .filter-bar input,
-        .history-shift-container .filter-bar select {
-            padding: 7px 14px;
-            border: 2px solid var(--border-input);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-input);
-            color: var(--text-primary);
-            outline: none;
-            transition: 0.3s;
-        }
-
-        .history-shift-container .filter-bar input:focus,
-        .history-shift-container .filter-bar select:focus {
-            border-color: var(--sidebar-text);
-        }
-
-        .history-shift-container .filter-bar input {
-            flex: 1;
-            min-width: 180px;
-        }
-
-        .history-shift-container .filter-bar select {
-            cursor: pointer;
-        }
-
-        .history-table-wrap {
-            background: var(--bg-card);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            flex: 1;
-        }
-
-        .history-table-wrap table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .history-table-wrap th {
-            background: var(--bg-table-header);
-            color: var(--text-white);
-            padding: 10px 14px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 11px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        .history-table-wrap td {
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--border-light);
-            vertical-align: middle;
-            color: var(--text-primary);
-        }
-
-        .history-table-wrap tr:last-child td {
-            border-bottom: none;
-        }
-        .history-table-wrap tr:hover td {
-            background: var(--bg-hover);
-        }
-
-        .history-table-wrap .col-actions {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .history-table-wrap .col-actions .action-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 4px 6px;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            color: var(--text-muted);
-        }
-
-        .history-table-wrap .col-actions .action-btn:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        .history-table-wrap .col-actions .action-btn.delete:hover {
-            color: var(--danger);
-            background: var(--danger-bg);
-        }
-
-        .history-table-wrap .col-actions .action-btn.preview:hover {
-            color: #6a1b9a;
-            background: rgba(106, 27, 154, 0.08);
-        }
-
-        .history-table-wrap .col-actions .action-btn.open:hover {
-            color: var(--sidebar-text);
-            background: rgba(0, 229, 255, 0.08);
-        }
-
-        .history-empty {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-muted);
-        }
-
-        .history-empty .icon {
-            font-size: 40px;
-            margin-bottom: 8px;
-        }
-
-        /* ============================================================
-           PREVIEW MODAL - SHIFT
-           ============================================================ */
-
-        .shift-preview-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 99999;
-            justify-content: center;
-            align-items: center;
-            animation: fadeInModal 0.4s ease;
-        }
-
-        .shift-preview-modal.show {
-            display: flex;
-        }
-
-        .shift-preview-modal .preview-content {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 30px 36px 24px 36px;
-            max-width: 960px;
-            width: 95%;
-            max-height: 92vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow-xl);
-            position: relative;
-            animation: premiumBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .shift-preview-modal .preview-content::-webkit-scrollbar {
-            width: 4px;
-        }
-        .shift-preview-modal .preview-content::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .shift-preview-modal .preview-content::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-        }
-
-        .shift-preview-modal .preview-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 14px;
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 16px;
-        }
-
-        .shift-preview-modal .preview-header .title {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .shift-preview-modal .preview-header .subtitle {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-top: 4px;
-            font-weight: 500;
-        }
-
-        .shift-preview-modal .preview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .shift-preview-modal .preview-card {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            padding: 16px 18px;
-            min-height: 100px;
-        }
-
-        .shift-preview-modal .preview-card .card-title {
-            font-weight: 700;
-            font-size: 14px;
-            color: var(--text-primary);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .shift-preview-modal .preview-card .card-title .count {
-            font-size: 11px;
-            font-weight: 400;
-            color: var(--text-muted);
-        }
-
-        .shift-preview-modal .preview-card .role-group {
-            margin-bottom: 4px;
-        }
-
-        .shift-preview-modal .preview-card .role-group .role-label {
-            font-size: 9px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 1px 8px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 2px;
-            background: rgba(0, 0, 0, 0.04);
-        }
-
-        .shift-preview-modal .preview-card .role-group .role-label.csline { color: #e65100;
-            background: rgba(230, 81, 0, 0.08); }
-        .shift-preview-modal .preview-card .role-group .role-label.cs { color: #1565c0;
-            background: rgba(21, 101, 192, 0.08); }
-        .shift-preview-modal .preview-card .role-group .role-label.kapten { color: #6a1b9a;
-            background: rgba(106, 27, 154, 0.08); }
-        .shift-preview-modal .preview-card .role-group .role-label.kasir { color: #00838f;
-            background: rgba(0, 131, 143, 0.08); }
-
-        .shift-preview-modal .preview-card .staff-name {
-            font-size: 12px;
-            color: var(--text-primary);
-            padding: 1px 0 1px 12px;
-            border-left: 2px solid var(--border-color);
-            margin-bottom: 1px;
-        }
-
-        .shift-preview-modal .preview-card .staff-name:last-child {
-            margin-bottom: 0;
-        }
-
-        .shift-preview-modal .preview-card .staff-note {
-            font-size: 10px;
-            color: var(--text-muted);
-            padding: 1px 0 1px 12px;
-            border-left: 2px solid var(--sidebar-text);
-            margin-bottom: 1px;
-            font-style: italic;
-            opacity: 0.8;
-        }
-
-        .shift-preview-modal .preview-card .staff-note:last-child {
-            margin-bottom: 0;
-        }
-
-        .shift-preview-modal .preview-card .card-note {
-            font-size: 11px;
-            color: var(--text-muted);
-            padding-top: 6px;
-            border-top: 1px solid var(--border-color);
-            margin-top: 6px;
-        }
-
-        .shift-preview-modal .preview-card .card-note strong {
-            color: var(--text-secondary);
-        }
-
-        .shift-preview-modal .preview-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 14px;
-            border-top: 2px solid var(--border-color);
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .shift-preview-modal .preview-footer .info {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .shift-preview-modal .preview-footer .info strong {
-            color: var(--text-primary);
-        }
-
-        .shift-preview-modal .preview-footer .actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        /* ============================================================
-           RESPONSIVE
-           ============================================================ */
-
-        @media screen and (max-width: 1400px) {
-            .shift-main-grid {
-                grid-template-columns: 260px 1fr;
-                gap: 12px;
-            }
-            .shift-column-wrapper {
-                min-width: 240px;
-                max-width: 360px;
-            }
-        }
-
-        @media screen and (max-width: 1200px) {
-            .shift-main-grid {
-                grid-template-columns: 240px 1fr;
-                gap: 10px;
-            }
-            .shift-column-wrapper {
-                min-width: 220px;
-                max-width: 340px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .shift-main-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-                height: auto !important;
-                max-height: none !important;
-            }
-            .shift-available {
-                min-height: 200px !important;
-                max-height: 280px !important;
-            }
-            .shift-column-wrapper {
-                min-width: 100% !important;
-                max-width: 100% !important;
-                min-height: 200px !important;
-                max-height: 350px !important;
-            }
-            .shift-column .column-body {
-                min-height: 150px !important;
-                max-height: 250px !important;
-            }
-            .shift-log-container {
-                max-height: 75px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 38px !important;
-            }
-            .shift-preview-modal .preview-content {
-                padding: 20px;
-                max-width: 100%;
-            }
-            .shift-preview-modal .preview-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .shift-main-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            .shift-available {
-                min-height: 180px !important;
-                max-height: 250px !important;
-            }
-            .shift-column .column-body {
-                min-height: 120px !important;
-                max-height: 200px !important;
-            }
-            .shift-log-container {
-                max-height: 70px !important;
-                padding: 3px 10px 2px 10px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 35px !important;
-                font-size: 9px !important;
-            }
-            .shift-log-container .log-header .log-actions button {
-                font-size: 8px !important;
-                padding: 2px 8px !important;
-                height: 20px !important;
-            }
-            .shift-preview-modal .preview-grid {
-                grid-template-columns: 1fr;
-            }
-            .shift-preview-modal .preview-content {
-                padding: 14px;
-            }
-            .history-table-wrap {
-                overflow-x: auto;
-            }
-            .history-table-wrap table {
-                min-width: 600px;
-                font-size: 12px;
-            }
-            .history-table-wrap td,
-            .history-table-wrap th {
-                padding: 8px 10px;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .shift-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .shift-header-right {
-                flex-wrap: wrap;
-            }
-            .shift-column-wrapper {
-                flex-wrap: wrap;
-                min-width: 100%;
-                max-width: 100% !important;
-            }
-            .shift-column-wrapper:not(.has-note-open) {
-                max-width: 100% !important;
-            }
-            .shift-column-wrapper.has-note-open {
-                max-width: 100% !important;
-            }
-            .shift-note-panel.open {
-                width: 100%;
-                max-width: 100%;
-                min-width: 100px;
-            }
-            .shift-log-container {
-                max-height: 65px !important;
-                padding: 3px 8px 2px 8px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 32px !important;
-                font-size: 8.5px !important;
-            }
-            .shift-log-container .log-body .log-entry {
-                font-size: 8px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-time {
-                min-width: 45px;
-                font-size: 7.5px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-user {
-                font-size: 8px !important;
-                min-width: 50px;
-            }
-            .shift-log-container .log-body .log-entry .log-action {
-                font-size: 8px !important;
-            }
-            .shift-log-container .log-header .log-actions button {
-                font-size: 7.5px !important;
-                padding: 2px 6px !important;
-                height: 18px !important;
-                gap: 2px !important;
-            }
-            .shift-log-container .log-header .log-actions button .btn-icon {
-                font-size: 8px !important;
-            }
-            .shift-column-wrapper {
-                min-height: 180px !important;
-                max-height: 300px !important;
-            }
-            .shift-column .column-body {
-                min-height: 100px !important;
-                max-height: 180px !important;
-            }
-            .shift-preview-modal .preview-grid {
-                grid-template-columns: 1fr;
-            }
-            .shift-preview-modal .preview-content {
-                padding: 14px;
-            }
-            .history-table-wrap {
-                overflow-x: auto;
-            }
-            .history-table-wrap table {
-                min-width: 600px;
-                font-size: 12px;
-            }
-            .history-table-wrap td,
-            .history-table-wrap th {
-                padding: 8px 10px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .shift-log-container {
-                max-height: 55px !important;
-                padding: 2px 6px 2px 6px !important;
-            }
-            .shift-log-container .log-body {
-                max-height: 30px !important;
-                font-size: 8px !important;
-            }
-            .shift-log-container .log-body .log-entry {
-                font-size: 7.5px !important;
-                padding: 0px 2px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-time {
-                min-width: 35px;
-                font-size: 7px !important;
-            }
-            .shift-log-container .log-body .log-entry .log-user {
-                font-size: 7.5px !important;
-                min-width: 40px;
-            }
-            .shift-log-container .log-body .log-entry .log-action {
-                font-size: 7.5px !important;
-            }
         }
     </style>
 </head>
@@ -10111,7 +9834,7 @@
         }
 
         // ============================================================
-        // RENDER SHIFT PAGE - DENGAN NOTE PANEL YANG DIPERBAIKI
+        // RENDER SHIFT PAGE - DENGAN NOTE OTOMATIS TERSIMPAN
         // ============================================================
         function renderShiftPage() {
             const container = document.getElementById('shiftsContent');
@@ -10136,9 +9859,6 @@
                         <div class="shift-header-right">
                             <button class="btn-shift primary" onclick="refreshShiftData()">
                                 🔄 Refresh Shift
-                            </button>
-                            <button class="btn-shift success" onclick="saveAllNotes()" ${!canEdit ? 'disabled' : ''} style="background:linear-gradient(135deg, #00bcd4, #00838f) !important;">
-                                💾 Simpan Note
                             </button>
                             <button class="btn-shift preview" onclick="openShiftPreview()">👁️ Preview</button>
                             <button class="btn-shift success" onclick="openSaveShiftPopup()" ${!canEdit ? 'disabled' : ''}>💾 Simpan</button>
@@ -10248,7 +9968,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- NOTE PANEL - DENGAN SPACING YANG DIPERBAIKI -->
+                                    <!-- NOTE PANEL - DENGAN OTOMATIS SAVE -->
                                     <div class="shift-note-panel" id="notePanel_${col.id}">
                                         <div class="note-panel-header">
                                             <div class="panel-actions">
@@ -10264,6 +9984,7 @@
                                                               ${!canEdit ? 'style="cursor:default;"' : ''}
                                                               ${!canEdit ? 'title="🔒 Mode baca - hanya bisa melihat note"' : ''}
                                                               oninput="onNoteInput('${col.id}', '${user.id}', this.value)"
+                                                              onblur="onNoteBlur('${col.id}', '${user.id}', this)"
                                                               onfocus="${!canEdit ? 'this.blur()' : ''}">${user.note || ''}</textarea>
                                                 </div>
                                             `).join('')}
@@ -10357,7 +10078,7 @@
         }
 
         // ============================================================
-        // PERBAIKAN UTAMA - NOTE TERSIMPAN SAAT REFRESH
+        // PERBAIKAN NOTE - OTOMATIS TERSIMPAN SAAT KURSOR PINDAH (onblur)
         // ============================================================
         function onNoteInput(columnId, userId, value) {
             if (!canEditShift()) {
@@ -10366,14 +10087,22 @@
             }
 
             const col = shiftColumns.find(c => c.id === columnId);
-            if (!col) return;
+            if (!col) {
+                console.error('❌ Column not found:', columnId);
+                return;
+            }
 
             const user = col.users.find(u => u.id === userId);
-            if (!user) return;
+            if (!user) {
+                console.error('❌ User not found in column:', userId);
+                return;
+            }
 
             // Update nilai note
             user.note = value;
             shiftIsDirty = true;
+
+            console.log(`✏️ Note changed for ${user.name}: "${value}"`);
 
             // Update indicator
             const indicator = document.querySelector(
@@ -10412,29 +10141,18 @@
                 delete noteDebounceTimers[key];
             }
 
-            // Set timer untuk save - 300ms agar lebih cepat
+            // Set timer untuk save - 300ms agar cepat
             noteDebounceTimers[key] = setTimeout(async () => {
                 try {
-                    console.log(`💾 Saving note for ${user.name}: "${user.note}"`);
-                    
+                    console.log(`💾 Auto-saving note for ${user.name}: "${user.note}"`);
                     const success = await updateShiftActive();
-                    
                     if (success) {
-                        const detail = user.note && user.note.trim() !== '' ?
-                            `Menambahkan note untuk ${user.name}: "${user.note}"` :
-                            `Menghapus note untuk ${user.name}`;
-                        
-                        await insertShiftLog('EDIT_NOTE', getCurrentUserName(), detail);
-                        console.log(`✅ Note saved for ${user.name}: "${user.note}"`);
-                        showShiftToast(`✅ Note untuk ${user.name} tersimpan`, 'success', 1200);
+                        console.log(`✅ Note auto-saved for ${user.name}: "${user.note}"`);
                     } else {
-                        console.error('❌ Failed to save note - updateShiftActive returned false');
-                        showShiftToast('❌ Gagal menyimpan note', 'error');
+                        console.error('❌ Failed to auto-save note');
                     }
-                    
                 } catch (err) {
-                    console.error('❌ Error saving note:', err);
-                    showShiftToast('❌ Gagal menyimpan note: ' + err.message, 'error');
+                    console.error('❌ Error auto-saving note:', err);
                 } finally {
                     delete noteDebounceTimers[key];
                 }
@@ -10442,36 +10160,104 @@
         }
 
         // ============================================================
-        // TAMBAHKAN FUNGSI UNTUK MANUAL SAVE NOTE
+        // FUNGSI NOTE - SIMPAN SAAT KURSOR PINDAH (onblur)
         // ============================================================
-        async function saveAllNotes() {
-            if (!shiftIsDirty) {
-                showShiftToast('ℹ️ Tidak ada perubahan note', 'info', 1500);
-                return;
-            }
+        function onNoteBlur(columnId, userId, textarea) {
+            // Saat kursor keluar dari textarea, langsung simpan
+            const value = textarea ? textarea.value : '';
             
-            showShiftToast('💾 Menyimpan semua note...', 'info', 1500);
-            const success = await updateShiftActive();
-            if (success) {
-                showShiftToast('✅ Semua note berhasil disimpan!', 'success', 2000);
-            } else {
-                showShiftToast('❌ Gagal menyimpan note', 'error');
+            const col = shiftColumns.find(c => c.id === columnId);
+            if (!col) return;
+
+            const user = col.users.find(u => u.id === userId);
+            if (!user) return;
+
+            // Update nilai note
+            user.note = value;
+            shiftIsDirty = true;
+
+            console.log(`📝 Note blurred for ${user.name}: "${value}" - saving...`);
+
+            // Update indicator
+            const indicator = document.querySelector(
+                `.shift-column-wrapper[data-column-id="${columnId}"] .user-card-shift[data-user-id="${userId}"] .note-indicator`
+            );
+            if (indicator) {
+                if (value && value.trim() !== '') {
+                    indicator.classList.add('has-note');
+                } else {
+                    indicator.classList.remove('has-note');
+                }
             }
+
+            // Update badge
+            const badge = document.querySelector(`.shift-column-wrapper[data-column-id="${columnId}"] .note-badge`);
+            if (badge) {
+                const hasAnyNote = col.users.some(u => u.note && u.note.trim() !== '');
+                if (hasAnyNote) {
+                    badge.classList.add('has-note');
+                    if (!badge.querySelector('.badge-dot')) {
+                        const dot = document.createElement('span');
+                        dot.className = 'badge-dot';
+                        badge.prepend(dot);
+                    }
+                } else {
+                    badge.classList.remove('has-note');
+                    const dot = badge.querySelector('.badge-dot');
+                    if (dot) dot.remove();
+                }
+            }
+
+            // Clear existing timer
+            const key = `${columnId}_${userId}`;
+            if (noteDebounceTimers[key]) {
+                clearTimeout(noteDebounceTimers[key]);
+                delete noteDebounceTimers[key];
+            }
+
+            // LANGSUNG SIMPAN TANPA DELAY
+            setTimeout(async () => {
+                try {
+                    console.log(`💾 Saving note on blur for ${user.name}: "${user.note}"`);
+                    const success = await updateShiftActive();
+                    if (success) {
+                        console.log(`✅ Note saved on blur for ${user.name}`);
+                        // Tampilkan toast ringan
+                        showToast(`✅ Note "${user.name}" tersimpan`, 'success', 1000);
+                    } else {
+                        console.error('❌ Failed to save note on blur');
+                    }
+                } catch (err) {
+                    console.error('❌ Error saving note on blur:', err);
+                }
+            }, 100);
         }
 
         // ============================================================
-        // EVENT BEFOREUNLOAD - PASTIKAN NOTE TERSIMPAN
+        // EVENT BEFOREUNLOAD - PASTIKAN NOTE TERSIMPAN SAAT REFRESH
         // ============================================================
         window.addEventListener('beforeunload', function() {
+            // Hapus semua timer
             Object.keys(noteDebounceTimers).forEach(key => {
                 clearTimeout(noteDebounceTimers[key]);
                 delete noteDebounceTimers[key];
             });
             
+            // Flush logs
             flushShiftLogs();
             
+            // Jika ada perubahan note, simpan
             if (shiftIsDirty && shiftActiveId) {
                 updateShiftActive();
+            }
+        });
+
+        // Juga simpan saat tab disembunyikan
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                if (shiftIsDirty && shiftActiveId) {
+                    updateShiftActive();
+                }
             }
         });
 
