@@ -9124,7 +9124,7 @@
         };
 
         // ============================================================
-        // FUNGSI SELESAI IZIN
+        // FUNGSI SELESAI IZIN — ATOMIK & ANTI END GANDA
         // ============================================================
         window.selesaiIzin = async function(nama) {
             const formattedNama = formatName(nama);
@@ -9134,7 +9134,10 @@
                 return;
             }
 
-            const isLeaderOrCsLine = currentUserRole === 'leader' || currentUserRole === 'csline' || currentUserRole === 'admin';
+            const isLeaderOrCsLine =
+                currentUserRole === 'leader' ||
+                currentUserRole === 'csline' ||
+                currentUserRole === 'admin';
             const isCurrentUser = isUserCurrent(formattedNama);
 
             if (!isLeaderOrCsLine && !isCurrentUser) {
@@ -9142,48 +9145,157 @@
                 return;
             }
 
-            const now = new Date();
-            const data = dataIzin[formattedNama];
-            if (data.status !== 'izin') {
-                showToast('User belum dalam status izin!', 'warning');
+            const currentData = dataIzin[formattedNama];
+            if (!currentData || currentData.status !== 'izin' || !currentData.mulai) {
+                showToast('Sesi izin sudah selesai atau tidak lagi aktif.', 'warning');
                 return;
             }
 
             endLock[formattedNama] = true;
 
-            const endButtons = document.querySelectorAll(`.btn-action.end[onclick*="${formattedNama}"]`);
+            const endButtons = document.querySelectorAll(
+                `.btn-action.end[onclick*="${formattedNama}"]`
+            );
             endButtons.forEach(btn => {
                 btn.disabled = true;
                 btn.style.opacity = '0.5';
-                btn.textContent = '⏳ ...';
+                btn.innerHTML = '<span class="icon">⏳</span> PROSES';
             });
 
             try {
-                const selesaiTime = now.toISOString();
-                const durasiDetik = Math.floor((now - new Date(data.mulai)) / 1000);
+                // TEST MODE tetap berjalan lokal.
+                if (TEST_MODE) {
+                    const selesaiTime = new Date().toISOString();
+                    const durasiDetik = Math.max(
+                        0,
+                        Math.floor(
+                            (new Date(selesaiTime) - new Date(currentData.mulai)) / 1000
+                        )
+                    );
+                    const isQuotaValid = durasiDetik >= MIN_IZIN_DURATION_SECONDS;
+                    const isOverLimit = durasiDetik >= (jackpotLimitMinutes * 60);
 
-                const batasDetik = (jackpotLimitMinutes * 60) - 1;
-                const isOverLimit = durasiDetik > batasDetik;
+                    currentData.status = 'selesai';
+                    currentData.selesai = selesaiTime;
+                    currentData.emoticon = null;
 
-                data.status = 'selesai';
-                data.selesai = selesaiTime;
-                data.emoticon = null;
+                    historyData.unshift({
+                        nama: formattedNama,
+                        tanggal: currentData.tanggal,
+                        mulai: currentData.mulai,
+                        selesai: selesaiTime,
+                        status: 'selesai',
+                        role: getRoleForUser(formattedNama),
+                        durasiDetik,
+                        isQuotaValid
+                    });
 
-                const isQuotaValid = durasiDetik >= MIN_IZIN_DURATION_SECONDS;
+                    if (isOverLimit) {
+                        voucherData[formattedNama] =
+                            (voucherData[formattedNama] || 0) + 1;
+                        pendingVoucherClaim = formattedNama;
+                    }
 
-                const historyEntry = {
-                    nama: formattedNama,
-                    tanggal: data.tanggal,
-                    mulai: data.mulai,
-                    selesai: data.selesai,
-                    status: 'selesai',
-                    role: getRoleForUser(formattedNama),
-                    durasiDetik: durasiDetik,
-                    isQuotaValid: isQuotaValid
-                };
+                    dataIzin[formattedNama] = currentData;
+                    renderAll();
+                    updateCurrentCounts();
+                    updateQuickStats();
+                    return;
+                }
 
-                historyData.push(historyEntry);
-                historyData.sort((a, b) => new Date(b.mulai) - new Date(a.mulai));
+                // Database memproses END dalam satu transaksi.
+                const { data: rpcResult, error: rpcError } =
+                    await supabaseDashboard.rpc('finish_izin', {
+                        p_nama: formattedNama
+                    });
+
+                if (rpcError) {
+                    throw rpcError;
+                }
+
+                const result =
+                    typeof rpcResult === 'string'
+                        ? JSON.parse(rpcResult)
+                        : rpcResult;
+
+                if (!result || !result.success) {
+                    if (result?.code === 'already_finished') {
+                        // Tab/perangkat ini memiliki state lama. Sinkronkan ulang sekali.
+                        if (dataIzin[formattedNama]) {
+                            dataIzin[formattedNama].status = 'selesai';
+                            dataIzin[formattedNama].selesai =
+                                result.selesai || dataIzin[formattedNama].selesai;
+                            dataIzin[formattedNama].emoticon = null;
+                        }
+
+                        renderAll();
+                        updateCurrentCounts();
+
+                        showToast(
+                            'Sesi izin sudah diselesaikan dari tab atau perangkat lain.',
+                            'warning',
+                            4000
+                        );
+
+                        await loadDataFromDatabase(true);
+                        return;
+                    }
+
+                    showToast(
+                        result?.message || 'Gagal menyelesaikan izin.',
+                        'warning',
+                        4000
+                    );
+                    return;
+                }
+
+                const durasiDetik = Number(result.duration_seconds) || 0;
+                const isQuotaValid = Boolean(result.is_quota_valid);
+                const isOverLimit = Boolean(result.is_over_limit);
+                const mulaiTime = result.mulai || currentData.mulai;
+                const selesaiTime = result.selesai;
+                const role = result.role || getRoleForUser(formattedNama);
+                const tanggal = result.tanggal || currentData.tanggal;
+
+                currentData.status = 'selesai';
+                currentData.mulai = mulaiTime;
+                currentData.selesai = selesaiTime;
+                currentData.tanggal = tanggal;
+                currentData.role = role;
+                currentData.emoticon = null;
+                dataIzin[formattedNama] = currentData;
+
+                // Hindari duplikat pada state lokal bila Realtime/full sync datang bersamaan.
+                const alreadyInLocalHistory = historyData.some(entry =>
+                    entry.nama === formattedNama &&
+                    entry.mulai === mulaiTime
+                );
+
+                if (!alreadyInLocalHistory) {
+                    historyData.push({
+                        nama: formattedNama,
+                        tanggal,
+                        mulai: mulaiTime,
+                        selesai: selesaiTime,
+                        status: 'selesai',
+                        role,
+                        durasiDetik,
+                        isQuotaValid
+                    });
+                    historyData.sort(
+                        (a, b) => new Date(b.mulai) - new Date(a.mulai)
+                    );
+                }
+
+                if (result.voucher_added) {
+                    voucherData[formattedNama] =
+                        Number(result.voucher_total) ||
+                        ((voucherData[formattedNama] || 0) + 1);
+                    pendingVoucherClaim = formattedNama;
+                } else if (result.voucher_total !== undefined) {
+                    voucherData[formattedNama] =
+                        Number(result.voucher_total) || 0;
+                }
 
                 if (isQuotaValid) {
                     const today = new Date().toDateString();
@@ -9194,52 +9306,11 @@
                         h.durasiDetik >= MIN_IZIN_DURATION_SECONDS
                     );
 
-                    const usedCount = validHistory.length;
                     const maxQuota = getMaxQuota(formattedNama);
-
-                    if (!quotaData[formattedNama] || quotaData[formattedNama].date !== today) {
-                        quotaData[formattedNama] = { count: 0, date: today };
-                    }
-                    quotaData[formattedNama].count = Math.min(usedCount, maxQuota);
-                }
-
-                if (isOverLimit) {
-                    addVoucher(formattedNama);
-                    pendingVoucherClaim = formattedNama;
-                }
-
-                dataIzin[formattedNama] = data;
-
-                if (!TEST_MODE) {
-                    try {
-                        await supabaseDashboard
-                            .from('izin_anggota')
-                            .upsert({
-                                nama: formattedNama,
-                                status: 'selesai',
-                                mulai: data.mulai,
-                                selesai: data.selesai,
-                                tanggal: data.tanggal,
-                                role: getRoleForUser(formattedNama),
-                                emoticon: null
-                            }, { onConflict: 'nama' });
-
-                        await supabaseDashboard
-                            .from('history')
-                            .insert({
-                                nama: formattedNama,
-                                tanggal: data.tanggal,
-                                mulai: data.mulai,
-                                selesai: data.selesai,
-                                status: 'selesai',
-                                role: getRoleForUser(formattedNama),
-                                durasi_detik: durasiDetik,
-                                is_quota_valid: isQuotaValid
-                            });
-
-                    } catch (err) {
-                        console.error('❌ Error simpan ke database:', err);
-                    }
+                    quotaData[formattedNama] = {
+                        count: Math.min(validHistory.length, maxQuota),
+                        date: today
+                    };
                 }
 
                 renderAll();
@@ -9248,9 +9319,6 @@
 
                 const menit = Math.floor(durasiDetik / 60);
                 const detik = durasiDetik % 60;
-                const used = getUsedIzinToday(formattedNama);
-                const maxQuota = getMaxQuota(formattedNama);
-
                 const durasiText = `${menit}m ${detik}s`;
 
                 if (!isQuotaValid) {
@@ -9260,36 +9328,47 @@
                         4000
                     );
                 } else {
+                    const used = getUsedIzinToday(formattedNama);
+                    const maxQuota = getMaxQuota(formattedNama);
                     let pesan = `⏱️ ${durasiText} | Quota: ${used}/${maxQuota}`;
+
                     if (isOverLimit) {
-                        pesan += ` 🎫 +1 Voucher!`;
+                        pesan += ' 🎫 +1 Voucher!';
                     }
+
                     showToast(pesan, 'success', 4000);
                 }
 
                 if (isOverLimit && !isJackpotShown[formattedNama]) {
                     isJackpotShown[formattedNama] = true;
-                    setTimeout(() => {
-                        showJackpot();
-                    }, 500);
+                    setTimeout(showJackpot, 500);
                 }
 
             } catch (err) {
                 console.error('❌ Error selesai izin:', err);
-                showToast('Gagal menyelesaikan izin: ' + err.message, 'error');
+                showToast(
+                    'Gagal menyelesaikan izin: ' +
+                    (err?.message || 'Terjadi kesalahan database.'),
+                    'error',
+                    5000
+                );
             } finally {
                 setTimeout(() => {
                     endLock[formattedNama] = false;
-                    const endButtons = document.querySelectorAll(`.btn-action.end[onclick*="${formattedNama}"]`);
-                    endButtons.forEach(btn => {
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                        btn.innerHTML = '<span class="icon">■</span> END';
-                    });
-                }, 1000);
 
-                // Hindari full reload setelah END. Data lokal sudah diperbarui dan
-                // perubahan izin juga dikirim melalui Realtime.
+                    const latestData = dataIzin[formattedNama];
+                    const buttons = document.querySelectorAll(
+                        `.btn-action.end[onclick*="${formattedNama}"]`
+                    );
+
+                    buttons.forEach(btn => {
+                        if (latestData?.status === 'izin') {
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            btn.innerHTML = '<span class="icon">■</span> END';
+                        }
+                    });
+                }, 1200);
             }
         };
 
