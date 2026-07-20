@@ -275,6 +275,10 @@
             background: rgba(0, 229, 255, 0.10);
             color: #00e5ff;
         }
+        .role-tag.admin {
+            background: rgba(255, 213, 79, 0.10);
+            color: #ffd54f;
+        }
         .role-tag.csline {
             background: rgba(255, 152, 0, 0.10);
             color: #ff9800;
@@ -583,143 +587,303 @@
     </script>
 
     <script>
+
         (function() {
             'use strict';
 
             console.log('🚀 Live View - Starting...');
 
             // ============================================================
-            // KONFIGURASI SUPABASE
+            // KONFIGURASI SUPABASE BARU
             // ============================================================
-            var SUPABASE_URL = 'https://kdmxjficzigsumvcsrtn.supabase.co';
-            var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkbXhqZmljemlnc3VtdmNzcnRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTI4MDAsImV4cCI6MjA5ODg4ODgwMH0.LTh93wC11NeydKGlrkxSreaSTQFq5KiidWisQ09CqnM';
+            var SUPABASE_URL = 'https://vnmdtmlrfecremloqlmz.supabase.co';
+            var SUPABASE_ANON_KEY = 'sb_publishable_VJdyDKMe_g-YL2BlYBuLCg_xm5RrSQ1';
 
-            var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            var supabaseClient = window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_ANON_KEY,
+                {
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    }
+                }
+            );
 
             // ============================================================
             // STATE
             // ============================================================
-            var listUsers = [];
             var izinData = {};
-            var voucherData = {};
             var jackpotLimitMinutes = 15;
+            var realtimeChannel = null;
+            var lastSuccessfulLoad = 0;
+            var refreshInProgress = false;
+
+            // Query fallback dibuat jarang karena update utama memakai Realtime.
+            var FALLBACK_REFRESH_MS = 5 * 60 * 1000;
+            var SETTINGS_REFRESH_MS = 30 * 60 * 1000;
 
             // ============================================================
             // ROLE ORDER UNTUK SORTING
             // ============================================================
             var ROLE_ORDER = {
                 leader: 0,
-                csline: 1,
-                cs: 2,
-                kapten: 3,
-                kasir: 4
+                admin: 1,
+                csline: 2,
+                cs: 3,
+                kapten: 4,
+                kasir: 5
+            };
+
+            var ROLE_LABELS = {
+                leader: 'Leader',
+                admin: 'Admin',
+                csline: 'CS Line',
+                cs: 'CS',
+                kapten: 'Kapten',
+                kasir: 'Kasir'
+            };
+
+            var ROLE_ICONS = {
+                leader: '👑',
+                admin: '🛡️',
+                csline: '⭐',
+                cs: '💬',
+                kapten: '⚓',
+                kasir: '💰'
             };
 
             // ============================================================
-            // FORMAT UTILITY
+            // UTILITAS
             // ============================================================
-            function formatName(name) {
-                return name ? name.toUpperCase() : '';
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
             }
 
-            // ============================================================
-            // FUNGSI KONVERSI UTC KE WIB
-            // ============================================================
-            function parseToWIB(dateString) {
-                var date = new Date(dateString);
-                if (isNaN(date.getTime())) {
-                    return null;
+            function normalizeName(name) {
+                return String(name || '').trim().toUpperCase();
+            }
+
+            function parseTimestamp(value) {
+                if (!value) return null;
+                var date = new Date(value);
+                return isNaN(date.getTime()) ? null : date;
+            }
+
+            function setLiveStatus(status, label) {
+                var badge = document.querySelector('.live-badge');
+                if (!badge) return;
+
+                var dot = badge.querySelector('.dot');
+                badge.lastChild.textContent = ' ' + label;
+
+                if (status === 'online') {
+                    badge.style.color = '#00e676';
+                    badge.style.borderColor = 'rgba(0, 230, 118, 0.18)';
+                    badge.style.background = 'rgba(0, 230, 118, 0.08)';
+                    if (dot) dot.style.background = '#00e676';
+                } else if (status === 'connecting') {
+                    badge.style.color = '#ffd54f';
+                    badge.style.borderColor = 'rgba(255, 213, 79, 0.18)';
+                    badge.style.background = 'rgba(255, 213, 79, 0.08)';
+                    if (dot) dot.style.background = '#ffd54f';
+                } else {
+                    badge.style.color = '#ff6b6b';
+                    badge.style.borderColor = 'rgba(255, 107, 107, 0.18)';
+                    badge.style.background = 'rgba(255, 107, 107, 0.08)';
+                    if (dot) dot.style.background = '#ff6b6b';
                 }
-                var wibTime = new Date(date.getTime() + (7 * 60 * 60 * 1000));
-                return wibTime;
+            }
+
+            function showLoadError(message) {
+                var tbody = document.getElementById('tableBody');
+                if (!tbody) return;
+
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <div class="icon">⚠️</div>
+                                <h3>${escapeHtml(message)}</h3>
+                            </div>
+                        </td>
+                    </tr>
+                `;
             }
 
             // ============================================================
-            // LOAD DATA
+            // LOAD SETTING BATAS IZIN
             // ============================================================
-            async function loadPublicData() {
+            async function loadPublicSettings() {
                 try {
-                    console.log('📥 Loading data...');
-
-                    var usersResult = await supabase.from('users').select('*');
-                    if (usersResult.error) {
-                        console.error('❌ Users error:', usersResult.error);
-                    } else {
-                        listUsers = usersResult.data || [];
-                        console.log('✅ ' + listUsers.length + ' users loaded');
-                    }
-
-                    var voucherResult = await supabase.from('vouchers').select('*');
-                    if (voucherResult.error) {
-                        console.error('❌ Voucher error:', voucherResult.error);
-                    } else {
-                        voucherData = {};
-                        (voucherResult.data || []).forEach(function(v) {
-                            voucherData[v.nama] = v.jumlah || 0;
-                        });
-                        console.log('✅ ' + (voucherResult.data || []).length + ' voucher loaded');
-                    }
-
-                    var izinResult = await supabase.from('izin_anggota').select('*').eq('status', 'izin');
-                    if (izinResult.error) {
-                        console.error('❌ Izin error:', izinResult.error);
-                    } else {
-                        izinData = {};
-                        (izinResult.data || []).forEach(function(item) {
-                            var wibMulai = parseToWIB(item.mulai);
-                            izinData[item.nama] = {
-                                mulai: item.mulai,
-                                mulaiWIB: wibMulai,
-                                role: item.role
-                            };
-                        });
-                        console.log('✅ ' + (izinResult.data || []).length + ' users sedang izin');
-                    }
-
-                    var settingsResult = await supabase.from('settings').select('*').eq('key', 'izin_settings')
+                    var result = await supabaseClient
+                        .from('settings')
+                        .select('value')
+                        .eq('key', 'izin_settings')
                         .maybeSingle();
-                    if (!settingsResult.error && settingsResult.data) {
-                        try {
-                            var parsed = JSON.parse(settingsResult.data.value);
-                            if (parsed.jackpotLimitMinutes) {
-                                jackpotLimitMinutes = parsed.jackpotLimitMinutes;
-                            }
-                        } catch (e) {}
+
+                    if (result.error) {
+                        console.warn('⚠️ Setting izin tidak terbaca, memakai default 15 menit:', result.error.message);
+                        return;
                     }
 
+                    if (!result.data || !result.data.value) return;
+
+                    var parsed = JSON.parse(result.data.value);
+                    var newLimit = Number(parsed.jackpotLimitMinutes);
+
+                    if (Number.isFinite(newLimit) && newLimit > 0) {
+                        jackpotLimitMinutes = newLimit;
+                        updateTimers();
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Gagal memuat setting izin:', error);
+                }
+            }
+
+            // ============================================================
+            // LOAD DATA IZIN PUBLIK
+            // ============================================================
+            async function loadPublicData(force) {
+                if (refreshInProgress) return;
+
+                var now = Date.now();
+                if (!force && lastSuccessfulLoad && (now - lastSuccessfulLoad) < 15000) {
+                    return;
+                }
+
+                refreshInProgress = true;
+
+                try {
+                    console.log('📥 Loading live izin...');
+
+                    var result = await supabaseClient
+                        .from('izin_anggota')
+                        .select('nama,role,mulai,status')
+                        .eq('status', 'izin')
+                        .not('mulai', 'is', null)
+                        .order('mulai', { ascending: true })
+                        .limit(100);
+
+                    if (result.error) {
+                        throw result.error;
+                    }
+
+                    izinData = {};
+
+                    (result.data || []).forEach(function(item) {
+                        var key = normalizeName(item.nama);
+                        if (!key) return;
+
+                        izinData[key] = {
+                            nama: item.nama,
+                            role: item.role || 'cs',
+                            mulai: item.mulai
+                        };
+                    });
+
+                    lastSuccessfulLoad = Date.now();
                     renderTable();
                     updateOnlineCount();
-                    console.log('✅ Data loaded!');
+                    setLiveStatus('online', 'LIVE');
 
-                } catch (err) {
-                    console.error('❌ Error:', err);
+                    console.log('✅ ' + Object.keys(izinData).length + ' anggota sedang izin');
+                } catch (error) {
+                    console.error('❌ Gagal mengambil live izin:', error);
+                    setLiveStatus('offline', 'OFFLINE');
+
+                    if (!lastSuccessfulLoad) {
+                        showLoadError(
+                            'Data belum dapat dibaca. Jalankan SQL akses Live View di Supabase.'
+                        );
+                    }
+                } finally {
+                    refreshInProgress = false;
                 }
             }
 
             // ============================================================
-            // RENDER TABLE - DENGAN SORTING BERDASARKAN ROLE
+            // REALTIME
+            // ============================================================
+            function applyRealtimePayload(payload) {
+                var oldRow = payload.old || {};
+                var newRow = payload.new || {};
+
+                if (oldRow.nama) {
+                    delete izinData[normalizeName(oldRow.nama)];
+                }
+
+                if (
+                    payload.eventType !== 'DELETE' &&
+                    newRow.nama &&
+                    newRow.status === 'izin' &&
+                    newRow.mulai
+                ) {
+                    izinData[normalizeName(newRow.nama)] = {
+                        nama: newRow.nama,
+                        role: newRow.role || 'cs',
+                        mulai: newRow.mulai
+                    };
+                }
+
+                renderTable();
+                updateOnlineCount();
+            }
+
+            function subscribeRealtime() {
+                if (realtimeChannel) return;
+
+                setLiveStatus('connecting', 'CONNECTING');
+
+                realtimeChannel = supabaseClient
+                    .channel('public-live-izin')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'izin_anggota'
+                        },
+                        function(payload) {
+                            applyRealtimePayload(payload);
+                        }
+                    )
+                    .subscribe(function(status) {
+                        if (status === 'SUBSCRIBED') {
+                            setLiveStatus('online', 'LIVE');
+                            console.log('✅ Realtime connected');
+                        } else if (
+                            status === 'CHANNEL_ERROR' ||
+                            status === 'TIMED_OUT' ||
+                            status === 'CLOSED'
+                        ) {
+                            setLiveStatus('offline', 'OFFLINE');
+                            console.warn('⚠️ Realtime status:', status);
+                        }
+                    });
+            }
+
+            // ============================================================
+            // RENDER TABLE
             // ============================================================
             function renderTable() {
                 var tbody = document.getElementById('tableBody');
-
-                var onlineUsers = listUsers
-                    .filter(function(user) {
-                        return izinData[user.name] && izinData[user.name].mulai;
-                    })
-                    .map(function(user) {
-                        return {
-                            ...user,
-                            mulai: izinData[user.name].mulai,
-                            mulaiWIB: izinData[user.name].mulaiWIB
-                        };
+                var onlineUsers = Object.keys(izinData)
+                    .map(function(key) {
+                        return izinData[key];
                     })
                     .sort(function(a, b) {
                         var orderA = ROLE_ORDER[a.role] !== undefined ? ROLE_ORDER[a.role] : 99;
                         var orderB = ROLE_ORDER[b.role] !== undefined ? ROLE_ORDER[b.role] : 99;
-                        if (orderA !== orderB) {
-                            return orderA - orderB;
-                        }
-                        return a.name.localeCompare(b.name);
+
+                        if (orderA !== orderB) return orderA - orderB;
+                        return normalizeName(a.nama).localeCompare(normalizeName(b.nama));
                     });
 
                 if (onlineUsers.length === 0) {
@@ -736,48 +900,26 @@
                     return;
                 }
 
-                var roleLabels = {
-                    leader: 'Leader',
-                    csline: 'CS Line',
-                    cs: 'CS',
-                    kapten: 'Kapten',
-                    kasir: 'Kasir'
-                };
-
-                var roleIcons = {
-                    leader: '👑',
-                    csline: '⭐',
-                    cs: '💬',
-                    kapten: '⚓',
-                    kasir: '💰'
-                };
-
-                var now = new Date();
-                var batasDetik = (jackpotLimitMinutes * 60) - 1;
-
+                var now = Date.now();
+                var batasDetik = jackpotLimitMinutes * 60;
                 var html = '';
+
                 onlineUsers.forEach(function(user, index) {
-                    var startTime = user.mulaiWIB;
-                    if (!startTime) {
-                        startTime = parseToWIB(user.mulai);
-                        if (!startTime) {
-                            startTime = new Date();
-                        }
-                    }
+                    var startTime = parseTimestamp(user.mulai);
+                    var diff = startTime
+                        ? Math.max(0, Math.floor((now - startTime.getTime()) / 1000))
+                        : 0;
 
-                    var diffMs = now.getTime() - startTime.getTime();
-                    var diff = Math.floor(diffMs / 1000);
-                    var validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
-
-                    var menit = Math.floor(validDiff / 60);
-                    var detik = validDiff % 60;
-                    var isOverLimit = validDiff > batasDetik;
-
+                    var menit = Math.floor(diff / 60);
+                    var detik = diff % 60;
+                    var isOverLimit = diff >= batasDetik;
                     var role = user.role || 'cs';
-                    var roleLabel = roleLabels[role] || role;
-                    var roleIcon = roleIcons[role] || '👤';
+                    var roleLabel = ROLE_LABELS[role] || role;
+                    var roleIcon = ROLE_ICONS[role] || '👤';
                     var timerClass = isOverLimit ? 'over-limit' : '';
                     var delay = index * 0.06;
+                    var safeName = escapeHtml(user.nama);
+                    var safeRole = escapeHtml(role);
 
                     html += `
                         <tr style="animation: fadeIn 0.25s ease ${delay}s both;">
@@ -787,15 +929,16 @@
                                 </span>
                             </td>
                             <td class="col-nama">
-                                <span class="nama-cell">${user.name}</span>
+                                <span class="nama-cell">${safeName}</span>
                             </td>
                             <td class="col-role">
-                                <span class="role-tag ${role}">${roleIcon} ${roleLabel}</span>
+                                <span class="role-tag ${safeRole}">${roleIcon} ${escapeHtml(roleLabel)}</span>
                             </td>
                             <td class="col-durasi">
-                                <span class="timer-cell ${timerClass}" data-nama="${user.name}" data-mulai="${user.mulai}">
-                                    ${menit}m ${detik}s
-                                </span>
+                                <span
+                                    class="timer-cell ${timerClass}"
+                                    data-nama="${escapeHtml(normalizeName(user.nama))}"
+                                >${menit}m ${String(detik).padStart(2, '0')}s</span>
                             </td>
                         </tr>
                     `;
@@ -805,7 +948,7 @@
             }
 
             // ============================================================
-            // UPDATE ONLINE COUNT - 8 DOTS
+            // UPDATE ONLINE COUNT
             // ============================================================
             function updateOnlineCount() {
                 var online = Object.keys(izinData).length;
@@ -817,45 +960,34 @@
                 var activeDots = Math.min(online, maxDots);
 
                 for (var i = 0; i < maxDots; i++) {
-                    var isActive = i < activeDots;
-                    dotsHtml += `<span class="dot-item ${isActive ? 'active' : ''}"></span>`;
+                    dotsHtml += `<span class="dot-item ${i < activeDots ? 'active' : ''}"></span>`;
                 }
+
                 dotsContainer.innerHTML = dotsHtml;
             }
 
             // ============================================================
-            // UPDATE TIMERS
+            // UPDATE TIMER LOKAL (TIDAK QUERY DATABASE)
             // ============================================================
             function updateTimers() {
                 var timerCells = document.querySelectorAll('.timer-cell');
-                var now = new Date();
-                var batasDetik = (jackpotLimitMinutes * 60) - 1;
+                var now = Date.now();
+                var batasDetik = jackpotLimitMinutes * 60;
 
                 timerCells.forEach(function(el) {
-                    var nama = el.getAttribute('data-nama');
-                    var mulai = el.getAttribute('data-mulai');
-                    if (!nama || !mulai) return;
-
-                    var data = izinData[nama];
+                    var key = el.getAttribute('data-nama');
+                    var data = izinData[key];
                     if (!data || !data.mulai) return;
 
-                    var startTime = data.mulaiWIB;
-                    if (!startTime) {
-                        startTime = parseToWIB(data.mulai);
-                        if (!startTime) {
-                            return;
-                        }
-                    }
+                    var startTime = parseTimestamp(data.mulai);
+                    if (!startTime) return;
 
-                    var diffMs = now.getTime() - startTime.getTime();
-                    var diff = Math.floor(diffMs / 1000);
-                    var validDiff = (diff > 0 && !isNaN(diff)) ? diff : 0;
+                    var diff = Math.max(0, Math.floor((now - startTime.getTime()) / 1000));
+                    var menit = Math.floor(diff / 60);
+                    var detik = diff % 60;
+                    var isOverLimit = diff >= batasDetik;
 
-                    var menit = Math.floor(validDiff / 60);
-                    var detik = validDiff % 60;
-                    var isOverLimit = validDiff > batasDetik;
-
-                    el.textContent = menit + 'm ' + detik + 's';
+                    el.textContent = menit + 'm ' + String(detik).padStart(2, '0') + 's';
                     el.className = 'timer-cell' + (isOverLimit ? ' over-limit' : '');
                 });
             }
@@ -863,17 +995,19 @@
             // ============================================================
             // CLOCK
             // ============================================================
-            function startClock() {
-                updateClock();
-                setInterval(updateClock, 1000);
-            }
-
             function updateClock() {
                 var now = new Date();
                 var hours = String(now.getHours()).padStart(2, '0');
                 var minutes = String(now.getMinutes()).padStart(2, '0');
                 var seconds = String(now.getSeconds()).padStart(2, '0');
-                document.getElementById('clockDisplay').textContent = hours + ':' + minutes + ':' + seconds;
+
+                document.getElementById('clockDisplay').textContent =
+                    hours + ':' + minutes + ':' + seconds;
+            }
+
+            function startClock() {
+                updateClock();
+                setInterval(updateClock, 1000);
             }
 
             // ============================================================
@@ -881,13 +1015,45 @@
             // ============================================================
             document.addEventListener('DOMContentLoaded', function() {
                 console.log('🚀 Live View - DOM Ready');
-                loadPublicData();
+
                 startClock();
+                loadPublicSettings();
+                loadPublicData(true);
+                subscribeRealtime();
+
                 setInterval(updateTimers, 1000);
-                setInterval(loadPublicData, 30000);
+                setInterval(function() {
+                    loadPublicData(true);
+                }, FALLBACK_REFRESH_MS);
+                setInterval(loadPublicSettings, SETTINGS_REFRESH_MS);
+
+                document.addEventListener('visibilitychange', function() {
+                    if (
+                        document.visibilityState === 'visible' &&
+                        Date.now() - lastSuccessfulLoad > 60000
+                    ) {
+                        loadPublicData(true);
+                    }
+                });
+
+                window.addEventListener('online', function() {
+                    loadPublicData(true);
+                    subscribeRealtime();
+                });
+
+                window.addEventListener('offline', function() {
+                    setLiveStatus('offline', 'OFFLINE');
+                });
             });
 
+            window.addEventListener('beforeunload', function() {
+                if (realtimeChannel) {
+                    supabaseClient.removeChannel(realtimeChannel);
+                    realtimeChannel = null;
+                }
+            });
         })();
+
     </script>
 
 </body>
