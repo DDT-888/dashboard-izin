@@ -6427,10 +6427,19 @@
         // ============================================================
         // KONFIGURASI SUPABASE
         // ============================================================
-        const SUPABASE_URL = 'https://kdmxjficzigsumvcsrtn.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkbXhqZmljemlnc3VtdmNzcnRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTI4MDAsImV4cCI6MjA5ODg4ODgwMH0.LTh93wC11NeydKGlrkxSreaSTQFq5KiidWisQ09CqnM';
+        const SUPABASE_URL = 'https://vnmdtmlrfecremloqlmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_VJdyDKMe_g-YL2BlYBuLCg_xm5RrSQ1';
 
-        const supabaseDashboard = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseDashboard = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            },
+            realtime: {
+                params: { eventsPerSecond: 5 }
+            }
+        });
 
         console.log('🚀 Dashboard - Supabase client initialized');
 
@@ -6439,6 +6448,16 @@
         // ============================================================
         const DEFAULT_JACKPOT_LIMIT_MINUTES = 15;
         const MIN_IZIN_DURATION_SECONDS = 120;
+
+        // ============================================================
+        // EGRESS-SAFE PERFORMANCE SETTINGS
+        // ============================================================
+        const DATA_REFRESH_INTERVAL_MS = 15 * 60 * 1000;      // full sync setiap 15 menit
+        const VISIBILITY_REFRESH_COOLDOWN_MS = 5 * 60 * 1000; // tab aktif kembali: maksimal 1x/5 menit
+        const MIN_MANUAL_RELOAD_GAP_MS = 30 * 1000;           // cegah query ganda berdekatan
+        const HISTORY_INITIAL_LIMIT = 1000;                   // riwayat izin terbaru di memori
+        const SHIFT_HISTORY_LIMIT = 100;                      // riwayat shift terbaru
+        const SHIFT_LOG_LIMIT = 30;                           // log shift terbaru
 
         const DEFAULT_MAX_IZIN = {
             leader: 4,
@@ -6629,6 +6648,7 @@
         let lastVisibilityLoad = 0;
         let isShiftInitialized = false;
         let lastDataLoad = Date.now();
+        let lastShiftHistoryLoad = 0;
 
         // ============================================================
         // SHIFT LOG BATCH
@@ -7238,18 +7258,18 @@
                 refreshInterval = null;
             }
 
-            console.log('🔄 Periodic refresh started (300s interval)');
+            console.log('🔄 Periodic refresh started (15 menit, egress-safe)');
 
             refreshInterval = setInterval(() => {
                 if (!isLoading && document.visibilityState === 'visible' && isDataReady) {
-                    console.log('🔄 Periodic refresh (300s): syncing data...');
+                    console.log('🔄 Periodic refresh: syncing data...');
                     loadDataFromDatabase();
                 } else if (document.visibilityState === 'hidden') {
                     console.log('⏸️ Skip periodic refresh: tab inactive');
                 } else if (isLoading) {
                     console.log('⏸️ Skip periodic refresh: already loading');
                 }
-            }, 300000);
+            }, DATA_REFRESH_INTERVAL_MS);
         }
 
         function stopPeriodicRefresh() {
@@ -7263,8 +7283,15 @@
         // ============================================================
         // LOAD DATA DARI DATABASE
         // ============================================================
-        async function loadDataFromDatabase() {
+        async function loadDataFromDatabase(force = false) {
             if (isLoading) return;
+
+            const now = Date.now();
+            if (!force && isDataReady && (now - lastDataLoad) < MIN_MANUAL_RELOAD_GAP_MS) {
+                console.log('⏩ Full sync dilewati: data baru saja dimuat');
+                return;
+            }
+
             isLoading = true;
 
             hideTooltip();
@@ -7278,20 +7305,29 @@
 
                 const usersPromise = supabaseDashboard
                     .from('users')
-                    .select('id, name, role, email, created_at')
-                    .limit(100);
+                    .select('id, name, role, email, status, created_at')
+                    .eq('status', 'active')
+                    .order('name', { ascending: true })
+                    .limit(250);
 
                 const historyPromise = supabaseDashboard
                     .from('history')
                     .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
-                    .order('mulai', { ascending: false });
+                    .order('mulai', { ascending: false })
+                    .limit(HISTORY_INITIAL_LIMIT);
 
                 const [usersResult, historyResult, izinResult, voucherResult, settingsResult] = await Promise.all([
                     usersPromise,
                     historyPromise,
-                    supabaseDashboard.from('izin_anggota').select('*'),
-                    supabaseDashboard.from('vouchers').select('*'),
-                    supabaseDashboard.from('settings').select('*')
+                    supabaseDashboard
+                        .from('izin_anggota')
+                        .select('nama, status, mulai, selesai, tanggal, role, emoticon'),
+                    supabaseDashboard
+                        .from('vouchers')
+                        .select('nama, jumlah'),
+                    supabaseDashboard
+                        .from('settings')
+                        .select('key, value')
                 ]);
 
                 if (!usersResult.error && usersResult.data && usersResult.data.length > 0) {
@@ -7448,7 +7484,9 @@
                 updateProfileDropdown();
                 renderTicker();
 
-                subscribeToIzinChanges();
+                if (!realtimeChannel) {
+                    subscribeToIzinChanges();
+                }
 
                 if (!isShiftInitialized) {
                     await loadShiftActiveData();
@@ -7508,7 +7546,7 @@
 
                 const queryPromise = supabaseDashboard
                     .from('shift_active')
-                    .select('*')
+                    .select('id, shift_data, updated_at, updated_by')
                     .maybeSingle();
 
                 let result = null;
@@ -7552,7 +7590,7 @@
                             shift_data: newData,
                             updated_by: 'System'
                         })
-                        .select()
+                        .select('id, shift_data, updated_at, updated_by')
                         .maybeSingle();
 
                     if (insertError) throw insertError;
@@ -7699,9 +7737,9 @@
             try {
                 const { data, error } = await supabaseDashboard
                     .from('shift_logs')
-                    .select('*')
+                    .select('id, action, user_name, details, created_at')
                     .order('created_at', { ascending: false })
-                    .limit(50);
+                    .limit(SHIFT_LOG_LIMIT);
 
                 if (error) throw error;
 
@@ -8013,7 +8051,7 @@
                         window.history.replaceState({}, document.title, window.location.pathname);
 
                         renderTicker();
-                        await loadDataFromDatabase();
+                        await loadDataFromDatabase(true);
                         await checkIPAccess();
                         await syncUserRoleFromDatabase();
                         updateUserUI();
@@ -8137,7 +8175,7 @@
                 }
 
                 renderTicker();
-                await loadDataFromDatabase();
+                await loadDataFromDatabase(true);
                 await checkIPAccess();
                 await syncUserRoleFromDatabase();
                 updateUserUI();
@@ -8177,8 +8215,9 @@
                     console.log('⚠️ User tidak ditemukan di listUsers, mencoba query langsung...');
                     const { data: userData, error: userError } = await supabaseDashboard
                         .from('users')
-                        .select('*')
+                        .select('id, name, email, role, status, created_at')
                         .eq('email', formattedEmail)
+                        .eq('status', 'active')
                         .maybeSingle();
 
                     if (userError) {
@@ -8506,9 +8545,7 @@
                     renderAll();
                     updateCurrentCounts();
                     showToast(`${formattedNama} mulai izin!`, 'info');
-
-                    await loadDataFromDatabase();
-                    renderAll();
+                    // Tidak melakukan full reload di sini. State lokal + Realtime sudah cukup.
 
                 } catch (err) {
                     console.error('❌ Error:', err);
@@ -8696,9 +8733,8 @@
                     });
                 }, 1000);
 
-                setTimeout(() => {
-                    loadDataFromDatabase();
-                }, 500);
+                // Hindari full reload setelah END. Data lokal sudah diperbarui dan
+                // perubahan izin juga dikirim melalui Realtime.
             }
         };
 
@@ -10451,8 +10487,8 @@
 
             if (tab === 'dashboard') {
                 const now = Date.now();
-                if (now - lastDataLoad > 60000) {
-                    console.log('🔄 Data expired, refreshing...');
+                if (now - lastDataLoad > VISIBILITY_REFRESH_COOLDOWN_MS) {
+                    console.log('🔄 Data dashboard sudah stale, refreshing...');
                     loadDataFromDatabase();
                 } else {
                     renderDashboardTable();
@@ -10563,12 +10599,12 @@
 
         window.refreshAllData = function() {
             showToast('Memperbarui data...', 'info', 1500);
-            loadDataFromDatabase();
+            loadDataFromDatabase(true);
             if (currentTab === 'shifts') {
                 loadShiftActiveData();
             }
             if (currentTab === 'historyshift') {
-                loadShiftHistory();
+                loadShiftHistory(true);
             }
         };
 
@@ -11932,16 +11968,26 @@
         // ============================================================
         // RIWAYAT SHIFT
         // ============================================================
-        async function loadShiftHistory() {
+        async function loadShiftHistory(force = false) {
+            const now = Date.now();
+            if (!force && shiftHistoryData.length > 0 &&
+                (now - lastShiftHistoryLoad) < VISIBILITY_REFRESH_COOLDOWN_MS) {
+                console.log('⏩ Riwayat shift menggunakan cache lokal');
+                renderShiftHistory();
+                return;
+            }
+
             try {
                 const { data, error } = await supabaseDashboard
                     .from('shift_history')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                    .select('id, tanggal, periode_start, periode_end, shift_data, created_at, updated_at, created_by, updated_by, notes, is_active')
+                    .order('created_at', { ascending: false })
+                    .limit(SHIFT_HISTORY_LIMIT);
 
                 if (error) throw error;
 
                 shiftHistoryData = data || [];
+                lastShiftHistoryLoad = Date.now();
                 renderShiftHistory();
 
             } catch (err) {
@@ -12099,7 +12145,7 @@
                     </div>
 
                     <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:4px 0;">
-                        Total: <strong>${filtered.length}</strong> riwayat shift
+                        Total ditampilkan: <strong>${filtered.length}</strong> riwayat shift terbaru
                     </div>
                 </div>
             `;
@@ -12117,7 +12163,7 @@
             try {
                 const { data, error } = await supabaseDashboard
                     .from('shift_history')
-                    .select('*')
+                    .select('id, tanggal, periode_start, periode_end, shift_data, created_at, created_by, updated_by')
                     .eq('id', historyId)
                     .maybeSingle();
 
@@ -12138,7 +12184,8 @@
 
                 const { data: users, error: usersError } = await supabaseDashboard
                     .from('users')
-                    .select('*')
+                    .select('id, name, email, role, status')
+                    .eq('status', 'active')
                     .in('role', ['csline', 'cs', 'kapten', 'kasir']);
 
                 if (usersError) throw usersError;
@@ -12313,16 +12360,17 @@
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'visible') {
                 const now = Date.now();
-                if (now - lastVisibilityLoad > 15000) {
-                    console.log('👁️ Tab became visible, checking data...');
+                const dataIsStale = (now - lastDataLoad) >= VISIBILITY_REFRESH_COOLDOWN_MS;
+                if ((now - lastVisibilityLoad) >= VISIBILITY_REFRESH_COOLDOWN_MS && dataIsStale) {
+                    console.log('👁️ Tab aktif kembali, sinkronisasi data yang sudah stale...');
                     lastVisibilityLoad = now;
                     if (!isLoading && isDataReady) {
                         loadDataFromDatabase();
                     }
-                    startPeriodicRefresh();
                 } else {
-                    console.log('⏸️ Visibility reload skipped (cooldown)');
+                    console.log('⏸️ Visibility reload dilewati: data masih baru');
                 }
+                startPeriodicRefresh();
             }
         });
 
