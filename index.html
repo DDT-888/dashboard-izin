@@ -452,216 +452,206 @@
             }
         }
 
-        /* ========== NOT REGISTERED POPUP - PREMIUM THEME ========== */
-        .not-registered-overlay {
+
+        /* ========== ACCESS DENIED POPUP - DASHBOARD v2.7.1 SYNC ========== */
+        .access-denied-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
+            inset: 0;
             z-index: 10000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            animation: fadeInModal 0.5s ease;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: rgba(2, 15, 20, 0.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            animation: accessFadeIn 0.2s ease;
         }
 
-        @keyframes fadeInModal {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        @keyframes accessFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
-        @keyframes premiumBounce {
-            0% {
-                opacity: 0;
-                transform: scale(0.8) rotate(-2deg);
-            }
-            60% {
-                transform: scale(1.02) rotate(0.5deg);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) rotate(0deg);
-            }
-        }
-
-        @keyframes glowPulse {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.1); }
-        }
-
-        @keyframes jackpotSpin {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.05); }
-            75% { transform: rotate(-5deg) scale(1.05); }
-        }
-
-        .not-registered-popup {
-            background: linear-gradient(145deg, #0a0e1a, #0d1230, #1a0a2e);
-            border-radius: 24px;
-            padding: 40px 45px;
-            max-width: 440px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 0 60px rgba(0, 229, 255, 0.08), 0 0 120px rgba(0, 229, 255, 0.03);
-            border: 1px solid rgba(0, 229, 255, 0.12);
+        .access-denied-card {
             position: relative;
-            animation: premiumBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             overflow: hidden;
+            width: 432px;
+            max-width: calc(100vw - 42px);
+            padding: 22px;
+            border-radius: 18px;
+            background:
+                radial-gradient(circle at 93% 2%, rgba(0,229,255,.10), transparent 34%),
+                linear-gradient(180deg, rgba(255,255,255,.025), transparent 38%),
+                rgba(13,18,48,.98);
+            border: 1px solid rgba(255,107,107,.18);
+            box-shadow:
+                0 32px 90px rgba(0,0,0,.42),
+                inset 0 1px 0 rgba(255,255,255,.045);
+            animation: accessCardIn .22s cubic-bezier(.22,.61,.36,1);
         }
 
-        .not-registered-popup::before {
-            content: '';
+        @keyframes accessCardIn {
+            from { opacity: 0; transform: translateY(8px) scale(.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .access-denied-topline {
             position: absolute;
-            top: -50%;
-            left: -50%;
-            right: -50%;
-            bottom: -50%;
-            background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.05) 0%, transparent 70%);
-            pointer-events: none;
-            animation: glowPulse 3s ease-in-out infinite;
+            top: 0;
+            left: 36px;
+            right: 36px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ff6b6b, #00e5ff, transparent);
+            opacity: .8;
         }
 
-        .not-registered-popup .icon {
-            font-size: 56px;
-            margin-bottom: 8px;
-            display: inline-block;
-            animation: jackpotSpin 3s ease-in-out infinite;
+        .access-denied-heading {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 13px;
         }
 
-        .not-registered-popup h2 {
-            color: #00e5ff;
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            text-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+        .access-denied-icon {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            background: rgba(255,107,107,.08);
+            color: #ff7f88;
+            border: 1px solid rgba(255,107,107,.18);
+        }
+
+        .access-denied-icon svg,
+        .access-denied-button-icon svg {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.9;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .access-denied-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .access-denied-eyebrow {
+            margin-bottom: 4px;
+            color: rgba(255,255,255,.33);
+            font-size: 7px;
+            font-weight: 850;
             letter-spacing: 1px;
         }
 
-        .not-registered-popup p {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 8px;
+        .access-denied-card h2 {
+            margin: 0;
+            color: rgba(255,255,255,.94);
+            font-size: 17px;
+            font-weight: 820;
+            letter-spacing: -.2px;
         }
 
-        .not-registered-popup p strong {
-            color: #ffd54f;
-        }
-
-        .not-registered-popup .info-box {
-            background: rgba(0, 229, 255, 0.05);
-            border-left: 3px solid #00e5ff;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin: 16px 0;
+        .access-denied-message {
+            margin: 0 0 13px;
+            color: rgba(255,255,255,.68);
+            font-size: 13px;
+            line-height: 1.55;
             text-align: left;
         }
 
-        .not-registered-popup .info-box p {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 13px;
-            margin-bottom: 0;
+        .access-denied-message strong {
+            color: rgba(255,255,255,.92);
         }
 
-        .not-registered-popup .info-box p strong {
-            color: #00e5ff;
+        .access-denied-info {
+            position: relative;
+            padding: 11px 12px 11px 14px;
+            border-radius: 10px;
+            background:
+                linear-gradient(90deg, rgba(0,229,255,.045), transparent 60%),
+                rgba(255,255,255,.025);
+            color: rgba(255,255,255,.58);
+            border: 1px solid rgba(0,229,255,.08);
+            font-size: 12px;
+            line-height: 1.5;
+            text-align: left;
         }
 
-        .not-registered-popup .btn-close-popup {
-            background: transparent;
-            color: #00e5ff;
-            border: 2px solid rgba(0, 229, 255, 0.25);
-            padding: 10px 35px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 12px;
-            width: 100%;
-        }
-
-        .not-registered-popup .btn-close-popup:hover {
-            background: rgba(0, 229, 255, 0.08);
-            border-color: #00e5ff;
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .not-registered-popup .btn-logout-popup {
-            background: transparent;
-            color: #ff6b6b;
-            border: 2px solid rgba(255, 107, 107, 0.2);
-            padding: 10px 35px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 8px;
-            display: block;
-            width: 100%;
-        }
-
-        .not-registered-popup .btn-logout-popup:hover {
-            background: rgba(255, 107, 107, 0.08);
-            border-color: rgba(255, 107, 107, 0.4);
-            box-shadow: 0 0 30px rgba(255, 107, 107, 0.05);
-            transform: translateY(-2px);
-        }
-
-        .not-registered-popup .corner-deco {
+        .access-denied-info::before {
+            content: "";
             position: absolute;
-            width: 20px;
-            height: 20px;
-            border-color: rgba(0, 229, 255, 0.08);
-            border-style: solid;
-            border-width: 0;
+            left: 0;
+            top: 9px;
+            bottom: 9px;
+            width: 2px;
+            border-radius: 999px;
+            background: #00e5ff;
+            opacity: .72;
         }
 
-        .not-registered-popup .corner-deco.tl {
-            top: 16px;
-            left: 16px;
-            border-top-width: 2px;
-            border-left-width: 2px;
-            border-radius: 4px 0 0 0;
+        .access-denied-info strong {
+            color: #7eeef9;
         }
 
-        .not-registered-popup .corner-deco.tr {
-            top: 16px;
-            right: 16px;
-            border-top-width: 2px;
-            border-right-width: 2px;
-            border-radius: 0 4px 0 0;
+        .access-denied-logout {
+            width: 100%;
+            min-height: 39px;
+            margin-top: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,229,255,.22);
+            background: linear-gradient(135deg, #008fa5, #00b8d4);
+            color: #fff;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .1px;
+            cursor: pointer;
+            transition: .18s ease;
+            box-shadow: 0 8px 18px rgba(0,184,212,.14);
         }
 
-        .not-registered-popup .corner-deco.bl {
-            bottom: 16px;
-            left: 16px;
-            border-bottom-width: 2px;
-            border-left-width: 2px;
-            border-radius: 0 0 0 4px;
+        .access-denied-logout:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 11px 24px rgba(0,184,212,.20);
         }
 
-        .not-registered-popup .corner-deco.br {
-            bottom: 16px;
-            right: 16px;
-            border-bottom-width: 2px;
-            border-right-width: 2px;
-            border-radius: 0 0 4px 0;
+        .access-denied-button-icon {
+            width: 15px;
+            height: 15px;
+            display: grid;
+            place-items: center;
         }
+
+        .access-denied-button-icon svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .divider-lock {
+            width: 18px;
+            height: 18px;
+            display: inline-grid;
+            place-items: center;
+            color: rgba(0,229,255,.28);
+        }
+
+        .divider-lock svg {
+            width: 15px;
+            height: 15px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 480px) {
@@ -725,21 +715,6 @@
             .clock-container .clock-date {
                 font-size: 9px;
             }
-            .not-registered-popup {
-                padding: 30px 25px;
-                margin: 15px;
-            }
-            .not-registered-popup .icon {
-                font-size: 44px;
-            }
-            .not-registered-popup h2 {
-                font-size: 20px;
-            }
-            .not-registered-popup .btn-close-popup,
-            .not-registered-popup .btn-logout-popup {
-                padding: 8px 20px;
-                font-size: 12px;
-            }
         }
 
         @media (max-width: 380px) {
@@ -799,24 +774,76 @@
             .login-footer {
                 font-size: 9px;
             }
-            .not-registered-popup {
-                padding: 24px 18px;
+        }
+    
+        @media (max-width: 480px) {
+            .access-denied-card {
+                padding: 19px;
+                border-radius: 15px;
             }
-            .not-registered-popup .icon {
-                font-size: 36px;
+
+            .access-denied-heading {
+                align-items: flex-start;
             }
-            .not-registered-popup h2 {
-                font-size: 18px;
+
+            .access-denied-card h2 {
+                font-size: 15px;
             }
-            .not-registered-popup p {
+
+            .access-denied-message {
                 font-size: 12px;
             }
-            .not-registered-popup .btn-close-popup,
-            .not-registered-popup .btn-logout-popup {
-                padding: 6px 16px;
+
+            .access-denied-info {
                 font-size: 11px;
             }
         }
+
+    
+        .ip-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 36px;
+        }
+
+        .ip-info .ip-label {
+            padding: 2px 6px;
+            border-radius: 999px;
+            color: rgba(0,229,255,.56);
+            background: rgba(0,229,255,.05);
+            border: 1px solid rgba(0,229,255,.08);
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .4px;
+        }
+
+        .ip-info strong {
+            color: rgba(255,255,255,.64);
+            font-weight: 700;
+        }
+
+        .ip-info .status-ok,
+        .ip-info .status-blocked {
+            padding: 2px 7px;
+            border-radius: 999px;
+            font-size: 9px;
+            font-weight: 750;
+        }
+
+        .ip-info .status-ok {
+            color: #66d99b;
+            background: rgba(46,204,113,.06);
+            border: 1px solid rgba(46,204,113,.10);
+        }
+
+        .ip-info .status-blocked {
+            color: #ff858d;
+            background: rgba(255,107,107,.06);
+            border: 1px solid rgba(255,107,107,.10);
+        }
+
     </style>
 </head>
 <body>
@@ -845,7 +872,7 @@
 
         <!-- ===== LOGO - KIRI ATAS ===== -->
         <div class="login-logo">
-            <img src="https://cdn.areabermain.club/assets/cdn/az1/2026/07/08/20260708/8a08b19ab55c1f8c92bb0404eb934a1f/image-photoroom.png" alt="DDT" class="logo-img" />
+            <img src="https://dashboard-izin.pages.dev/assets/Logo%20DDT%20-%20Full.png" alt="DDT" class="logo-img" />
         </div>
 
         <!-- ===== TITLE - TENGAH ===== -->
@@ -861,21 +888,21 @@
         </button>
 
         <div class="loading-spinner" id="loadingSpinner"></div>
-        <div class="status-message" id="statusMessage">⏳ Mengalihkan ke dashboard...</div>
+        <div class="status-message" id="statusMessage">Mengalihkan ke dashboard...</div>
         <div class="error-msg" id="errorMsg"></div>
 
         <!-- ===== DIVIDER ===== -->
         <div class="divider">
-            <span>🔒</span>
+            <span class="divider-lock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
         </div>
 
         <!-- ===== IP INFO ===== -->
         <div class="ip-info" id="ipInfo">
-            🔍 Mengecek IP Anda...
+            Mengecek IP Anda...
         </div>
 
         <!-- ===== FOOTER ===== -->
-        <div class="login-footer">v1.1 • Shark Engine</div>
+        <div class="login-footer">v1.2 • DDT Secure Access</div>
     </div>
 
     <!-- ============================================================ -->
@@ -908,7 +935,7 @@
             }
         );
 
-        console.log('🚀 Supabase client initialized');
+        console.log('Supabase client initialized');
 
         // ============================================================
         // ELEMEN DOM & STATE
@@ -1026,29 +1053,42 @@
         }
 
         // ============================================================
-        // POPUP AKSES DITOLAK
+        // POPUP AKSES DITOLAK — DASHBOARD v2.7.1 SYNC
         // ============================================================
         function showAccessDeniedPopup({ title, message, info }) {
-            const oldOverlay = document.getElementById('notRegisteredOverlay');
-            if (oldOverlay) oldOverlay.remove();
+            document.querySelectorAll('.access-denied-overlay').forEach(node => node.remove());
 
             const overlay = document.createElement('div');
-            overlay.className = 'not-registered-overlay';
-            overlay.id = 'notRegisteredOverlay';
+            overlay.className = 'access-denied-overlay';
+            overlay.id = 'accessDeniedOverlay';
 
             overlay.innerHTML = `
-                <div class="not-registered-popup">
-                    <span class="corner-deco tl"></span>
-                    <span class="corner-deco tr"></span>
-                    <span class="corner-deco bl"></span>
-                    <span class="corner-deco br"></span>
-                    <div class="icon">🚫</div>
-                    <h2>${escapeHTML(title)}</h2>
-                    <p>${message}</p>
-                    <div class="info-box">
-                        <p>${info}</p>
+                <div class="access-denied-card" role="dialog" aria-modal="true" aria-labelledby="accessDeniedTitle">
+                    <div class="access-denied-topline"></div>
+                    <div class="access-denied-heading">
+                        <div class="access-denied-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 3 2.7 19h18.6Z"/>
+                                <path d="M12 9v4M12 17h.01"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="access-denied-eyebrow">SECURITY ACCESS</div>
+                            <h2 id="accessDeniedTitle">${escapeHTML(title)}</h2>
+                        </div>
                     </div>
-                    <button class="btn-logout-popup" id="deniedLogoutBtn">🚪 Logout</button>
+                    <p class="access-denied-message">${message}</p>
+                    <div class="access-denied-info">${info}</div>
+                    <button class="access-denied-logout" id="deniedLogoutBtn" type="button">
+                        <span class="access-denied-button-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M10 17l5-5-5-5"/>
+                                <path d="M15 12H3"/>
+                                <path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/>
+                            </svg>
+                        </span>
+                        <span>Logout</span>
+                    </button>
                 </div>
             `;
 
@@ -1058,23 +1098,65 @@
 
         function showNotRegisteredPopup(email) {
             showAccessDeniedPopup({
-                title: '⚠️ Akses Ditolak',
+                title: 'Akses Ditolak',
                 message: `Email <strong>${escapeHTML(formatEmail(email))}</strong> tidak terdaftar atau tidak aktif di sistem.`,
-                info: '💡 <strong>PS:</strong> Silakan hubungi <strong>CS LINE</strong> untuk pendaftaran atau aktivasi akun.',
+                info: '<strong>PS:</strong> Silakan hubungi <strong>CS LINE</strong> untuk pendaftaran atau aktivasi akun.',
             });
         }
 
         function showIPBlockedPopup(ip) {
             showAccessDeniedPopup({
-                title: '⚠️ IP Tidak Diizinkan',
-                message: `IP <strong>${escapeHTML(ip)}</strong> tidak terdaftar dalam whitelist.`,
-                info: '💡 Silakan hubungi <strong>CS LINE</strong> atau administrator untuk mendaftarkan IP ini.',
+                title: 'Akses Ditolak',
+                message: `Terdeteksi akses dari IP yang berbeda (<strong>${escapeHTML(ip)}</strong>).`,
+                info: 'IP saat ini tidak terdaftar sehingga dashboard tidak dapat diakses. Silakan hubungi <strong>CS LINE</strong> untuk memperbarui IP office.',
             });
         }
 
         // ============================================================
-        // IP — SATU KALI, DISIMPAN 10 MENIT DI SESSIONSTORAGE
+        // IP ACCESS — SINKRON DENGAN DASHBOARD v2.7.1
         // ============================================================
+        function normalizeAccessRole(role) {
+            return String(role || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[\s_-]+/g, '');
+        }
+
+        function roleBypassesIPGate(role) {
+            const normalizedRole = normalizeAccessRole(role);
+            return normalizedRole === 'leader' || normalizedRole === 'csline';
+        }
+
+        function parseWhitelistIPs(value) {
+            return String(value || '0.0.0.0')
+                .split(',')
+                .map(ip => ip.trim())
+                .filter(Boolean);
+        }
+
+        function evaluateIPAccess(role, userIP, whitelistValue) {
+            if (roleBypassesIPGate(role)) {
+                return { allowed: true, bypass: true, reason: 'role_bypass' };
+            }
+
+            const whitelistIPs = parseWhitelistIPs(whitelistValue);
+            const whitelistDisabled =
+                whitelistIPs.length === 0 ||
+                whitelistIPs.includes('0.0.0.0') ||
+                whitelistIPs.includes('*');
+
+            if (whitelistDisabled) {
+                return { allowed: true, bypass: false, reason: 'whitelist_disabled' };
+            }
+
+            const allowed = whitelistIPs.includes(String(userIP || '').trim());
+            return {
+                allowed,
+                bypass: false,
+                reason: allowed ? 'ip_match' : 'ip_mismatch'
+            };
+        }
+
         function readCachedIP() {
             try {
                 const raw = sessionStorage.getItem(IP_CACHE_KEY);
@@ -1085,6 +1167,7 @@
                     sessionStorage.removeItem(IP_CACHE_KEY);
                     return null;
                 }
+
                 return cached.ip;
             } catch {
                 sessionStorage.removeItem(IP_CACHE_KEY);
@@ -1092,13 +1175,17 @@
             }
         }
 
-        async function getPublicIP() {
-            if (currentPublicIP) return currentPublicIP;
+        async function getPublicIP({ forceFresh = false } = {}) {
+            if (!forceFresh && currentPublicIP) {
+                return currentPublicIP;
+            }
 
-            const cachedIP = readCachedIP();
-            if (cachedIP) {
-                currentPublicIP = cachedIP;
-                return cachedIP;
+            if (!forceFresh) {
+                const cachedIP = readCachedIP();
+                if (cachedIP) {
+                    currentPublicIP = cachedIP;
+                    return cachedIP;
+                }
             }
 
             const controller = new AbortController();
@@ -1117,31 +1204,66 @@
                 const data = await response.json();
                 if (!data?.ip) throw new Error('Alamat IP tidak ditemukan');
 
-                currentPublicIP = data.ip;
+                currentPublicIP = String(data.ip).trim();
                 sessionStorage.setItem(IP_CACHE_KEY, JSON.stringify({
-                    ip: data.ip,
+                    ip: currentPublicIP,
                     expiresAt: Date.now() + IP_CACHE_TTL_MS,
                 }));
-                return data.ip;
+
+                return currentPublicIP;
             } finally {
                 clearTimeout(timeoutId);
             }
         }
 
+        function setIPInfo({ ip = '', status = '', blocked = false } = {}) {
+            const safeIP = escapeHTML(ip);
+            const statusClass = blocked ? 'status-blocked' : 'status-ok';
+            ipInfo.innerHTML = `
+                <span class="ip-label">IP</span>
+                <strong>${safeIP}</strong>
+                <span class="${statusClass}">${escapeHTML(status)}</span>
+            `;
+        }
+
         async function displayPublicIP() {
-            ipInfo.textContent = '🔍 Mengecek IP Anda...';
+            ipInfo.textContent = 'Mengecek IP Anda...';
+
             try {
                 const userIP = await getPublicIP();
-                ipInfo.innerHTML = `📡 IP: <strong>${escapeHTML(userIP)}</strong> <span class="status-ok">✅ Siap diverifikasi</span>`;
+                setIPInfo({
+                    ip: userIP,
+                    status: 'Siap diverifikasi',
+                    blocked: false
+                });
             } catch (error) {
                 console.error('Gagal mengambil IP:', error);
-                ipInfo.textContent = '⚠️ IP belum dapat dibaca. Akan dicoba kembali setelah login.';
+                ipInfo.textContent = 'IP belum dapat dibaca. Akan dicoba kembali setelah login.';
             }
         }
 
-        // Query whitelist hanya dilakukan setelah pengguna terautentikasi.
-        async function verifyIPAccess() {
-            const userIP = await getPublicIP();
+        async function verifyIPAccess(role) {
+            if (roleBypassesIPGate(role)) {
+                // Leader dan CS Line tidak bergantung pada whitelist IP.
+                // IP tetap ditampilkan jika tersedia, tetapi kegagalan layanan IP tidak memblokir role pemulihan.
+                try {
+                    const userIP = await getPublicIP({ forceFresh: true });
+                    setIPInfo({
+                        ip: userIP,
+                        status: 'Akses pemulihan',
+                        blocked: false
+                    });
+                    return { isAllowed: true, userIP, bypass: true };
+                } catch (error) {
+                    console.warn('IP tidak dapat dibaca, role pemulihan tetap diizinkan:', error);
+                    ipInfo.textContent = 'Akses pemulihan aktif untuk role ini.';
+                    return { isAllowed: true, userIP: '', bypass: true };
+                }
+            }
+
+            // Untuk role lain, IP selalu dibaca fresh setelah autentikasi.
+            const userIP = await getPublicIP({ forceFresh: true });
+
             const { data, error } = await supabaseClient
                 .from('settings')
                 .select('value')
@@ -1152,33 +1274,43 @@
                 throw new Error(`Gagal memeriksa whitelist IP: ${error.message}`);
             }
 
-            const whitelistIPs = String(data?.value || '0.0.0.0')
-                .split(',')
-                .map(ip => ip.trim())
-                .filter(Boolean);
+            const evaluation = evaluateIPAccess(
+                role,
+                userIP,
+                data?.value || '0.0.0.0'
+            );
 
-            const whitelistDisabled = whitelistIPs.length === 0 || whitelistIPs.includes('0.0.0.0') || whitelistIPs.includes('*');
-            const isAllowed = whitelistDisabled || whitelistIPs.includes(userIP);
-
-            if (isAllowed) {
-                ipInfo.innerHTML = `📡 IP: <strong>${escapeHTML(userIP)}</strong> <span class="status-ok">✅ Terdaftar</span>`;
+            if (evaluation.allowed) {
+                setIPInfo({
+                    ip: userIP,
+                    status: 'Terdaftar',
+                    blocked: false
+                });
             } else {
-                ipInfo.innerHTML = `📡 IP: <strong>${escapeHTML(userIP)}</strong> <span class="status-blocked">⛔ Tidak terdaftar</span>`;
+                setIPInfo({
+                    ip: userIP,
+                    status: 'Tidak terdaftar',
+                    blocked: true
+                });
             }
 
-            return { isAllowed, userIP };
+            return {
+                isAllowed: evaluation.allowed,
+                userIP,
+                bypass: evaluation.bypass
+            };
         }
 
         // ============================================================
-        // VALIDASI USER — HANYA SATU BARIS/KOLUMN YANG DIBUTUHKAN
+        // VALIDASI USER — AMBIL ROLE UNTUK IP GATE
         // ============================================================
-        async function checkUserRegistered(email) {
+        async function getRegisteredUser(email) {
             const formattedEmail = formatEmail(email);
-            if (!formattedEmail) return false;
+            if (!formattedEmail) return null;
 
             const { data, error } = await supabaseClient
                 .from('users')
-                .select('id')
+                .select('id,email,role,status')
                 .eq('email', formattedEmail)
                 .eq('status', 'active')
                 .maybeSingle();
@@ -1187,41 +1319,50 @@
                 throw new Error(`Gagal memeriksa akun: ${error.message}`);
             }
 
-            return Boolean(data?.id);
+            return data || null;
         }
 
         // ============================================================
-        // VALIDASI SESSION, USER, DAN IP SEBELUM MASUK DASHBOARD
+        // VALIDASI SESSION, USER, ROLE, DAN IP SEBELUM DASHBOARD
         // ============================================================
         async function validateSessionAndRedirect(session) {
             if (authProcessing || !session?.user?.email) return false;
+
             authProcessing = true;
             clearError();
-            setLoading(true, '⏳ Memeriksa akun dan keamanan akses...');
+            setLoading(true, 'Memeriksa akun dan keamanan akses...');
 
             try {
-                const isRegistered = await checkUserRegistered(session.user.email);
-                if (!isRegistered) {
+                const registeredUser = await getRegisteredUser(session.user.email);
+
+                if (!registeredUser) {
                     setLoading(false);
                     showNotRegisteredPopup(session.user.email);
                     return false;
                 }
 
-                const { isAllowed, userIP } = await verifyIPAccess();
+                const role = normalizeAccessRole(registeredUser.role);
+                const { isAllowed, userIP, bypass } = await verifyIPAccess(role);
+
                 if (!isAllowed) {
-                    await supabaseClient.auth.signOut();
+                    // Session sengaja tidak dihapus otomatis.
+                    // User tetap berada di halaman login dan hanya dapat keluar melalui tombol Logout.
                     setLoading(false);
                     showIPBlockedPopup(userIP);
                     return false;
                 }
 
-                statusMsg.textContent = '✅ Login berhasil! Mengalihkan ke dashboard...';
+                if (bypass) {
+                    console.log('IP whitelist dilewati untuk role pemulihan:', role);
+                }
+
+                statusMsg.textContent = 'Login berhasil. Mengalihkan ke dashboard...';
                 statusMsg.classList.add('show');
                 window.location.replace(DASHBOARD_URL);
                 return true;
             } catch (error) {
                 console.error('Validasi login gagal:', error);
-                showError(`❌ ${error.message}`);
+                showError(error.message);
                 setLoading(false);
                 return false;
             } finally {
@@ -1239,13 +1380,13 @@
 
             if (oauthError) {
                 window.history.replaceState({}, document.title, window.location.pathname);
-                showError(`❌ Login Google dibatalkan atau gagal: ${oauthError}`);
+                showError(`Login Google dibatalkan atau gagal: ${oauthError}`);
                 return null;
             }
 
             if (!code) return null;
 
-            setLoading(true, '⏳ Memproses login Google...');
+            setLoading(true, 'Memproses login Google...');
 
             const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code);
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -1262,7 +1403,7 @@
         // ============================================================
         async function loginWithGoogle() {
             clearError();
-            setLoading(true, '⏳ Mengalihkan ke Google Login...');
+            setLoading(true, 'Mengalihkan ke Google Login...');
 
             try {
                 // IP hanya dibaca dari cache / layanan IP, tanpa query Supabase sebelum login.
@@ -1278,7 +1419,7 @@
                 if (error) throw error;
             } catch (error) {
                 console.error('Login error:', error);
-                showError(`❌ Gagal login: ${error.message}`);
+                showError(`Gagal login: ${error.message}`);
                 setLoading(false);
             }
         }
@@ -1289,9 +1430,9 @@
         // INIT
         // ============================================================
         async function init() {
-            console.log('🚀 Dashboard Izin - Login Page');
-            console.log('📍 Callback URL:', LOGIN_CALLBACK_URL);
-            console.log('🔗 Dashboard URL:', DASHBOARD_URL);
+            console.log('Dashboard Izin - Login Page');
+            console.log('Callback URL:', LOGIN_CALLBACK_URL);
+            console.log('Dashboard URL:', DASHBOARD_URL);
 
             createParticles();
             updateClock();
@@ -1315,7 +1456,7 @@
                 }
             } catch (error) {
                 console.error('Init login gagal:', error);
-                showError(`❌ ${error.message}`);
+                showError(error.message);
                 setLoading(false);
             }
         }
