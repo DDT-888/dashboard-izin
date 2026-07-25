@@ -9868,6 +9868,109 @@
             height: 15px;
         }
 
+    
+        /* ============================================================
+           SaaS MODERN v2.7.1 — VERIFIED ACCESS GATE
+           ============================================================ */
+
+        html.dashboard-access-blocked,
+        body.dashboard-access-blocked {
+            overflow: hidden !important;
+        }
+
+        body.dashboard-access-blocked > .sidebar,
+        body.dashboard-access-blocked > .main-content,
+        body.dashboard-access-blocked > .overlay {
+            pointer-events: none !important;
+            user-select: none !important;
+        }
+
+        body.dashboard-access-blocked > .main-content,
+        body.dashboard-access-blocked > .sidebar {
+            filter: saturate(.82) brightness(.84);
+        }
+
+        .access-denied-overlay {
+            isolation: isolate;
+        }
+
+        .access-denied-card {
+            position: relative;
+            overflow: hidden;
+            width: 432px !important;
+            padding: 22px !important;
+            border-radius: 18px !important;
+            background:
+                radial-gradient(circle at 93% 2%, rgba(var(--accent-rgb), .10), transparent 34%),
+                linear-gradient(180deg, rgba(255,255,255,.025), transparent 38%),
+                var(--bg-card) !important;
+            border: 1px solid color-mix(in srgb, var(--danger) 19%, var(--border-color)) !important;
+            box-shadow:
+                0 32px 90px rgba(0,0,0,.36),
+                inset 0 1px 0 rgba(255,255,255,.045) !important;
+        }
+
+        .access-denied-topline {
+            position: absolute;
+            top: 0;
+            left: 36px;
+            right: 36px;
+            height: 1px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                color-mix(in srgb, var(--danger) 72%, var(--accent)),
+                transparent
+            );
+            opacity: .85;
+        }
+
+        .access-denied-heading {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 13px;
+        }
+
+        .access-denied-heading .access-denied-icon {
+            flex: 0 0 42px;
+            margin: 0 !important;
+        }
+
+        .access-denied-heading h2 {
+            margin-top: 1px !important;
+        }
+
+        .access-denied-message {
+            padding: 0 1px;
+        }
+
+        .access-denied-info {
+            position: relative;
+            padding: 11px 12px 11px 14px !important;
+            border-radius: 10px !important;
+            background:
+                linear-gradient(90deg, rgba(var(--accent-rgb), .045), transparent 60%),
+                var(--bg-secondary) !important;
+        }
+
+        .access-denied-info::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 9px;
+            bottom: 9px;
+            width: 2px;
+            border-radius: 999px;
+            background: var(--accent);
+            opacity: .72;
+        }
+
+        .access-denied-logout {
+            min-height: 39px !important;
+            letter-spacing: .12px;
+        }
+
     </style>
 </head>
 
@@ -11475,14 +11578,19 @@
         // ============================================================
         // SHOW NOT REGISTERED POPUP
         // ============================================================
+        function setDashboardAccessBlocked(blocked) {
+            document.body.classList.toggle('dashboard-access-blocked', Boolean(blocked));
+            document.documentElement.classList.toggle('dashboard-access-blocked', Boolean(blocked));
+        }
+
         function showAccessDeniedPopup({
             title = 'Akses Ditolak',
             message = '',
             info = '',
             overlayId = 'accessDeniedOverlay'
         } = {}) {
-            const previous = document.getElementById(overlayId);
-            if (previous) previous.remove();
+            document.querySelectorAll('.access-denied-overlay').forEach(node => node.remove());
+            setDashboardAccessBlocked(true);
 
             const overlay = document.createElement('div');
             overlay.className = 'access-denied-overlay';
@@ -11490,14 +11598,19 @@
 
             overlay.innerHTML = `
                 <div class="access-denied-card" role="dialog" aria-modal="true" aria-labelledby="${overlayId}Title">
-                    <div class="access-denied-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 3 2.7 19h18.6Z"/>
-                            <path d="M12 9v4M12 17h.01"/>
-                        </svg>
+                    <div class="access-denied-topline"></div>
+                    <div class="access-denied-heading">
+                        <div class="access-denied-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 3 2.7 19h18.6Z"/>
+                                <path d="M12 9v4M12 17h.01"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="access-denied-eyebrow">SECURITY ACCESS</div>
+                            <h2 id="${overlayId}Title">${title}</h2>
+                        </div>
                     </div>
-                    <div class="access-denied-eyebrow">SECURITY ACCESS</div>
-                    <h2 id="${overlayId}Title">${title}</h2>
                     <p class="access-denied-message">${message}</p>
                     <div class="access-denied-info">${info}</div>
                     <button class="access-denied-logout" type="button" onclick="logout()">
@@ -11533,6 +11646,23 @@
                 overlayId: 'ipAccessDeniedOverlay'
             });
         }
+
+
+        // Visual verification helper (manual only; never runs automatically).
+        window.previewAccessDeniedPopup = function() {
+            showAccessDeniedPopup({
+                title: 'Akses Ditolak',
+                message: 'Terdeteksi akses dari IP yang berbeda (203.0.113.10).',
+                info: 'IP saat ini tidak terdaftar sehingga dashboard tidak dapat diakses. Silakan hubungi <strong>CS LINE</strong> untuk memperbarui IP office.',
+                overlayId: 'accessDeniedPreviewOverlay'
+            });
+        };
+
+        window.closeAccessDeniedPreview = function() {
+            const preview = document.getElementById('accessDeniedPreviewOverlay');
+            if (preview) preview.remove();
+            setDashboardAccessBlocked(false);
+        };
 
         // ============================================================
         // REALTIME SUBSCRIPTION (IZIN - TETAP AKTIF)
@@ -12442,20 +12572,100 @@
         // ============================================================
         // CHECK IP
         // ============================================================
-        async function checkIPAccess() {
-            // Leader dan CS Line tetap dapat masuk jika IP office berubah
-            // supaya mereka dapat memperbarui whitelist dari Settings.
-            if (currentUserRole === 'leader' || currentUserRole === 'csline') {
-                console.log('IP gate bypass untuk role pemulihan:', currentUserRole);
+        let ipAccessMonitorTimer = null;
+        let lastIPAccessCheckAt = 0;
+        const IP_ACCESS_RECHECK_MS = 120000;
+
+        function normalizeAccessRole(role) {
+            return String(role || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[\s_-]+/g, '');
+        }
+
+        function roleBypassesIPGate(role) {
+            const normalizedRole = normalizeAccessRole(role);
+            return normalizedRole === 'leader' || normalizedRole === 'csline';
+        }
+
+        function parseWhitelistIPs(value) {
+            return String(value || '0.0.0.0')
+                .split(',')
+                .map(ip => ip.trim())
+                .filter(Boolean);
+        }
+
+        function evaluateIPAccess(role, userIP, whitelistValue) {
+            if (roleBypassesIPGate(role)) {
+                return { allowed: true, bypass: true, reason: 'role_bypass' };
+            }
+
+            const whitelistIPs = parseWhitelistIPs(whitelistValue);
+            const whitelistDisabled =
+                whitelistIPs.length === 0 || whitelistIPs.includes('0.0.0.0');
+
+            if (whitelistDisabled) {
+                return { allowed: true, bypass: false, reason: 'whitelist_disabled' };
+            }
+
+            const allowed = whitelistIPs.includes(String(userIP || '').trim());
+            return {
+                allowed,
+                bypass: false,
+                reason: allowed ? 'ip_match' : 'ip_mismatch'
+            };
+        }
+
+        function stopIPAccessMonitor() {
+            if (ipAccessMonitorTimer) {
+                clearInterval(ipAccessMonitorTimer);
+                ipAccessMonitorTimer = null;
+            }
+        }
+
+        function startIPAccessMonitor() {
+            stopIPAccessMonitor();
+
+            if (roleBypassesIPGate(currentUserRole)) {
+                return;
+            }
+
+            ipAccessMonitorTimer = setInterval(async () => {
+                if (document.hidden || document.body.classList.contains('dashboard-access-blocked')) {
+                    return;
+                }
+
+                const allowed = await checkIPAccess({ source: 'periodic' });
+                if (!allowed) {
+                    stopIPAccessMonitor();
+                }
+            }, IP_ACCESS_RECHECK_MS);
+        }
+
+        async function checkIPAccess({ source = 'login' } = {}) {
+            const normalizedRole = normalizeAccessRole(currentUserRole);
+
+            if (roleBypassesIPGate(normalizedRole)) {
+                console.log('IP gate bypass untuk role pemulihan:', normalizedRole);
+                setDashboardAccessBlocked(false);
                 return true;
             }
 
             try {
-                const response = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
-                if (!response.ok) throw new Error(`IP service HTTP ${response.status}`);
+                const response = await fetch('https://api.ipify.org?format=json', {
+                    cache: 'no-store'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`IP service HTTP ${response.status}`);
+                }
 
                 const data = await response.json();
                 const userIP = String(data?.ip || '').trim();
+
+                if (!userIP) {
+                    throw new Error('IP publik kosong');
+                }
 
                 const { data: settings, error } = await supabaseDashboard
                     .from('settings')
@@ -12465,33 +12675,62 @@
 
                 if (error) {
                     console.error('Gagal membaca whitelist IP:', error);
+                    isDataReady = false;
+                    stopIPAccessMonitor();
+                    showAccessDeniedPopup({
+                        title: 'Akses Ditolak',
+                        message: 'IP perangkat saat ini tidak dapat diverifikasi.',
+                        info: 'Dashboard tidak dapat diakses sampai pemeriksaan IP berhasil. Silakan hubungi <strong>CS LINE</strong>.',
+                        overlayId: 'ipAccessDeniedOverlay'
+                    });
                     return false;
                 }
 
-                const whitelistIPs = String(settings?.value || '0.0.0.0')
-                    .split(',')
-                    .map(ip => ip.trim())
-                    .filter(Boolean);
+                const evaluation = evaluateIPAccess(
+                    normalizedRole,
+                    userIP,
+                    settings?.value || '0.0.0.0'
+                );
 
-                const whitelistDisabled = whitelistIPs.length === 0 || whitelistIPs.includes('0.0.0.0');
-                const allowed = whitelistDisabled || whitelistIPs.includes(userIP);
+                lastIPAccessCheckAt = Date.now();
 
-                if (!allowed) {
-                    console.warn(`IP ${userIP} tidak terdaftar di whitelist`);
+                if (!evaluation.allowed) {
+                    console.warn(`IP ${userIP} tidak terdaftar di whitelist (${source})`);
                     isDataReady = false;
+                    stopIPAccessMonitor();
                     if (typeof stopTimerUpdates === 'function') stopTimerUpdates();
                     showIPAccessDeniedPopup(userIP);
                     return false;
                 }
 
+                setDashboardAccessBlocked(false);
                 return true;
             } catch (err) {
                 console.error('Gagal cek IP:', err);
                 isDataReady = false;
-                showIPAccessDeniedPopup('tidak dapat diverifikasi');
+                stopIPAccessMonitor();
+                showAccessDeniedPopup({
+                    title: 'Akses Ditolak',
+                    message: 'IP perangkat saat ini tidak dapat diverifikasi.',
+                    info: 'Dashboard tidak dapat diakses untuk menjaga keamanan. Silakan hubungi <strong>CS LINE</strong>.',
+                    overlayId: 'ipAccessDeniedOverlay'
+                });
                 return false;
             }
         }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (
+                document.visibilityState === 'visible' &&
+                currentUser &&
+                !roleBypassesIPGate(currentUserRole) &&
+                !document.body.classList.contains('dashboard-access-blocked') &&
+                Date.now() - lastIPAccessCheckAt > 60000
+            ) {
+                const allowed = await checkIPAccess({ source: 'visibility' });
+                if (!allowed) stopIPAccessMonitor();
+            }
+        });
 
         // ============================================================
         // AUTHENTICATION
@@ -12513,13 +12752,13 @@
                     if (!isRegistered) {
                         console.log('❌ User tidak terdaftar, tampilkan popup...');
                         showNotRegisteredPopup(session.user.email);
-                        return;
+                        return false;
                     }
                 }
             } catch (err) {
                 console.error('❌ Error checking user registration:', err);
                 showNotRegisteredPopup('unknown@email.com');
-                return;
+                return false;
             }
 
             if (code || (hash && hash.includes('access_token'))) {
@@ -12530,7 +12769,7 @@
                     if (error) {
                         console.error('❌ Error getting session after redirect:', error);
                         showNotRegisteredPopup('error@email.com');
-                        return;
+                        return false;
                     }
 
                     if (data?.session) {
@@ -12544,7 +12783,7 @@
                         const ipAllowed = await checkIPAccess();
                         if (!ipAllowed) {
                             console.warn('Dashboard diblokir karena IP tidak sesuai.');
-                            return;
+                            return false;
                         }
 
                         await loadDataFromDatabase(true);
@@ -12553,19 +12792,20 @@
                         renderAll();
                         startTimerUpdates();
                         startClock();
+                        startIPAccessMonitor();
                         console.log('✅ Dashboard siap!');
-                        return;
+                        return true;
                     } else {
                         console.log('⏳ No session yet after redirect, waiting...');
                         setTimeout(() => {
                             window.location.reload();
                         }, 1000);
-                        return;
+                        return false;
                     }
                 } catch (err) {
                     console.error('❌ Error processing redirect:', err);
                     showNotRegisteredPopup('error@email.com');
-                    return;
+                    return false;
                 }
             }
 
@@ -12626,7 +12866,10 @@
                 }
 
                 if (welcomeUsername) welcomeUsername.textContent = 'Test Leader';
-                if (badgeRole) badgeRole.innerHTML = '<span class="icon">👑</span> Leader';
+                if (badgeRole) {
+                    badgeRole.textContent = 'Leader';
+                    badgeRole.className = 'badge-role leader';
+                }
                 if (lockedNotice) lockedNotice.style.display = 'none';
 
                 updateGreeting();
@@ -12639,7 +12882,7 @@
                 renderTicker();
                 updateQuickStats();
                 console.log('✅ TEST MODE - Dashboard siap!');
-                return;
+                return true;
             }
 
             try {
@@ -12648,13 +12891,13 @@
                 if (error) {
                     console.error('❌ Session error:', error);
                     showToast('Error session: ' + error.message, 'error', 5000);
-                    return;
+                    return false;
                 }
 
                 if (!session) {
                     console.log('❌ No session found, redirecting to login...');
                     window.location.href = '/';
-                    return;
+                    return false;
                 }
 
                 currentUser = session.user;
@@ -12662,14 +12905,14 @@
                 if (!currentUser) {
                     console.error('❌ No user found');
                     window.location.href = '/';
-                    return;
+                    return false;
                 }
 
                 console.log('✅ User authenticated:', currentUser.email);
 
                 const isRegistered = await checkUserRegistered(currentUser.email);
                 if (!isRegistered) {
-                    return;
+                    return false;
                 }
 
                 renderTicker();
@@ -12678,7 +12921,7 @@
                 const ipAllowed = await checkIPAccess();
                 if (!ipAllowed) {
                     console.warn('Dashboard diblokir karena IP tidak sesuai.');
-                    return;
+                    return false;
                 }
 
                 await loadDataFromDatabase(true);
@@ -12686,12 +12929,15 @@
                 updateProfileDropdown();
                 startTimerUpdates();
                 startClock();
+                startIPAccessMonitor();
 
                 console.log('✅ Dashboard siap!');
+                return true;
 
             } catch (err) {
                 console.error('❌ Error checkAuth:', err);
                 showToast('Error: ' + err.message, 'error', 5000);
+                return false;
             }
         }
 
@@ -17122,7 +17368,12 @@ function toggleSidebar() {
                 localStorage.getItem('lastTab') || 'dashboard';
 
             Promise.resolve(checkAuth())
-                .then(() => {
+                .then(accessGranted => {
+                    if (!accessGranted) {
+                        console.warn('Startup dashboard dihentikan karena akses belum diberikan.');
+                        return;
+                    }
+
                     setTimeout(() => {
                         const targetTab = document.getElementById(`tab-${savedTab}`) ? savedTab : 'dashboard';
                         switchTab(targetTab);
