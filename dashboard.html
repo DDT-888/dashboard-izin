@@ -12365,6 +12365,125 @@
         }
 
 
+    
+        /* ============================================================
+           SaaS MODERN v2.7.5.9 — REALTIME BADGES & COMPACT SHIFT
+           ============================================================ */
+
+        /* Kembali lebih ringkas dari v2.7.5.8 */
+        #tab-shifts {
+            --shift-card-width: 260px !important;
+            --shift-note-width: 130px !important;
+        }
+
+        #tab-shifts .shift-main-grid {
+            gap: 11px !important;
+        }
+
+        #tab-shifts .shift-columns-wrapper {
+            gap: 11px !important;
+        }
+
+        #tab-shifts .shift-available,
+        #tab-shifts .shift-column-wrapper,
+        #tab-shifts .shift-column-wrapper .shift-column {
+            width: var(--shift-card-width) !important;
+            min-width: var(--shift-card-width) !important;
+            max-width: var(--shift-card-width) !important;
+        }
+
+        #tab-shifts .shift-column-wrapper {
+            flex-basis: var(--shift-card-width) !important;
+            will-change: width, min-width, max-width, flex-basis;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+            transition:
+                width .44s cubic-bezier(.2,.82,.2,1),
+                min-width .44s cubic-bezier(.2,.82,.2,1),
+                max-width .44s cubic-bezier(.2,.82,.2,1),
+                flex-basis .44s cubic-bezier(.2,.82,.2,1)
+                !important;
+        }
+
+        #tab-shifts .shift-column-wrapper.has-note-open {
+            width: calc(
+                var(--shift-card-width) + 7px + var(--shift-note-width)
+            ) !important;
+            min-width: calc(
+                var(--shift-card-width) + 7px + var(--shift-note-width)
+            ) !important;
+            max-width: calc(
+                var(--shift-card-width) + 7px + var(--shift-note-width)
+            ) !important;
+            flex-basis: calc(
+                var(--shift-card-width) + 7px + var(--shift-note-width)
+            ) !important;
+        }
+
+        #tab-shifts .shift-column-wrapper .shift-note-panel,
+        #tab-shifts .shift-column-wrapper.has-note-open .shift-note-panel,
+        #tab-shifts .shift-column-wrapper .shift-note-panel.open {
+            will-change:
+                width,
+                min-width,
+                max-width,
+                flex-basis,
+                margin-left,
+                transform,
+                opacity;
+            backface-visibility: hidden;
+            transform-origin: left center;
+            transition:
+                width .44s cubic-bezier(.2,.82,.2,1),
+                min-width .44s cubic-bezier(.2,.82,.2,1),
+                max-width .44s cubic-bezier(.2,.82,.2,1),
+                flex-basis .44s cubic-bezier(.2,.82,.2,1),
+                margin-left .44s cubic-bezier(.2,.82,.2,1),
+                transform .4s cubic-bezier(.16,1,.3,1),
+                opacity .22s ease,
+                visibility 0s linear .44s
+                !important;
+        }
+
+        #tab-shifts .shift-column-wrapper.has-note-open .shift-note-panel,
+        #tab-shifts .shift-column-wrapper .shift-note-panel.open {
+            width: var(--shift-note-width) !important;
+            min-width: var(--shift-note-width) !important;
+            max-width: var(--shift-note-width) !important;
+            flex-basis: var(--shift-note-width) !important;
+            margin-left: 7px !important;
+            transform: translate3d(0,0,0) scale(1) !important;
+            transition:
+                width .44s cubic-bezier(.2,.82,.2,1),
+                min-width .44s cubic-bezier(.2,.82,.2,1),
+                max-width .44s cubic-bezier(.2,.82,.2,1),
+                flex-basis .44s cubic-bezier(.2,.82,.2,1),
+                margin-left .44s cubic-bezier(.2,.82,.2,1),
+                transform .4s cubic-bezier(.16,1,.3,1),
+                opacity .25s ease .08s,
+                visibility 0s linear 0s
+                !important;
+        }
+
+        #tab-shifts .shift-column-wrapper.note-preparing .shift-note-panel {
+            transform: translate3d(-11px,0,0) scale(.975) !important;
+            opacity: 0 !important;
+        }
+
+        #tab-shifts .shift-column-wrapper.note-opening .shift-column {
+            box-shadow:
+                0 8px 25px rgba(15,23,42,.06),
+                inset 0 1px 0 rgba(255,255,255,.04)
+                !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #tab-shifts .shift-column-wrapper,
+            #tab-shifts .shift-column-wrapper .shift-note-panel {
+                transition: none !important;
+            }
+        }
+
     </style>
 </head>
 
@@ -13385,6 +13504,10 @@
         let artifactHistoryDirty = false;
         let artifactVoucherDirty = false;
 
+        let usersSnapshotPromise = null;
+        let usersRealtimeSyncTimer = null;
+        let usersRealtimeNeedsReconcile = false;
+
         // ============================================================
         // SHIFT STATE
         // ============================================================
@@ -13906,10 +14029,79 @@
             return false;
         }
 
+        function getMonitoringIzinList() {
+            const monitoredRoles = new Set(['csline', 'cs', 'kapten', 'kasir']);
+            const seenNames = new Set();
+
+            return daftarAnggota
+                .filter(nama => {
+                    const normalizedName = formatName(nama);
+                    if (!normalizedName || seenNames.has(normalizedName)) return false;
+
+                    const izin = dataIzin[nama];
+                    const role = getRoleForUser(nama);
+                    const isActive =
+                        izin?.status === 'izin' &&
+                        monitoredRoles.has(role);
+
+                    if (isActive) seenNames.add(normalizedName);
+                    return isActive;
+                })
+                .map(nama => ({
+                    nama: formatName(nama),
+                    mulai: dataIzin[nama]?.mulai || null,
+                    role: getRoleForUser(nama),
+                    emoticon: dataIzin[nama]?.emoticon || '🐧'
+                }))
+                .sort((a, b) => new Date(a.mulai || 0) - new Date(b.mulai || 0));
+        }
+
+        function getTodayHistoryCount() {
+            const todayKey = new Date().toLocaleDateString('en-CA');
+            const seenRecords = new Set();
+
+            historyData.forEach(item => {
+                const timestamp = item?.mulai || item?.selesai;
+                if (!timestamp) return;
+
+                const date = new Date(timestamp);
+                if (Number.isNaN(date.getTime())) return;
+                if (date.toLocaleDateString('en-CA') !== todayKey) return;
+
+                const key = item.id != null
+                    ? `id:${item.id}`
+                    : `${formatName(item.nama)}|${item.mulai || ''}`;
+
+                seenRecords.add(key);
+            });
+
+            return seenRecords.size;
+        }
+
+        function updateAllSidebarBadges() {
+            const monitoringCount = getMonitoringIzinList().length;
+            const activeUsersCount = listUsers.filter(user =>
+                String(user?.status || 'active').toLowerCase() === 'active'
+            ).length;
+            const voucherCount = Object.values(voucherData).reduce(
+                (total, value) => total + Math.max(0, Number(value) || 0),
+                0
+            );
+            const historyCount = getTodayHistoryCount();
+
+            const badgeIzin = document.getElementById('sidebarBadgeIzin');
+            const badgeUsers = document.getElementById('sidebarBadgeTotal');
+            const badgeVoucher = document.getElementById('sidebarBadgeVoucher');
+            const badgeHistory = document.getElementById('sidebarBadgeHistory');
+
+            if (badgeIzin) badgeIzin.textContent = monitoringCount;
+            if (badgeUsers) badgeUsers.textContent = activeUsersCount;
+            if (badgeVoucher) badgeVoucher.textContent = voucherCount;
+            if (badgeHistory) badgeHistory.textContent = historyCount;
+        }
+
         function updateSidebarBadge() {
-            const total = Object.values(voucherData).reduce((a, b) => a + b, 0);
-            const badge = document.getElementById('sidebarBadgeVoucher');
-            if (badge) badge.textContent = total;
+            updateAllSidebarBadges();
         }
 
         function updateQuickStats() {
@@ -14200,6 +14392,7 @@
             renderDashboardTable();
             updateCurrentCounts();
             updateQuickStats();
+            updateAllSidebarBadges();
         }
 
         function normalizeHistoryRecord(row = {}) {
@@ -14283,7 +14476,7 @@
                 artifactUiFrame = null;
 
                 if (artifactHistoryDirty) {
-                    updateStatsAndBadges();
+                    updateAllSidebarBadges();
 
                     if (currentTab === 'history') {
                         renderHistory();
@@ -14291,7 +14484,7 @@
                 }
 
                 if (artifactVoucherDirty) {
-                    updateSidebarBadge();
+                    updateAllSidebarBadges();
                     updateQuickStats();
                     updateProfileDropdown();
 
@@ -14575,6 +14768,108 @@
             return artifactReconcilePromise;
         }
 
+        function applyUsersSnapshot(records = []) {
+            const activeUsers = records.filter(user =>
+                String(user?.status || 'active').toLowerCase() === 'active'
+            );
+
+            const previousNames = new Set(daftarAnggota.map(formatName));
+            const nextNames = new Set(activeUsers.map(user => formatName(user.name)));
+
+            listUsers = activeUsers;
+            daftarAnggota = activeUsers.map(user => user.name);
+
+            activeUsers.forEach(user => {
+                const nama = user.name;
+
+                if (!dataIzin[nama]) {
+                    dataIzin[nama] = {
+                        status: 'none',
+                        mulai: null,
+                        selesai: null,
+                        tanggal: null,
+                        role: user.role,
+                        emoticon: null
+                    };
+                } else {
+                    dataIzin[nama].role = user.role;
+                }
+            });
+
+            previousNames.forEach(previousName => {
+                if (nextNames.has(previousName)) return;
+
+                const exactKey = Object.keys(dataIzin).find(name =>
+                    formatName(name) === previousName
+                );
+
+                if (exactKey && dataIzin[exactKey]?.status !== 'izin') {
+                    delete dataIzin[exactKey];
+                }
+            });
+
+            updateFilterNama();
+            updateRoleCounts();
+            updateQuickStats();
+            updateAllSidebarBadges();
+
+            if (currentTab === 'users') {
+                renderUsersPage();
+            }
+
+            if (currentTab === 'monitoring') {
+                renderLiveIzin();
+                renderDashboardTable();
+            }
+
+            if (currentTab === 'dashboard') {
+                renderDashboardTable();
+            }
+        }
+
+        async function syncUsersSnapshot({ reason = 'realtime-users' } = {}) {
+            if (usersSnapshotPromise) return usersSnapshotPromise;
+
+            usersSnapshotPromise = (async () => {
+                try {
+                    const { data, error } = await supabaseDashboard
+                        .from('users')
+                        .select('id, name, role, email, status, created_at')
+                        .eq('status', 'active')
+                        .order('name', { ascending: true })
+                        .limit(250);
+
+                    if (error) throw error;
+
+                    applyUsersSnapshot(data || []);
+                    usersRealtimeNeedsReconcile = false;
+                    return true;
+                } catch (error) {
+                    console.error(`Gagal sinkronisasi Users (${reason}):`, error);
+                    usersRealtimeNeedsReconcile = true;
+                    return false;
+                } finally {
+                    usersSnapshotPromise = null;
+                }
+            })();
+
+            return usersSnapshotPromise;
+        }
+
+        function scheduleUsersSnapshotSync(reason = 'users-event') {
+            usersRealtimeNeedsReconcile = true;
+            clearTimeout(usersRealtimeSyncTimer);
+
+            usersRealtimeSyncTimer = window.setTimeout(() => {
+                usersRealtimeSyncTimer = null;
+                syncUsersSnapshot({ reason });
+            }, 550);
+        }
+
+        function handleUsersRealtime() {
+            scheduleUsersSnapshotSync('users-realtime-event');
+        }
+
         function subscribeToIzinChanges() {
             if (realtimeChannel) {
                 supabaseDashboard.removeChannel(realtimeChannel);
@@ -14599,21 +14894,34 @@
                         if (eventType === 'INSERT' || eventType === 'UPDATE') {
                             const nama = newRecord.nama;
 
-                            if (dataIzin[nama]) {
-                                let mulai = newRecord.mulai;
-                                if (mulai && !mulai.endsWith('Z') && !mulai.includes('+')) {
-                                    mulai += 'Z';
-                                }
+                            if (!dataIzin[nama]) {
+                                dataIzin[nama] = {
+                                    status: 'none',
+                                    mulai: null,
+                                    selesai: null,
+                                    tanggal: null,
+                                    role: newRecord.role || 'cs',
+                                    emoticon: null
+                                };
 
-                                dataIzin[nama].status = newRecord.status || 'none';
-                                dataIzin[nama].mulai = mulai || null;
-                                dataIzin[nama].tanggal = newRecord.tanggal || null;
-                                dataIzin[nama].selesai = newRecord.selesai || null;
-                                dataIzin[nama].emoticon = newRecord.emoticon || null;
-
-                                if (newRecord.role) {
-                                    dataIzin[nama].role = newRecord.role;
+                                if (!daftarAnggota.includes(nama)) {
+                                    scheduleUsersSnapshotSync('izin-unknown-user');
                                 }
+                            }
+
+                            let mulai = newRecord.mulai;
+                            if (mulai && !mulai.endsWith('Z') && !mulai.includes('+')) {
+                                mulai += 'Z';
+                            }
+
+                            dataIzin[nama].status = newRecord.status || 'none';
+                            dataIzin[nama].mulai = mulai || null;
+                            dataIzin[nama].tanggal = newRecord.tanggal || null;
+                            dataIzin[nama].selesai = newRecord.selesai || null;
+                            dataIzin[nama].emoticon = newRecord.emoticon || null;
+
+                            if (newRecord.role) {
+                                dataIzin[nama].role = newRecord.role;
                             }
                         } else if (eventType === 'DELETE') {
                             const nama = oldRecord.nama;
@@ -14630,6 +14938,15 @@
                         lastIzinReconcileAt = Date.now();
                         renderIzinRealtimeViews();
                     }
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'users'
+                    },
+                    handleUsersRealtime
                 )
                 .on(
                     'postgres_changes',
@@ -14674,7 +14991,12 @@
                                 syncRealtimeArtifacts({
                                     forceVoucherSnapshot: true,
                                     reason: 'realtime-resubscribed'
-                                })
+                                }),
+                                usersRealtimeNeedsReconcile
+                                    ? syncUsersSnapshot({
+                                        reason: 'realtime-resubscribed'
+                                    })
+                                    : Promise.resolve(false)
                             ]);
                         }
                     } else if (
@@ -14685,6 +15007,7 @@
                         updateRealtimeConnectionIndicator(false);
                         realtimeNeedsReconcile = true;
                         artifactRealtimeNeedsReconcile = true;
+                        usersRealtimeNeedsReconcile = true;
                     }
                 });
 
@@ -15581,24 +15904,39 @@
 
             openShiftNoteColumnId = normalizedId;
 
-            document.querySelectorAll('#shiftsContent .shift-column-wrapper').forEach(wrapper => {
-                const isOpen =
-                    normalizedId &&
-                    String(wrapper.dataset.columnId) === normalizedId;
+            const wrappers = [
+                ...document.querySelectorAll(
+                    '#shiftsContent .shift-column-wrapper'
+                )
+            ];
 
-                wrapper.classList.toggle('has-note-open', Boolean(isOpen));
-                wrapper.querySelector('.shift-note-panel')?.classList.toggle(
-                    'open',
-                    Boolean(isOpen)
-                );
-            });
+            const targetWrapper = normalizedId
+                ? wrappers.find(wrapper =>
+                    String(wrapper.dataset.columnId) === normalizedId
+                )
+                : null;
 
-            if (!normalizedId) return;
-
-            const panel = document.getElementById(`notePanel_${normalizedId}`);
-            if (!panel) return;
+            const closeAll = () => {
+                wrappers.forEach(wrapper => {
+                    wrapper.classList.remove(
+                        'has-note-open',
+                        'note-opening',
+                        'note-preparing'
+                    );
+                    wrapper.querySelector('.shift-note-panel')?.classList.remove(
+                        'open'
+                    );
+                });
+            };
 
             const finishOpen = () => {
+                if (!targetWrapper || !normalizedId) return;
+
+                const panel = document.getElementById(
+                    `notePanel_${normalizedId}`
+                );
+                if (!panel) return;
+
                 syncNoteHeight(normalizedId);
 
                 panel.querySelectorAll('textarea').forEach(textarea => {
@@ -15612,83 +15950,43 @@
                 });
             };
 
-            if (animate) {
-                window.setTimeout(finishOpen, 280);
-            } else {
-                requestAnimationFrame(finishOpen);
-            }
-        }
+            if (!animate) {
+                closeAll();
 
-        function getShiftRealtimeErrorMessage(error) {
-            const code = String(error?.code || '').toUpperCase();
-            const message = String(error?.message || '').toLowerCase();
+                if (targetWrapper) {
+                    targetWrapper.classList.add('has-note-open');
+                    targetWrapper
+                        .querySelector('.shift-note-panel')
+                        ?.classList.add('open');
+                    requestAnimationFrame(finishOpen);
+                }
 
-            if (
-                code === '42702' ||
-                message.includes('ambiguous') ||
-                message.includes('column reference')
-            ) {
-                return 'Fungsi Realtime Shift versi lama perlu diperbaiki. Jalankan SQL 06B.';
+                return;
             }
 
-            if (
-                code === 'PGRST202' ||
-                code === '42883' ||
-                message.includes('schema cache') ||
-                message.includes('could not find the function')
-            ) {
-                return 'RPC Realtime Shift belum terbaca. Jalankan SQL 06B lalu refresh dashboard.';
-            }
+            closeAll();
+            if (!targetWrapper) return;
 
-            if (
-                code === '42501' ||
-                message.includes('permission') ||
-                message.includes('not allowed')
-            ) {
-                return 'Izin Realtime Shift belum lengkap. Jalankan SQL 06B.';
-            }
+            targetWrapper.classList.add('note-preparing');
 
-            return 'Sinyal Realtime Shift belum dapat dikirim. Jalankan SQL 06B.';
-        }
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    targetWrapper.classList.remove('note-preparing');
+                    targetWrapper.classList.add(
+                        'has-note-open',
+                        'note-opening'
+                    );
 
-        async function publishShiftRealtimeFallback(payload) {
-            for (let attempt = 0; attempt < 2; attempt += 1) {
-                const { data: state, error: readError } = await supabaseDashboard
-                    .from('shift_realtime_state')
-                    .select(
-                        'id, revision, change_type, client_id, open_note_column_id, updated_at, updated_by'
-                    )
-                    .eq('id', 1)
-                    .maybeSingle();
+                    targetWrapper
+                        .querySelector('.shift-note-panel')
+                        ?.classList.add('open');
 
-                if (readError) throw readError;
-
-                const currentRevision = Number(state?.revision) || 0;
-                const nextRevision = currentRevision + 1;
-                const updatedAt = new Date().toISOString();
-
-                const { data, error } = await supabaseDashboard
-                    .from('shift_realtime_state')
-                    .update({
-                        revision: nextRevision,
-                        change_type: payload.p_change_type,
-                        client_id: payload.p_client_id,
-                        open_note_column_id: payload.p_open_note_column_id,
-                        updated_at: updatedAt,
-                        updated_by: payload.p_updated_by
-                    })
-                    .eq('id', 1)
-                    .eq('revision', currentRevision)
-                    .select(
-                        'id, revision, change_type, client_id, open_note_column_id, updated_at, updated_by'
-                    )
-                    .maybeSingle();
-
-                if (error) throw error;
-                if (data) return data;
-            }
-
-            return null;
+                    window.setTimeout(() => {
+                        targetWrapper.classList.remove('note-opening');
+                        finishOpen();
+                    }, 470);
+                });
+            });
         }
 
         async function publishShiftRealtime(
@@ -17192,28 +17490,15 @@
         }
 
         function updateStatsAndBadges() {
-            let totalIzin = 0;
-
-            daftarAnggota.forEach(nama => {
-                const d = dataIzin[nama];
-                if (d && d.status === 'izin') totalIzin++;
-            });
-
-            const today = new Date().toDateString();
-            const todayHistory = historyData.filter(h => {
-                const historyDate = new Date(h.mulai);
-                return historyDate.toDateString() === today;
-            });
-
-            const badgeIzin = document.getElementById('sidebarBadgeIzin');
-            const badgeTotal = document.getElementById('sidebarBadgeTotal');
-            const badgeHistory = document.getElementById('sidebarBadgeHistory');
+            const monitoringCount = getMonitoringIzinList().length;
             const liveCount = document.getElementById('liveCount');
 
-            if (badgeIzin) badgeIzin.textContent = totalIzin;
-            if (badgeTotal) badgeTotal.textContent = daftarAnggota.length;
-            if (badgeHistory) badgeHistory.textContent = todayHistory.length;
-            if (liveCount) liveCount.innerHTML = `<span>${totalIzin}</span> orang sedang izin`;
+            updateAllSidebarBadges();
+
+            if (liveCount) {
+                liveCount.innerHTML =
+                    `<span>${monitoringCount}</span> orang sedang izin`;
+            }
         }
 
         // ============================================================
@@ -17239,15 +17524,7 @@
                 if (countMap[role]) countMap[role].textContent = '0';
             });
 
-            const izinList = daftarAnggota
-                .filter(nama => dataIzin[nama] && dataIzin[nama].status === 'izin')
-                .map(nama => ({
-                    nama: formatName(nama),
-                    mulai: dataIzin[nama].mulai,
-                    role: getRoleForUser(nama),
-                    emoticon: dataIzin[nama].emoticon || '🐧'
-                }))
-                .sort((a, b) => new Date(a.mulai) - new Date(b.mulai));
+            const izinList = getMonitoringIzinList();
 
             const grouped = {};
             izinList.forEach(item => {
@@ -21503,6 +21780,15 @@ function toggleSidebar() {
                 });
             }
 
+            if (
+                usersRealtimeNeedsReconcile ||
+                realtimeSubscriptionStatus !== 'SUBSCRIBED'
+            ) {
+                await syncUsersSnapshot({
+                    reason: `visibility-resume-${Math.round(hiddenDuration / 1000)}s`
+                });
+            }
+
             // Data umum tetap disegarkan secara terpisah bila sudah melewati interval.
             // History 1000 baris otomatis dilewati kecuali halaman History sedang dibuka.
             if (
@@ -21554,13 +21840,20 @@ function toggleSidebar() {
 
         window.addEventListener('online', function() {
             realtimeNeedsReconcile = true;
+            usersRealtimeNeedsReconcile = true;
             ensureIzinRealtimeSubscription();
+
             syncIzinState({
                 force: true,
                 reason: 'network-online'
             });
+
             syncRealtimeArtifacts({
                 forceVoucherSnapshot: true,
+                reason: 'network-online'
+            });
+
+            syncUsersSnapshot({
                 reason: 'network-online'
             });
         });
