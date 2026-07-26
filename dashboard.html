@@ -10620,6 +10620,20 @@
             --shift-role-grad-mid: rgba(121,95,172,.09);
         }
 
+    
+        /* ============================================================
+           SaaS MODERN v2.7.5.1 — ALL ROLES HISTORY ACCESS
+           Semua role dapat membuka History Izin.
+           Initial load hanya History hari ini; full list saat menu dibuka.
+           ============================================================ */
+
+    
+        /* ============================================================
+           SaaS MODERN v2.7.5.2 — HISTORY DELETE PERMISSION
+           Semua role dapat melihat History Izin.
+           Hanya Leader dan CS Line yang dapat menghapus History.
+           ============================================================ */
+
     </style>
 </head>
 
@@ -11389,6 +11403,8 @@
         const IZIN_RECONCILE_MIN_GAP_MS = 8 * 1000;           // query izin ringan maksimal 1x/8 detik
         const RESUME_RECONCILE_AFTER_MS = 2 * 1000;           // kembali setelah hidden >=2 detik
         const HISTORY_REFRESH_MIN_GAP_MS = 30 * 1000;         // History dimuat saat dibutuhkan
+        const VOUCHER_REFRESH_MIN_GAP_MS = 30 * 1000;         // Voucher snapshot ringan saat diperlukan
+        const ARTIFACT_RESUME_AFTER_MS = 8 * 1000;            // fallback setelah hidden cukup lama
         const HISTORY_INITIAL_LIMIT = 1000;                   // riwayat izin terbaru di memori
         const SHIFT_HISTORY_LIMIT = 100;                      // riwayat shift terbaru
         const SHIFT_LOG_LIMIT = 30;                           // log shift terbaru
@@ -11470,7 +11486,7 @@
                 canViewVoucher: true,
                 canEditSettings: false,
                 canEditShift: false,
-                canOpenHistory: false,
+                canOpenHistory: true,
                 canDeleteHistory: false,
                 label: 'CS',
                 icon: '💬'
@@ -11486,7 +11502,7 @@
                 canEditSettings: false,
                 canEditShift: true,
                 canOpenHistory: true,
-                canDeleteHistory: true,
+                canDeleteHistory: false,
                 label: 'Kapten',
                 icon: '⚓'
             },
@@ -11500,7 +11516,7 @@
                 canViewVoucher: true,
                 canEditSettings: false,
                 canEditShift: false,
-                canOpenHistory: false,
+                canOpenHistory: true,
                 canDeleteHistory: false,
                 label: 'Kasir',
                 icon: '💰'
@@ -11516,7 +11532,7 @@
                 canEditSettings: true,
                 canEditShift: true,
                 canOpenHistory: true,
-                canDeleteHistory: true,
+                canDeleteHistory: false,
                 label: 'Admin',
                 icon: '🔴'
             }
@@ -11565,6 +11581,15 @@
         let lastHiddenAt = 0;
         let historyLoading = false;
         let lastHistoryLoad = 0;
+        let historyDataScope = 'none'; // none | today | full
+
+        let artifactReconcilePromise = null;
+        let lastArtifactSyncAt = 0;
+        let lastVoucherSyncAt = 0;
+        let artifactRealtimeNeedsReconcile = false;
+        let artifactUiFrame = null;
+        let artifactHistoryDirty = false;
+        let artifactVoucherDirty = false;
 
         // ============================================================
         // SHIFT STATE
@@ -12326,13 +12351,162 @@
         };
 
         // ============================================================
-        // REALTIME SUBSCRIPTION (IZIN - TETAP AKTIF)
+        // REALTIME — IZIN + HISTORY + VOUCHER (EVENT-DRIVEN)
         // ============================================================
         function renderIzinRealtimeViews() {
             renderLiveIzin();
             renderDashboardTable();
             updateCurrentCounts();
             updateQuickStats();
+        }
+
+        function normalizeHistoryRecord(row = {}) {
+            return {
+                id: row.id ?? null,
+                nama: row.nama,
+                tanggal: row.tanggal,
+                mulai: row.mulai,
+                selesai: row.selesai,
+                status: row.status || 'selesai',
+                role: row.role || 'cs',
+                durasiDetik: Number(row.durasi_detik ?? row.durasiDetik) || 0,
+                isQuotaValid:
+                    row.is_quota_valid !== undefined
+                        ? Boolean(row.is_quota_valid)
+                        : (
+                            row.isQuotaValid !== undefined
+                                ? Boolean(row.isQuotaValid)
+                                : true
+                        )
+            };
+        }
+
+        function historyRecordsMatch(a = {}, b = {}) {
+            if (a.id != null && b.id != null) {
+                return String(a.id) === String(b.id);
+            }
+
+            return (
+                formatName(a.nama) === formatName(b.nama) &&
+                String(a.mulai || '') === String(b.mulai || '')
+            );
+        }
+
+        function upsertHistoryRecord(row) {
+            if (!row?.nama || !row?.mulai) return false;
+
+            const normalized = normalizeHistoryRecord(row);
+            const index = historyData.findIndex(item =>
+                historyRecordsMatch(item, normalized)
+            );
+
+            if (index >= 0) {
+                historyData[index] = {
+                    ...historyData[index],
+                    ...normalized
+                };
+            } else {
+                historyData.push(normalized);
+            }
+
+            historyData.sort(
+                (a, b) => new Date(b.mulai || 0) - new Date(a.mulai || 0)
+            );
+
+            if (historyData.length > HISTORY_INITIAL_LIMIT) {
+                historyData.length = HISTORY_INITIAL_LIMIT;
+            }
+
+            return true;
+        }
+
+        function removeHistoryRecord(row) {
+            if (!row) return false;
+
+            const before = historyData.length;
+            historyData = historyData.filter(item =>
+                !historyRecordsMatch(item, row)
+            );
+
+            return historyData.length !== before;
+        }
+
+        function scheduleArtifactUiRefresh({ history = false, voucher = false } = {}) {
+            artifactHistoryDirty = artifactHistoryDirty || history;
+            artifactVoucherDirty = artifactVoucherDirty || voucher;
+
+            if (artifactUiFrame) return;
+
+            artifactUiFrame = requestAnimationFrame(() => {
+                artifactUiFrame = null;
+
+                if (artifactHistoryDirty) {
+                    updateStatsAndBadges();
+
+                    if (currentTab === 'history') {
+                        renderHistory();
+                    }
+                }
+
+                if (artifactVoucherDirty) {
+                    updateSidebarBadge();
+                    updateQuickStats();
+                    updateProfileDropdown();
+
+                    if (currentTab === 'voucher') {
+                        renderVoucherPage();
+                    }
+                }
+
+                artifactHistoryDirty = false;
+                artifactVoucherDirty = false;
+            });
+        }
+
+        function handleHistoryRealtime(payload) {
+            const eventType = payload?.eventType;
+            let changed = false;
+
+            if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                changed = upsertHistoryRecord(payload.new);
+            } else if (eventType === 'DELETE') {
+                changed = removeHistoryRecord(payload.old);
+            }
+
+            if (!changed) return;
+
+            lastHistoryLoad = Date.now();
+            lastArtifactSyncAt = Date.now();
+            scheduleArtifactUiRefresh({ history: true });
+        }
+
+        function applyVoucherRecord(row) {
+            const nama = formatName(row?.nama);
+            if (!nama) return false;
+
+            voucherData[nama] = Math.max(0, Number(row?.jumlah) || 0);
+            return true;
+        }
+
+        function handleVoucherRealtime(payload) {
+            const eventType = payload?.eventType;
+            let changed = false;
+
+            if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                changed = applyVoucherRecord(payload.new);
+            } else if (eventType === 'DELETE') {
+                const nama = formatName(payload.old?.nama);
+                if (nama) {
+                    delete voucherData[nama];
+                    changed = true;
+                }
+            }
+
+            if (!changed) return;
+
+            lastVoucherSyncAt = Date.now();
+            lastArtifactSyncAt = Date.now();
+            scheduleArtifactUiRefresh({ voucher: true });
         }
 
         function applyIzinSnapshot(records = []) {
@@ -12380,7 +12554,6 @@
             const now = Date.now();
             const elapsed = now - lastIzinReconcileAt;
 
-            // Tetap cegah visibility + focus memicu query ganda hampir bersamaan.
             if (elapsed < 2000 || (!force && elapsed < IZIN_RECONCILE_MIN_GAP_MS)) {
                 return false;
             }
@@ -12389,8 +12562,6 @@
 
             izinReconcilePromise = (async () => {
                 try {
-                    console.log(`Sinkronisasi izin ringan (${reason})...`);
-
                     const { data, error } = await supabaseDashboard
                         .from('izin_anggota')
                         .select('nama, status, mulai, selesai, tanggal, role, emoticon');
@@ -12405,7 +12576,6 @@
                     renderIzinRealtimeViews();
 
                     realtimeNeedsReconcile = false;
-                    console.log(`Sinkronisasi izin ringan selesai: ${(data || []).length} baris`);
                     return true;
                 } catch (error) {
                     console.error('Error sinkronisasi izin ringan:', error);
@@ -12419,6 +12589,150 @@
             return izinReconcilePromise;
         }
 
+        async function syncHistoryDelta({ reason = 'delta' } = {}) {
+            const queryStartedAt = Date.now();
+            const baseTime =
+                lastArtifactSyncAt ||
+                lastHistoryLoad ||
+                (queryStartedAt - (15 * 60 * 1000));
+
+            const since = new Date(
+                Math.max(0, baseTime - 5000)
+            ).toISOString();
+
+            const { data, error } = await supabaseDashboard
+                .from('history')
+                .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
+                .gte('selesai', since)
+                .order('selesai', { ascending: true })
+                .limit(250);
+
+            if (error) {
+                console.error(`Gagal sync History delta (${reason}):`, error);
+                return { success: false, names: [] };
+            }
+
+            const names = new Set();
+
+            (data || []).forEach(row => {
+                if (upsertHistoryRecord(row)) {
+                    names.add(formatName(row.nama));
+                }
+            });
+
+            lastHistoryLoad = queryStartedAt;
+            lastArtifactSyncAt = queryStartedAt;
+
+            if ((data || []).length > 0) {
+                scheduleArtifactUiRefresh({ history: true });
+            }
+
+            return {
+                success: true,
+                names: [...names]
+            };
+        }
+
+        async function syncVoucherSnapshot({ names = null, reason = 'snapshot' } = {}) {
+            let query = supabaseDashboard
+                .from('vouchers')
+                .select('nama, jumlah');
+
+            if (Array.isArray(names) && names.length > 0) {
+                query = query.in('nama', names);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error(`Gagal sync Voucher (${reason}):`, error);
+                return false;
+            }
+
+            if (!names) {
+                const nextVoucherData = {};
+
+                (data || []).forEach(row => {
+                    const nama = formatName(row.nama);
+                    if (nama) {
+                        nextVoucherData[nama] = Math.max(
+                            0,
+                            Number(row.jumlah) || 0
+                        );
+                    }
+                });
+
+                voucherData = nextVoucherData;
+            } else {
+                const returnedNames = new Set();
+
+                (data || []).forEach(row => {
+                    applyVoucherRecord(row);
+                    returnedNames.add(formatName(row.nama));
+                });
+
+                names.forEach(nama => {
+                    const formattedNama = formatName(nama);
+                    if (!returnedNames.has(formattedNama)) {
+                        voucherData[formattedNama] = 0;
+                    }
+                });
+            }
+
+            lastVoucherSyncAt = Date.now();
+            scheduleArtifactUiRefresh({ voucher: true });
+            return true;
+        }
+
+        async function syncRealtimeArtifacts({
+            forceVoucherSnapshot = false,
+            reason = 'manual'
+        } = {}) {
+            if (
+                !currentUser ||
+                document.body.classList.contains('dashboard-access-blocked')
+            ) {
+                return false;
+            }
+
+            if (artifactReconcilePromise) {
+                return artifactReconcilePromise;
+            }
+
+            artifactReconcilePromise = (async () => {
+                try {
+                    const historyResult = await syncHistoryDelta({ reason });
+
+                    if (!historyResult.success) {
+                        artifactRealtimeNeedsReconcile = true;
+                        return false;
+                    }
+
+                    if (forceVoucherSnapshot) {
+                        await syncVoucherSnapshot({
+                            reason: `${reason}-full-voucher`
+                        });
+                    } else if (historyResult.names.length > 0) {
+                        await syncVoucherSnapshot({
+                            names: historyResult.names,
+                            reason: `${reason}-changed-names`
+                        });
+                    }
+
+                    artifactRealtimeNeedsReconcile = false;
+                    return true;
+                } catch (error) {
+                    console.error('Gagal reconcile History/Voucher:', error);
+                    artifactRealtimeNeedsReconcile = true;
+                    return false;
+                } finally {
+                    artifactReconcilePromise = null;
+                }
+            })();
+
+            return artifactReconcilePromise;
+        }
+
         function subscribeToIzinChanges() {
             if (realtimeChannel) {
                 supabaseDashboard.removeChannel(realtimeChannel);
@@ -12426,12 +12740,13 @@
             }
 
             realtimeSubscriptionStatus = 'CONNECTING';
-            console.log('Subscribing to izin_anggota changes...');
+            updateRealtimeConnectionIndicator(false);
 
             realtimeChannel = supabaseDashboard
-                .channel('izin_anggota_changes')
+                .channel('dashboard_realtime_v275')
                 .on(
-                    'postgres_changes', {
+                    'postgres_changes',
+                    {
                         event: '*',
                         schema: 'public',
                         table: 'izin_anggota'
@@ -12474,20 +12789,51 @@
                         renderIzinRealtimeViews();
                     }
                 )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'history'
+                    },
+                    handleHistoryRealtime
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'vouchers'
+                    },
+                    handleVoucherRealtime
+                )
                 .subscribe((status) => {
                     realtimeSubscriptionStatus = status;
-                    console.log('Subscription status:', status);
+                    console.log('Dashboard Realtime status:', status);
 
                     if (status === 'SUBSCRIBED') {
                         updateRealtimeConnectionIndicator(true);
-                        const shouldReconcile = realtimeNeedsReconcile;
+
+                        const shouldReconcile =
+                            realtimeNeedsReconcile ||
+                            artifactRealtimeNeedsReconcile;
+
                         realtimeNeedsReconcile = false;
 
-                        if (shouldReconcile && document.visibilityState === 'visible') {
-                            syncIzinState({
-                                force: true,
-                                reason: 'realtime-resubscribed'
-                            });
+                        if (
+                            shouldReconcile &&
+                            document.visibilityState === 'visible'
+                        ) {
+                            Promise.all([
+                                syncIzinState({
+                                    force: true,
+                                    reason: 'realtime-resubscribed'
+                                }),
+                                syncRealtimeArtifacts({
+                                    forceVoucherSnapshot: true,
+                                    reason: 'realtime-resubscribed'
+                                })
+                            ]);
                         }
                     } else if (
                         status === 'CHANNEL_ERROR' ||
@@ -12496,6 +12842,7 @@
                     ) {
                         updateRealtimeConnectionIndicator(false);
                         realtimeNeedsReconcile = true;
+                        artifactRealtimeNeedsReconcile = true;
                     }
                 });
 
@@ -12664,12 +13011,35 @@
             if (historyLoading) return false;
 
             const now = Date.now();
+            const needsFullHistory =
+                currentTab === 'history' &&
+                userPermissions.canOpenHistory &&
+                historyDataScope !== 'full';
+
             if (
                 !force &&
+                !needsFullHistory &&
                 historyData.length > 0 &&
                 (now - lastHistoryLoad) < HISTORY_REFRESH_MIN_GAP_MS
             ) {
                 return false;
+            }
+
+            if (
+                !force &&
+                !needsFullHistory &&
+                historyData.length > 0
+            ) {
+                historyLoading = true;
+
+                try {
+                    const result = await syncHistoryDelta({
+                        reason: 'history-open'
+                    });
+                    return result.success;
+                } finally {
+                    historyLoading = false;
+                }
             }
 
             historyLoading = true;
@@ -12686,23 +13056,16 @@
                     return false;
                 }
 
-                historyData = (data || []).map(h => ({
-                    nama: h.nama,
-                    tanggal: h.tanggal,
-                    mulai: h.mulai,
-                    selesai: h.selesai,
-                    status: h.status || 'selesai',
-                    role: h.role || 'cs',
-                    durasiDetik: h.durasi_detik || 0,
-                    isQuotaValid: h.is_quota_valid !== undefined ? h.is_quota_valid : true
-                }));
-
+                historyData = (data || []).map(normalizeHistoryRecord);
+                historyDataScope = 'full';
                 lastHistoryLoad = Date.now();
+                lastArtifactSyncAt = Date.now();
 
                 if (currentTab === 'history') {
                     renderHistory();
                 }
 
+                updateStatsAndBadges();
                 return true;
             } catch (error) {
                 console.error('Error memuat History:', error);
@@ -12710,6 +13073,22 @@
             } finally {
                 historyLoading = false;
             }
+        }
+
+        async function loadVoucherData(force = false) {
+            const now = Date.now();
+
+            if (
+                !force &&
+                lastVoucherSyncAt > 0 &&
+                (now - lastVoucherSyncAt) < VOUCHER_REFRESH_MIN_GAP_MS
+            ) {
+                return false;
+            }
+
+            return syncVoucherSnapshot({
+                reason: force ? 'voucher-force' : 'voucher-open'
+            });
         }
 
         // ============================================================
@@ -12725,11 +13104,20 @@
             }
 
             const hadReadyData = isDataReady;
-            const shouldLoadHistory =
-                force ||
-                !hadReadyData ||
-                historyData.length === 0 ||
-                currentTab === 'history';
+
+            let historyLoadMode = 'skip';
+            if (!hadReadyData || historyData.length === 0) {
+                historyLoadMode =
+                    currentTab === 'history' && userPermissions.canOpenHistory
+                        ? 'full'
+                        : 'today';
+            } else if (
+                currentTab === 'history' &&
+                userPermissions.canOpenHistory &&
+                historyDataScope !== 'full'
+            ) {
+                historyLoadMode = 'full';
+            }
 
             isLoading = true;
 
@@ -12749,13 +13137,39 @@
                     .order('name', { ascending: true })
                     .limit(250);
 
-                const historyPromise = shouldLoadHistory ?
-                    supabaseDashboard
+                const historyPromise = (async () => {
+                    if (historyLoadMode === 'skip') {
+                        return {
+                            data: null,
+                            error: null,
+                            skipped: true,
+                            scope: 'skip'
+                        };
+                    }
+
+                    let query = supabaseDashboard
                         .from('history')
                         .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
-                        .order('mulai', { ascending: false })
-                        .limit(HISTORY_INITIAL_LIMIT) :
-                    Promise.resolve({ data: null, error: null, skipped: true });
+                        .order('mulai', { ascending: false });
+
+                    if (historyLoadMode === 'today') {
+                        const todayStart = new Date();
+                        todayStart.setHours(0, 0, 0, 0);
+
+                        query = query
+                            .gte('mulai', todayStart.toISOString())
+                            .limit(300);
+                    } else {
+                        query = query.limit(HISTORY_INITIAL_LIMIT);
+                    }
+
+                    const result = await query;
+                    return {
+                        ...result,
+                        skipped: false,
+                        scope: historyLoadMode
+                    };
+                })();
 
                 const [usersResult, historyResult, izinResult, voucherResult, settingsResult] = await Promise.all([
                     usersPromise,
@@ -12798,18 +13212,13 @@
                 if (historyResult.skipped) {
                     console.log('History dilewati pada sync berkala untuk menghemat egress');
                 } else if (!historyResult.error && historyResult.data) {
-                    historyData = historyResult.data.map(h => ({
-                        nama: h.nama,
-                        tanggal: h.tanggal,
-                        mulai: h.mulai,
-                        selesai: h.selesai,
-                        status: h.status || 'selesai',
-                        role: h.role || 'cs',
-                        durasiDetik: h.durasi_detik || 0,
-                        isQuotaValid: h.is_quota_valid !== undefined ? h.is_quota_valid : true
-                    }));
+                    historyData = historyResult.data.map(normalizeHistoryRecord);
+                    historyDataScope = historyResult.scope || 'full';
                     lastHistoryLoad = Date.now();
-                    console.log(`${historyResult.data.length} history loaded`);
+                    lastArtifactSyncAt = Date.now();
+                    console.log(
+                        `${historyResult.data.length} history loaded (${historyDataScope})`
+                    );
                 } else {
                     console.log('History gagal dimuat:', historyResult.error);
                 }
@@ -12852,11 +13261,15 @@
                 if (!voucherResult.error && voucherResult.data) {
                     voucherData = {};
                     voucherResult.data.forEach(v => {
-                        voucherData[v.nama] = v.jumlah || 0;
+                        voucherData[formatName(v.nama)] = Math.max(
+                            0,
+                            Number(v.jumlah) || 0
+                        );
                     });
-                    console.log(`✅ ${voucherResult.data.length} voucher loaded`);
+                    lastVoucherSyncAt = Date.now();
+                    console.log(`${voucherResult.data.length} voucher loaded`);
                 } else {
-                    console.log('⚠️ No vouchers found');
+                    console.log('No vouchers found');
                     voucherData = {};
                 }
 
@@ -13934,9 +14347,15 @@
             const menuManagement = document.getElementById('menuManagement');
             const menuSettings = document.getElementById('menuSettings');
             const menuVoucher = document.getElementById('menuVoucher');
+            const btnHapusHistory = document.getElementById('btnHapusHistory');
+
             if (menuManagement) menuManagement.style.display = 'flex';
             if (menuSettings) menuSettings.style.display = userPermissions.canViewSettings ? 'flex' : 'none';
             if (menuVoucher) menuVoucher.style.display = userPermissions.canViewVoucher ? 'flex' : 'none';
+
+            if (btnHapusHistory) {
+                btnHapusHistory.style.display = canDeleteHistory() ? 'inline-flex' : 'none';
+            }
 
             const canEdit = userPermissions.canEditSettings;
             document.querySelectorAll('.view-only-indicator').forEach(el => {
@@ -14234,6 +14653,7 @@
                     currentData.emoticon = null;
 
                     historyData.unshift({
+                        id: null,
                         nama: formattedNama,
                         tanggal: currentData.tanggal,
                         mulai: currentData.mulai,
@@ -14327,6 +14747,7 @@
 
                 if (!alreadyInLocalHistory) {
                     historyData.push({
+                        id: result.history_id ?? null,
                         nama: formattedNama,
                         tanggal,
                         mulai: mulaiTime,
@@ -15827,8 +16248,8 @@
         };
 
         window.hapusSemuaHistory = async function() {
-            if (!userPermissions.canDeleteData) {
-                showToast('Hanya Leader & CS Line yang dapat menghapus history!', 'error');
+            if (!canDeleteHistory()) {
+                showToast('Hanya Leader dan CS Line yang dapat menghapus History Izin.', 'error');
                 return;
             }
 
@@ -16318,6 +16739,7 @@
                 renderUsersPage();
             } else if (selectedTab === 'voucher') {
                 renderVoucherPage();
+                loadVoucherData(false);
             } else if (selectedTab === 'history') {
                 const filterTanggal = document.getElementById('filterTanggal');
                 if (filterTanggal) {
@@ -18002,7 +18424,7 @@ function toggleSidebar() {
                                                         <button class="action-btn open" onclick="openShiftFromHistory('${item.id}')" title="Buka" aria-label="Buka"><span class="button-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h6l2 2h10v11H3Z"/><path d="M3 10h18"/></svg></span></button>
                                                     ` : ''}
                                                     <button class="action-btn preview" onclick="previewShiftFromHistory('${item.id}')" title="Preview" aria-label="Preview"><span class="button-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span></button>
-                                                    ${canEdit ? `
+                                                    ${canDeleteHistory() ? `
                                                         <button class="action-btn delete" onclick="deleteShiftHistory('${item.id}')" title="Hapus" aria-label="Hapus"><span class="button-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></span></button>
                                                     ` : ''}
                                                 </div>
@@ -18186,7 +18608,7 @@ function toggleSidebar() {
         // ============================================================
         async function deleteShiftHistory(historyId) {
             if (!canDeleteHistory()) {
-                showShiftToast('❌ Anda tidak memiliki izin untuk menghapus!', 'error');
+                showShiftToast('Hanya Leader dan CS Line yang dapat menghapus riwayat.', 'error');
                 return;
             }
 
@@ -18251,6 +18673,19 @@ function toggleSidebar() {
                 });
             }
 
+            if (
+                hiddenDuration >= ARTIFACT_RESUME_AFTER_MS ||
+                artifactRealtimeNeedsReconcile ||
+                realtimeSubscriptionStatus !== 'SUBSCRIBED'
+            ) {
+                await syncRealtimeArtifacts({
+                    forceVoucherSnapshot:
+                        artifactRealtimeNeedsReconcile ||
+                        realtimeSubscriptionStatus !== 'SUBSCRIBED',
+                    reason: `visibility-resume-${Math.round(hiddenDuration / 1000)}s`
+                });
+            }
+
             // Data umum tetap disegarkan secara terpisah bila sudah melewati interval.
             // History 1000 baris otomatis dilewati kecuali halaman History sedang dibuka.
             if (
@@ -18285,6 +18720,10 @@ function toggleSidebar() {
                     force: true,
                     reason: 'pageshow-bfcache'
                 });
+                syncRealtimeArtifacts({
+                    forceVoucherSnapshot: true,
+                    reason: 'pageshow-bfcache'
+                });
             }
         });
 
@@ -18293,6 +18732,10 @@ function toggleSidebar() {
             ensureIzinRealtimeSubscription();
             syncIzinState({
                 force: true,
+                reason: 'network-online'
+            });
+            syncRealtimeArtifacts({
+                forceVoucherSnapshot: true,
                 reason: 'network-online'
             });
         });
