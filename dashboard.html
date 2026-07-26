@@ -11383,9 +11383,12 @@
         // ============================================================
         // EGRESS-SAFE PERFORMANCE SETTINGS
         // ============================================================
-        const DATA_REFRESH_INTERVAL_MS = 15 * 60 * 1000;      // full sync setiap 15 menit
-        const VISIBILITY_REFRESH_COOLDOWN_MS = 5 * 60 * 1000; // tab aktif kembali: maksimal 1x/5 menit
-        const MIN_MANUAL_RELOAD_GAP_MS = 30 * 1000;           // cegah query ganda berdekatan
+        const DATA_REFRESH_INTERVAL_MS = 15 * 60 * 1000;      // full sync data umum setiap 15 menit
+        const VISIBILITY_REFRESH_COOLDOWN_MS = 5 * 60 * 1000; // kompatibilitas pemeriksaan data umum
+        const MIN_MANUAL_RELOAD_GAP_MS = 30 * 1000;           // cegah full query ganda berdekatan
+        const IZIN_RECONCILE_MIN_GAP_MS = 8 * 1000;           // query izin ringan maksimal 1x/8 detik
+        const RESUME_RECONCILE_AFTER_MS = 2 * 1000;           // kembali setelah hidden >=2 detik
+        const HISTORY_REFRESH_MIN_GAP_MS = 30 * 1000;         // History dimuat saat dibutuhkan
         const HISTORY_INITIAL_LIMIT = 1000;                   // riwayat izin terbaru di memori
         const SHIFT_HISTORY_LIMIT = 100;                      // riwayat shift terbaru
         const SHIFT_LOG_LIMIT = 30;                           // log shift terbaru
@@ -11553,6 +11556,15 @@
         let isTooltipVisible = false;
         let voucherTooltipTimeout = null;
         let refreshInterval = null;
+        let timerUpdateInterval = null;
+
+        let realtimeSubscriptionStatus = 'IDLE';
+        let realtimeNeedsReconcile = false;
+        let izinReconcilePromise = null;
+        let lastIzinReconcileAt = 0;
+        let lastHiddenAt = 0;
+        let historyLoading = false;
+        let lastHistoryLoad = 0;
 
         // ============================================================
         // SHIFT STATE
@@ -12316,13 +12328,105 @@
         // ============================================================
         // REALTIME SUBSCRIPTION (IZIN - TETAP AKTIF)
         // ============================================================
+        function renderIzinRealtimeViews() {
+            renderLiveIzin();
+            renderDashboardTable();
+            updateCurrentCounts();
+            updateQuickStats();
+        }
+
+        function applyIzinSnapshot(records = []) {
+            daftarAnggota.forEach(nama => {
+                if (!dataIzin[nama]) return;
+                dataIzin[nama].status = 'none';
+                dataIzin[nama].mulai = null;
+                dataIzin[nama].tanggal = null;
+                dataIzin[nama].selesai = null;
+                dataIzin[nama].emoticon = null;
+            });
+
+            records.forEach(item => {
+                if (!dataIzin[item.nama]) return;
+
+                let mulai = item.mulai;
+                if (mulai && !mulai.endsWith('Z') && !mulai.includes('+')) {
+                    mulai += 'Z';
+                }
+
+                dataIzin[item.nama].status = item.status || 'none';
+                dataIzin[item.nama].mulai = mulai || null;
+                dataIzin[item.nama].tanggal = item.tanggal || null;
+                dataIzin[item.nama].selesai = item.selesai || null;
+                dataIzin[item.nama].emoticon = item.emoticon || null;
+
+                if (item.role) {
+                    dataIzin[item.nama].role = item.role;
+                }
+            });
+        }
+
+        async function syncIzinState({ force = false, reason = 'manual' } = {}) {
+            if (
+                !currentUser ||
+                document.body.classList.contains('dashboard-access-blocked')
+            ) {
+                return false;
+            }
+
+            if (izinReconcilePromise) {
+                return izinReconcilePromise;
+            }
+
+            const now = Date.now();
+            const elapsed = now - lastIzinReconcileAt;
+
+            // Tetap cegah visibility + focus memicu query ganda hampir bersamaan.
+            if (elapsed < 2000 || (!force && elapsed < IZIN_RECONCILE_MIN_GAP_MS)) {
+                return false;
+            }
+
+            lastIzinReconcileAt = now;
+
+            izinReconcilePromise = (async () => {
+                try {
+                    console.log(`Sinkronisasi izin ringan (${reason})...`);
+
+                    const { data, error } = await supabaseDashboard
+                        .from('izin_anggota')
+                        .select('nama, status, mulai, selesai, tanggal, role, emoticon');
+
+                    if (error) {
+                        console.error('Gagal sinkronisasi izin ringan:', error);
+                        realtimeNeedsReconcile = true;
+                        return false;
+                    }
+
+                    applyIzinSnapshot(data || []);
+                    renderIzinRealtimeViews();
+
+                    realtimeNeedsReconcile = false;
+                    console.log(`Sinkronisasi izin ringan selesai: ${(data || []).length} baris`);
+                    return true;
+                } catch (error) {
+                    console.error('Error sinkronisasi izin ringan:', error);
+                    realtimeNeedsReconcile = true;
+                    return false;
+                } finally {
+                    izinReconcilePromise = null;
+                }
+            })();
+
+            return izinReconcilePromise;
+        }
+
         function subscribeToIzinChanges() {
             if (realtimeChannel) {
                 supabaseDashboard.removeChannel(realtimeChannel);
                 realtimeChannel = null;
             }
 
-            console.log('🔌 Subscribing to izin_anggota changes...');
+            realtimeSubscriptionStatus = 'CONNECTING';
+            console.log('Subscribing to izin_anggota changes...');
 
             realtimeChannel = supabaseDashboard
                 .channel('izin_anggota_changes')
@@ -12333,55 +12437,95 @@
                         table: 'izin_anggota'
                     },
                     (payload) => {
-                        console.log('🔄 Real-time update received:', payload);
-
                         const { eventType, new: newRecord, old: oldRecord } = payload;
 
                         if (eventType === 'INSERT' || eventType === 'UPDATE') {
                             const nama = newRecord.nama;
-                            if (dataIzin[nama]) {
-                                dataIzin[nama].status = newRecord.status || 'none';
 
-                                if (newRecord.mulai) {
-                                    let mulaiStr = newRecord.mulai;
-                                    if (!mulaiStr.endsWith('Z') && !mulaiStr.includes('+')) {
-                                        mulaiStr = mulaiStr + 'Z';
-                                    }
-                                    dataIzin[nama].mulai = mulaiStr;
-                                } else {
-                                    dataIzin[nama].mulai = null;
+                            if (dataIzin[nama]) {
+                                let mulai = newRecord.mulai;
+                                if (mulai && !mulai.endsWith('Z') && !mulai.includes('+')) {
+                                    mulai += 'Z';
                                 }
 
-                                dataIzin[nama].tanggal = newRecord.tanggal;
-                                dataIzin[nama].selesai = newRecord.selesai;
+                                dataIzin[nama].status = newRecord.status || 'none';
+                                dataIzin[nama].mulai = mulai || null;
+                                dataIzin[nama].tanggal = newRecord.tanggal || null;
+                                dataIzin[nama].selesai = newRecord.selesai || null;
                                 dataIzin[nama].emoticon = newRecord.emoticon || null;
 
-                                console.log(
-                                    `✅ Updated ${nama}: status=${newRecord.status}, emoticon=${dataIzin[nama].emoticon || '🐧'}`
-                                );
+                                if (newRecord.role) {
+                                    dataIzin[nama].role = newRecord.role;
+                                }
                             }
                         } else if (eventType === 'DELETE') {
                             const nama = oldRecord.nama;
+
                             if (dataIzin[nama]) {
                                 dataIzin[nama].status = 'none';
                                 dataIzin[nama].mulai = null;
                                 dataIzin[nama].tanggal = null;
                                 dataIzin[nama].selesai = null;
                                 dataIzin[nama].emoticon = null;
-                                console.log(`✅ Removed ${nama} from izin list`);
                             }
                         }
 
-                        renderAll();
-                        updateCurrentCounts();
-                        console.log('🔄 Dashboard updated via real-time subscription');
+                        lastIzinReconcileAt = Date.now();
+                        renderIzinRealtimeViews();
                     }
                 )
                 .subscribe((status) => {
-                    console.log('📡 Subscription status:', status);
+                    realtimeSubscriptionStatus = status;
+                    console.log('Subscription status:', status);
+
+                    if (status === 'SUBSCRIBED') {
+                        updateRealtimeConnectionIndicator(true);
+                        const shouldReconcile = realtimeNeedsReconcile;
+                        realtimeNeedsReconcile = false;
+
+                        if (shouldReconcile && document.visibilityState === 'visible') {
+                            syncIzinState({
+                                force: true,
+                                reason: 'realtime-resubscribed'
+                            });
+                        }
+                    } else if (
+                        status === 'CHANNEL_ERROR' ||
+                        status === 'TIMED_OUT' ||
+                        status === 'CLOSED'
+                    ) {
+                        updateRealtimeConnectionIndicator(false);
+                        realtimeNeedsReconcile = true;
+                    }
                 });
 
             return realtimeChannel;
+        }
+
+        function updateRealtimeConnectionIndicator(isHealthy) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+
+            if (dot) {
+                dot.classList.toggle('online', Boolean(isHealthy));
+                dot.classList.toggle('offline', !isHealthy);
+            }
+
+            if (text) {
+                text.textContent = isHealthy ? 'Terhubung' : 'Menyambungkan';
+            }
+        }
+
+        function ensureIzinRealtimeSubscription() {
+            if (
+                !realtimeChannel ||
+                realtimeSubscriptionStatus === 'CHANNEL_ERROR' ||
+                realtimeSubscriptionStatus === 'TIMED_OUT' ||
+                realtimeSubscriptionStatus === 'CLOSED'
+            ) {
+                updateRealtimeConnectionIndicator(false);
+                subscribeToIzinChanges();
+            }
         }
 
         // ============================================================
@@ -12516,6 +12660,58 @@
             }
         }
 
+        async function loadHistoryData(force = false) {
+            if (historyLoading) return false;
+
+            const now = Date.now();
+            if (
+                !force &&
+                historyData.length > 0 &&
+                (now - lastHistoryLoad) < HISTORY_REFRESH_MIN_GAP_MS
+            ) {
+                return false;
+            }
+
+            historyLoading = true;
+
+            try {
+                const { data, error } = await supabaseDashboard
+                    .from('history')
+                    .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
+                    .order('mulai', { ascending: false })
+                    .limit(HISTORY_INITIAL_LIMIT);
+
+                if (error) {
+                    console.error('Gagal memuat History:', error);
+                    return false;
+                }
+
+                historyData = (data || []).map(h => ({
+                    nama: h.nama,
+                    tanggal: h.tanggal,
+                    mulai: h.mulai,
+                    selesai: h.selesai,
+                    status: h.status || 'selesai',
+                    role: h.role || 'cs',
+                    durasiDetik: h.durasi_detik || 0,
+                    isQuotaValid: h.is_quota_valid !== undefined ? h.is_quota_valid : true
+                }));
+
+                lastHistoryLoad = Date.now();
+
+                if (currentTab === 'history') {
+                    renderHistory();
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Error memuat History:', error);
+                return false;
+            } finally {
+                historyLoading = false;
+            }
+        }
+
         // ============================================================
         // LOAD DATA DARI DATABASE
         // ============================================================
@@ -12524,9 +12720,16 @@
 
             const now = Date.now();
             if (!force && isDataReady && (now - lastDataLoad) < MIN_MANUAL_RELOAD_GAP_MS) {
-                console.log('⏩ Full sync dilewati: data baru saja dimuat');
+                console.log('Full sync dilewati: data baru saja dimuat');
                 return;
             }
+
+            const hadReadyData = isDataReady;
+            const shouldLoadHistory =
+                force ||
+                !hadReadyData ||
+                historyData.length === 0 ||
+                currentTab === 'history';
 
             isLoading = true;
 
@@ -12546,11 +12749,13 @@
                     .order('name', { ascending: true })
                     .limit(250);
 
-                const historyPromise = supabaseDashboard
-                    .from('history')
-                    .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
-                    .order('mulai', { ascending: false })
-                    .limit(HISTORY_INITIAL_LIMIT);
+                const historyPromise = shouldLoadHistory ?
+                    supabaseDashboard
+                        .from('history')
+                        .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
+                        .order('mulai', { ascending: false })
+                        .limit(HISTORY_INITIAL_LIMIT) :
+                    Promise.resolve({ data: null, error: null, skipped: true });
 
                 const [usersResult, historyResult, izinResult, voucherResult, settingsResult] = await Promise.all([
                     usersPromise,
@@ -12590,7 +12795,9 @@
                     console.log('⚠️ No users found in database');
                 }
 
-                if (!historyResult.error && historyResult.data) {
+                if (historyResult.skipped) {
+                    console.log('History dilewati pada sync berkala untuk menghemat egress');
+                } else if (!historyResult.error && historyResult.data) {
                     historyData = historyResult.data.map(h => ({
                         nama: h.nama,
                         tanggal: h.tanggal,
@@ -12601,10 +12808,10 @@
                         durasiDetik: h.durasi_detik || 0,
                         isQuotaValid: h.is_quota_valid !== undefined ? h.is_quota_valid : true
                     }));
-                    console.log(`✅ ${historyResult.data.length} history loaded`);
+                    lastHistoryLoad = Date.now();
+                    console.log(`${historyResult.data.length} history loaded`);
                 } else {
-                    console.log('⚠️ No history found');
-                    historyData = [];
+                    console.log('History gagal dimuat:', historyResult.error);
                 }
 
                 if (!izinResult.error && izinResult.data) {
@@ -12720,9 +12927,7 @@
                 updateProfileDropdown();
                 renderTicker();
 
-                if (!realtimeChannel) {
-                    subscribeToIzinChanges();
-                }
+                ensureIzinRealtimeSubscription();
 
                 if (!isShiftInitialized) {
                     await loadShiftActiveData();
@@ -15410,8 +15615,21 @@
                 }
             });
         }
-function startTimerUpdates() {
-            setInterval(() => {
+        function stopTimerUpdates() {
+            if (timerUpdateInterval) {
+                clearInterval(timerUpdateInterval);
+                timerUpdateInterval = null;
+            }
+
+            stopPeriodicRefresh();
+        }
+
+        function startTimerUpdates() {
+            if (timerUpdateInterval) {
+                clearInterval(timerUpdateInterval);
+            }
+
+            timerUpdateInterval = setInterval(() => {
                 updateLiveTimers();
                 updateDashboardTimers();
                 updateCurrentCounts();
@@ -16089,14 +16307,13 @@ function startTimerUpdates() {
             if (selectedTab === 'dashboard') {
                 updateQuickStats();
             } else if (selectedTab === 'monitoring') {
-                const now = Date.now();
-                if (now - lastDataLoad > VISIBILITY_REFRESH_COOLDOWN_MS) {
-                    console.log('Data monitoring sudah stale, refreshing...');
-                    loadDataFromDatabase();
-                } else {
-                    renderDashboardTable();
-                    renderLiveIzin();
-                }
+                renderDashboardTable();
+                renderLiveIzin();
+
+                syncIzinState({
+                    force: false,
+                    reason: 'monitoring-open'
+                });
             } else if (selectedTab === 'users') {
                 renderUsersPage();
             } else if (selectedTab === 'voucher') {
@@ -16111,6 +16328,7 @@ function startTimerUpdates() {
                     filterTanggal.value = `${year}-${month}-${day}`;
                 }
                 renderHistory();
+                loadHistoryData(false);
             } else if (selectedTab === 'shifts') {
                 if (!isShiftInitialized) {
                     loadShiftActiveData();
@@ -18007,23 +18225,76 @@ function toggleSidebar() {
         }
 
         // ============================================================
-        // VISIBILITY CHANGE HANDLER
+        // VISIBILITY / RESUME HANDLER — FAST IZIN RECONCILIATION
         // ============================================================
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'visible') {
-                const now = Date.now();
-                const dataIsStale = (now - lastDataLoad) >= VISIBILITY_REFRESH_COOLDOWN_MS;
-                if ((now - lastVisibilityLoad) >= VISIBILITY_REFRESH_COOLDOWN_MS && dataIsStale) {
-                    console.log('👁️ Tab aktif kembali, sinkronisasi data yang sudah stale...');
-                    lastVisibilityLoad = now;
-                    if (!isLoading && isDataReady) {
-                        loadDataFromDatabase();
-                    }
-                } else {
-                    console.log('⏸️ Visibility reload dilewati: data masih baru');
-                }
-                startPeriodicRefresh();
+        document.addEventListener('visibilitychange', async function() {
+            if (document.visibilityState === 'hidden') {
+                lastHiddenAt = Date.now();
+                realtimeNeedsReconcile = true;
+                return;
             }
+
+            const now = Date.now();
+            const hiddenDuration = lastHiddenAt ? now - lastHiddenAt : 0;
+            lastVisibilityLoad = now;
+
+            ensureIzinRealtimeSubscription();
+
+            if (
+                hiddenDuration >= RESUME_RECONCILE_AFTER_MS ||
+                realtimeNeedsReconcile ||
+                realtimeSubscriptionStatus !== 'SUBSCRIBED'
+            ) {
+                await syncIzinState({
+                    force: true,
+                    reason: `visibility-resume-${Math.round(hiddenDuration / 1000)}s`
+                });
+            }
+
+            // Data umum tetap disegarkan secara terpisah bila sudah melewati interval.
+            // History 1000 baris otomatis dilewati kecuali halaman History sedang dibuka.
+            if (
+                !isLoading &&
+                isDataReady &&
+                (now - lastDataLoad) >= DATA_REFRESH_INTERVAL_MS
+            ) {
+                loadDataFromDatabase(false);
+            }
+
+            startPeriodicRefresh();
+        });
+
+        window.addEventListener('focus', function() {
+            if (
+                document.visibilityState === 'visible' &&
+                !document.body.classList.contains('dashboard-access-blocked')
+            ) {
+                ensureIzinRealtimeSubscription();
+                syncIzinState({
+                    force: false,
+                    reason: 'window-focus'
+                });
+            }
+        });
+
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                realtimeNeedsReconcile = true;
+                ensureIzinRealtimeSubscription();
+                syncIzinState({
+                    force: true,
+                    reason: 'pageshow-bfcache'
+                });
+            }
+        });
+
+        window.addEventListener('online', function() {
+            realtimeNeedsReconcile = true;
+            ensureIzinRealtimeSubscription();
+            syncIzinState({
+                force: true,
+                reason: 'network-online'
+            });
         });
 
 
