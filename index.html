@@ -844,6 +844,33 @@
             border: 1px solid rgba(255,107,107,.10);
         }
 
+    
+        /* ============================================================
+           Login v1.2.1 — IP STATUS CLARIFICATION
+           ============================================================ */
+        .ip-info-wrap {
+            position: relative;
+            z-index: 1;
+        }
+
+        .ip-info-wrap .ip-info {
+            margin-top: 22px;
+        }
+
+        .ip-helper {
+            margin-top: 6px;
+            color: rgba(255,255,255,.18);
+            font-size: 9px;
+            line-height: 1.4;
+            letter-spacing: .15px;
+        }
+
+        @media (max-width: 480px) {
+            .ip-helper {
+                font-size: 8.5px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -897,12 +924,17 @@
         </div>
 
         <!-- ===== IP INFO ===== -->
-        <div class="ip-info" id="ipInfo">
-            Mengecek IP Anda...
+        <div class="ip-info-wrap">
+            <div class="ip-info" id="ipInfo">
+                Mendeteksi IP perangkat...
+            </div>
+            <div class="ip-helper">
+                Status whitelist diperiksa setelah akun Google berhasil diverifikasi.
+            </div>
         </div>
 
         <!-- ===== FOOTER ===== -->
-        <div class="login-footer">v1.2 • DDT Secure Access</div>
+        <div class="login-footer">v1.2.1 • DDT Secure Access</div>
     </div>
 
     <!-- ============================================================ -->
@@ -1227,13 +1259,13 @@
         }
 
         async function displayPublicIP() {
-            ipInfo.textContent = 'Mengecek IP Anda...';
+            ipInfo.textContent = 'Mendeteksi IP perangkat...';
 
             try {
                 const userIP = await getPublicIP();
                 setIPInfo({
                     ip: userIP,
-                    status: 'Siap diverifikasi',
+                    status: 'Verifikasi setelah login',
                     blocked: false
                 });
             } catch (error) {
