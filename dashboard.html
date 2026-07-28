@@ -13333,6 +13333,23 @@
             border-color: #303b49 !important;
         }
 
+    
+        /* ============================================================
+           SaaS MODERN v2.7.5.13 — PERIOD & SCREENSHOT FIT
+           ============================================================ */
+
+        /* Hanya Preview layar.
+           Pembagian nama/note pada Screenshot Canvas tidak diubah. */
+        #shiftPreviewModal .preview-staff-row {
+            grid-template-columns:
+                22px minmax(106px, 1.28fr) minmax(70px, .72fr)
+                !important;
+        }
+
+        #shiftPreviewModal .preview-user-note {
+            padding-left: 8px !important;
+        }
+
     </style>
 </head>
 
@@ -14499,6 +14516,7 @@
         let shiftActiveId = null;
         let shiftHistoryData = [];
         let previewData = null;
+        let activeShiftPeriod = null;
         let columnDragData = null;
         let shiftLogs = [];
         let noteDebounceTimers = {};
@@ -16746,6 +16764,8 @@
                     shiftSaveQueued = true;
                 }
 
+                activeShiftPeriod = extractShiftPeriod(parsedData);
+
                 // PERTAHANKAN NOTE SAAT LOAD
                 shiftColumns = parsedData.columns.map(col => ({
                     id: col.id || `shift_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
@@ -16874,6 +16894,8 @@
             }
 
             if (!Array.isArray(parsedData?.columns)) return false;
+
+            activeShiftPeriod = extractShiftPeriod(parsedData);
 
             const previousLayout = animate ? captureShiftCardLayout() : null;
             const userMap = getEligibleShiftUserMap();
@@ -19329,7 +19351,7 @@
                                 <span class="button-icon">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
                                 </span>
-                                <span>Kurangi Voucher</span>
+                                <span>Kurangi</span>
                             </button>
                         </td>
                     ` : '';
@@ -21058,8 +21080,115 @@ function toggleSidebar() {
             return { column, user: user || null };
         }
 
+        function normalizeShiftPeriod(period) {
+            if (!period || typeof period !== 'object') return null;
+
+            const normalizeDateKey = value => {
+                if (!value) return null;
+
+                const text = String(value).trim();
+                const isoMatch = text.match(/^(\d{4}-\d{2}-\d{2})/);
+
+                if (isoMatch) return isoMatch[1];
+
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return null;
+
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+
+                return `${year}-${month}-${day}`;
+            };
+
+            const start = normalizeDateKey(
+                period.start ||
+                period.periode_start ||
+                period.periodeStart
+            );
+
+            const end = normalizeDateKey(
+                period.end ||
+                period.periode_end ||
+                period.periodeEnd ||
+                start
+            );
+
+            if (!start || !end) return null;
+
+            return {
+                start,
+                end,
+                source: String(period.source || 'active')
+            };
+        }
+
+        function extractShiftPeriod(data) {
+            if (!data || typeof data !== 'object') return null;
+
+            return normalizeShiftPeriod(
+                data.period || {
+                    start:
+                        data.periode_start ||
+                        data.periodeStart,
+                    end:
+                        data.periode_end ||
+                        data.periodeEnd,
+                    source: data.period_source || 'legacy'
+                }
+            );
+        }
+
+        function formatShiftPeriodDate(value) {
+            const normalized = normalizeShiftPeriod({
+                start: value,
+                end: value
+            });
+
+            if (!normalized) return '';
+
+            const [year, month, day] = normalized.start
+                .split('-')
+                .map(Number);
+
+            return new Date(
+                year,
+                month - 1,
+                day
+            ).toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function formatShiftPeriodRange(period) {
+            const normalized = normalizeShiftPeriod(period);
+            if (!normalized) return null;
+
+            const startText = formatShiftPeriodDate(normalized.start);
+            const endText = formatShiftPeriodDate(normalized.end);
+
+            return {
+                ...normalized,
+                startText,
+                endText,
+                label:
+                    normalized.start === normalized.end
+                        ? startText
+                        : `${startText} — ${endText}`
+            };
+        }
+
         function buildShiftActiveData() {
             return {
+                period: activeShiftPeriod
+                    ? {
+                        start: activeShiftPeriod.start,
+                        end: activeShiftPeriod.end,
+                        source: activeShiftPeriod.source || 'active'
+                    }
+                    : null,
                 columns: shiftColumns.map(column => ({
                     id: column.id,
                     name: column.name,
@@ -21894,8 +22023,11 @@ function toggleSidebar() {
             });
 
             sortAvailableUsers();
+            activeShiftPeriod = null;
             shiftIsDirty = true;
-            updateShiftActive();
+            shiftSaveQueued = true;
+            cachePendingShiftDraft();
+            updateShiftActive('RESET');
             renderShiftPage();
             insertShiftLog('RESET', getCurrentUserName(), `Mereset semua shift (${colNames})`);
             showShiftToast('✅ Shift di-reset', 'success', 1500);
@@ -22026,6 +22158,25 @@ function toggleSidebar() {
 
                 if (error) throw error;
 
+                activeShiftPeriod = normalizeShiftPeriod({
+                    start: startDate,
+                    end: endDate,
+                    source: 'saved'
+                });
+
+                shiftIsDirty = true;
+                shiftSaveQueued = true;
+                cachePendingShiftDraft();
+
+                const activePeriodSaved =
+                    await updateShiftActive('PERIOD');
+
+                if (!activePeriodSaved) {
+                    console.warn(
+                        'Riwayat berhasil disimpan, tetapi metadata periode Shift aktif belum tersinkron.'
+                    );
+                }
+
                 closeSaveShiftPopup();
                 await loadShiftHistory(true);
 
@@ -22058,35 +22209,30 @@ function toggleSidebar() {
         // PREVIEW SHIFT
         // ============================================================
         function openShiftPreview() {
-            const totalStaff = availableUsers.length + shiftColumns.reduce((sum, col) => sum + col.users.length, 0);
+            const totalStaff =
+                availableUsers.length +
+                shiftColumns.reduce(
+                    (sum, column) => sum + column.users.length,
+                    0
+                );
 
-            let periodeStart = '';
-            let periodeEnd = '';
-            
-            if (shiftActiveId) {
-                const now = new Date();
-                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                periodeStart = firstDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                periodeEnd = lastDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-            } else {
-                const now = new Date();
-                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                periodeStart = firstDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                periodeEnd = lastDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-            }
+            const period = formatShiftPeriodRange(activeShiftPeriod);
 
             previewData = {
-                columns: shiftColumns.map(col => ({
-                    ...col,
-                    users: [...col.users]
+                columns: shiftColumns.map(column => ({
+                    ...column,
+                    users: [...column.users]
                 })),
-                totalStaff: totalStaff,
+                totalStaff,
                 createdBy: getCurrentUserName() || 'System',
                 createdAt: new Date().toLocaleString('id-ID'),
-                periodeStart: periodeStart,
-                periodeEnd: periodeEnd
+                periodeStart: period?.startText || '',
+                periodeEnd: period?.endText || '',
+                periodLabel:
+                    period?.label ||
+                    'Periode belum ditentukan',
+                periodSource:
+                    activeShiftPeriod?.source || 'unset'
             };
 
             renderShiftPreview();
@@ -22120,9 +22266,18 @@ function toggleSidebar() {
 
             const roleOrder = ['csline', 'cs', 'kapten', 'kasir'];
             const periodText =
-                previewData.periodeStart && previewData.periodeEnd
-                    ? `${previewData.periodeStart} — ${previewData.periodeEnd}`
-                    : 'Shift aktif saat ini';
+                previewData.periodLabel ||
+                (
+                    previewData.periodeStart &&
+                    previewData.periodeEnd
+                        ? (
+                            previewData.periodeStart ===
+                            previewData.periodeEnd
+                                ? previewData.periodeStart
+                                : `${previewData.periodeStart} — ${previewData.periodeEnd}`
+                        )
+                        : 'Periode belum ditentukan'
+                );
 
             const roleMaxCounts = Object.fromEntries(
                 roleOrder.map(role => [
@@ -22486,11 +22641,26 @@ function toggleSidebar() {
                     cardHeaderHeight +
                     Math.max(roleBodyHeight + 16, 92);
 
+                const shiftColumnCount = Math.max(
+                    1,
+                    previewData.columns.length
+                );
+
+                const shiftGridWidth =
+                    shiftColumnCount * columnWidth +
+                    Math.max(
+                        0,
+                        shiftColumnCount - 1
+                    ) * columnGap;
+
                 const canvasWidth = Math.max(
-                    1100,
-                    outerPadding * 2 +
-                    previewData.columns.length * columnWidth +
-                    Math.max(0, previewData.columns.length - 1) * columnGap
+                    580,
+                    outerPadding * 2 + shiftGridWidth
+                );
+
+                const cardsStartX = Math.max(
+                    outerPadding,
+                    (canvasWidth - shiftGridWidth) / 2
                 );
 
                 const canvasHeight =
@@ -22537,9 +22707,18 @@ function toggleSidebar() {
 
                 // Header
                 const periodText =
-                    previewData.periodeStart && previewData.periodeEnd
-                        ? `${previewData.periodeStart} — ${previewData.periodeEnd}`
-                        : 'Shift aktif saat ini';
+                    previewData.periodLabel ||
+                    (
+                        previewData.periodeStart &&
+                        previewData.periodeEnd
+                            ? (
+                                previewData.periodeStart ===
+                                previewData.periodeEnd
+                                    ? previewData.periodeStart
+                                    : `${previewData.periodeStart} — ${previewData.periodeEnd}`
+                            )
+                            : 'Periode belum ditentukan'
+                    );
 
                 ctx.fillStyle = palette.accent;
                 ctx.font = '700 11px Segoe UI, Arial, sans-serif';
@@ -22596,7 +22775,7 @@ function toggleSidebar() {
                 const cardsY = summaryY + summaryHeight;
                 previewData.columns.forEach((column, columnIndex) => {
                     const x =
-                        outerPadding +
+                        cardsStartX +
                         columnIndex * (columnWidth + columnGap);
 
                     drawRoundedRect(
@@ -23250,6 +23429,18 @@ function toggleSidebar() {
 
                 sortAvailableUsers();
                 openShiftNoteColumnIds = new Set();
+
+                activeShiftPeriod = normalizeShiftPeriod({
+                    start:
+                        historyRecord.periode_start ||
+                        historyRecord.tanggal,
+                    end:
+                        historyRecord.periode_end ||
+                        historyRecord.periode_start ||
+                        historyRecord.tanggal,
+                    source: 'history'
+                });
+
                 shiftIsDirty = true;
                 shiftSaveQueued = true;
 
@@ -23316,61 +23507,82 @@ function toggleSidebar() {
         // PREVIEW SHIFT FROM HISTORY
         // ============================================================
         function previewShiftFromHistory(historyId) {
-            const item = shiftHistoryData.find(h => String(h.id) === String(historyId));
+            const item = shiftHistoryData.find(history =>
+                String(history.id) === String(historyId)
+            );
+
             if (!item) {
-                showShiftToast('❌ Data tidak ditemukan di riwayat!', 'error');
+                showShiftToast(
+                    'Data tidak ditemukan di Riwayat Shift.',
+                    'error'
+                );
                 return;
             }
 
             try {
-                const shiftData = parseShiftHistoryPayload(item.shift_data);
+                const shiftData =
+                    parseShiftHistoryPayload(item.shift_data);
+
                 let totalStaff = 0;
-                const columns = shiftData.columns.map(col => {
-                    const users = col.users || [];
+
+                const columns = shiftData.columns.map(column => {
+                    const users = column.users || [];
                     totalStaff += users.length;
+
                     return {
-                        ...col,
-                        users: users.map(u => ({ ...u, note: u.note || '' }))
+                        ...column,
+                        users: users.map(user => ({
+                            ...user,
+                            note: user.note || ''
+                        }))
                     };
                 });
 
-                let periodeStart = '';
-                let periodeEnd = '';
-                
-                if (item.periode_start && item.periode_end) {
-                    const start = new Date(item.periode_start);
-                    const end = new Date(item.periode_end);
-                    periodeStart = start.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                    periodeEnd = end.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                } else if (item.tanggal) {
-                    const date = new Date(item.tanggal);
-                    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-                    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-                    periodeStart = firstDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                    periodeEnd = lastDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                } else {
-                    const now = new Date();
-                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                    periodeStart = firstDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                    periodeEnd = lastDay.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                }
+                const historyPeriod = formatShiftPeriodRange({
+                    start:
+                        item.periode_start ||
+                        item.tanggal,
+                    end:
+                        item.periode_end ||
+                        item.periode_start ||
+                        item.tanggal,
+                    source: 'history-preview'
+                });
 
                 previewData = {
                     tanggal: item.tanggal,
-                    periodeStart: periodeStart,
-                    periodeEnd: periodeEnd,
-                    columns: columns,
-                    totalStaff: totalStaff,
-                    createdBy: item.updated_by || item.created_by || 'System',
-                    createdAt: new Date(item.created_at).toLocaleString('id-ID')
+                    periodeStart:
+                        historyPeriod?.startText || '',
+                    periodeEnd:
+                        historyPeriod?.endText || '',
+                    periodLabel:
+                        historyPeriod?.label ||
+                        'Periode belum ditentukan',
+                    periodSource: 'history',
+                    columns,
+                    totalStaff,
+                    createdBy:
+                        item.updated_by ||
+                        item.created_by ||
+                        'System',
+                    createdAt:
+                        item.created_at
+                            ? new Date(item.created_at)
+                                .toLocaleString('id-ID')
+                            : '-'
                 };
 
                 renderShiftPreview();
+            } catch (error) {
+                console.error(
+                    'Gagal membuka Preview Riwayat Shift:',
+                    error
+                );
 
-            } catch (err) {
-                console.error('❌ Error previewing shift:', err);
-                showShiftToast('❌ Gagal preview shift: ' + err.message, 'error');
+                showShiftToast(
+                    `Gagal membuka Preview Shift: ${error.message}`,
+                    'error'
+                );
             }
         }
 
