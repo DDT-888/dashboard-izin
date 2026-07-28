@@ -1,8 +1,34 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="light">
+<html lang="id" data-theme="light" class="boot-pending">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#031821" />
+    <link
+        rel="preload"
+        as="image"
+        href="https://dashboard-izin.pages.dev/assets/Logo%20DDT%20-%20Full.png"
+    />
+    <style id="critical-first-paint">
+        /*
+         * First-paint protection:
+         * displayed before the large dashboard stylesheet finishes parsing.
+         */
+        html.boot-pending,
+        html.boot-pending body {
+            margin: 0;
+            min-height: 100%;
+            background: #031821 !important;
+        }
+
+        html.boot-pending {
+            color-scheme: dark;
+        }
+
+        html.boot-pending body {
+            overflow: hidden !important;
+        }
+    </style>
     <title>Dashboard Izin - Real-time</title>
     <!-- UI: 5 desktop themes; application functions preserved -->
     <style>
@@ -18534,6 +18560,26 @@
         }
 
             /* Dashboard Izin v2.9.0 — Realtime Lengkap Aman */
+    
+        /* ============================================================
+           Dashboard Izin v2.9.1 — SMOOTH FIRST PAINT
+           ============================================================ */
+
+        html.boot-pending .page-loader {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        html.boot-pending body {
+            background-color: #031821 !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .page-loader {
+                transition-duration: .12s !important;
+            }
+        }
+
     </style>
 </head>
 
@@ -31928,21 +31974,68 @@
 
 
         function hidePremiumPageLoader() {
-            const loader = document.getElementById('pageLoader');
-            if (!loader || loader.classList.contains('is-hidden')) return;
+            const loader =
+                document.getElementById(
+                    'pageLoader'
+                );
+
+            if (
+                !loader ||
+                loader.classList.contains(
+                    'is-hidden'
+                )
+            ) {
+                return;
+            }
+
             loader.classList.add('is-hidden');
+
+            /*
+             * Keep the dark first-paint background until the loader's
+             * fade-out has completely finished. This prevents a white
+             * frame between the loader and the dashboard.
+             */
             window.setTimeout(() => {
-                if (loader && loader.parentNode) {
-                    loader.setAttribute('aria-hidden', 'true');
+                document.documentElement
+                    .classList
+                    .remove('boot-pending');
+
+                if (
+                    loader &&
+                    loader.parentNode
+                ) {
+                    loader.setAttribute(
+                        'aria-hidden',
+                        'true'
+                    );
                 }
             }, 400);
         }
 
         function showPremiumPageLoader() {
-            const loader = document.getElementById('pageLoader');
+            const loader =
+                document.getElementById(
+                    'pageLoader'
+                );
+
+            /*
+             * Reapply the protected background before F5/navigation.
+             * The old document remains dark while the next document
+             * starts loading.
+             */
+            document.documentElement
+                .classList
+                .add('boot-pending');
+
             if (!loader) return;
-            loader.removeAttribute('aria-hidden');
-            loader.classList.remove('is-hidden');
+
+            loader.removeAttribute(
+                'aria-hidden'
+            );
+
+            loader.classList.remove(
+                'is-hidden'
+            );
         }
 
         window.addEventListener('beforeunload', showPremiumPageLoader);
