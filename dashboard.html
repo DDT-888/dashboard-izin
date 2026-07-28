@@ -16897,6 +16897,119 @@
             }
         }
 
+    
+        /* ============================================================
+           Dashboard Izin v2.8.10 — DURATION SAVE & MATRIX SPACING
+           ============================================================ */
+
+        #tab-settings .settings-duration-standalone {
+            grid-template-columns:
+                minmax(0, 1fr)
+                auto
+                !important;
+            gap: 12px !important;
+        }
+
+        #tab-settings .settings-duration-copy {
+            min-width: 0 !important;
+        }
+
+        #tab-settings .settings-duration-actions {
+            display: grid !important;
+            grid-template-columns:
+                112px
+                112px
+                !important;
+            align-items: center !important;
+            gap: 7px !important;
+        }
+
+        #tab-settings .settings-duration-control {
+            width: 112px !important;
+            min-width: 112px !important;
+        }
+
+        #tab-settings .settings-save-duration {
+            width: 112px !important;
+            min-width: 112px !important;
+            padding-left: 7px !important;
+            padding-right: 7px !important;
+            white-space: nowrap !important;
+        }
+
+        /*
+         * Compact native number steppers. Chromium exposes the two
+         * arrow buttons through this inner spin-button pseudo element.
+         */
+        #tab-settings input[type="number"] {
+            padding-right: 22px !important;
+        }
+
+        #tab-settings input[type="number"]::-webkit-inner-spin-button,
+        #tab-settings input[type="number"]::-webkit-outer-spin-button {
+            width: 12px !important;
+            height: 20px !important;
+            margin: 0 !important;
+            opacity: .62 !important;
+            transform: scale(.72) !important;
+            transform-origin: center right !important;
+        }
+
+        #tab-settings input[type="number"]:hover::-webkit-inner-spin-button,
+        #tab-settings input[type="number"]:hover::-webkit-outer-spin-button {
+            opacity: .82 !important;
+        }
+
+        /*
+         * Add an unmistakable left inset for every Permission feature.
+         * This applies after all earlier responsive/zoom declarations.
+         */
+        #tab-settings .permission-feature-column {
+            padding-left: 20px !important;
+        }
+
+        #tab-settings .permission-feature-cell {
+            padding-left: 20px !important;
+            padding-right: 6px !important;
+        }
+
+        #tab-settings .permission-feature-cell strong {
+            display: block !important;
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+        }
+
+        #tab-settings .permission-group-row td {
+            padding-left: 19px !important;
+            padding-right: 7px !important;
+        }
+
+        @media (max-width: 1500px) and (min-width: 1381px) {
+            #tab-settings .permission-feature-column,
+            #tab-settings .permission-feature-cell {
+                padding-left: 17px !important;
+            }
+
+            #tab-settings .permission-group-row td {
+                padding-left: 16px !important;
+            }
+        }
+
+        @media (max-width: 1380px) {
+            #tab-settings .settings-duration-actions {
+                grid-template-columns:
+                    120px
+                    120px
+                    !important;
+            }
+
+            #tab-settings .settings-duration-control,
+            #tab-settings .settings-save-duration {
+                width: 120px !important;
+                min-width: 120px !important;
+            }
+        }
+
     </style>
 </head>
 
@@ -17423,22 +17536,41 @@
 
                         <section class="settings-access-section settings-duration-section">
                             <div class="settings-duration-standalone">
-                                <div>
+                                <div class="settings-duration-copy">
                                     <div class="section-title">Durasi Izin</div>
                                     <div class="section-desc">Batas waktu satu sesi izin sebelum masuk status terlambat.</div>
                                 </div>
 
-                                <div class="settings-number-with-unit settings-duration-control">
-                                    <input
-                                        id="limitDurasi"
-                                        max="60"
-                                        min="1"
-                                        type="number"
-                                        value="15"
-                                    />
-                                    <span>menit</span>
+                                <div class="settings-duration-actions">
+                                    <div class="settings-number-with-unit settings-duration-control">
+                                        <input
+                                            id="limitDurasi"
+                                            max="60"
+                                            min="1"
+                                            type="number"
+                                            value="15"
+                                        />
+                                        <span>menit</span>
+                                    </div>
+
+                                    <button
+                                        class="btn-settings settings-primary-action settings-save-duration"
+                                        id="btnSaveDuration"
+                                        onclick="saveDurationSetting()"
+                                    >
+                                        <span class="button-icon">
+                                            <svg aria-hidden="true" viewBox="0 0 24 24">
+                                                <path d="M4 4h14l2 2v14H4Z"></path>
+                                                <path d="M8 4v6h8V4"></path>
+                                                <path d="M8 20v-6h8v6"></path>
+                                            </svg>
+                                        </span>
+                                        <span>Simpan Durasi</span>
+                                    </button>
                                 </div>
                             </div>
+
+                            <div class="saved-notice" id="durationSavedNotice">Durasi izin berhasil disimpan.</div>
                         </section>
 
                         <div class="settings-limit-pair">
@@ -24911,20 +25043,134 @@
             }
         };
 
-        window.saveLimitSettings = function() {
+        async function persistIzinSettings({
+            successMessage,
+            noticeId,
+            errorMessage
+        }) {
+            const payload = {
+                key: 'izin_settings',
+                value: JSON.stringify({
+                    jackpotLimitMinutes:
+                        jackpotLimitMinutes,
+                    maxIzinPerRole:
+                        maxIzinPerRole
+                }),
+                updated_at:
+                    new Date().toISOString()
+            };
+
+            try {
+                if (!TEST_MODE) {
+                    const { error } =
+                        await supabaseDashboard
+                            .from('settings')
+                            .upsert(
+                                payload,
+                                {
+                                    onConflict: 'key'
+                                }
+                            );
+
+                    if (error) {
+                        throw error;
+                    }
+                }
+
+                const notice =
+                    document.getElementById(
+                        noticeId
+                    );
+
+                if (notice) {
+                    notice.style.display =
+                        'block';
+
+                    setTimeout(() => {
+                        notice.style.display =
+                            'none';
+                    }, 3000);
+                }
+
+                showToast(
+                    successMessage,
+                    'success'
+                );
+
+                renderAll();
+                return true;
+            } catch (error) {
+                console.error(
+                    'Gagal simpan izin_settings:',
+                    error
+                );
+
+                showToast(
+                    errorMessage,
+                    'error'
+                );
+
+                return false;
+            }
+        }
+
+        window.saveDurationSetting = async function() {
             if (!userPermissions.canManageLimits) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast(
+                    'Hanya Leader & CS Line yang dapat mengubah pengaturan!',
+                    'error'
+                );
                 return;
             }
 
-            const durasiInput = document.getElementById('limitDurasi');
-            const durasi = parseInt(durasiInput ? durasiInput.value : 15) || 15;
-            if (durasi < 1) {
-                showToast('Durasi minimal 1 menit!', 'warning');
+            const durationInput =
+                document.getElementById(
+                    'limitDurasi'
+                );
+
+            const durationValue =
+                Number.parseInt(
+                    durationInput?.value,
+                    10
+                );
+
+            if (
+                !Number.isFinite(durationValue) ||
+                durationValue < 1
+            ) {
+                showToast(
+                    'Durasi minimal 1 menit!',
+                    'warning'
+                );
                 return;
             }
 
-            jackpotLimitMinutes = durasi;
+            jackpotLimitMinutes =
+                Math.min(60, durationValue);
+
+            if (durationInput) {
+                durationInput.value =
+                    jackpotLimitMinutes;
+            }
+
+            await persistIzinSettings({
+                successMessage:
+                    'Durasi izin berhasil disimpan!',
+                noticeId:
+                    'durationSavedNotice',
+                errorMessage:
+                    'Gagal menyimpan durasi izin'
+            });
+        };
+
+        window.saveLimitSettings = async function() {
+            if (!userPermissions.canManageLimits) {
+                showToast(
+                    'Hanya Leader & CS Line yang dapat mengubah pengaturan!',
+                    'error'
+                );
+                return;
+            }
 
             const maxCsline =
                 document.getElementById(
@@ -24950,10 +25196,11 @@
                 input,
                 fallback
             ) => {
-                const value = Number.parseInt(
-                    input?.value,
-                    10
-                );
+                const value =
+                    Number.parseInt(
+                        input?.value,
+                        10
+                    );
 
                 return Number.isFinite(value)
                     ? Math.max(0, value)
@@ -24983,39 +25230,14 @@
                     )
             };
 
-            if (!TEST_MODE) {
-                supabaseDashboard
-                    .from('settings')
-                    .upsert({
-                        key: 'izin_settings',
-                        value: JSON.stringify({
-                            jackpotLimitMinutes: jackpotLimitMinutes,
-                            maxIzinPerRole: maxIzinPerRole
-                        }),
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'key' })
-                    .then(() => {
-                        const notice = document.getElementById('limitSettingsSaved');
-                        if (notice) {
-                            notice.style.display = 'block';
-                            setTimeout(() => { notice.style.display = 'none'; }, 3000);
-                        }
-                        showToast('Pengaturan berhasil disimpan!', 'success');
-                        renderAll();
-                    })
-                    .catch(err => {
-                        console.error('Gagal simpan settings:', err);
-                        showToast('Gagal menyimpan pengaturan', 'error');
-                    });
-            } else {
-                const notice = document.getElementById('limitSettingsSaved');
-                if (notice) {
-                    notice.style.display = 'block';
-                    setTimeout(() => { notice.style.display = 'none'; }, 3000);
-                }
-                showToast('Pengaturan berhasil disimpan!', 'success');
-                renderAll();
-            }
+            await persistIzinSettings({
+                successMessage:
+                    'Batas harian berhasil disimpan!',
+                noticeId:
+                    'limitSettingsSaved',
+                errorMessage:
+                    'Gagal menyimpan batas harian'
+            });
         };
 
         // ============================================================
