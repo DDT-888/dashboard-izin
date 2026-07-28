@@ -18533,6 +18533,7 @@
             margin-bottom: 6px !important;
         }
 
+            /* Dashboard Izin v2.9.0 — Realtime Lengkap Aman */
     </style>
 </head>
 
@@ -19654,6 +19655,14 @@
         const SHIFT_LOG_LIMIT = 30;                           // log shift terbaru
         const SHIFT_REALTIME_FETCH_DEBOUNCE_MS = 850;         // gabungkan event Shift berdekatan
         const SHIFT_NOTE_SAVE_DEBOUNCE_MS = 900;              // cegah save setiap karakter
+        const SHIFT_LOG_FLUSH_DEBOUNCE_MS = 900;              // log terasa realtime, tetap menggabungkan burst
+        const SETTINGS_REALTIME_DEBOUNCE_MS = 420;            // gabungkan perubahan Settings berdekatan
+        const SETTINGS_REALTIME_KEYS = [
+            'role_limits',
+            'izin_settings',
+            'ticker_settings',
+            'whitelist_ip'
+        ];
 
         const DEFAULT_MAX_IZIN = {
             csline: 4,
@@ -19992,6 +20001,15 @@
         let usersSnapshotPromise = null;
         let usersRealtimeSyncTimer = null;
         let usersRealtimeNeedsReconcile = false;
+        let currentUserAccessRevoked = false;
+
+        let settingsRealtimeChannel = null;
+        let settingsRealtimeStatus = 'IDLE';
+        let settingsRealtimeRevision = 0;
+        let settingsRealtimeSyncTimer = null;
+        let settingsRealtimeNeedsSync = false;
+        let settingsRealtimePendingKeys = new Set();
+        let settingsSnapshotPromise = null;
 
         // ============================================================
         // SHIFT STATE
@@ -20030,6 +20048,13 @@
         let shiftHistoryRealtimeRevision = 0;
         let shiftHistoryRealtimeFetchTimer = null;
         let shiftHistoryRealtimeNeedsSync = false;
+
+        let shiftLogsRealtimeChannel = null;
+        let shiftLogsRealtimeStatus = 'IDLE';
+        let shiftLogsRealtimeRevision = 0;
+        let shiftLogsRealtimeFetchTimer = null;
+        let shiftLogsRealtimeNeedsSync = false;
+        let shiftLogsSnapshotPromise = null;
 
         const shiftClientSessionId = (() => {
             try {
@@ -22052,6 +22077,357 @@
             setDashboardAccessBlocked(false);
         };
 
+
+        // ============================================================
+        // SETTINGS REALTIME — TINY REVISION SIGNAL
+        // ============================================================
+        function parseSettingValue(value, fallback = null) {
+            if (value === null || value === undefined) {
+                return fallback;
+            }
+
+            if (typeof value === 'object') {
+                return value;
+            }
+
+            try {
+                return JSON.parse(value);
+            } catch (error) {
+                return fallback;
+            }
+        }
+
+        async function applySettingsRecords(
+            records = [],
+            {
+                reason = 'settings-sync',
+                checkAccess = true
+            } = {}
+        ) {
+            const changedKeys = new Set();
+
+            records.forEach(setting => {
+                if (!setting?.key) return;
+
+                changedKeys.add(setting.key);
+
+                if (setting.key === 'role_limits') {
+                    const parsed = parseSettingValue(setting.value, null);
+                    if (parsed && typeof parsed === 'object') {
+                        limits = {
+                            ...DEFAULT_LIMITS,
+                            ...parsed
+                        };
+                    }
+                }
+
+                if (setting.key === 'izin_settings') {
+                    const parsed = parseSettingValue(setting.value, null);
+                    if (parsed && typeof parsed === 'object') {
+                        const duration = Number(parsed.jackpotLimitMinutes);
+                        if (Number.isFinite(duration) && duration >= 1) {
+                            jackpotLimitMinutes = duration;
+                        }
+
+                        if (
+                            parsed.maxIzinPerRole &&
+                            typeof parsed.maxIzinPerRole === 'object'
+                        ) {
+                            maxIzinPerRole = {
+                                ...DEFAULT_MAX_IZIN,
+                                ...parsed.maxIzinPerRole
+                            };
+                        }
+                    }
+                }
+
+                if (setting.key === 'ticker_settings') {
+                    const parsed = parseSettingValue(setting.value, null);
+                    if (parsed && typeof parsed === 'object') {
+                        if (Array.isArray(parsed.items)) {
+                            tickerItems = parsed.items;
+                        }
+
+                        const speed = Number(parsed.speed);
+                        if (
+                            Number.isFinite(speed) &&
+                            speed >= 5 &&
+                            speed <= 120
+                        ) {
+                            tickerSpeed = speed;
+                        }
+                    }
+                }
+
+                if (setting.key === 'whitelist_ip') {
+                    const input = document.getElementById('ipWhitelistInput');
+                    if (input) {
+                        input.value = String(setting.value || '0.0.0.0');
+                    }
+                }
+            });
+
+            if (changedKeys.has('role_limits')) {
+                updateLimitUI();
+                updateCurrentCounts();
+                renderDashboardTable();
+                renderLiveIzin();
+            }
+
+            if (changedKeys.has('izin_settings')) {
+                updateSettingsUI();
+                renderDashboardTable();
+                renderLiveIzin();
+                updateQuickStats();
+            }
+
+            if (changedKeys.has('ticker_settings')) {
+                updateTickerUI();
+                updateTickerSpeedUI();
+                renderTicker();
+                renderTickerSettingsPreview();
+            }
+
+            if (
+                changedKeys.has('whitelist_ip') &&
+                checkAccess &&
+                currentUser &&
+                !roleBypassesIPGate(currentUserRole) &&
+                !document.body.classList.contains('dashboard-access-blocked')
+            ) {
+                await checkIPAccess({
+                    source: `settings-realtime-${reason}`
+                });
+            }
+
+            return changedKeys;
+        }
+
+        async function syncSettingsSnapshot({
+            keys = null,
+            reason = 'settings-realtime',
+            checkAccess = true
+        } = {}) {
+            if (settingsSnapshotPromise) {
+                return settingsSnapshotPromise;
+            }
+
+            const requestedKeys =
+                Array.isArray(keys) && keys.length > 0
+                    ? [...new Set(
+                        keys.filter(key => SETTINGS_REALTIME_KEYS.includes(key))
+                    )]
+                    : [...SETTINGS_REALTIME_KEYS];
+
+            settingsSnapshotPromise = (async () => {
+                try {
+                    let query = supabaseDashboard
+                        .from('settings')
+                        .select('key, value, updated_at');
+
+                    if (requestedKeys.length > 0) {
+                        query = query.in('key', requestedKeys);
+                    }
+
+                    const { data, error } = await query;
+                    if (error) throw error;
+
+                    await applySettingsRecords(data || [], {
+                        reason,
+                        checkAccess
+                    });
+
+                    settingsRealtimeNeedsSync = false;
+                    return true;
+                } catch (error) {
+                    console.warn(
+                        `Sinkronisasi Settings gagal (${reason}):`,
+                        error
+                    );
+                    settingsRealtimeNeedsSync = true;
+                    return false;
+                } finally {
+                    settingsSnapshotPromise = null;
+                }
+            })();
+
+            return settingsSnapshotPromise;
+        }
+
+        function scheduleSettingsRealtimeSync(
+            settingKey = null,
+            reason = 'signal'
+        ) {
+            settingsRealtimeNeedsSync = true;
+
+            if (
+                settingKey &&
+                SETTINGS_REALTIME_KEYS.includes(settingKey)
+            ) {
+                settingsRealtimePendingKeys.add(settingKey);
+            }
+
+            clearTimeout(settingsRealtimeSyncTimer);
+            settingsRealtimeSyncTimer = window.setTimeout(async () => {
+                settingsRealtimeSyncTimer = null;
+
+                const keys = settingsRealtimePendingKeys.size > 0
+                    ? [...settingsRealtimePendingKeys]
+                    : null;
+
+                settingsRealtimePendingKeys.clear();
+
+                await syncSettingsSnapshot({
+                    keys,
+                    reason
+                });
+            }, SETTINGS_REALTIME_DEBOUNCE_MS);
+        }
+
+        function handleSettingsRealtimeSignal(payload) {
+            const row = payload?.new || payload?.record || null;
+            if (!row) return;
+
+            const revision = Number(row.revision) || 0;
+            if (revision <= settingsRealtimeRevision) return;
+
+            settingsRealtimeRevision = revision;
+
+            scheduleSettingsRealtimeSync(
+                row.setting_key || null,
+                `signal-${row.operation || 'update'}`
+            );
+        }
+
+        async function syncSettingsRealtimeState({
+            baseline = false,
+            reason = 'state'
+        } = {}) {
+            try {
+                const previousRevision = settingsRealtimeRevision;
+
+                const { data, error } = await supabaseDashboard
+                    .from('settings_realtime_state')
+                    .select(
+                        'id, revision, setting_key, operation, updated_at, updated_by'
+                    )
+                    .eq('id', 1)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!data) return false;
+
+                const revision = Number(data.revision) || 0;
+                settingsRealtimeRevision = Math.max(
+                    settingsRealtimeRevision,
+                    revision
+                );
+
+                if (
+                    !baseline &&
+                    (
+                        revision > previousRevision ||
+                        settingsRealtimeNeedsSync
+                    )
+                ) {
+                    scheduleSettingsRealtimeSync(
+                        data.setting_key || null,
+                        `state-${reason}`
+                    );
+                }
+
+                return true;
+            } catch (error) {
+                console.warn(
+                    'State Realtime Settings belum tersedia:',
+                    error
+                );
+                settingsRealtimeNeedsSync = true;
+                return false;
+            }
+        }
+
+        function startSettingsRealtime() {
+            if (
+                TEST_MODE ||
+                !currentUser ||
+                settingsRealtimeChannel
+            ) {
+                return;
+            }
+
+            settingsRealtimeStatus = 'CONNECTING';
+
+            settingsRealtimeChannel = supabaseDashboard
+                .channel(`settings_realtime_${shiftClientSessionId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'settings_realtime_state',
+                        filter: 'id=eq.1'
+                    },
+                    handleSettingsRealtimeSignal
+                )
+                .subscribe(async status => {
+                    settingsRealtimeStatus = status;
+
+                    if (status === 'SUBSCRIBED') {
+                        await syncSettingsRealtimeState({
+                            baseline: !settingsRealtimeNeedsSync,
+                            reason: 'subscribed'
+                        });
+
+                        if (settingsRealtimeNeedsSync) {
+                            scheduleSettingsRealtimeSync(
+                                null,
+                                'reconnected'
+                            );
+                        }
+                    } else if (
+                        status === 'CHANNEL_ERROR' ||
+                        status === 'TIMED_OUT' ||
+                        status === 'CLOSED'
+                    ) {
+                        settingsRealtimeNeedsSync = true;
+                    }
+                });
+        }
+
+        function stopSettingsRealtime() {
+            clearTimeout(settingsRealtimeSyncTimer);
+            settingsRealtimeSyncTimer = null;
+            settingsRealtimePendingKeys.clear();
+
+            if (settingsRealtimeChannel) {
+                supabaseDashboard.removeChannel(settingsRealtimeChannel);
+                settingsRealtimeChannel = null;
+            }
+
+            settingsRealtimeStatus = 'IDLE';
+        }
+
+        function ensureSettingsRealtimeSubscription() {
+            if (
+                TEST_MODE ||
+                !currentUser ||
+                document.body.classList.contains('dashboard-access-blocked')
+            ) {
+                return;
+            }
+
+            if (
+                !settingsRealtimeChannel ||
+                settingsRealtimeStatus === 'CHANNEL_ERROR' ||
+                settingsRealtimeStatus === 'TIMED_OUT' ||
+                settingsRealtimeStatus === 'CLOSED'
+            ) {
+                stopSettingsRealtime();
+                startSettingsRealtime();
+            }
+        }
+
         // ============================================================
         // REALTIME — IZIN + HISTORY + VOUCHER (EVENT-DRIVEN)
         // ============================================================
@@ -22436,7 +22812,166 @@
             return artifactReconcilePromise;
         }
 
-        function applyUsersSnapshot(records = []) {
+
+        function stopRealtimeForRevokedSession() {
+            stopPeriodicRefresh();
+            stopShiftRealtime();
+            stopShiftHistoryRealtime();
+            stopShiftLogsRealtime();
+            stopSettingsRealtime();
+            stopIPAccessMonitor();
+
+            if (realtimeChannel) {
+                supabaseDashboard.removeChannel(realtimeChannel);
+                realtimeChannel = null;
+            }
+
+            realtimeSubscriptionStatus = 'IDLE';
+
+            if (typeof stopTimerUpdates === 'function') {
+                stopTimerUpdates();
+            }
+        }
+
+        function revokeCurrentUserAccess(reason = 'inactive') {
+            if (currentUserAccessRevoked || TEST_MODE) {
+                return;
+            }
+
+            currentUserAccessRevoked = true;
+            isDataReady = false;
+            stopRealtimeForRevokedSession();
+
+            showAccessDeniedPopup({
+                title: 'Akun Tidak Aktif',
+                message:
+                    `Akun <strong>${formatEmail(
+                        currentUser?.email || 'tidak diketahui'
+                    )}</strong> sudah tidak aktif atau telah dihapus dari sistem.`,
+                info:
+                    '<strong>PS:</strong> Silakan hubungi <strong>CS LINE</strong> apabila akses masih diperlukan.',
+                overlayId: 'currentUserRevokedOverlay'
+            });
+
+            console.warn(`Akses user aktif dicabut (${reason}).`);
+        }
+
+        function reconcileCurrentUserSession(
+            activeUsers = [],
+            { reason = 'users-realtime' } = {}
+        ) {
+            if (TEST_MODE || !currentUser?.email) {
+                return true;
+            }
+
+            const currentEmail = formatEmail(currentUser.email);
+            const userRecord = activeUsers.find(user =>
+                formatEmail(user.email) === currentEmail
+            );
+
+            if (!userRecord) {
+                revokeCurrentUserAccess(reason);
+                return false;
+            }
+
+            currentUserAccessRevoked = false;
+
+            const previousRole = currentUserRole;
+            const previousName = getCurrentUserName();
+            const nextRole = normalizeAccessRole(userRecord.role || 'cs');
+
+            currentUser = {
+                ...currentUser,
+                ...userRecord
+            };
+
+            currentUserRole = nextRole;
+            applyPermissionMatrixToCurrentUser();
+            updateUserUI();
+            updateProfileDropdown();
+
+            if (!canAccessTab(currentTab)) {
+                switchTab(getFirstAccessibleTab());
+            }
+
+            if (previousRole !== nextRole && previousRole) {
+                showToast(
+                    `Role akun diperbarui menjadi ${
+                        ROLE_LABELS[nextRole] || nextRole
+                    }.`,
+                    'info',
+                    2800
+                );
+            } else if (previousName !== getCurrentUserName()) {
+                showToast(
+                    'Data profil akun diperbarui.',
+                    'info',
+                    2200
+                );
+            }
+
+            return true;
+        }
+
+        function reconcileShiftRosterFromUsers(activeUsers = []) {
+            if (!isShiftInitialized) {
+                return;
+            }
+
+            const allowedRoles = new Set([
+                'csline',
+                'cs',
+                'kapten',
+                'kasir'
+            ]);
+
+            const eligibleMap = new Map();
+
+            activeUsers.forEach(user => {
+                const role = normalizeAccessRole(user.role);
+                if (!allowedRoles.has(role)) return;
+
+                eligibleMap.set(String(user.id), {
+                    id: user.id,
+                    name: user.name || 'User',
+                    role,
+                    note: ''
+                });
+            });
+
+            const assignedIds = new Set();
+
+            shiftColumns = shiftColumns.map(column => ({
+                ...column,
+                users: (column.users || [])
+                    .map(existing => {
+                        const fresh = eligibleMap.get(String(existing.id));
+                        if (!fresh) return null;
+
+                        assignedIds.add(String(existing.id));
+                        return {
+                            ...fresh,
+                            note: existing.note || ''
+                        };
+                    })
+                    .filter(Boolean)
+            }));
+
+            availableUsers = [...eligibleMap.values()].filter(user =>
+                !assignedIds.has(String(user.id))
+            );
+
+            sortAvailableUsers();
+
+            if (currentTab === 'shifts') {
+                renderShiftPage();
+            }
+        }
+
+        function applyUsersSnapshot(
+            records = [],
+            { reason = 'users-snapshot' } = {}
+        ) {
             const activeUsers = records
                 .filter(user =>
                     String(user?.status || 'active').toLowerCase() === 'active'
@@ -22451,6 +22986,13 @@
 
             listUsers = activeUsers;
             daftarAnggota = activeUsers.map(user => user.name);
+
+            reconcileCurrentUserSession(
+                activeUsers,
+                { reason }
+            );
+
+            reconcileShiftRosterFromUsers(activeUsers);
 
             activeUsers.forEach(user => {
                 const nama = user.name;
@@ -22514,7 +23056,10 @@
 
                     if (error) throw error;
 
-                    applyUsersSnapshot(data || []);
+                    applyUsersSnapshot(
+                        data || [],
+                        { reason }
+                    );
                     usersRealtimeNeedsReconcile = false;
                     return true;
                 } catch (error) {
@@ -23122,48 +23667,22 @@
                     voucherData = {};
                 }
 
-                if (!settingsResult.error && settingsResult.data && settingsResult.data.length > 0) {
-                    settingsResult.data.forEach(setting => {
-                        if (setting.key === 'role_limits') {
-                            try {
-                                limits = JSON.parse(setting.value);
-                                updateLimitUI();
-                                console.log('✅ role_limits loaded');
-                            } catch (e) { console.log('⚠️ Failed to parse role_limits'); }
+                if (
+                    !settingsResult.error &&
+                    settingsResult.data &&
+                    settingsResult.data.length > 0
+                ) {
+                    await applySettingsRecords(
+                        settingsResult.data,
+                        {
+                            reason: 'full-data-load',
+                            checkAccess: false
                         }
-                        if (setting.key === 'izin_settings') {
-                            try {
-                                const izinSettings = JSON.parse(setting.value);
-                                if (izinSettings.jackpotLimitMinutes) {
-                                    jackpotLimitMinutes = izinSettings.jackpotLimitMinutes;
-                                }
-                                if (izinSettings.maxIzinPerRole) {
-                                    maxIzinPerRole = izinSettings.maxIzinPerRole;
-                                }
-                                updateSettingsUI();
-                                console.log('✅ izin_settings loaded');
-                            } catch (e) { console.log('⚠️ Failed to parse izin_settings'); }
-                        }
-                        if (setting.key === 'ticker_settings') {
-                            try {
-                                const tickerSettings = JSON.parse(setting.value);
-                                if (tickerSettings.items && Array.isArray(tickerSettings.items)) {
-                                    tickerItems = tickerSettings.items;
-                                }
-                                if (tickerSettings.speed) {
-                                    tickerSpeed = tickerSettings.speed;
-                                }
-                                updateTickerUI();
-                                updateTickerSpeedUI();
-                                console.log('✅ ticker_settings loaded');
-                            } catch (e) { console.log('⚠️ Failed to parse ticker_settings'); }
-                        }
-                        if (setting.key === 'whitelist_ip') {
-                            const input = document.getElementById('ipWhitelistInput');
-                            if (input) input.value = setting.value || '0.0.0.0';
-                            console.log('✅ whitelist_ip loaded');
-                        }
-                    });
+                    );
+
+                    console.log(
+                        `✅ ${settingsResult.data.length} settings loaded`
+                    );
                 } else {
                     console.log('⚠️ No settings found, using defaults');
                     const defaultSettings = [
@@ -23190,6 +23709,7 @@
                 renderTicker();
 
                 ensureIzinRealtimeSubscription();
+                ensureSettingsRealtimeSubscription();
 
                 if (!isShiftInitialized) {
                     await loadShiftActiveData();
@@ -23381,9 +23901,19 @@
 
                 isShiftInitialized = true;
 
-                if (currentTab === 'shifts' && document.visibilityState === 'visible') {
+                if (
+                    currentTab === 'shifts' &&
+                    document.visibilityState === 'visible'
+                ) {
                     startShiftRealtime();
+                    startShiftLogsRealtime();
+
                     syncShiftRealtimeState({
+                        baseline: true,
+                        reason: 'initial-shift-load'
+                    });
+
+                    syncShiftLogsRealtimeState({
                         baseline: true,
                         reason: 'initial-shift-load'
                     });
@@ -23435,24 +23965,31 @@
 
         function getEligibleShiftUserMap() {
             const map = new Map();
-            const allowedRoles = new Set(['csline', 'cs', 'kapten', 'kasir']);
+            const allowedRoles = new Set([
+                'csline',
+                'cs',
+                'kapten',
+                'kasir'
+            ]);
 
-            const addUser = user => {
-                if (!user || !allowedRoles.has(user.role)) return;
-                const key = String(user.id);
-                if (!key) return;
+            listUsers.forEach(user => {
+                const role = normalizeAccessRole(user?.role);
 
-                map.set(key, {
+                if (
+                    !user ||
+                    String(user.status || 'active').toLowerCase() !== 'active' ||
+                    !allowedRoles.has(role)
+                ) {
+                    return;
+                }
+
+                map.set(String(user.id), {
                     id: user.id,
                     name: user.name || 'User',
-                    role: user.role,
-                    note: user.note || ''
+                    role,
+                    note: ''
                 });
-            };
-
-            listUsers.forEach(addUser);
-            availableUsers.forEach(addUser);
-            shiftColumns.forEach(column => column.users.forEach(addUser));
+            });
 
             return map;
         }
@@ -23474,23 +24011,23 @@
             const assignedIds = new Set();
 
             const nextColumns = parsedData.columns.map(column => {
-                const users = (column.users || []).map(savedUser => {
-                    const key = String(savedUser.id);
-                    assignedIds.add(key);
+                const users = (column.users || [])
+                    .map(savedUser => {
+                        const key = String(savedUser.id);
+                        const baseUser = userMap.get(key);
 
-                    const baseUser = userMap.get(key) || {
-                        id: savedUser.id,
-                        name: savedUser.name || 'User',
-                        role: savedUser.role || 'cs'
-                    };
+                        if (!baseUser) {
+                            return null;
+                        }
 
-                    return {
-                        ...baseUser,
-                        name: savedUser.name || baseUser.name,
-                        role: savedUser.role || baseUser.role,
-                        note: savedUser.note || ''
-                    };
-                });
+                        assignedIds.add(key);
+
+                        return {
+                            ...baseUser,
+                            note: savedUser.note || ''
+                        };
+                    })
+                    .filter(Boolean);
 
                 return {
                     id:
@@ -23879,6 +24416,152 @@
             shiftRealtimeStatus = 'IDLE';
         }
 
+
+        // ============================================================
+        // SHIFT LOGS REALTIME — SMALL SIGNAL, ACTIVE TAB ONLY
+        // ============================================================
+        function scheduleShiftLogsRealtimeFetch(reason = 'signal') {
+            shiftLogsRealtimeNeedsSync = true;
+
+            if (
+                currentTab !== 'shifts' ||
+                document.visibilityState !== 'visible'
+            ) {
+                return;
+            }
+
+            clearTimeout(shiftLogsRealtimeFetchTimer);
+            shiftLogsRealtimeFetchTimer = window.setTimeout(async () => {
+                shiftLogsRealtimeFetchTimer = null;
+
+                if (shiftLogsSnapshotPromise) return;
+
+                shiftLogsSnapshotPromise = loadShiftLogs();
+                try {
+                    await shiftLogsSnapshotPromise;
+                    shiftLogsRealtimeNeedsSync = false;
+                } finally {
+                    shiftLogsSnapshotPromise = null;
+                }
+            }, 520);
+        }
+
+        function handleShiftLogsRealtimeSignal(payload) {
+            const row = payload?.new || payload?.record || null;
+            if (!row) return;
+
+            const revision = Number(row.revision) || 0;
+            if (revision <= shiftLogsRealtimeRevision) return;
+
+            shiftLogsRealtimeRevision = revision;
+            scheduleShiftLogsRealtimeFetch(
+                `signal-${row.operation || 'update'}`
+            );
+        }
+
+        async function syncShiftLogsRealtimeState({
+            baseline = false,
+            reason = 'state'
+        } = {}) {
+            try {
+                const previousRevision = shiftLogsRealtimeRevision;
+
+                const { data, error } = await supabaseDashboard
+                    .from('shift_logs_realtime_state')
+                    .select(
+                        'id, revision, operation, updated_at, updated_by'
+                    )
+                    .eq('id', 1)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!data) return false;
+
+                const revision = Number(data.revision) || 0;
+                shiftLogsRealtimeRevision = Math.max(
+                    shiftLogsRealtimeRevision,
+                    revision
+                );
+
+                if (
+                    !baseline &&
+                    (
+                        revision > previousRevision ||
+                        shiftLogsRealtimeNeedsSync
+                    )
+                ) {
+                    scheduleShiftLogsRealtimeFetch(`state-${reason}`);
+                }
+
+                return true;
+            } catch (error) {
+                console.warn(
+                    'State Realtime Shift Logs belum tersedia:',
+                    error
+                );
+                shiftLogsRealtimeNeedsSync = true;
+                return false;
+            }
+        }
+
+        function startShiftLogsRealtime() {
+            if (
+                TEST_MODE ||
+                currentTab !== 'shifts' ||
+                document.visibilityState !== 'visible' ||
+                shiftLogsRealtimeChannel
+            ) {
+                return;
+            }
+
+            shiftLogsRealtimeStatus = 'CONNECTING';
+
+            shiftLogsRealtimeChannel = supabaseDashboard
+                .channel(`shift_logs_realtime_${shiftClientSessionId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'shift_logs_realtime_state',
+                        filter: 'id=eq.1'
+                    },
+                    handleShiftLogsRealtimeSignal
+                )
+                .subscribe(async status => {
+                    shiftLogsRealtimeStatus = status;
+
+                    if (status === 'SUBSCRIBED') {
+                        await syncShiftLogsRealtimeState({
+                            baseline: !shiftLogsRealtimeNeedsSync,
+                            reason: 'subscribed'
+                        });
+
+                        if (shiftLogsRealtimeNeedsSync) {
+                            scheduleShiftLogsRealtimeFetch('reconnected');
+                        }
+                    } else if (
+                        status === 'CHANNEL_ERROR' ||
+                        status === 'TIMED_OUT' ||
+                        status === 'CLOSED'
+                    ) {
+                        shiftLogsRealtimeNeedsSync = true;
+                    }
+                });
+        }
+
+        function stopShiftLogsRealtime() {
+            clearTimeout(shiftLogsRealtimeFetchTimer);
+            shiftLogsRealtimeFetchTimer = null;
+
+            if (shiftLogsRealtimeChannel) {
+                supabaseDashboard.removeChannel(shiftLogsRealtimeChannel);
+                shiftLogsRealtimeChannel = null;
+            }
+
+            shiftLogsRealtimeStatus = 'IDLE';
+        }
+
         // ============================================================
         // SHIFT LOGS - BATCH INSERT
         // ============================================================
@@ -23896,7 +24579,10 @@
             }
             
             clearTimeout(logBatchTimer);
-            logBatchTimer = setTimeout(flushShiftLogs, 10000);
+            logBatchTimer = setTimeout(
+                flushShiftLogs,
+                SHIFT_LOG_FLUSH_DEBOUNCE_MS
+            );
         }
 
         async function flushShiftLogs() {
@@ -26789,13 +27475,15 @@
             }
 
             try {
-                await supabaseDashboard
+                const { error } = await supabaseDashboard
                     .from('settings')
                     .upsert({
                         key: 'whitelist_ip',
                         value: ipValue,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'key' });
+
+                if (error) throw error;
 
                 const notice = document.getElementById('savedNotice');
                 if (notice) {
@@ -26809,97 +27497,60 @@
             }
         };
 
-        window.saveLimits = function() {
+        window.saveLimits = async function() {
             if (!userPermissions.canManageLimits) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah batas izin!', 'error');
+                showToast(
+                    'Hanya Leader & CS Line yang dapat mengubah batas izin!',
+                    'error'
+                );
                 return;
             }
 
-            const cslineInput =
-                document.getElementById(
-                    'limitCsline'
-                );
+            const cslineInput = document.getElementById('limitCsline');
+            const csInput = document.getElementById('limitCS');
+            const kaptenInput = document.getElementById('limitKapten');
+            const kasirInput = document.getElementById('limitKasir');
 
-            const csInput =
-                document.getElementById(
-                    'limitCS'
-                );
-
-            const kaptenInput =
-                document.getElementById(
-                    'limitKapten'
-                );
-
-            const kasirInput =
-                document.getElementById(
-                    'limitKasir'
-                );
-
-            const parseLimit = (
-                input,
-                fallback
-            ) => {
-                const value = Number.parseInt(
-                    input?.value,
-                    10
-                );
-
+            const parseLimit = (input, fallback) => {
+                const value = Number.parseInt(input?.value, 10);
                 return Number.isFinite(value)
                     ? Math.max(0, value)
                     : fallback;
             };
 
-            const newLimits = {
-                csline:
-                    parseLimit(
-                        cslineInput,
-                        4
-                    ),
-                cs:
-                    parseLimit(
-                        csInput,
-                        2
-                    ),
-                kapten:
-                    parseLimit(
-                        kaptenInput,
-                        1
-                    ),
-                kasir:
-                    parseLimit(
-                        kasirInput,
-                        2
-                    )
+            limits = {
+                csline: parseLimit(cslineInput, 4),
+                cs: parseLimit(csInput, 2),
+                kapten: parseLimit(kaptenInput, 1),
+                kasir: parseLimit(kasirInput, 2)
             };
 
-            limits = newLimits;
+            try {
+                if (!TEST_MODE) {
+                    const { error } = await supabaseDashboard
+                        .from('settings')
+                        .upsert({
+                            key: 'role_limits',
+                            value: JSON.stringify(limits),
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'key' });
 
-            if (!TEST_MODE) {
-                supabaseDashboard
-                    .from('settings')
-                    .upsert({ key: 'role_limits', value: JSON.stringify(limits),
-                        updated_at: new Date().toISOString() }, { onConflict: 'key' })
-                    .then(() => {
-                        const notice = document.getElementById('limitSavedNotice');
-                        if (notice) {
-                            notice.style.display = 'block';
-                            setTimeout(() => { notice.style.display = 'none'; }, 3000);
-                        }
-                        showToast('Batas izin berhasil disimpan!', 'success');
-                        updateCurrentCounts();
-                    })
-                    .catch(err => {
-                        console.error('Gagal simpan limits:', err);
-                        showToast('Gagal menyimpan batas izin', 'error');
-                    });
-            } else {
+                    if (error) throw error;
+                }
+
                 const notice = document.getElementById('limitSavedNotice');
                 if (notice) {
                     notice.style.display = 'block';
-                    setTimeout(() => { notice.style.display = 'none'; }, 3000);
+                    setTimeout(() => {
+                        notice.style.display = 'none';
+                    }, 3000);
                 }
+
                 showToast('Batas izin berhasil disimpan!', 'success');
                 updateCurrentCounts();
+            } catch (error) {
+                console.error('Gagal simpan limits:', error);
+                showToast('Gagal menyimpan batas izin', 'error');
             }
         };
 
@@ -27284,7 +27935,7 @@
             track.style.animation = `tickerScroll ${speed}s linear infinite`;
         }
 
-        window.saveTickerSettings = function() {
+        window.saveTickerSettings = async function() {
             if (!userPermissions.canEditSettings) {
                 showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
                 return;
@@ -27316,29 +27967,40 @@
             tickerItems = lines;
 
             if (!TEST_MODE) {
-                supabaseDashboard
-                    .from('settings')
-                    .upsert({
-                        key: 'ticker_settings',
-                        value: JSON.stringify({
-                            items: tickerItems,
-                            speed: tickerSpeed
-                        }),
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'key' })
-                    .then(() => {
-                        const notice = document.getElementById('tickerSavedNotice');
-                        if (notice) {
-                            notice.style.display = 'block';
-                            setTimeout(() => { notice.style.display = 'none'; }, 3000);
-                        }
-                        showToast('Ticker berhasil disimpan ke database!', 'success');
-                        renderTicker();
-                    })
-                    .catch(err => {
-                        console.error('Gagal simpan ticker:', err);
-                        showToast('Gagal menyimpan ticker: ' + err.message, 'error');
-                    });
+                try {
+                    const { error } = await supabaseDashboard
+                        .from('settings')
+                        .upsert({
+                            key: 'ticker_settings',
+                            value: JSON.stringify({
+                                items: tickerItems,
+                                speed: tickerSpeed
+                            }),
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'key' });
+
+                    if (error) throw error;
+
+                    const notice = document.getElementById('tickerSavedNotice');
+                    if (notice) {
+                        notice.style.display = 'block';
+                        setTimeout(() => {
+                            notice.style.display = 'none';
+                        }, 3000);
+                    }
+
+                    showToast(
+                        'Ticker berhasil disimpan ke database!',
+                        'success'
+                    );
+                    renderTicker();
+                } catch (error) {
+                    console.error('Gagal simpan ticker:', error);
+                    showToast(
+                        'Gagal menyimpan ticker: ' + error.message,
+                        'error'
+                    );
+                }
             } else {
                 localStorage.setItem('tickerItems', JSON.stringify(tickerItems));
                 localStorage.setItem('izinSettings', JSON.stringify({
@@ -27384,31 +28046,40 @@
             tickerSpeed = 30;
 
             if (!TEST_MODE) {
-                supabaseDashboard
-                    .from('settings')
-                    .upsert({
-                        key: 'ticker_settings',
-                        value: JSON.stringify({
-                            items: tickerItems,
-                            speed: tickerSpeed
-                        }),
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'key' })
-                    .then(() => {
-                        updateTickerUI();
-                        updateTickerSpeedUI();
-                        renderTicker();
-                        const notice = document.getElementById('tickerSavedNotice');
-                        if (notice) {
-                            notice.style.display = 'block';
-                            setTimeout(() => { notice.style.display = 'none'; }, 3000);
-                        }
-                        showToast('Ticker di-reset ke default!', 'success');
-                    })
-                    .catch(err => {
-                        console.error('Gagal reset ticker:', err);
-                        showToast('Gagal reset ticker: ' + err.message, 'error');
-                    });
+                try {
+                    const { error } = await supabaseDashboard
+                        .from('settings')
+                        .upsert({
+                            key: 'ticker_settings',
+                            value: JSON.stringify({
+                                items: tickerItems,
+                                speed: tickerSpeed
+                            }),
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'key' });
+
+                    if (error) throw error;
+
+                    updateTickerUI();
+                    updateTickerSpeedUI();
+                    renderTicker();
+
+                    const notice = document.getElementById('tickerSavedNotice');
+                    if (notice) {
+                        notice.style.display = 'block';
+                        setTimeout(() => {
+                            notice.style.display = 'none';
+                        }, 3000);
+                    }
+
+                    showToast('Ticker di-reset ke default!', 'success');
+                } catch (error) {
+                    console.error('Gagal reset ticker:', error);
+                    showToast(
+                        'Gagal reset ticker: ' + error.message,
+                        'error'
+                    );
+                }
             } else {
                 localStorage.setItem('tickerItems', JSON.stringify(tickerItems));
                 localStorage.setItem('izinSettings', JSON.stringify({
@@ -27504,6 +28175,7 @@
                 selectedTab !== 'shifts'
             ) {
                 stopShiftRealtime();
+                stopShiftLogsRealtime();
             }
 
             if (
@@ -27595,12 +28267,18 @@
                 loadHistoryData(false);
             } else if (selectedTab === 'shifts') {
                 startShiftRealtime();
+                startShiftLogsRealtime();
 
                 if (!isShiftInitialized) {
                     loadShiftActiveData();
                 } else {
                     renderShiftPage();
                     syncShiftRealtimeState({
+                        baseline: false,
+                        reason: 'shift-tab-open'
+                    });
+
+                    syncShiftLogsRealtimeState({
                         baseline: false,
                         reason: 'shift-tab-open'
                     });
@@ -27612,7 +28290,10 @@
                     baseline: false
                 });
             } else if (selectedTab === 'settings') {
-                loadIPWhitelist();
+                syncSettingsSnapshot({
+                    reason: 'settings-tab-open',
+                    checkAccess: false
+                });
                 updateSettingsUI();
                 updateLimitUI();
                 updateTickerUI();
@@ -31080,7 +31761,9 @@
 
                 if (currentTab === 'shifts') {
                     shiftRealtimeNeedsSync = true;
+                    shiftLogsRealtimeNeedsSync = true;
                     stopShiftRealtime();
+                    stopShiftLogsRealtime();
                 }
 
                 if (currentTab === 'historyshift') {
@@ -31096,6 +31779,14 @@
             lastVisibilityLoad = now;
 
             ensureIzinRealtimeSubscription();
+            ensureSettingsRealtimeSubscription();
+
+            await syncSettingsRealtimeState({
+                baseline: false,
+                reason: `visibility-resume-${Math.round(
+                    hiddenDuration / 1000
+                )}s`
+            });
 
             if (
                 hiddenDuration >= RESUME_RECONCILE_AFTER_MS ||
@@ -31142,7 +31833,14 @@
 
             if (currentTab === 'shifts') {
                 startShiftRealtime();
+                startShiftLogsRealtime();
+
                 syncShiftRealtimeState({
+                    baseline: false,
+                    reason: 'visibility-resume'
+                });
+
+                syncShiftLogsRealtimeState({
                     baseline: false,
                     reason: 'visibility-resume'
                 });
@@ -31174,7 +31872,9 @@
         window.addEventListener('pageshow', function(event) {
             if (event.persisted) {
                 realtimeNeedsReconcile = true;
+                settingsRealtimeNeedsSync = true;
                 ensureIzinRealtimeSubscription();
+                ensureSettingsRealtimeSubscription();
                 syncIzinState({
                     force: true,
                     reason: 'pageshow-bfcache'
@@ -31183,13 +31883,20 @@
                     forceVoucherSnapshot: true,
                     reason: 'pageshow-bfcache'
                 });
+
+                syncSettingsRealtimeState({
+                    baseline: false,
+                    reason: 'pageshow-bfcache'
+                });
             }
         });
 
         window.addEventListener('online', function() {
             realtimeNeedsReconcile = true;
             usersRealtimeNeedsReconcile = true;
+            settingsRealtimeNeedsSync = true;
             ensureIzinRealtimeSubscription();
+            ensureSettingsRealtimeSubscription();
 
             syncIzinState({
                 force: true,
@@ -31204,6 +31911,19 @@
             syncUsersSnapshot({
                 reason: 'network-online'
             });
+
+            syncSettingsRealtimeState({
+                baseline: false,
+                reason: 'network-online'
+            });
+
+            if (currentTab === 'shifts') {
+                startShiftLogsRealtime();
+                syncShiftLogsRealtimeState({
+                    baseline: false,
+                    reason: 'network-online'
+                });
+            }
         });
 
 
