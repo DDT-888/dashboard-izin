@@ -17010,6 +17010,109 @@
             }
         }
 
+    
+        /* ============================================================
+           Dashboard Izin v2.8.11 — VISIBLE MATRIX INSET & LIGHTER TITLES
+           ============================================================ */
+
+        /*
+         * The three main Settings titles were visually too heavy.
+         * Keep their size, but reduce weight for a cleaner hierarchy.
+         */
+        #tab-settings .settings-table-heading h3,
+        #tab-settings .permission-matrix-heading h3 {
+            font-weight: 700 !important;
+            letter-spacing: -0.04px !important;
+        }
+
+        /*
+         * Do not rely on table-cell padding for the Permission labels.
+         * Each text item now has a dedicated inner wrapper with a clear,
+         * consistent inset that is visible at every browser zoom level.
+         */
+        #tab-settings .permission-feature-column {
+            padding: 0 !important;
+            text-align: left !important;
+        }
+
+        #tab-settings .permission-feature-header-label {
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 33px !important;
+            box-sizing: border-box !important;
+            padding-left: 17px !important;
+            padding-right: 5px !important;
+        }
+
+        #tab-settings .permission-feature-cell {
+            padding: 0 !important;
+            text-align: left !important;
+        }
+
+        #tab-settings .permission-feature-content {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            width: 100% !important;
+            min-height: 30px !important;
+            box-sizing: border-box !important;
+            padding-left: 17px !important;
+            padding-right: 6px !important;
+        }
+
+        #tab-settings .permission-feature-content strong {
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1.2 !important;
+        }
+
+        #tab-settings .permission-feature-content > span {
+            display: none !important;
+        }
+
+        #tab-settings .permission-group-row td {
+            padding: 0 !important;
+            text-align: left !important;
+        }
+
+        #tab-settings .permission-group-label {
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+            min-height: 16px !important;
+            box-sizing: border-box !important;
+            padding-left: 17px !important;
+            padding-right: 7px !important;
+        }
+
+        /*
+         * Neutralize older direct-cell inset declarations so they cannot
+         * visually cancel or distort the new wrapper-based alignment.
+         */
+        #tab-settings .permission-feature-cell strong {
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+        }
+
+        @media (max-width: 1500px) and (min-width: 1381px) {
+            #tab-settings .permission-feature-header-label,
+            #tab-settings .permission-feature-content,
+            #tab-settings .permission-group-label {
+                padding-left: 15px !important;
+            }
+        }
+
+        @media (max-width: 1380px) {
+            #tab-settings .permission-feature-header-label,
+            #tab-settings .permission-feature-content,
+            #tab-settings .permission-group-label {
+                padding-left: 16px !important;
+            }
+        }
+
     </style>
 </head>
 
@@ -17758,7 +17861,9 @@
 
                             <thead>
                                 <tr>
-                                    <th class="permission-feature-column">Fitur</th>
+                                    <th class="permission-feature-column">
+                                        <span class="permission-feature-header-label">Fitur</span>
+                                    </th>
                                     <th><span class="permission-role-header">Leader</span></th>
                                     <th><span class="permission-role-header">CS Line</span></th>
                                     <th><span class="permission-role-header">CS</span></th>
@@ -19290,7 +19395,11 @@
 
                     rows.push(`
                         <tr class="permission-group-row">
-                            <td colspan="6">${currentGroup}</td>
+                            <td colspan="6">
+                                <span class="permission-group-label">
+                                    ${currentGroup}
+                                </span>
+                            </td>
                         </tr>
                     `);
                 }
@@ -19379,8 +19488,10 @@
                             data-tooltip="${feature.description}"
                             data-tooltip-icon="info"
                         >
-                            <strong>${feature.label}</strong>
-                            <span>${feature.description}</span>
+                            <div class="permission-feature-content">
+                                <strong>${feature.label}</strong>
+                                <span>${feature.description}</span>
+                            </div>
                         </td>
                         ${roleCells}
                     </tr>
