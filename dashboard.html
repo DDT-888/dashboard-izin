@@ -19664,6 +19664,164 @@
             .employee-dashboard-lower { grid-template-columns: 1fr; }
         }
 
+    
+        /* ============================================================
+           Dashboard Izin v3.0.1 Preview
+           Users readability, confirmation cleanup, premium ranks
+           ============================================================ */
+
+        .premium-confirm-message,
+        .premium-confirm-note {
+            white-space: pre-line !important;
+        }
+
+        #tab-users .employee-inline-cell.is-editable {
+            cursor: default !important;
+        }
+
+        #tab-users .employee-inline-cell.is-editable:hover {
+            background: color-mix(in srgb, var(--accent-soft) 40%, transparent) !important;
+        }
+
+        #tab-users .employee-current-user-mark {
+            color: var(--accent-strong) !important;
+            font-size: .94em !important;
+            font-weight: 780 !important;
+        }
+
+        .employee-monitor-card.training .employee-monitor-icon {
+            width: 25px !important;
+            height: 25px !important;
+            flex-basis: 25px !important;
+            padding: 5.5px !important;
+            border-radius: 8px !important;
+        }
+
+        .employee-rank-row .employee-rank-badge {
+            transform: scale(.76) !important;
+            transform-origin: right center !important;
+            margin-right: -15px !important;
+        }
+
+        .employee-rank-row .employee-rank-emblem {
+            width: 14px !important;
+            height: 14px !important;
+            flex-basis: 14px !important;
+        }
+
+        .employee-rank-mythic,
+        .employee-rank-mythical-honor,
+        .employee-rank-mythical-glory,
+        .employee-rank-mythical-immortal {
+            isolation: isolate;
+            background-size: 190% 190% !important;
+            border-color: rgba(255,255,255,.58) !important;
+        }
+
+        .employee-rank-mythic {
+            background: linear-gradient(128deg, #4e0e28 0%, #8f203f 40%, #d0a34a 72%, #5a132a 100%) !important;
+        }
+        .employee-rank-mythical-honor {
+            background: linear-gradient(128deg, #27104d 0%, #6531a5 38%, #c07ad9 62%, #ddb150 100%) !important;
+        }
+        .employee-rank-mythical-glory {
+            background: linear-gradient(128deg, #081c47 0%, #1557a6 38%, #55b4dc 61%, #e1b653 100%) !important;
+        }
+        .employee-rank-mythical-immortal {
+            background: linear-gradient(128deg, #080b12 0%, #25111a 27%, #821d35 52%, #e0b14d 75%, #11141b 100%) !important;
+            border-color: rgba(246,210,119,.72) !important;
+        }
+
+        .employee-rank-mythic > *,
+        .employee-rank-mythical-honor > *,
+        .employee-rank-mythical-glory > *,
+        .employee-rank-mythical-immortal > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        .employee-rank-mythic::before,
+        .employee-rank-mythical-honor::before,
+        .employee-rank-mythical-glory::before,
+        .employee-rank-mythical-immortal::before {
+            content: "";
+            position: absolute;
+            z-index: 1;
+            top: -45%;
+            bottom: -45%;
+            left: -55%;
+            width: 42%;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateX(-140%) skewX(-20deg);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.52), transparent);
+        }
+
+        .employee-rank-mythic:hover,
+        .employee-rank-mythical-honor:hover,
+        .employee-rank-mythical-glory:hover,
+        .employee-rank-mythical-immortal:hover {
+            animation: employeePremiumRankFlow 3.2s ease-in-out infinite;
+            box-shadow: inset 0 1px rgba(255,255,255,.34), 0 8px 19px rgba(63,29,92,.22), 0 0 0 1px rgba(255,255,255,.14);
+        }
+
+        .employee-rank-mythical-immortal:hover {
+            box-shadow: inset 0 1px rgba(255,236,184,.38), 0 9px 24px rgba(126,22,48,.33), 0 0 18px rgba(221,173,69,.22), 0 0 0 1px rgba(238,197,102,.30);
+        }
+
+        .employee-rank-mythic:hover::before,
+        .employee-rank-mythical-honor:hover::before,
+        .employee-rank-mythical-glory:hover::before,
+        .employee-rank-mythical-immortal:hover::before {
+            opacity: .72;
+            animation: employeePremiumRankSheen 1.85s ease-in-out infinite;
+        }
+
+        .employee-rank-mythical-immortal::after {
+            content: "✦";
+            position: absolute;
+            z-index: 3;
+            top: 2px;
+            right: 4px;
+            color: #ffe09a;
+            font-size: 7px;
+            line-height: 1;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(.65) rotate(-16deg);
+        }
+
+        .employee-rank-mythical-immortal:hover::after {
+            animation: employeeImmortalSpark 1.65s ease-in-out infinite;
+        }
+
+        @keyframes employeePremiumRankFlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        @keyframes employeePremiumRankSheen {
+            0% { transform: translateX(-150%) skewX(-20deg); }
+            58%, 100% { transform: translateX(430%) skewX(-20deg); }
+        }
+        @keyframes employeeImmortalSpark {
+            0%, 100% { opacity: .22; transform: scale(.72) rotate(-16deg); }
+            50% { opacity: 1; transform: scale(1.15) rotate(8deg); text-shadow: 0 0 7px rgba(255,214,117,.82); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .employee-rank-mythic:hover,
+            .employee-rank-mythical-honor:hover,
+            .employee-rank-mythical-glory:hover,
+            .employee-rank-mythical-immortal:hover,
+            .employee-rank-mythic:hover::before,
+            .employee-rank-mythical-honor:hover::before,
+            .employee-rank-mythical-glory:hover::before,
+            .employee-rank-mythical-immortal:hover::before,
+            .employee-rank-mythical-immortal:hover::after {
+                animation: none !important;
+            }
+        }
+
     </style>
 </head>
 
@@ -21397,6 +21555,19 @@
             `
         };
 
+        function premiumConfirmationPlainText(value = '') {
+            const raw = String(value ?? '')
+                .replace(/<br\s*\/?>/gi, '\n');
+
+            const parser = document.createElement('div');
+            parser.innerHTML = raw;
+
+            return String(parser.textContent || '')
+                .replace(/\n[ \t]+/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        }
+
         function requestPremiumConfirmation(options = {}) {
             const modal =
                 document.getElementById(
@@ -21484,13 +21655,17 @@
 
             if (message) {
                 message.textContent =
-                    options.message ||
-                    'Pastikan pilihan Anda sudah benar.';
+                    premiumConfirmationPlainText(
+                        options.message ||
+                        'Pastikan pilihan Anda sudah benar.'
+                    );
             }
 
             if (note) {
                 const noteText =
-                    String(options.note || '').trim();
+                    premiumConfirmationPlainText(
+                        options.note || ''
+                    );
 
                 note.hidden = !noteText;
                 note.textContent = noteText;
@@ -33309,6 +33484,40 @@
                 .replaceAll("'", '&#039;');
         }
 
+        const EMPLOYEE_FIELD_LABELS = {
+            passport_number: 'Nomor Passport',
+            passport_expiry_date: 'Tanggal Berakhir Passport',
+            visa_expiry_date: 'Tanggal Berakhir Visa',
+            join_site_date: 'JOIN DDT',
+            join_smb_date: 'JOIN SMB',
+            training_status: 'Status Training'
+        };
+
+        function employeeConfirmationValue(field, value) {
+            if (value === null || value === undefined || value === '') {
+                return '—';
+            }
+
+            if ([
+                'passport_expiry_date',
+                'visa_expiry_date',
+                'join_site_date',
+                'join_smb_date'
+            ].includes(field)) {
+                return employeeFormatDate(value);
+            }
+
+            if (field === 'training_status') {
+                return {
+                    belum_direview: 'Belum Direview',
+                    lulus: 'Lulus',
+                    perpanjang: 'Perpanjang'
+                }[value] || String(value);
+            }
+
+            return String(value);
+        }
+
         function employeeDateFromISO(value) {
             if (!value) return null;
             const parsed = new Date(`${String(value).slice(0, 10)}T00:00:00`);
@@ -33597,7 +33806,7 @@
 
         function employeeInlineCell(user, field, main, sub = '', alert = '') {
             const editable = employeeCan('employee_data_edit') && user.status === 'active';
-            return `<button type="button" class="employee-inline-cell ${editable ? 'is-editable' : ''}" ${editable ? `data-user-id="${user.id}" data-field="${field}" onclick="beginEmployeeInlineEdit(this)"` : 'disabled'}><span style="min-width:0"><span class="employee-inline-main">${main}</span>${sub ? `<span class="employee-inline-sub">${sub}</span>` : ''}</span>${alert || (editable ? `<span class="employee-edit-mark"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></span>` : '')}</button>`;
+            return `<button type="button" class="employee-inline-cell ${editable ? 'is-editable' : ''}" ${editable ? `data-user-id="${user.id}" data-field="${field}" ondblclick="beginEmployeeInlineEdit(this)" title="Klik dua kali untuk mengubah" aria-label="Klik dua kali untuk mengubah data"` : 'disabled'}><span style="min-width:0"><span class="employee-inline-main">${main}</span>${sub ? `<span class="employee-inline-sub">${sub}</span>` : ''}</span>${alert || (editable ? `<span class="employee-edit-mark"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></span>` : '')}</button>`;
         }
 
         function employeeAlertIcon(kind, title, danger = false) {
@@ -33655,7 +33864,7 @@
                 const visaIcon = visaAlert ? employeeAlertIcon('visa', visaDays === 0 ? 'Visa sudah berakhir' : `Visa tersisa ${visaDays} hari`, visaDays === 0) : '';
                 return `<tr>
                     <td class="sticky-left-one"><span class="employee-status-badge ${user.status === 'active' ? 'active' : 'inactive'}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
-                    <td class="sticky-left-two"><span class="employee-user-name">${employeeEscape(user.name)}${isCurrentUser ? ' · Anda' : ''}</span><span class="employee-user-email">${employeeEscape(user.email)}</span></td>
+                    <td class="sticky-left-two"><span class="employee-user-name">${employeeEscape(user.name)}${isCurrentUser ? ' · <span class="employee-current-user-mark">Anda</span>' : ''}</span><span class="employee-user-email">${employeeEscape(user.email)}</span></td>
                     <td><span class="badge role-${user.role}">${employeeEscape(roleLabel)}</span></td>
                     <td>${employeeInlineCell(user, 'passport_number', employeeEscape(passportNumber))}</td>
                     <td>${employeeInlineCell(user, 'passport_expiry_date', profile.passport_expiry_date ? `${passportMonths} bulan` : '—', profile.passport_expiry_date ? `Berakhir ${employeeFormatDate(profile.passport_expiry_date)}` : 'Tanggal belum diisi', passportIcon)}</td>
@@ -33694,7 +33903,6 @@
                     <button class="saas-action-primary" onclick="tambahUser()" id="btnTambahUser" ${!canManage ? 'disabled' : ''}><span class="button-icon"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span>Tambah User</span></button>${viewOnlyText}
                 </div>
                 <div class="users-list-heading"><div class="users-list-title"><span class="users-section-icon compact"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><h3>Data User & Kepegawaian</h3><p>Passport, visa, masa kerja, rank, training, dan status akun.</p></div></div><div class="role-summary"><span class="role-item role-leader"><span class="role-dot"></span><span class="role-label">Leader</span><strong>${roleCounts.leader}</strong></span><span class="role-item role-csline"><span class="role-dot"></span><span class="role-label">CS Line</span><strong>${roleCounts.csline}</strong></span><span class="role-item role-cs"><span class="role-dot"></span><span class="role-label">CS</span><strong>${roleCounts.cs}</strong></span><span class="role-item role-kapten"><span class="role-dot"></span><span class="role-label">Kapten</span><strong>${roleCounts.kapten}</strong></span><span class="role-item role-kasir"><span class="role-dot"></span><span class="role-label">Kasir</span><strong>${roleCounts.kasir}</strong></span></div></div>
-                <div class="employee-module-note"><span><strong>${employeeFeatureAvailable ? 'Realtime aman aktif' : 'Mode fallback aktif'}</strong> · Perubahan profil hanya mengambil ulang satu user melalui tiny signal.</span><span>${employeeUserDirectory.length || listUsers.length} user</span></div>
                 <div class="employee-toolbar">
                     <input id="employeeUserSearch" type="search" value="${employeeEscape(employeeUserFilters.search)}" placeholder="Cari nama, email, atau passport..." oninput="setEmployeeUserFilter('search', this.value)"/>
                     <select onchange="setEmployeeUserFilter('status', this.value)"><option value="all">Semua Status</option><option value="active" ${employeeUserFilters.status === 'active' ? 'selected' : ''}>Aktif</option><option value="inactive" ${employeeUserFilters.status === 'inactive' ? 'selected' : ''}>Nonaktif</option></select>
@@ -33704,7 +33912,7 @@
                     ${employeeCan('employee_audit_export') ? `<button class="employee-export-button history-tooltip-target" type="button" onclick="exportEmployeeAudit()" data-tooltip="Export Audit Kepegawaian" data-tooltip-icon="export"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Export Audit</span></button>` : ''}
                 </div>
                 <div class="employee-table-wrap"><table class="employee-users-table"><thead><tr>
-                    <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry">Masa Aktif Passport</th><th class="employee-col-expiry">Masa Aktif Visa</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-tenure">Masa Kerja & Rank</th><th class="employee-col-training">Training</th><th class="employee-col-actions sticky-right">Aksi</th>
+                    <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry">Masa Aktif Passport</th><th class="employee-col-expiry">Masa Aktif Visa</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-tenure">Masa Kerja</th><th class="employee-col-training">Training</th><th class="employee-col-actions sticky-right">Aksi</th>
                 </tr></thead><tbody>${renderEmployeeUserRows(users)}</tbody></table></div>
                 <div class="history-count">Menampilkan <span>${users.length}</span> dari <span>${employeeUserDirectory.length || listUsers.length}</span> user</div>
             </div>`;
@@ -33757,7 +33965,21 @@
             const oldValue = profile[field] || null;
             if (String(oldValue || '') === String(value || '')) { renderUsersPage(); return; }
             const user = employeeUserDirectory.find(item => Number(item.id) === userId) || listUsers.find(item => Number(item.id) === userId);
-            const confirmed = await requestPremiumConfirmation({ title: 'Konfirmasi Perubahan', message: `Ubah <strong>${employeeEscape(field.replaceAll('_', ' '))}</strong> milik <strong>${employeeEscape(user?.name || 'User')}</strong>?`, note: `Sebelumnya: ${employeeEscape(oldValue || '—')}<br>Menjadi: ${employeeEscape(value || '—')}`, confirmLabel: 'Simpan Perubahan', tone: 'warning' });
+            const fieldLabel =
+                EMPLOYEE_FIELD_LABELS[field] ||
+                field.replaceAll('_', ' ');
+
+            const confirmed =
+                await requestPremiumConfirmation({
+                    title: 'Konfirmasi Perubahan',
+                    message:
+                        `Ubah ${fieldLabel} milik ${user?.name || 'User'}?`,
+                    note:
+                        `Sebelumnya: ${employeeConfirmationValue(field, oldValue)}\n` +
+                        `Menjadi: ${employeeConfirmationValue(field, value)}`,
+                    confirmText: 'Simpan Perubahan',
+                    variant: 'warning'
+                });
             if (!confirmed) { renderUsersPage(); return; }
             await saveEmployeeProfilePatch(userId, { [field]: value }, field === 'training_status' ? 'training' : field.includes('passport') || field.includes('visa') ? 'documents' : 'employment');
         };
@@ -33843,7 +34065,27 @@
             const accountChanged = userPermissions.canManage && ['name','email','role','status'].some(key => String(employeeEditingSnapshot.user[key] || '') !== String(userPatch[key] || ''));
             const profileChanged = employeeCan('employee_data_edit') && Object.keys(profilePatch).some(key => String(employeeEditingSnapshot.profile[key] || '') !== String(profilePatch[key] || ''));
             if (!accountChanged && !profileChanged) { closeEmployeeEditor(); return; }
-            const confirmed = await requestPremiumConfirmation({ title: 'Simpan Perubahan User', message: `Simpan seluruh perubahan data <strong>${employeeEscape(userPatch.name)}</strong>?`, note: `${accountChanged ? '• Informasi akun akan diperbarui.<br>' : ''}${profileChanged ? '• Data dokumen, masa kerja, atau training akan diperbarui.' : ''}`, confirmLabel: 'Simpan Semua', tone: 'warning' });
+            const changeNotes = [];
+
+            if (accountChanged) {
+                changeNotes.push('• Informasi akun akan diperbarui.');
+            }
+
+            if (profileChanged) {
+                changeNotes.push(
+                    '• Data dokumen, masa kerja, atau training akan diperbarui.'
+                );
+            }
+
+            const confirmed =
+                await requestPremiumConfirmation({
+                    title: 'Simpan Perubahan User',
+                    message:
+                        `Simpan seluruh perubahan data ${userPatch.name}?`,
+                    note: changeNotes.join('\n'),
+                    confirmText: 'Simpan Semua',
+                    variant: 'warning'
+                });
             if (!confirmed) return;
             const saveButton = document.getElementById('employeeEditorSaveButton');
             if (saveButton) saveButton.disabled = true;
@@ -33874,7 +34116,27 @@
             const user = employeeUserDirectory.find(item => String(item.id) === String(userId));
             if (!user || !userPermissions.canManage) return;
             const nextStatus = user.status === 'active' ? 'inactive' : 'active';
-            const confirmed = await requestPremiumConfirmation({ title: nextStatus === 'inactive' ? 'Nonaktifkan User' : 'Aktifkan Kembali', message: `${nextStatus === 'inactive' ? 'Nonaktifkan' : 'Aktifkan'} akun <strong>${employeeEscape(user.name)}</strong>?`, note: nextStatus === 'inactive' ? 'User tidak dapat masuk dan akan dikeluarkan dari daftar operasional aktif.' : 'User kembali dapat masuk dan muncul pada data operasional.', confirmLabel: nextStatus === 'inactive' ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan', tone: nextStatus === 'inactive' ? 'warning' : 'normal' });
+            const confirmed =
+                await requestPremiumConfirmation({
+                    title:
+                        nextStatus === 'inactive'
+                            ? 'Nonaktifkan User'
+                            : 'Aktifkan Kembali',
+                    message:
+                        `${nextStatus === 'inactive' ? 'Nonaktifkan' : 'Aktifkan'} akun ${user.name}?`,
+                    note:
+                        nextStatus === 'inactive'
+                            ? 'User tidak dapat masuk dan akan dikeluarkan dari daftar operasional aktif.'
+                            : 'User kembali dapat masuk dan muncul pada data operasional.',
+                    confirmText:
+                        nextStatus === 'inactive'
+                            ? 'Ya, Nonaktifkan'
+                            : 'Ya, Aktifkan',
+                    variant:
+                        nextStatus === 'inactive'
+                            ? 'warning'
+                            : 'info'
+                });
             if (!confirmed) return;
             try {
                 const { error } = await supabaseDashboard.rpc('save_employee_user_account', { p_user_id: Number(user.id), p_name: user.name, p_email: user.email, p_role: user.role, p_status: nextStatus, p_updated_by: getCurrentUserEmail() });
