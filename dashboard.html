@@ -902,7 +902,7 @@
 
 
         /* ============================================================
-           Dashboard Izin v3.0.11 Preview
+           Dashboard Izin v3.0.12 Preview
            Date typing, Training priority, Rank dropdown, Settings spacing
            ============================================================ */
 
@@ -23092,7 +23092,268 @@
             }
         }
 
-    </style>
+    
+
+        /* ============================================================
+           Dashboard Izin v3.0.12 Preview
+           Native date typing fix + unified smooth custom filters
+           ============================================================ */
+
+        #tab-users .employee-toolbar {
+            overflow: visible !important;
+        }
+
+        #tab-users .employee-toolbar > input[type="search"] {
+            height: 34px !important;
+            min-height: 34px !important;
+            border: 1.25px solid color-mix(in srgb, var(--accent) 22%, var(--border-light)) !important;
+            border-radius: 9px !important;
+            background: color-mix(in srgb, var(--accent-soft) 13%, var(--bg-primary)) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.46) !important;
+        }
+
+        #tab-users .employee-custom-filter {
+            position: relative;
+            width: 100%;
+            min-width: 0;
+            height: 34px;
+            z-index: 34;
+        }
+
+        #tab-users .employee-custom-filter.open {
+            z-index: 240;
+        }
+
+        #tab-users .employee-custom-filter-trigger {
+            width: 100%;
+            height: 34px;
+            min-height: 34px;
+            padding: 0 8px 0 6px;
+            display: grid;
+            grid-template-columns: 22px minmax(0, 1fr) 12px;
+            align-items: center;
+            gap: 6px;
+            border: 1.25px solid color-mix(in srgb, var(--accent) 30%, var(--border-light));
+            border-radius: 9px;
+            color: var(--text-primary);
+            background:
+                linear-gradient(
+                    180deg,
+                    color-mix(in srgb, var(--bg-primary) 96%, white),
+                    color-mix(in srgb, var(--accent-soft) 16%, var(--bg-primary))
+                );
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.62),
+                0 2px 6px rgba(9,34,48,.035);
+            font-family: inherit;
+            font-size: 9.7px;
+            font-weight: 500;
+            line-height: 1;
+            text-align: left;
+            outline: none;
+            cursor: pointer;
+            transition:
+                border-color .18s ease,
+                background .18s ease,
+                box-shadow .18s ease,
+                transform .18s ease;
+        }
+
+        #tab-users .employee-custom-filter-trigger:hover {
+            border-color: color-mix(in srgb, var(--accent) 48%, var(--border-light));
+            background: color-mix(in srgb, var(--accent-soft) 25%, var(--bg-primary));
+        }
+
+        #tab-users .employee-custom-filter.open .employee-custom-filter-trigger,
+        #tab-users .employee-custom-filter-trigger:focus-visible {
+            border-color: color-mix(in srgb, var(--accent) 68%, var(--border-light));
+            background: color-mix(in srgb, var(--accent-soft) 32%, var(--bg-primary));
+            box-shadow:
+                0 0 0 3px color-mix(in srgb, var(--accent-soft) 58%, transparent),
+                inset 0 1px 0 rgba(255,255,255,.68);
+        }
+
+        #tab-users .employee-custom-filter-leading {
+            width: 22px;
+            height: 22px;
+            display: grid;
+            place-items: center;
+            border-radius: 6px;
+            color: var(--accent-dark);
+            background: color-mix(in srgb, var(--accent-soft) 72%, var(--bg-primary));
+            border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+        }
+
+        #tab-users .employee-filter-funnel {
+            width: 11px;
+            height: 11px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        #tab-users .employee-custom-filter-value {
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        #tab-users .employee-custom-filter-chevron {
+            width: 12px;
+            height: 12px;
+            fill: none;
+            stroke: var(--text-muted);
+            stroke-width: 1.9;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform .2s cubic-bezier(.22,.61,.36,1);
+        }
+
+        #tab-users .employee-custom-filter.open .employee-custom-filter-chevron {
+            transform: rotate(180deg);
+        }
+
+        #tab-users .employee-custom-filter-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: max(100%, 178px);
+            max-height: 250px;
+            padding: 5px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
+            border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-light));
+            border-radius: 11px;
+            color: var(--text-primary);
+            background: color-mix(in srgb, var(--bg-primary) 98%, var(--accent-soft));
+            box-shadow:
+                0 18px 38px rgba(7,25,38,.20),
+                0 0 0 1px rgba(255,255,255,.42) inset;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-7px) scale(.985);
+            transform-origin: top left;
+            transition:
+                opacity .18s ease,
+                transform .22s cubic-bezier(.22,.61,.36,1),
+                visibility 0s linear .22s;
+        }
+
+        #tab-users .employee-custom-filter-wide .employee-custom-filter-menu {
+            width: 252px;
+        }
+
+        #tab-users .employee-custom-filter.open .employee-custom-filter-menu {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+            transition:
+                opacity .18s ease,
+                transform .22s cubic-bezier(.22,.61,.36,1),
+                visibility 0s linear 0s;
+        }
+
+        #tab-users .employee-custom-filter-option {
+            width: 100%;
+            min-height: 29px;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 0;
+            border-radius: 7px;
+            color: var(--text-secondary);
+            background: transparent;
+            font-family: inherit;
+            font-size: 9.7px;
+            font-weight: 500;
+            line-height: 1.1;
+            text-align: left;
+            cursor: pointer;
+            transition:
+                color .14s ease,
+                background .14s ease,
+                transform .14s ease;
+        }
+
+        #tab-users .employee-custom-filter-option:hover,
+        #tab-users .employee-custom-filter-option:focus-visible {
+            color: var(--text-primary);
+            background: color-mix(in srgb, var(--accent-soft) 62%, var(--bg-primary));
+            outline: none;
+            transform: translateX(1px);
+        }
+
+        #tab-users .employee-custom-filter-option.active {
+            color: var(--accent-dark);
+            background: color-mix(in srgb, var(--accent-soft) 82%, var(--bg-primary));
+            font-weight: 720;
+        }
+
+        #tab-users .employee-custom-filter-option > span {
+            min-width: 0;
+            white-space: nowrap;
+        }
+
+        #tab-users .employee-custom-filter-option.has-hint {
+            justify-content: space-between;
+            gap: 18px;
+        }
+
+        #tab-users .employee-custom-filter-option.has-hint small {
+            margin-left: auto;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 9.7px;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        #tab-users .employee-custom-filter-option.active small {
+            color: color-mix(in srgb, var(--accent-dark) 70%, var(--text-muted));
+        }
+
+        #tab-users .employee-custom-filter-menu::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        #tab-users .employee-custom-filter-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #tab-users .employee-custom-filter-menu::-webkit-scrollbar-thumb {
+            border: 2px solid transparent;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--accent) 40%, var(--border-light));
+            background-clip: padding-box;
+        }
+
+        #tab-users .employee-custom-filter-menu {
+            scrollbar-width: thin;
+            scrollbar-color:
+                color-mix(in srgb, var(--accent) 40%, var(--border-light))
+                transparent;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #tab-users .employee-custom-filter-trigger,
+            #tab-users .employee-custom-filter-chevron,
+            #tab-users .employee-custom-filter-menu,
+            #tab-users .employee-custom-filter-option {
+                transition: none !important;
+            }
+        }
+
+</style>
 </head>
 
 <body>
@@ -37006,36 +37267,191 @@
             { value: 'unavailable', label: 'Belum Tersedia', start: 'JOIN SMB kosong' }
         ];
 
-        function employeeRankFilterOptionLabel(option) {
-            const labelWidth = 19;
-            const label = String(option.label || '');
-            const start = String(option.start || '');
-            const spaces = Math.max(2, labelWidth - label.length);
-            return `${label}${'\u00A0'.repeat(spaces)}${start}`;
+        const EMPLOYEE_STATUS_FILTER_OPTIONS = [
+            { value: 'all', label: 'Semua Status' },
+            { value: 'active', label: 'Aktif' },
+            { value: 'inactive', label: 'Nonaktif' }
+        ];
+
+        const EMPLOYEE_ALERT_FILTER_OPTIONS = [
+            { value: 'all', label: 'Semua Monitoring' },
+            { value: 'passport', label: 'Passport' },
+            { value: 'visa', label: 'Visa' },
+            { value: 'training', label: 'Training' },
+            { value: 'none', label: 'Aman' }
+        ];
+
+        function employeeRoleFilterOptions() {
+            return [
+                { value: 'all', label: 'Semua Role' },
+                ...PERMISSION_ROLES.map(role => ({
+                    value: role,
+                    label: ROLE_LABELS[role] || role
+                }))
+            ];
+        }
+
+        function employeeFilterFunnelIcon() {
+            return `
+                <svg class="employee-filter-funnel" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 6h16l-6.4 7.1v4.4l-3.2 1.7v-6.1Z"/>
+                </svg>
+            `;
+        }
+
+        function employeeCustomFilterMarkup(key, options, config = {}) {
+            const currentValue = employeeUserFilters[key] ?? 'all';
+            const selected = options.find(option => option.value === currentValue) || options[0];
+            const hasHints = Boolean(config.hasHints);
+            const filterLabel = config.ariaLabel || 'Filter';
+
+            const rows = options.map(option => `
+                <button
+                    type="button"
+                    class="employee-custom-filter-option ${option.value === currentValue ? 'active' : ''} ${hasHints ? 'has-hint' : ''}"
+                    role="option"
+                    aria-selected="${option.value === currentValue ? 'true' : 'false'}"
+                    onclick="chooseEmployeeCustomFilter(event, '${employeeEscape(key)}', '${employeeEscape(option.value)}')"
+                >
+                    <span>${employeeEscape(option.label)}</span>
+                    ${hasHints ? `<small>${employeeEscape(option.hint || '')}</small>` : ''}
+                </button>
+            `).join('');
+
+            return `
+                <div
+                    class="employee-custom-filter ${hasHints ? 'employee-custom-filter-wide' : ''}"
+                    data-filter-key="${employeeEscape(key)}"
+                >
+                    <button
+                        type="button"
+                        class="employee-custom-filter-trigger"
+                        aria-label="${employeeEscape(filterLabel)}"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        onclick="toggleEmployeeCustomFilter(event, this)"
+                    >
+                        <span class="employee-custom-filter-leading">
+                            ${employeeFilterFunnelIcon()}
+                        </span>
+                        <span class="employee-custom-filter-value">${employeeEscape(selected?.label || filterLabel)}</span>
+                        <svg class="employee-custom-filter-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+                    </button>
+                    <div class="employee-custom-filter-menu" role="listbox" aria-label="${employeeEscape(filterLabel)}">
+                        ${rows}
+                    </div>
+                </div>
+            `;
+        }
+
+        function employeeStatusFilterMarkup() {
+            return employeeCustomFilterMarkup(
+                'status',
+                EMPLOYEE_STATUS_FILTER_OPTIONS,
+                { ariaLabel: 'Filter Status' }
+            );
+        }
+
+        function employeeRoleFilterMarkup() {
+            return employeeCustomFilterMarkup(
+                'role',
+                employeeRoleFilterOptions(),
+                { ariaLabel: 'Filter Role' }
+            );
         }
 
         function employeeRankFilterMarkup() {
-            const selected = EMPLOYEE_RANK_FILTER_OPTIONS.find(
-                option => option.value === employeeUserFilters.rank
+            return employeeCustomFilterMarkup(
+                'rank',
+                [
+                    { value: 'all', label: 'Semua Rank', hint: 'Semua' },
+                    ...EMPLOYEE_RANK_FILTER_OPTIONS.map(option => ({
+                        value: option.value,
+                        label: option.label,
+                        hint: option.start
+                    }))
+                ],
+                { ariaLabel: 'Filter Rank', hasHints: true }
             );
-            const selectedLabel = selected?.label || 'Semua Rank';
+        }
 
-            const optionRows = [
-                `<button type="button" class="employee-rank-filter-option ${employeeUserFilters.rank === 'all' ? 'active' : ''}" onclick="setEmployeeUserFilter('rank', 'all')"><span>Semua Rank</span><small>Semua</small></button>`,
-                ...EMPLOYEE_RANK_FILTER_OPTIONS.map(option =>
-                    `<button type="button" class="employee-rank-filter-option ${employeeUserFilters.rank === option.value ? 'active' : ''}" onclick="setEmployeeUserFilter('rank', '${employeeEscape(option.value)}')"><span>${employeeEscape(option.label)}</span><small>${employeeEscape(option.start)}</small></button>`
-                )
-            ].join('');
+        function employeeAlertFilterMarkup() {
+            return employeeCustomFilterMarkup(
+                'alert',
+                EMPLOYEE_ALERT_FILTER_OPTIONS,
+                { ariaLabel: 'Filter Monitoring' }
+            );
+        }
 
-            return `
-                <details class="employee-rank-filter">
-                    <summary>
-                        <span>${employeeEscape(selectedLabel)}</span>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
-                    </summary>
-                    <div class="employee-rank-filter-menu">${optionRows}</div>
-                </details>
-            `;
+        window.closeEmployeeCustomFilters = function(except = null) {
+            document.querySelectorAll('#tab-users .employee-custom-filter.open').forEach(filter => {
+                if (filter === except) return;
+                filter.classList.remove('open');
+                filter.querySelector('.employee-custom-filter-trigger')?.setAttribute('aria-expanded', 'false');
+            });
+        };
+
+        window.toggleEmployeeCustomFilter = function(event, trigger) {
+            event?.preventDefault();
+            event?.stopPropagation();
+
+            const filter = trigger?.closest('.employee-custom-filter');
+            if (!filter) return;
+
+            const willOpen = !filter.classList.contains('open');
+            closeEmployeeCustomFilters(filter);
+            filter.classList.toggle('open', willOpen);
+            trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+
+            if (willOpen) {
+                window.requestAnimationFrame(() => {
+                    const selected = filter.querySelector('.employee-custom-filter-option.active');
+                    const menu = filter.querySelector('.employee-custom-filter-menu');
+                    selected?.scrollIntoView({ block: 'nearest' });
+                    if (menu) menu.dataset.ready = 'true';
+                });
+            }
+        };
+
+        window.chooseEmployeeCustomFilter = function(event, key, value) {
+            event?.preventDefault();
+            event?.stopPropagation();
+            closeEmployeeCustomFilters();
+            setEmployeeUserFilter(key, value);
+        };
+
+        if (!window.__employeeCustomFilterEventsBound) {
+            window.__employeeCustomFilterEventsBound = true;
+
+            document.addEventListener('pointerdown', event => {
+                const openFilter = event.target.closest?.('#tab-users .employee-custom-filter.open');
+                if (!openFilter) closeEmployeeCustomFilters();
+            });
+
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') {
+                    const openFilters = document.querySelectorAll('#tab-users .employee-custom-filter.open');
+                    if (openFilters.length) {
+                        event.preventDefault();
+                        const lastTrigger = openFilters[openFilters.length - 1]
+                            ?.querySelector('.employee-custom-filter-trigger');
+                        closeEmployeeCustomFilters();
+                        lastTrigger?.focus();
+                    }
+                }
+            });
+
+            document.addEventListener('wheel', event => {
+                const filter = event.target.closest?.('#tab-users .employee-custom-filter.open');
+                if (!filter) return;
+
+                const menu = filter.querySelector('.employee-custom-filter-menu');
+                if (!menu || menu.scrollHeight <= menu.clientHeight + 1) return;
+
+                menu.scrollTop += event.deltaY;
+                event.preventDefault();
+                event.stopPropagation();
+            }, { passive: false, capture: true });
         }
 
         function employeeRankFor(user, profile) {
@@ -37809,10 +38225,10 @@
                 <div class="users-list-heading"><div class="users-list-title"><span class="users-section-icon compact"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><h3>Data User & Kepegawaian</h3><p>Passport, visa, masa kerja, rank, training, dan status akun.</p></div></div><div class="role-summary"><span class="role-item role-leader"><span class="role-dot"></span><span class="role-label">Leader</span><strong>${roleCounts.leader}</strong></span><span class="role-item role-csline"><span class="role-dot"></span><span class="role-label">CS Line</span><strong>${roleCounts.csline}</strong></span><span class="role-item role-cs"><span class="role-dot"></span><span class="role-label">CS</span><strong>${roleCounts.cs}</strong></span><span class="role-item role-kapten"><span class="role-dot"></span><span class="role-label">Kapten</span><strong>${roleCounts.kapten}</strong></span><span class="role-item role-kasir"><span class="role-dot"></span><span class="role-label">Kasir</span><strong>${roleCounts.kasir}</strong></span></div></div>
                 <div class="employee-toolbar">
                     <input id="employeeUserSearch" type="search" value="${employeeEscape(employeeUserFilters.search)}" placeholder="Cari nama, email, atau passport..." oninput="setEmployeeUserFilter('search', this.value)"/>
-                    <select onchange="setEmployeeUserFilter('status', this.value)"><option value="all">Semua Status</option><option value="active" ${employeeUserFilters.status === 'active' ? 'selected' : ''}>Aktif</option><option value="inactive" ${employeeUserFilters.status === 'inactive' ? 'selected' : ''}>Nonaktif</option></select>
-                    <select onchange="setEmployeeUserFilter('role', this.value)"><option value="all">Semua Role</option>${PERMISSION_ROLES.map(role => `<option value="${role}" ${employeeUserFilters.role === role ? 'selected' : ''}>${ROLE_LABELS[role]}</option>`).join('')}</select>
+                    ${employeeStatusFilterMarkup()}
+                    ${employeeRoleFilterMarkup()}
                     ${employeeRankFilterMarkup()}
-                    <select onchange="setEmployeeUserFilter('alert', this.value)"><option value="all">Semua Monitoring</option><option value="passport" ${employeeUserFilters.alert === 'passport' ? 'selected' : ''}>Passport</option><option value="visa" ${employeeUserFilters.alert === 'visa' ? 'selected' : ''}>Visa</option><option value="training" ${employeeUserFilters.alert === 'training' ? 'selected' : ''}>Training</option><option value="none" ${employeeUserFilters.alert === 'none' ? 'selected' : ''}>Aman</option></select>
+                    ${employeeAlertFilterMarkup()}
                     ${employeeCan('employee_audit_export') ? `<button class="employee-export-button history-tooltip-target" type="button" onclick="exportEmployeeAudit()" data-tooltip="Export Audit Kepegawaian" data-tooltip-icon="export"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Export Audit</span></button>` : ''}
                 </div>
                 <div class="employee-table-wrap"><table class="employee-users-table"><thead><tr>
@@ -37902,7 +38318,7 @@
                         <input
                             id="employeeTrainingDateInput"
                             type="date"
-                            max="9999-12-31"
+                           
                             data-employee-date="true"
                             autocomplete="off"
                         />
@@ -38000,6 +38416,16 @@
                     return;
                 }
 
+                const reviewDate = employeeDateFromISO(value);
+                if (!reviewDate || reviewDate < employeeToday()) {
+                    showToast(
+                        'Tanggal review berikutnya tidak boleh sebelum hari ini.',
+                        'warning'
+                    );
+                    input?.focus();
+                    return;
+                }
+
                 closeEmployeeTrainingDateModal(
                     value
                 );
@@ -38036,10 +38462,9 @@
                 input.value =
                     initialDate || '';
 
-                input.min =
-                    employeeToday()
-                        .toISOString()
-                        .slice(0, 10);
+                /* Avoid native segmented-input resets while typing a year. */
+                input.removeAttribute('min');
+                input.removeAttribute('max');
             }
 
             modal.classList.add('show');
@@ -38084,16 +38509,15 @@
                 return;
             }
 
-            input.max = '9999-12-31';
-
-            const value = String(input.value || '');
-            if (!value) return;
-
-            const parts = value.split('-');
-            if (parts[0] && parts[0].length > 4) {
-                parts[0] = parts[0].slice(0, 4);
-                input.value = parts.join('-');
-            }
+            /*
+             * Do not rewrite a native date value while the user is typing.
+             * Chromium temporarily represents a partly typed year as a value
+             * such as 0002. A min/max constraint or value mutation at that
+             * moment can clear the day and month segments. Validation is done
+             * only when the user saves/continues.
+             */
+            input.removeAttribute('min');
+            input.removeAttribute('max');
         }
 
         function bindEmployeeDateYearLock(input) {
@@ -38106,23 +38530,7 @@
             }
 
             input.dataset.employeeYearLock = 'true';
-            input.max = '9999-12-31';
-
-            /*
-             * Native date inputs emit temporary/incomplete values while the
-             * user moves between day, month and year segments. Mutating the
-             * value on every input event can reset segments that were already
-             * typed. Keep the 4-digit rule at change/blur and on save instead.
-             */
-            input.addEventListener(
-                'change',
-                () => normalizeEmployeeDateYearInput(input)
-            );
-
-            input.addEventListener(
-                'blur',
-                () => normalizeEmployeeDateYearInput(input)
-            );
+            normalizeEmployeeDateYearInput(input);
         }
 
         function bindAllEmployeeDateYearLocks(root = document) {
@@ -38135,18 +38543,41 @@
         }
 
         function validateEmployeeDateInput(input, label = 'Tanggal') {
-            if (!input || !input.value) {
+            if (!input) {
                 return true;
             }
 
-            normalizeEmployeeDateYearInput(input);
+            const value = String(input.value || '');
 
-            if (!employeeDateHasFourDigitYear(input.value)) {
+            if (!value) {
+                if (input.validity?.badInput) {
+                    showToast(
+                        `${label} belum lengkap. Isi tanggal, bulan, dan tahun 4 digit.`,
+                        'warning'
+                    );
+                    input.focus();
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (!employeeDateHasFourDigitYear(value)) {
                 showToast(
-                    `${label} harus menggunakan tahun 4 digit.`,
+                    `${label} harus menggunakan tahun tepat 4 digit.`,
                     'warning'
                 );
 
+                input.focus();
+                return false;
+            }
+
+            const parsed = employeeDateFromISO(value);
+            if (!parsed || parsed.getFullYear() < 1000 || parsed.getFullYear() > 9999) {
+                showToast(
+                    `${label} tidak valid. Gunakan tahun antara 1000 sampai 9999.`,
+                    'warning'
+                );
                 input.focus();
                 return false;
             }
@@ -38170,7 +38601,7 @@
             const type = field.includes('date') ? 'date' : 'text';
             const editor = field === 'training_status'
                 ? `<select class="employee-inline-editor"><option value="belum_direview">Belum Direview</option><option value="lulus">Lulus</option><option value="perpanjang">Perpanjang</option></select>`
-                : `<input class="employee-inline-editor" type="${type}" value="${employeeEscape(fieldValues[field])}" ${type === 'date' ? 'max="9999-12-31" data-employee-date="true"' : ''} />`;
+                : `<input class="employee-inline-editor" type="${type}" value="${employeeEscape(fieldValues[field])}" ${type === 'date' ? 'data-employee-date="true"' : ''} />`;
             button.outerHTML = `
                 <div
                     class="employee-inline-cell employee-inline-cell-editing"
@@ -39266,23 +39697,23 @@
                     <div class="employee-editor-section-title">Dokumen</div>
                     <div class="employee-editor-grid">
                         <div class="employee-editor-field"><label>No. Passport</label><input id="employeeEditPassportNumber" type="text" placeholder="Nomor passport" /></div>
-                        <div class="employee-editor-field"><label>Tanggal Berakhir Passport</label><input id="employeeEditPassportExpiry" type="date" max="9999-12-31" data-employee-date="true" /></div>
-                        <div class="employee-editor-field"><label>Tanggal Berakhir Visa</label><input id="employeeEditVisaExpiry" type="date" max="9999-12-31" data-employee-date="true" /></div>
+                        <div class="employee-editor-field"><label>Tanggal Berakhir Passport</label><input id="employeeEditPassportExpiry" type="date" data-employee-date="true" /></div>
+                        <div class="employee-editor-field"><label>Tanggal Berakhir Visa</label><input id="employeeEditVisaExpiry" type="date" data-employee-date="true" /></div>
                     </div>
                 </section>
                 <section class="employee-editor-section">
                     <div class="employee-editor-section-title">Kepegawaian</div>
                     <div class="employee-editor-grid two">
-                        <div class="employee-editor-field"><label>JOIN SMB</label><input id="employeeEditJoinSmb" type="date" max="9999-12-31" data-employee-date="true" /></div>
-                        <div class="employee-editor-field"><label>JOIN DDT</label><input id="employeeEditJoinSite" type="date" max="9999-12-31" data-employee-date="true" /></div>
+                        <div class="employee-editor-field"><label>JOIN SMB</label><input id="employeeEditJoinSmb" type="date" data-employee-date="true" /></div>
+                        <div class="employee-editor-field"><label>JOIN DDT</label><input id="employeeEditJoinSite" type="date" data-employee-date="true" /></div>
                     </div>
                 </section>
                 <section class="employee-editor-section">
                     <div class="employee-editor-section-title">Training</div>
                     <div class="employee-editor-grid">
                         <div class="employee-editor-field"><label>Status Training</label><select id="employeeEditTrainingStatus"><option value="belum_direview">Belum Direview</option><option value="lulus">Lulus</option><option value="perpanjang">Perpanjang</option></select></div>
-                        <div class="employee-editor-field"><label>Review Berikutnya</label><input id="employeeEditTrainingNextReview" type="date" max="9999-12-31" data-employee-date="true" /></div>
-                        <div class="employee-editor-field"><label>Tanggal Review Terakhir</label><input id="employeeEditTrainingReviewedAt" type="date" max="9999-12-31" data-employee-date="true" /></div>
+                        <div class="employee-editor-field"><label>Review Berikutnya</label><input id="employeeEditTrainingNextReview" type="date" data-employee-date="true" /></div>
+                        <div class="employee-editor-field"><label>Tanggal Review Terakhir</label><input id="employeeEditTrainingReviewedAt" type="date" data-employee-date="true" /></div>
                         <div class="employee-editor-field full"><label>Catatan Training</label><textarea id="employeeEditTrainingNote" placeholder="Catatan singkat hasil review atau perpanjangan training"></textarea></div>
                     </div>
                 </section>
