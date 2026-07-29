@@ -22997,6 +22997,15 @@
             }
         }
 
+
+
+        /* ============================================================
+           Dashboard Izin v3.0.22 Preview — F5 Loader Continuity
+           ============================================================ */
+        .page-loader {
+            transition: opacity .24s ease, visibility .24s ease !important;
+        }
+
 </style>
 </head>
 
@@ -36645,7 +36654,13 @@
             );
         }
 
-        window.addEventListener('beforeunload', showPremiumPageLoader);
+        /*
+         * Jangan tampilkan ulang loader pada beforeunload/F5.
+         * Loader pada dokumen lama menyebabkan urutan visual:
+         * loader lama -> first-paint gelap -> loader dokumen baru.
+         * Biarkan halaman lama tetap terlihat sampai navigasi berpindah,
+         * lalu loader dokumen baru akan muncul satu kali.
+         */
         window.setTimeout(hidePremiumPageLoader, 12000);
 
         // ============================================================
@@ -36684,7 +36699,7 @@
                     console.error('Gagal memulai dashboard:', error);
                 })
                 .finally(() => {
-                    setTimeout(hidePremiumPageLoader, 320);
+                    setTimeout(hidePremiumPageLoader, 140);
                 });
         });
 
