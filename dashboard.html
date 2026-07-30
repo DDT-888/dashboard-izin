@@ -25030,6 +25030,26 @@
             min-height: 28px !important;
         }
 
+
+
+        /* ============================================================
+           Dashboard Izin v3.0.41 Production Hotfix
+           - Monitoring save disabled state
+           ============================================================ */
+        #tab-settings .employee-settings-save:disabled,
+        #tab-settings .employee-settings-save.settings-primary-action:disabled,
+        #tab-settings .employee-settings-save:disabled:hover,
+        #tab-settings .employee-settings-save.settings-primary-action:disabled:hover {
+            color: var(--text-muted) !important;
+            background: var(--bg-secondary) !important;
+            border: 1px solid var(--border-light) !important;
+            box-shadow: none !important;
+            opacity: .58 !important;
+            cursor: not-allowed !important;
+            filter: none !important;
+            transform: none !important;
+            pointer-events: none !important;
+        }
 </style>
 </head>
 
@@ -28656,19 +28676,39 @@
         // ============================================================
         async function checkUserRegistered(email) {
             try {
+                const normalizedEmail = formatEmail(email);
                 const { data, error } = await supabaseDashboard
                     .from('users')
-                    .select('email')
-                    .eq('email', email)
+                    .select('email, status')
+                    .eq('email', normalizedEmail)
                     .maybeSingle();
 
                 if (error || !data) {
-                    showNotRegisteredPopup(email);
+                    showNotRegisteredPopup(normalizedEmail);
                     return false;
                 }
+
+                if (String(data.status || 'active').toLowerCase() !== 'active') {
+                    currentUserAccessRevoked = true;
+                    isDataReady = false;
+                    showAccessDeniedPopup({
+                        title: 'Akses Ditolak',
+                        message: `Akun <strong>${normalizedEmail}</strong> sudah dinonaktifkan dari sistem.`,
+                        info: '<strong>PS:</strong> Silakan hubungi <strong>CS LINE</strong> apabila akses masih diperlukan.',
+                        overlayId: 'currentUserRevokedOverlay'
+                    });
+                    return false;
+                }
+
                 return true;
             } catch (err) {
                 console.error('Gagal cek user:', err);
+                showAccessDeniedPopup({
+                    title: 'Akses Ditolak',
+                    message: 'Status akun tidak dapat diverifikasi.',
+                    info: 'Silakan coba kembali atau hubungi <strong>CS LINE</strong>.',
+                    overlayId: 'userStatusCheckErrorOverlay'
+                });
                 return false;
             }
         }
@@ -29528,7 +29568,7 @@
             stopRealtimeForRevokedSession();
 
             showAccessDeniedPopup({
-                title: 'Akun Tidak Aktif',
+                title: 'Akses Ditolak',
                 message:
                     `Akun <strong>${formatEmail(
                         currentUser?.email || 'tidak diketahui'
@@ -29769,8 +29809,63 @@
             }, 550);
         }
 
-        function handleUsersRealtime() {
+        function isCurrentUserAccessRecord(record = null) {
+            if (!record || !currentUser?.email) return false;
+            return formatEmail(record.email || '') === getCurrentUserEmail();
+        }
+
+        function handleUsersRealtime(payload = {}) {
+            const eventType = String(payload?.eventType || '').toUpperCase();
+            const freshRecord = payload?.new || null;
+            const previousRecord = payload?.old || null;
+            const accessRecord = freshRecord || previousRecord;
+
+            if (isCurrentUserAccessRecord(accessRecord)) {
+                const nextStatus = String(freshRecord?.status || '').toLowerCase();
+                if (eventType === 'DELETE' || (eventType === 'UPDATE' && nextStatus && nextStatus !== 'active')) {
+                    revokeCurrentUserAccess('users-realtime-direct');
+                    return;
+                }
+            }
+
             scheduleUsersSnapshotSync('users-realtime-event');
+        }
+
+        function handleUserAccessBroadcast(message = {}) {
+            const payload = message?.payload || message || {};
+            const targetEmail = formatEmail(payload.email || '');
+            const nextStatus = String(payload.status || '').toLowerCase();
+
+            if (!targetEmail || targetEmail !== getCurrentUserEmail()) return;
+
+            if (nextStatus && nextStatus !== 'active') {
+                revokeCurrentUserAccess('users-access-broadcast');
+                return;
+            }
+
+            scheduleUsersSnapshotSync('users-access-broadcast');
+        }
+
+        async function broadcastUserAccessChange(user, status) {
+            if (!realtimeChannel || realtimeSubscriptionStatus !== 'SUBSCRIBED' || !user?.email) {
+                return false;
+            }
+
+            try {
+                const result = await realtimeChannel.send({
+                    type: 'broadcast',
+                    event: 'user-access-change',
+                    payload: {
+                        email: formatEmail(user.email),
+                        status: String(status || '').toLowerCase(),
+                        changedAt: Date.now()
+                    }
+                });
+                return result === 'ok';
+            } catch (error) {
+                console.warn('Broadcast perubahan akses user gagal:', error);
+                return false;
+            }
         }
 
         function subscribeToIzinChanges() {
@@ -29852,6 +29947,13 @@
                         filter: 'id=eq.1'
                     },
                     handlePermissionMatrixRealtime
+                )
+                .on(
+                    'broadcast',
+                    {
+                        event: 'user-access-change'
+                    },
+                    handleUserAccessBroadcast
                 )
                 .on(
                     'postgres_changes',
@@ -31746,8 +31848,7 @@
                 if (session?.user?.email) {
                     const isRegistered = await checkUserRegistered(session.user.email);
                     if (!isRegistered) {
-                        console.log('❌ User tidak terdaftar, tampilkan popup...');
-                        showNotRegisteredPopup(session.user.email);
+                        console.log('❌ Akses user tidak valid atau akun sudah dinonaktifkan.');
                         return false;
                     }
                 }
@@ -40714,6 +40815,7 @@
             try {
                 const { error } = await supabaseDashboard.rpc('save_employee_user_account', { p_user_id: Number(user.id), p_name: user.name, p_email: user.email, p_role: user.role, p_status: nextStatus, p_updated_by: getCurrentUserEmail() });
                 if (error) throw error;
+                await broadcastUserAccessChange(user, nextStatus);
                 await Promise.all([loadEmployeeDirectory(true), syncUsersSnapshot({ reason: 'employee-status-change' })]);
                 renderUsersPage();
                 renderEmployeeDashboardMonitoring();
