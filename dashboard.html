@@ -24234,6 +24234,111 @@
             }
         }
 
+
+
+        /* ============================================================
+           Dashboard Izin v3.0.32 Preview
+           Priority typography, themed headers, independent scrolling
+           ============================================================ */
+
+        /* The three priority labels follow the MONITORING KARYAWAN eyebrow. */
+        #tab-dashboard .employee-priority-heading {
+            min-height: 68px !important;
+            padding: 10px 12px !important;
+        }
+
+        #tab-dashboard .employee-priority-heading small {
+            display: block !important;
+            margin: 0 0 5px !important;
+            color: var(--accent-strong) !important;
+            font-size: 9px !important;
+            font-weight: 800 !important;
+            letter-spacing: 1.3px !important;
+            line-height: 1.15 !important;
+            text-transform: uppercase !important;
+        }
+
+        /* Perlu diperpanjang / Perlu direview follows the monitoring description. */
+        #tab-dashboard .employee-priority-heading strong {
+            display: block !important;
+            margin: 0 !important;
+            color: var(--text-secondary) !important;
+            font-size: 12px !important;
+            font-weight: 400 !important;
+            letter-spacing: 0 !important;
+            line-height: 1.55 !important;
+        }
+
+        /* Each priority table scrolls independently when the list is long. */
+        #tab-dashboard .employee-priority-table-wrap {
+            max-height: 231px !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain !important;
+            scrollbar-gutter: stable !important;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(var(--accent-rgb), .42) transparent;
+        }
+
+        #tab-dashboard .employee-priority-table-wrap::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #tab-dashboard .employee-priority-table-wrap::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #tab-dashboard .employee-priority-table-wrap::-webkit-scrollbar-thumb {
+            border: 1px solid transparent;
+            border-radius: 999px;
+            background: rgba(var(--accent-rgb), .36);
+            background-clip: padding-box;
+        }
+
+        #tab-dashboard .employee-priority-table-wrap::-webkit-scrollbar-thumb:hover {
+            background: rgba(var(--accent-rgb), .56);
+            background-clip: padding-box;
+        }
+
+        /* Light themed header row; typography follows the monitoring description. */
+        #tab-dashboard .employee-priority-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+
+        #tab-dashboard .employee-priority-table th {
+            height: 34px !important;
+            padding: 0 10px !important;
+            border-top: 0 !important;
+            border-bottom: 1px solid rgba(var(--accent-rgb), .13) !important;
+            color: var(--text-secondary) !important;
+            background: color-mix(in srgb, var(--accent-soft) 72%, var(--bg-card)) !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0 !important;
+            line-height: 1.55 !important;
+            text-transform: none !important;
+            box-shadow: 0 1px 0 rgba(255,255,255,.22) inset !important;
+        }
+
+        #tab-dashboard .employee-priority-card.passport .employee-priority-table th {
+            background: color-mix(in srgb, rgba(197,139,42,.13) 72%, var(--bg-card)) !important;
+        }
+
+        #tab-dashboard .employee-priority-card.visa .employee-priority-table th {
+            background: color-mix(in srgb, rgba(209,77,104,.12) 72%, var(--bg-card)) !important;
+        }
+
+        #tab-dashboard .employee-priority-card.training .employee-priority-table th {
+            background: color-mix(in srgb, rgba(117,86,199,.12) 72%, var(--bg-card)) !important;
+        }
+
+        /* The old +N footer is no longer used. */
+        #tab-dashboard .employee-priority-more {
+            display: none !important;
+        }
+
 </style>
 </head>
 
@@ -40109,8 +40214,7 @@
                 items,
                 type
             ) => {
-                const rows =
-                    items.slice(0, 6);
+                const rows = items;
 
                 if (!rows.length) {
                     return `
@@ -40185,21 +40289,6 @@
                     }
                 ).join('');
             };
-
-            const priorityFooter = (
-                total
-            ) =>
-                total > 6
-                    ? `
-                        <button
-                            type="button"
-                            class="employee-priority-more"
-                            onclick="openEmployeeUsersFilter('all')"
-                        >
-                            +${total - 6} data lainnya
-                        </button>
-                    `
-                    : '';
 
             const summaryChip = (total, klass) => `
                 <span class="employee-priority-count ${klass}">
@@ -40308,10 +40397,6 @@
                                 </tbody>
                             </table>
                         </div>
-
-                        ${priorityFooter(
-                            passport.length
-                        )}
                     </article>
 
                     <article
@@ -40368,10 +40453,6 @@
                                 </tbody>
                             </table>
                         </div>
-
-                        ${priorityFooter(
-                            visa.length
-                        )}
                     </article>
 
                     <article
@@ -40436,10 +40517,6 @@
                                 </tbody>
                             </table>
                         </div>
-
-                        ${priorityFooter(
-                            training.length
-                        )}
                     </article>
                 </div>
             `;
