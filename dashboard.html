@@ -30356,62 +30356,96 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-users .employee-users-t
 </style>
 
 
-<style id="venom-smooth-theme-crossfade-v8">
+
+
+<style id="theme-transition-smooth-all-v9">
 /* ============================================================
-   V8 — Lightweight theme crossfade
-   Menyamarkan pergantian warna tanpa View Transition snapshot.
-   Aman untuk tabel Users panjang dan tidak aktif saat scrolling biasa.
+   V9 — Smooth theme transition for all themes
+   Subtle top-level fade + lightweight surface color blending.
+   No full-screen veil, no View Transition snapshot, and no
+   per-cell animation on long tables.
    ============================================================ */
 #themeSwitchOverlay {
-    --theme-switch-color: rgba(12, 14, 12, .94);
-    position: fixed;
-    inset: 0;
-    z-index: 2147483600;
-    display: block;
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    background: var(--theme-switch-color);
-    transition:
-        opacity 125ms cubic-bezier(.4, 0, .2, 1),
-        visibility 0s linear 190ms;
-    transform: translateZ(0);
-    will-change: opacity;
-    contain: strict;
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
-#themeSwitchOverlay.is-active {
-    opacity: .94;
-    visibility: visible;
-    transition:
-        opacity 125ms cubic-bezier(.4, 0, .2, 1),
-        visibility 0s linear 0s;
-}
-
-#themeSwitchOverlay.is-settling {
-    opacity: 0;
-    visibility: visible;
-    transition:
-        opacity 185ms cubic-bezier(.22, .61, .36, 1),
-        visibility 0s linear 185ms;
-}
-
-/* Saat crossfade aktif, hanya permukaan besar yang ikut blending ringan.
-   Baris tabel tetap tanpa animasi agar scroll tidak berat. */
-html.theme-switching body,
 html.theme-switching .sidebar,
-html.theme-switching .main-content,
-html.theme-switching .topbar,
-html.theme-switching .footer {
+html.theme-switching .main-content {
+    transition: opacity 95ms cubic-bezier(.4, 0, .2, 1) !important;
+    will-change: opacity;
+}
+
+html.theme-switching.theme-switch-out .sidebar,
+html.theme-switching.theme-switch-out .main-content {
+    opacity: .94;
+}
+
+html.theme-switching.theme-switch-in .sidebar,
+html.theme-switching.theme-switch-in .main-content {
+    opacity: 1;
+    transition-duration: 190ms !important;
+    transition-timing-function: cubic-bezier(.22, .61, .36, 1) !important;
+}
+
+html.theme-switching,
+html.theme-switching body,
+html.theme-switching :is(
+    .sidebar,
+    .topbar,
+    .footer,
+    .welcome-banner,
+    .ticker-container,
+    .clock-container,
+    .theme-picker-button,
+    .header-profile-button,
+    .theme-menu,
+    .profile-dropdown,
+    .card,
+    .table-wrap,
+    .employee-priority-card,
+    .employee-users-card,
+    .shift-log-container,
+    .history-shift-container,
+    .settings-card .section,
+    .permission-matrix-panel,
+    .settings-existing-panel,
+    .custom-filter-menu,
+    .modal-content,
+    .premium-modal,
+    .sidebar-footer,
+    .sidebar-user-card
+) {
     transition:
-        background-color 165ms ease,
-        border-color 165ms ease,
-        color 165ms ease !important;
+        background-color 230ms cubic-bezier(.22, .61, .36, 1),
+        border-color 230ms cubic-bezier(.22, .61, .36, 1),
+        color 180ms ease,
+        box-shadow 230ms cubic-bezier(.22, .61, .36, 1) !important;
 }
 
 html.theme-switching :is(
-    .tab-content,
-    .table-wrap,
+    input,
+    select,
+    textarea,
+    button,
+    .badge,
+    .role-tag,
+    .status-badge,
+    .theme-option,
+    .menu-item
+) {
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease,
+        color 160ms ease,
+        box-shadow 180ms ease !important;
+}
+
+/* Keep large/long data grids inexpensive during the switch. Their parent
+   surface fades subtly, masking the instantaneous cell palette update. */
+html.theme-switching :is(
     table,
     thead,
     tbody,
@@ -30419,16 +30453,28 @@ html.theme-switching :is(
     th,
     td,
     .employee-inline-cell,
-    .settings-card .section
+    .employee-users-table *,
+    #tab-users .employee-users-table *
 ) {
     transition: none !important;
 }
 
+/* Prevent hover transforms from competing with the short theme animation. */
+html.theme-switching :is(.card, .menu-item, button, .theme-option) {
+    transform: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-    #themeSwitchOverlay,
-    #themeSwitchOverlay.is-active,
-    #themeSwitchOverlay.is-settling {
+    html.theme-switching .sidebar,
+    html.theme-switching .main-content,
+    html.theme-switching body,
+    html.theme-switching :is(.topbar, .footer, .card, .table-wrap) {
         transition-duration: 1ms !important;
+    }
+
+    html.theme-switching.theme-switch-out .sidebar,
+    html.theme-switching.theme-switch-out .main-content {
+        opacity: 1 !important;
     }
 }
 </style>
@@ -30436,8 +30482,6 @@ html.theme-switching :is(
 </head>
 
 <body>
-
-    <div id="themeSwitchOverlay" aria-hidden="true"></div>
 
     <div class="page-loader" id="pageLoader" role="status" aria-live="polite" aria-label="Memuat dashboard">
         <div class="page-loader-card">
@@ -32109,20 +32153,8 @@ html.theme-switching :is(
             updateThemeUI(selectedTheme);
         }
 
-        const THEME_SWITCH_OVERLAY_COLORS = {
-            light: 'rgba(232, 236, 239, .92)',
-            dark: 'rgba(7, 16, 20, .94)',
-            venom: 'rgba(8, 10, 8, .95)',
-            pink: 'rgba(241, 229, 236, .92)',
-            emerald: 'rgba(226, 237, 232, .92)',
-            purple: 'rgba(233, 229, 242, .92)',
-            ocean: 'rgba(225, 237, 242, .92)',
-            'rose-gold': 'rgba(241, 232, 229, .92)'
-        };
-
         let themeSwitchSequence = 0;
         let themeSwitchApplyTimer = null;
-        let themeSwitchRevealTimer = null;
         let themeSwitchCleanupTimer = null;
 
         function setTheme(theme, event) {
@@ -32147,74 +32179,55 @@ html.theme-switching :is(
             }
 
             const sequence = ++themeSwitchSequence;
-            const overlay = document.getElementById('themeSwitchOverlay');
             const reduceMotion = window.matchMedia &&
                 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
             window.clearTimeout(themeSwitchApplyTimer);
-            window.clearTimeout(themeSwitchRevealTimer);
             window.clearTimeout(themeSwitchCleanupTimer);
 
-            const cleanup = () => {
-                if (sequence !== themeSwitchSequence) return;
+            root.classList.remove(
+                'theme-switching',
+                'theme-switch-out',
+                'theme-switch-in',
+                'theme-view-transition'
+            );
+            root.removeAttribute('data-theme-transition-target');
 
-                root.classList.remove('theme-switching', 'theme-view-transition');
-                root.removeAttribute('data-theme-transition-target');
-
-                if (overlay) {
-                    overlay.classList.remove('is-active', 'is-settling');
-                }
-            };
-
-            const applySelectedTheme = () => {
-                if (sequence !== themeSwitchSequence) return;
-
-                // Color scheme dan native controls ikut berubah ketika layar
-                // masih tertutup overlay, sehingga tidak ada flash mendadak.
+            if (reduceMotion) {
                 applyThemeAttributes(selectedTheme, { deferColorScheme: false });
-            };
-
-            root.classList.add('theme-switching');
-            root.setAttribute('data-theme-transition-target', selectedTheme);
-
-            if (!overlay || reduceMotion) {
-                applySelectedTheme();
-                themeSwitchCleanupTimer = window.setTimeout(cleanup, 40);
                 return;
             }
 
-            overlay.style.setProperty(
-                '--theme-switch-color',
-                THEME_SWITCH_OVERLAY_COLORS[selectedTheme] ||
-                    THEME_SWITCH_OVERLAY_COLORS.light
-            );
-            overlay.classList.remove('is-settling');
+            root.setAttribute('data-theme-transition-target', selectedTheme);
+            root.classList.add('theme-switching', 'theme-switch-out');
 
-            // Paksa browser menangkap state awal opacity: 0 sebelum fade-in.
-            void overlay.offsetWidth;
-            overlay.classList.add('is-active');
+            // Commit the starting opacity before the theme palette changes.
+            void root.offsetWidth;
 
             themeSwitchApplyTimer = window.setTimeout(() => {
-                applySelectedTheme();
+                if (sequence !== themeSwitchSequence) return;
 
-                // Beri dua frame agar warna target selesai dihitung sebelum
-                // veil dibuka kembali. Tidak ada snapshot atau repaint besar.
+                applyThemeAttributes(selectedTheme, { deferColorScheme: false });
+
                 requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
+                    if (sequence !== themeSwitchSequence) return;
+
+                    root.classList.remove('theme-switch-out');
+                    root.classList.add('theme-switch-in');
+
+                    themeSwitchCleanupTimer = window.setTimeout(() => {
                         if (sequence !== themeSwitchSequence) return;
 
-                        themeSwitchRevealTimer = window.setTimeout(() => {
-                            overlay.classList.remove('is-active');
-                            overlay.classList.add('is-settling');
-
-                            themeSwitchCleanupTimer = window.setTimeout(
-                                cleanup,
-                                205
-                            );
-                        }, 45);
-                    });
+                        root.classList.remove(
+                            'theme-switching',
+                            'theme-switch-out',
+                            'theme-switch-in',
+                            'theme-view-transition'
+                        );
+                        root.removeAttribute('data-theme-transition-target');
+                    }, 250);
                 });
-            }, 125);
+            }, 90);
         }
 
         // Dipertahankan untuk kompatibilitas jika masih dipanggil dari kode lama.
