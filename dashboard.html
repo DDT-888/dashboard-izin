@@ -4,6 +4,87 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
+    <script id="early-theme-bootstrap">
+        /*
+         * Apply the saved theme before the first stylesheet is parsed.
+         * This prevents a DDT Original/Cyber-colored frame on F5 when
+         * Venom Green was the last selected theme.
+         */
+        (() => {
+            const root = document.documentElement;
+            const meta = document.querySelector('meta[name="theme-color"]');
+            let savedTheme = 'light';
+            try {
+                savedTheme = localStorage.getItem('theme') || 'light';
+            } catch (error) {
+                savedTheme = 'light';
+            }
+
+            const firstPaint = {
+                light: {
+                    rendered: 'light', bg: '#f0f4f8', card: '#ffffff',
+                    accent: '#00b8d4', title: '#15313b', subtitle: '#617681',
+                    scheme: 'light', meta: '#f0f4f8'
+                },
+                dark: {
+                    rendered: 'dark', bg: '#0d1117', card: '#151b24',
+                    accent: '#27d9ef', title: '#edf2f7', subtitle: '#9aa7b7',
+                    scheme: 'dark', meta: '#0d1117'
+                },
+                pink: {
+                    rendered: 'pink', bg: '#fff4f8', card: '#ffffff',
+                    accent: '#e65392', title: '#553442', subtitle: '#876674',
+                    scheme: 'light', meta: '#fff4f8'
+                },
+                emerald: {
+                    rendered: 'emerald', bg: '#f1faf6', card: '#ffffff',
+                    accent: '#18a77b', title: '#24453a', subtitle: '#668078',
+                    scheme: 'light', meta: '#f1faf6'
+                },
+                purple: {
+                    rendered: 'purple', bg: '#f7f4ff', card: '#ffffff',
+                    accent: '#8061df', title: '#3f365a', subtitle: '#756c8b',
+                    scheme: 'light', meta: '#f7f4ff'
+                },
+                ocean: {
+                    rendered: 'ocean', bg: '#edf8fc', card: '#ffffff',
+                    accent: '#0796bd', title: '#234653', subtitle: '#657f89',
+                    scheme: 'light', meta: '#edf8fc'
+                },
+                'rose-gold': {
+                    rendered: 'rose-gold', bg: '#fff6f3', card: '#ffffff',
+                    accent: '#c67f73', title: '#503c38', subtitle: '#806d68',
+                    scheme: 'light', meta: '#fff6f3'
+                },
+                venom: {
+                    rendered: 'dark', bg: '#070707', card: '#101010',
+                    accent: '#44d62c', title: '#67e853', subtitle: '#91aa8d',
+                    scheme: 'dark', meta: '#070707', variant: 'venom'
+                }
+            };
+
+            const selected = firstPaint[savedTheme] ? savedTheme : 'light';
+            const config = firstPaint[selected];
+
+            root.setAttribute('data-theme', config.rendered);
+            root.dataset.selectedTheme = selected;
+            if (config.variant) {
+                root.setAttribute('data-theme-variant', config.variant);
+            } else {
+                root.removeAttribute('data-theme-variant');
+            }
+
+            root.style.colorScheme = config.scheme;
+            root.style.setProperty('--boot-bg', config.bg);
+            root.style.setProperty('--boot-card', config.card);
+            root.style.setProperty('--boot-accent', config.accent);
+            root.style.setProperty('--boot-title', config.title);
+            root.style.setProperty('--boot-subtitle', config.subtitle);
+
+            if (meta) meta.setAttribute('content', config.meta);
+            window.__DASHBOARD_BOOT_THEME__ = selected;
+        })();
+    </script>
     <link
         rel="preload"
         as="image"
@@ -18,7 +99,7 @@
         html.boot-pending body {
             margin: 0;
             min-height: 100%;
-            background: #031821 !important;
+            background: var(--boot-bg, #031821) !important;
         }
 
         html.boot-pending {
@@ -30475,6 +30556,93 @@ html.theme-fallback-transition.theme-fallback-in :is(.sidebar, .main-content) {
 }
 </style>
 
+
+
+<style id="venom-boot-and-loader-v13">
+    /* First frame and loader must already match the saved theme. */
+    html.boot-pending,
+    html.boot-pending body {
+        background-color: var(--boot-bg, #031821) !important;
+    }
+
+    html.boot-pending .page-loader {
+        background-color: var(--boot-bg, #031821) !important;
+    }
+
+    html.boot-pending .page-loader-card {
+        background-color: var(--boot-card, rgba(4,35,45,.92)) !important;
+    }
+
+    /* Venom Green loader identity. */
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader {
+        background:
+            radial-gradient(circle at 50% 38%, rgba(68,214,44,.105), transparent 27%),
+            linear-gradient(180deg, #070707 0%, #0a0a0a 100%) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-card {
+        background: linear-gradient(180deg, #121212 0%, #0e0e0e 100%) !important;
+        border: 1px solid rgba(68,214,44,.22) !important;
+        border-top: 2px solid #44d62c !important;
+        box-shadow:
+            0 30px 88px rgba(0,0,0,.66),
+            0 0 34px rgba(68,214,44,.055),
+            inset 0 1px 0 rgba(255,255,255,.025) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-orbit > span {
+        border-color: rgba(68,214,44,.20) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-orbit > span:nth-child(2) {
+        border-color: rgba(68,214,44,.40) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-orbit > span:nth-child(3) {
+        border-color: rgba(103,232,83,.56) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-orbit > span::after {
+        background: #44d62c !important;
+        box-shadow:
+            0 0 8px rgba(68,214,44,.86),
+            0 0 18px rgba(68,214,44,.34) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-core {
+        background: linear-gradient(135deg, #78f366, #44d62c) !important;
+        border: 0 !important;
+        box-shadow:
+            0 0 12px rgba(68,214,44,.76),
+            0 0 27px rgba(68,214,44,.28) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-title {
+        color: #67e853 !important;
+        text-shadow: 0 0 16px rgba(68,214,44,.12) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-subtitle {
+        color: #91aa8d !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-progress {
+        background: #202220 !important;
+        border: 1px solid rgba(68,214,44,.08) !important;
+    }
+
+    html[data-theme="dark"][data-theme-variant="venom"] .page-loader-progress span {
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            #2cae1c 24%,
+            #44d62c 50%,
+            #8af276 72%,
+            transparent 100%
+        ) !important;
+        box-shadow: 0 0 12px rgba(68,214,44,.34) !important;
+    }
+</style>
 
 </head>
 
