@@ -30358,12 +30358,15 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-users .employee-users-t
 
 
 
-<style id="theme-transition-smooth-all-v9">
+
+<style id="theme-transition-smooth-all-v10">
 /* ============================================================
-   V9 — Smooth theme transition for all themes
-   Subtle top-level fade + lightweight surface color blending.
-   No full-screen veil, no View Transition snapshot, and no
-   per-cell animation on long tables.
+   V10 — Smooth theme transition restored for all themes.
+   Uses the browser root View Transition again (the original
+   smooth behavior), while synchronizing color-scheme inside the
+   new snapshot to prevent a late blink when returning to DDT
+   Original. Existing per-element theme transitions are disabled
+   only during the snapshot, avoiding double animation.
    ============================================================ */
 #themeSwitchOverlay {
     display: none !important;
@@ -30372,112 +30375,86 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-users .employee-users-t
     pointer-events: none !important;
 }
 
-html.theme-switching .sidebar,
-html.theme-switching .main-content {
-    transition: opacity 95ms cubic-bezier(.4, 0, .2, 1) !important;
-    will-change: opacity;
+::view-transition-group(root),
+::view-transition-image-pair(root) {
+    animation-duration: 520ms;
+    animation-timing-function: cubic-bezier(.22, .61, .36, 1);
 }
 
-html.theme-switching.theme-switch-out .sidebar,
-html.theme-switching.theme-switch-out .main-content {
-    opacity: .94;
+::view-transition-image-pair(root) {
+    isolation: auto;
 }
 
-html.theme-switching.theme-switch-in .sidebar,
-html.theme-switching.theme-switch-in .main-content {
-    opacity: 1;
-    transition-duration: 190ms !important;
-    transition-timing-function: cubic-bezier(.22, .61, .36, 1) !important;
+::view-transition-old(root) {
+    z-index: 1;
+    mix-blend-mode: normal;
+    animation: ddtThemeV10Old 520ms cubic-bezier(.22, .61, .36, 1) both !important;
 }
 
-html.theme-switching,
-html.theme-switching body,
-html.theme-switching :is(
-    .sidebar,
-    .topbar,
-    .footer,
-    .welcome-banner,
-    .ticker-container,
-    .clock-container,
-    .theme-picker-button,
-    .header-profile-button,
-    .theme-menu,
-    .profile-dropdown,
-    .card,
-    .table-wrap,
-    .employee-priority-card,
-    .employee-users-card,
-    .shift-log-container,
-    .history-shift-container,
-    .settings-card .section,
-    .permission-matrix-panel,
-    .settings-existing-panel,
-    .custom-filter-menu,
-    .modal-content,
-    .premium-modal,
-    .sidebar-footer,
-    .sidebar-user-card
-) {
-    transition:
-        background-color 230ms cubic-bezier(.22, .61, .36, 1),
-        border-color 230ms cubic-bezier(.22, .61, .36, 1),
-        color 180ms ease,
-        box-shadow 230ms cubic-bezier(.22, .61, .36, 1) !important;
+::view-transition-new(root) {
+    z-index: 2;
+    mix-blend-mode: normal;
+    animation: ddtThemeV10New 520ms cubic-bezier(.22, .61, .36, 1) both !important;
 }
 
-html.theme-switching :is(
-    input,
-    select,
-    textarea,
-    button,
-    .badge,
-    .role-tag,
-    .status-badge,
-    .theme-option,
-    .menu-item
-) {
-    transition:
-        background-color 180ms ease,
-        border-color 180ms ease,
-        color 160ms ease,
-        box-shadow 180ms ease !important;
+@keyframes ddtThemeV10Old {
+    0%   { opacity: 1; filter: brightness(1) saturate(1); }
+    42%  { opacity: .94; filter: brightness(.985) saturate(.98); }
+    100% { opacity: 0; filter: brightness(.965) saturate(.96); }
 }
 
-/* Keep large/long data grids inexpensive during the switch. Their parent
-   surface fades subtly, masking the instantaneous cell palette update. */
-html.theme-switching :is(
-    table,
-    thead,
-    tbody,
-    tr,
-    th,
-    td,
-    .employee-inline-cell,
-    .employee-users-table *,
-    #tab-users .employee-users-table *
-) {
+@keyframes ddtThemeV10New {
+    0%   { opacity: 0; filter: brightness(1.015) saturate(1.01); }
+    18%  { opacity: .08; }
+    100% { opacity: 1; filter: brightness(1) saturate(1); }
+}
+
+/* Do not let old accumulated component transitions compete with the
+   root snapshot. This is the main fix for light <-> dark stuttering. */
+html.theme-view-transition body,
+html.theme-view-transition body *,
+html.theme-view-transition body *::before,
+html.theme-view-transition body *::after {
     transition: none !important;
 }
 
-/* Prevent hover transforms from competing with the short theme animation. */
-html.theme-switching :is(.card, .menu-item, button, .theme-option) {
+/* Freeze decorative animations for half a second so old/new snapshots
+   stay aligned, especially around the footer and sidebar logo line. */
+html.theme-view-transition body *,
+html.theme-view-transition body *::before,
+html.theme-view-transition body *::after {
+    animation-play-state: paused !important;
+}
+
+/* Neutralize V7/V9 opacity rules if they remain earlier in the file. */
+html.theme-view-transition :is(.sidebar, .main-content, .topbar, .footer-premium) {
+    opacity: 1 !important;
     transform: none !important;
+    will-change: auto !important;
+}
+
+/* Fallback for browsers without document.startViewTransition(). */
+html.theme-fallback-transition :is(.sidebar, .main-content) {
+    transition: opacity 170ms cubic-bezier(.4, 0, .2, 1) !important;
+}
+
+html.theme-fallback-transition.theme-fallback-out :is(.sidebar, .main-content) {
+    opacity: .90;
+}
+
+html.theme-fallback-transition.theme-fallback-in :is(.sidebar, .main-content) {
+    opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    html.theme-switching .sidebar,
-    html.theme-switching .main-content,
-    html.theme-switching body,
-    html.theme-switching :is(.topbar, .footer, .card, .table-wrap) {
-        transition-duration: 1ms !important;
-    }
-
-    html.theme-switching.theme-switch-out .sidebar,
-    html.theme-switching.theme-switch-out .main-content {
-        opacity: 1 !important;
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation-duration: 120ms !important;
+        filter: none !important;
     }
 }
 </style>
+
 
 </head>
 
@@ -32071,11 +32048,13 @@ html.theme-switching :is(.card, .menu-item, button, .theme-option) {
         const DASHBOARD_THEMES = {
             light: {
                 label: 'DDT Original',
-                swatchClass: 'swatch-original'
+                swatchClass: 'swatch-original',
+                themeColor: '#f0f4f8'
             },
             dark: {
                 label: 'Cyber Dark',
-                swatchClass: 'swatch-dark'
+                swatchClass: 'swatch-dark',
+                themeColor: '#0d1117'
             },
             venom: {
                 label: 'Venom Green',
@@ -32084,23 +32063,28 @@ html.theme-switching :is(.card, .menu-item, button, .theme-option) {
             },
             pink: {
                 label: 'Pastel Pink',
-                swatchClass: 'swatch-pink'
+                swatchClass: 'swatch-pink',
+                themeColor: '#fff4f8'
             },
             emerald: {
                 label: 'Emerald',
-                swatchClass: 'swatch-emerald'
+                swatchClass: 'swatch-emerald',
+                themeColor: '#f1faf6'
             },
             purple: {
                 label: 'Royal Purple',
-                swatchClass: 'swatch-purple'
+                swatchClass: 'swatch-purple',
+                themeColor: '#f7f4ff'
             },
             ocean: {
                 label: 'Ocean Blue',
-                swatchClass: 'swatch-ocean'
+                swatchClass: 'swatch-ocean',
+                themeColor: '#edf8fc'
             },
             'rose-gold': {
                 label: 'Rose Gold',
-                swatchClass: 'swatch-rose-gold'
+                swatchClass: 'swatch-rose-gold',
+                themeColor: '#fff6f3'
             }
         };
 
@@ -32153,9 +32137,23 @@ html.theme-switching :is(.card, .menu-item, button, .theme-option) {
             updateThemeUI(selectedTheme);
         }
 
-        let themeSwitchSequence = 0;
-        let themeSwitchApplyTimer = null;
-        let themeSwitchCleanupTimer = null;
+        let activeThemeTransition = null;
+        let queuedThemeAfterTransition = null;
+        let fallbackThemeTimer = null;
+
+        function cleanupThemeTransitionClasses() {
+            const root = document.documentElement;
+            root.classList.remove(
+                'theme-switching',
+                'theme-switch-out',
+                'theme-switch-in',
+                'theme-view-transition',
+                'theme-fallback-transition',
+                'theme-fallback-out',
+                'theme-fallback-in'
+            );
+            root.removeAttribute('data-theme-transition-target');
+        }
 
         function setTheme(theme, event) {
             if (event) {
@@ -32173,61 +32171,84 @@ html.theme-switching :is(.card, .menu-item, button, .theme-option) {
 
             closeThemeMenu();
 
-            if (currentTheme === selectedTheme) {
+            if (currentTheme === selectedTheme && !activeThemeTransition) {
                 updateThemeUI(selectedTheme);
                 return;
             }
 
-            const sequence = ++themeSwitchSequence;
-            const reduceMotion = window.matchMedia &&
-                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-            window.clearTimeout(themeSwitchApplyTimer);
-            window.clearTimeout(themeSwitchCleanupTimer);
-
-            root.classList.remove(
-                'theme-switching',
-                'theme-switch-out',
-                'theme-switch-in',
-                'theme-view-transition'
-            );
-            root.removeAttribute('data-theme-transition-target');
-
-            if (reduceMotion) {
-                applyThemeAttributes(selectedTheme, { deferColorScheme: false });
+            /* If the user chooses another theme while a snapshot transition is
+               running, apply the newest choice immediately after it finishes. */
+            if (activeThemeTransition) {
+                queuedThemeAfterTransition = selectedTheme;
                 return;
             }
 
-            root.setAttribute('data-theme-transition-target', selectedTheme);
-            root.classList.add('theme-switching', 'theme-switch-out');
+            const reduceMotion = window.matchMedia &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            // Commit the starting opacity before the theme palette changes.
+            window.clearTimeout(fallbackThemeTimer);
+            cleanupThemeTransitionClasses();
+            root.setAttribute('data-theme-transition-target', selectedTheme);
+
+            if (reduceMotion) {
+                applyThemeAttributes(selectedTheme, { deferColorScheme: false });
+                cleanupThemeTransitionClasses();
+                return;
+            }
+
+            const applyCompleteTheme = () => {
+                /* color-scheme is intentionally committed inside the transition
+                   callback. This makes native controls, scrollbar colors, and
+                   DDT Original's light repaint part of the NEW snapshot instead
+                   of repainting after the animation and causing a blink. */
+                applyThemeAttributes(selectedTheme, { deferColorScheme: false });
+            };
+
+            if (typeof document.startViewTransition === 'function') {
+                root.classList.add('theme-view-transition');
+
+                let transition;
+                try {
+                    transition = document.startViewTransition(applyCompleteTheme);
+                } catch (error) {
+                    root.classList.remove('theme-view-transition');
+                    applyCompleteTheme();
+                    cleanupThemeTransitionClasses();
+                    return;
+                }
+
+                activeThemeTransition = transition;
+
+                transition.finished
+                    .catch(() => {})
+                    .finally(() => {
+                        activeThemeTransition = null;
+                        cleanupThemeTransitionClasses();
+
+                        const queuedTheme = queuedThemeAfterTransition;
+                        queuedThemeAfterTransition = null;
+                        if (queuedTheme && queuedTheme !== selectedTheme) {
+                            requestAnimationFrame(() => setTheme(queuedTheme));
+                        }
+                    });
+
+                return;
+            }
+
+            /* Lightweight fallback. Chromium/Edge normally use the branch
+               above; this keeps older browsers usable without a hard flash. */
+            root.classList.add('theme-fallback-transition', 'theme-fallback-out');
             void root.offsetWidth;
 
-            themeSwitchApplyTimer = window.setTimeout(() => {
-                if (sequence !== themeSwitchSequence) return;
+            fallbackThemeTimer = window.setTimeout(() => {
+                applyCompleteTheme();
+                root.classList.remove('theme-fallback-out');
+                root.classList.add('theme-fallback-in');
 
-                applyThemeAttributes(selectedTheme, { deferColorScheme: false });
-
-                requestAnimationFrame(() => {
-                    if (sequence !== themeSwitchSequence) return;
-
-                    root.classList.remove('theme-switch-out');
-                    root.classList.add('theme-switch-in');
-
-                    themeSwitchCleanupTimer = window.setTimeout(() => {
-                        if (sequence !== themeSwitchSequence) return;
-
-                        root.classList.remove(
-                            'theme-switching',
-                            'theme-switch-out',
-                            'theme-switch-in',
-                            'theme-view-transition'
-                        );
-                        root.removeAttribute('data-theme-transition-target');
-                    }, 250);
-                });
-            }, 90);
+                fallbackThemeTimer = window.setTimeout(() => {
+                    cleanupThemeTransitionClasses();
+                }, 190);
+            }, 150);
         }
 
         // Dipertahankan untuk kompatibilitas jika masih dipanggil dari kode lama.
