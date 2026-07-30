@@ -1278,6 +1278,147 @@
             line-height: 13px !important;
         }
 
+
+
+        /* ============================================================
+           Dashboard Izin v3.0.28 Preview
+           Universal employee monitoring, balanced permission panel,
+           compact dashboard identity typography
+           ============================================================ */
+
+        /* Permission Matrix fills the Settings workspace vertically so
+           its lower edge aligns cleanly with the content/footer area. */
+        #tab-settings .settings-workspace.settings-workspace-final {
+            align-items: stretch !important;
+        }
+
+        #tab-settings .permission-matrix-panel {
+            position: relative !important;
+            top: auto !important;
+            align-self: stretch !important;
+            height: auto !important;
+            min-height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        #tab-settings .permission-matrix-heading,
+        #tab-settings .permission-matrix-notice,
+        #tab-settings .permission-matrix-footer {
+            flex: 0 0 auto !important;
+        }
+
+        #tab-settings .permission-matrix-scroll {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            display: flex !important;
+            align-items: flex-start !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+        }
+
+        #tab-settings .permission-matrix-table {
+            flex: 0 0 auto !important;
+            align-self: flex-start !important;
+        }
+
+        #tab-settings .permission-matrix-footer {
+            margin-top: auto !important;
+        }
+
+        /* Checkbox is slightly larger than v3.0.27, while rows stay compact. */
+        #tab-settings .permission-matrix-table thead th {
+            height: 29px !important;
+            min-height: 29px !important;
+        }
+
+        #tab-settings .permission-feature-header-label {
+            height: 28px !important;
+            min-height: 28px !important;
+        }
+
+        #tab-settings .permission-matrix-table td,
+        #tab-settings .permission-matrix-table tbody tr:not(.permission-group-row) td {
+            height: 22px !important;
+            min-height: 22px !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        #tab-settings .permission-feature-content {
+            height: 22px !important;
+            min-height: 22px !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        #tab-settings .permission-status-cell {
+            width: 17px !important;
+            height: 17px !important;
+            min-width: 17px !important;
+            min-height: 17px !important;
+            border-radius: 4.5px !important;
+        }
+
+        #tab-settings .permission-cell-icon,
+        #tab-settings .permission-cell-main-icon {
+            width: 8.5px !important;
+            height: 8.5px !important;
+        }
+
+        #tab-settings .permission-cell-lock {
+            right: -1.5px !important;
+            bottom: -1.5px !important;
+            width: 6.5px !important;
+            height: 6.5px !important;
+        }
+
+        #tab-settings .permission-group-row td {
+            height: 12px !important;
+            min-height: 12px !important;
+            line-height: 12px !important;
+            padding: 0 !important;
+        }
+
+        #tab-settings .permission-group-label {
+            height: 12px !important;
+            min-height: 12px !important;
+            line-height: 12px !important;
+            font-size: 6.3px !important;
+        }
+
+        /* Dashboard identity: restore the earlier compact name scale and
+           remove the excessive vertical gap between greeting and name. */
+        .welcome-banner .welcome-left .text {
+            gap: 1px !important;
+            align-content: center !important;
+        }
+
+        .welcome-banner .welcome-left .text .greeting {
+            margin: 0 !important;
+            font-size: 11px !important;
+            line-height: 1.05 !important;
+        }
+
+        .welcome-banner .welcome-identity-row {
+            margin: 0 !important;
+            gap: 9px !important;
+            line-height: 1 !important;
+        }
+
+        .welcome-banner .welcome-identity-row .username,
+        .welcome-banner .welcome-left .text .username {
+            margin: 0 !important;
+            font-size: 16px !important;
+            line-height: 1.08 !important;
+            font-weight: 760 !important;
+        }
+
+        .welcome-banner .welcome-role-divider {
+            height: 17px !important;
+        }
+
 </style>
     <title>Dashboard Izin - Real-time</title>
     <!-- UI: 5 desktop themes; application functions preserved -->
@@ -37461,7 +37602,6 @@
             { key: 'employee_passport_view', label: 'Lihat Nomor Passport', group: 'Data Kepegawaian', description: 'Melihat nomor passport lengkap pada tabel Users dan form Edit.' },
             { key: 'employee_data_edit', label: 'Edit Data Kepegawaian', group: 'Data Kepegawaian', description: 'Mengubah passport, visa, JOIN DDT, JOIN SMB, dan data kepegawaian lainnya.' },
             { key: 'employee_training_edit', label: 'Ubah Status Training', group: 'Data Kepegawaian', description: 'Mengubah status, jadwal review, dan catatan training.' },
-            { key: 'employee_monitoring_view', label: 'Monitoring Karyawan', group: 'Data Kepegawaian', description: 'Melihat notifikasi passport, visa, training, dan rank di Dashboard.' },
             { key: 'employee_audit_export', label: 'Export Audit Kepegawaian', group: 'Data Kepegawaian', description: 'Mengunduh audit perubahan data kepegawaian dalam format CSV.' }
         ];
 
@@ -37561,6 +37701,10 @@
         };
 
         function employeeCan(permissionKey) {
+            // Monitoring Karyawan di Dashboard selalu dapat dilihat semua role.
+            // Kunci lama boleh tetap tersimpan di database untuk kompatibilitas,
+            // tetapi tidak lagi digunakan atau ditampilkan di Permission Matrix.
+            if (permissionKey === 'employee_monitoring_view') return true;
             if (currentUserRole === 'leader' || currentUserRole === 'csline') return true;
             return Boolean(dashboardPermissionMatrix?.[currentUserRole]?.[permissionKey]);
         }
