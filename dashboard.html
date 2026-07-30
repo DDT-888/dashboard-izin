@@ -24339,6 +24339,90 @@
             display: none !important;
         }
 
+
+
+        /* ============================================================
+           Dashboard Izin v3.0.33 Preview
+           Priority polish + active filter states
+           ============================================================ */
+
+        #tab-dashboard .employee-priority-heading strong {
+            font-weight: 720 !important;
+        }
+
+        #tab-dashboard .employee-priority-card.passport .employee-priority-table th,
+        #tab-dashboard .employee-priority-card.visa .employee-priority-table th,
+        #tab-dashboard .employee-priority-card.training .employee-priority-table th,
+        #tab-dashboard .employee-priority-table th {
+            color: color-mix(in srgb, var(--accent-strong) 70%, var(--text-primary)) !important;
+            background: linear-gradient(180deg, rgba(var(--accent-rgb), .14), rgba(var(--accent-rgb), .075)) !important;
+            border-bottom-color: rgba(var(--accent-rgb), .18) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 0 1px 0 rgba(var(--accent-rgb), .04) !important;
+        }
+
+        [data-theme="dark"] #tab-dashboard .employee-priority-card.passport .employee-priority-table th,
+        [data-theme="dark"] #tab-dashboard .employee-priority-card.visa .employee-priority-table th,
+        [data-theme="dark"] #tab-dashboard .employee-priority-card.training .employee-priority-table th,
+        [data-theme="dark"] #tab-dashboard .employee-priority-table th {
+            color: color-mix(in srgb, var(--accent) 72%, #fff) !important;
+            background: linear-gradient(180deg, rgba(var(--accent-rgb), .20), rgba(var(--accent-rgb), .11)) !important;
+            border-bottom-color: rgba(var(--accent-rgb), .24) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.05) !important;
+        }
+
+        #tab-dashboard .employee-priority-count {
+            min-width: 27px !important;
+            height: 20px !important;
+            padding: 0 7px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 2px !important;
+            border-radius: 999px !important;
+            color: color-mix(in srgb, var(--accent-strong) 76%, var(--text-primary)) !important;
+            background: rgba(var(--accent-rgb), .095) !important;
+            border: 1px solid rgba(var(--accent-rgb), .17) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.42) !important;
+            font-size: 7.8px !important;
+            font-weight: 720 !important;
+            line-height: 1 !important;
+            font-variant-numeric: tabular-nums !important;
+        }
+
+        #tab-dashboard .employee-priority-count > span {
+            font-size: 7px !important;
+            font-weight: 650 !important;
+            opacity: .62 !important;
+        }
+
+        #tab-users .employee-custom-filter.has-active-filter .employee-custom-filter-trigger,
+        .unified-custom-filter.has-active-filter .unified-custom-filter-trigger {
+            color: var(--accent-dark) !important;
+            border-color: color-mix(in srgb, var(--accent) 72%, var(--border-light)) !important;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 72%, var(--bg-primary)), color-mix(in srgb, var(--accent-soft) 46%, var(--bg-primary))) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 0 0 2px color-mix(in srgb, var(--accent-soft) 38%, transparent), 0 4px 10px rgba(var(--accent-rgb), .08) !important;
+            font-weight: 700 !important;
+        }
+
+        #tab-users .employee-custom-filter.has-active-filter .employee-custom-filter-leading,
+        .unified-custom-filter.has-active-filter .unified-custom-filter-leading {
+            color: #fff !important;
+            background: var(--accent-strong) !important;
+            border-color: var(--accent-strong) !important;
+            box-shadow: 0 4px 9px rgba(var(--accent-rgb), .18) !important;
+        }
+
+        #tab-users .employee-custom-filter.has-active-filter .employee-custom-filter-chevron,
+        .unified-custom-filter.has-active-filter .unified-custom-filter-chevron {
+            stroke: var(--accent-dark) !important;
+        }
+
+        #tab-users .employee-custom-filter.has-active-filter.open .employee-custom-filter-trigger,
+        .unified-custom-filter.has-active-filter.open .unified-custom-filter-trigger {
+            border-color: var(--accent-strong) !important;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-soft) 58%, transparent), inset 0 1px 0 rgba(255,255,255,.72) !important;
+        }
+
 </style>
 </head>
 
@@ -38343,7 +38427,7 @@
 
             return `
                 <div
-                    class="employee-custom-filter ${hasHints ? 'employee-custom-filter-wide' : ''}"
+                    class="employee-custom-filter ${hasHints ? 'employee-custom-filter-wide' : ''} ${currentValue !== 'all' ? 'has-active-filter' : ''}"
                     data-filter-key="${employeeEscape(key)}"
                 >
                     <button
@@ -40290,11 +40374,11 @@
                 ).join('');
             };
 
-            const summaryChip = (total, klass) => `
-                <span class="employee-priority-count ${klass}">
-                    ${total}
+            const summaryChip = (total, klass) => total > 0 ? `
+                <span class="employee-priority-count ${klass}" aria-label="${total} data">
+                    <span aria-hidden="true">#</span>${total}
                 </span>
-            `;
+            ` : '';
 
             panel.innerHTML = `
                 <article
@@ -40611,6 +40695,13 @@
             if (!trigger || !valueNode || !menu) return;
 
             const selected = select.options[select.selectedIndex] || select.options[0];
+            const defaultOption = select.options[0];
+            const hasActiveFilter = Boolean(
+                selected && defaultOption &&
+                selected !== defaultOption &&
+                String(selected.value ?? '').trim() !== ''
+            );
+            wrapper.classList.toggle('has-active-filter', hasActiveFilter);
             valueNode.textContent = unifiedFilterDisplayText(selected?.textContent || 'Filter');
             trigger.disabled = Boolean(select.disabled);
             trigger.setAttribute('aria-label', select.getAttribute('aria-label') || selected?.textContent || 'Filter');
