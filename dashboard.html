@@ -1673,6 +1673,45 @@
             overflow: visible !important;
         }
 
+
+
+        /* ============================================================
+           Dashboard Izin v3.0.42 Production Hotfix
+           Monitoring save disabled visual parity
+           ============================================================ */
+        #tab-settings .employee-settings-save {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            color: #fff !important;
+            background: var(--accent-strong) !important;
+            border: 1px solid var(--accent-strong) !important;
+            box-shadow: none !important;
+        }
+
+        #tab-settings .employee-settings-save .button-icon,
+        #tab-settings .employee-settings-save .button-icon svg {
+            width: 12px !important;
+            height: 12px !important;
+            flex-basis: 12px !important;
+        }
+
+        #tab-settings .employee-settings-save:disabled,
+        #tab-settings .employee-settings-save.settings-primary-action:disabled,
+        #tab-settings .employee-settings-save:disabled:hover,
+        #tab-settings .employee-settings-save.settings-primary-action:disabled:hover {
+            color: #fff !important;
+            background: var(--accent-strong) !important;
+            border-color: var(--accent-strong) !important;
+            box-shadow: none !important;
+            opacity: .48 !important;
+            cursor: not-allowed !important;
+            filter: none !important;
+            transform: none !important;
+            pointer-events: none !important;
+        }
+
 </style>
     <title>Dashboard Izin - Real-time</title>
     <!-- UI: 5 desktop themes; application functions preserved -->
@@ -40860,7 +40899,7 @@
         function ensureEmployeeSettingsPanel() {
             const host = document.querySelector('#tab-settings .settings-access-content');
             if (!host || document.getElementById('employeeMonitoringSettingsPanel')) return;
-            host.insertAdjacentHTML('beforeend', `<section class="employee-settings-panel" id="employeeMonitoringSettingsPanel"><div class="employee-settings-heading"><div><strong>Monitoring Dokumen & Training</strong><span>Tentukan batas notifikasi passport, visa, dan review training.</span></div></div><div class="employee-settings-grid"><div class="employee-settings-field"><label>Peringatan Passport</label><div class="number-unit"><input id="employeePassportAlertMonths" type="number" min="0" max="60" value="10"/><span>bulan</span></div></div><div class="employee-settings-field"><label>Peringatan Visa</label><div class="number-unit"><input id="employeeVisaAlertDays" type="number" min="0" max="365" value="45"/><span>hari</span></div></div><div class="employee-settings-field"><label>Review Training</label><div class="number-unit"><input id="employeeTrainingAlertMonths" type="number" min="1" max="24" value="3"/><span>bulan</span></div></div><div class="employee-settings-action"><button class="employee-settings-save settings-primary-action" type="button" onclick="saveEmployeeMonitoringSettings()">Simpan Monitoring</button></div></div></section>`);
+            host.insertAdjacentHTML('beforeend', `<section class="employee-settings-panel" id="employeeMonitoringSettingsPanel"><div class="employee-settings-heading"><div><strong>Monitoring Dokumen & Training</strong><span>Tentukan batas notifikasi passport, visa, dan review training.</span></div></div><div class="employee-settings-grid"><div class="employee-settings-field"><label>Peringatan Passport</label><div class="number-unit"><input id="employeePassportAlertMonths" type="number" min="0" max="60" value="10"/><span>bulan</span></div></div><div class="employee-settings-field"><label>Peringatan Visa</label><div class="number-unit"><input id="employeeVisaAlertDays" type="number" min="0" max="365" value="45"/><span>hari</span></div></div><div class="employee-settings-field"><label>Review Training</label><div class="number-unit"><input id="employeeTrainingAlertMonths" type="number" min="1" max="24" value="3"/><span>bulan</span></div></div><div class="employee-settings-action"><button class="btn-settings employee-settings-save settings-primary-action" type="button" onclick="saveEmployeeMonitoringSettings()"><span class="button-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h14l2 2v14H4Z"></path><path d="M8 4v6h8V4"></path><path d="M8 20v-6h8v6"></path></svg></span><span>Simpan Monitoring</span></button></div></div></section>`);
             updateEmployeeSettingsUI();
             const canEdit = userPermissions.canEditSettings;
             host.querySelectorAll('#employeeMonitoringSettingsPanel input, #employeeMonitoringSettingsPanel button').forEach(element => element.disabled = !canEdit);
