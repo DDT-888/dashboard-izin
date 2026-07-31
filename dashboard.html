@@ -35378,6 +35378,16 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 }
 </style>
 
+
+<style id="unified-toast-permission-v37">
+.shift-toast,
+#shiftToast {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -39044,28 +39054,96 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
             updateQuickStats();
         }
 
-        function removeVoucher(nama) {
+        async function removeVoucher(nama) {
             const formattedNama = formatName(nama);
-            if (voucherData[formattedNama] && voucherData[formattedNama] > 0) {
-                voucherData[formattedNama]--;
+            const previousValue = getVoucherCount(formattedNama);
 
-                if (!TEST_MODE) {
-                    supabaseDashboard
+            if (previousValue <= 0) {
+                return { success: false, jumlah: previousValue };
+            }
+
+            const nextValue = Math.max(0, previousValue - 1);
+
+            if (TEST_MODE) {
+                voucherData[formattedNama] = nextValue;
+                updateSidebarBadge();
+                updateQuickStats();
+                return { success: true, jumlah: nextValue };
+            }
+
+            try {
+                let persistedValue = null;
+
+                const rpcResult = await supabaseDashboard.rpc(
+                    'manage_voucher_by_permission',
+                    {
+                        p_nama: formattedNama,
+                        p_delta: -1
+                    }
+                );
+
+                if (!rpcResult.error) {
+                    const rawValue = Array.isArray(rpcResult.data)
+                        ? rpcResult.data[0]
+                        : rpcResult.data;
+                    const parsedValue = Number(
+                        rawValue?.jumlah ?? rawValue?.manage_voucher_by_permission ?? rawValue
+                    );
+                    if (Number.isFinite(parsedValue)) {
+                        persistedValue = Math.max(0, parsedValue);
+                    }
+                } else {
+                    const missingRpc =
+                        rpcResult.error.code === 'PGRST202' ||
+                        rpcResult.error.code === '42883' ||
+                        (/manage_voucher_by_permission/i.test(rpcResult.error.message || '') &&
+                         /not found|does not exist|schema cache/i.test(rpcResult.error.message || ''));
+
+                    if (!missingRpc) {
+                        throw rpcResult.error;
+                    }
+
+                    const { data, error } = await supabaseDashboard
                         .from('vouchers')
                         .upsert({
                             nama: formattedNama,
-                            jumlah: voucherData[formattedNama]
+                            jumlah: nextValue
                         }, { onConflict: 'nama' })
-                        .then(({ error }) => {
-                            if (error) console.error('❌ Gagal update voucher:', error);
-                        });
+                        .select('jumlah')
+                        .maybeSingle();
+
+                    if (error) throw error;
+                    persistedValue = Number(data?.jumlah);
                 }
 
+                if (!Number.isFinite(persistedValue)) {
+                    const { data: verifyRow, error: verifyError } = await supabaseDashboard
+                        .from('vouchers')
+                        .select('jumlah')
+                        .eq('nama', formattedNama)
+                        .maybeSingle();
+
+                    if (verifyError) throw verifyError;
+                    persistedValue = Number(verifyRow?.jumlah);
+                }
+
+                if (!Number.isFinite(persistedValue) || persistedValue !== nextValue) {
+                    throw new Error(
+                        'Perubahan voucher belum tersimpan. Terapkan SQL Permission Voucher V37 di Supabase.'
+                    );
+                }
+
+                voucherData[formattedNama] = persistedValue;
                 updateSidebarBadge();
                 updateQuickStats();
-                return true;
+                return { success: true, jumlah: persistedValue };
+            } catch (error) {
+                voucherData[formattedNama] = previousValue;
+                updateSidebarBadge();
+                updateQuickStats();
+                console.error('❌ Gagal menyimpan pengurangan voucher:', error);
+                throw error;
             }
-            return false;
         }
 
         function getMonitoringIzinList() {
@@ -44260,7 +44338,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 
             const infoText = userPermissions.canManageVoucher ?
                 'Kurangi voucher setelah voucher digunakan oleh anggota.' :
-                'Mode lihat aktif. Hanya Leader dan CS Line yang dapat mengurangi voucher.';
+                'Mode lihat aktif. Permission Kelola Voucher belum diberikan untuk role ini.';
 
             container.innerHTML = `
                 <div class="voucher-page-heading">
@@ -44727,7 +44805,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         // ============================================================
         window.tambahUser = async function() {
             if (!userPermissions.canManage) {
-                showToast('Hanya Leader & CS Line yang dapat menambah user!', 'error');
+                showToast('Akun Anda belum memiliki permission Kelola User.', 'error');
                 return;
             }
 
@@ -44806,7 +44884,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 
         window.hapusUser = async function(userId, userEmail) {
             if (!userPermissions.canManage) {
-                showToast('Hanya Leader & CS Line yang dapat menghapus user!', 'error');
+                showToast('Akun Anda belum memiliki permission Kelola User.', 'error');
                 return;
             }
 
@@ -44881,8 +44959,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         };
 
         window.kurangiVoucher = async function(nama) {
-            if (!userPermissions.canManageVoucher) {
-                showToast('Hanya Leader & CS Line yang dapat mengurangi voucher!', 'error');
+            if (!getPermission(currentUserRole, 'voucher_manage')) {
+                showToast('Akun Anda belum memiliki permission Kelola Voucher.', 'error');
                 return;
             }
 
@@ -44912,21 +44990,36 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                 return;
             }
 
-            if (removeVoucher(formattedNama)) {
-                showToast(`1 voucher ${formattedNama} berhasil dikurangi! Sisa: ${getVoucherCount(formattedNama)}`,
-                    'success');
+            try {
+                const result = await removeVoucher(formattedNama);
+
+                if (!result.success) {
+                    showToast('Gagal mengurangi voucher.', 'error');
+                    return;
+                }
+
+                showToast(
+                    `1 voucher ${formattedNama} berhasil dikurangi. Sisa: ${result.jumlah}`,
+                    'success'
+                );
                 renderVoucherPage();
                 renderDashboardTable();
                 updateSidebarBadge();
                 updateQuickStats();
-            } else {
-                showToast('Gagal mengurangi voucher!', 'error');
+            } catch (error) {
+                showToast(
+                    error?.message || 'Pengurangan voucher gagal disimpan ke database.',
+                    'error',
+                    5000
+                );
+                renderVoucherPage();
+                renderDashboardTable();
             }
         };
 
         window.hapusSemuaHistory = async function() {
             if (!canDeleteHistory()) {
-                showToast('Hanya Leader dan CS Line yang dapat menghapus History Izin.', 'error');
+                showToast('Akun Anda belum memiliki permission Hapus History.', 'error');
                 return;
             }
 
@@ -44991,7 +45084,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         // ============================================================
         window.saveIPWhitelist = async function() {
             if (!userPermissions.canManageIP) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('Akun Anda belum memiliki permission Edit Settings.', 'error');
                 return;
             }
 
@@ -45046,7 +45139,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         window.saveLimits = async function() {
             if (!userPermissions.canManageLimits) {
                 showToast(
-                    'Hanya Leader & CS Line yang dapat mengubah batas izin!',
+                    'Akun Anda belum memiliki permission Edit Settings.',
                     'error'
                 );
                 return;
@@ -45174,7 +45267,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         window.saveDurationSetting = async function() {
             if (!userPermissions.canManageLimits) {
                 showToast(
-                    'Hanya Leader & CS Line yang dapat mengubah pengaturan!',
+                    'Akun Anda belum memiliki permission Edit Settings.',
                     'error'
                 );
                 return;
@@ -45223,7 +45316,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         window.saveLimitSettings = async function() {
             if (!userPermissions.canManageLimits) {
                 showToast(
-                    'Hanya Leader & CS Line yang dapat mengubah pengaturan!',
+                    'Akun Anda belum memiliki permission Edit Settings.',
                     'error'
                 );
                 return;
@@ -45483,7 +45576,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 
         window.saveTickerSettings = async function() {
             if (!userPermissions.canEditSettings) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('Akun Anda belum memiliki permission Edit Settings.', 'error');
                 return;
             }
 
@@ -45566,7 +45659,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 
         window.resetTickerSettings = async function() {
             if (!userPermissions.canEditSettings) {
-                showToast('Hanya Leader & CS Line yang dapat mengubah pengaturan!', 'error');
+                showToast('Akun Anda belum memiliki permission Edit Settings.', 'error');
                 return;
             }
 
@@ -48448,22 +48541,15 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         // SHIFT TOAST
         // ============================================================
         function showShiftToast(message, type = 'info', duration = 2000) {
-            let toast = document.getElementById('shiftToast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'shiftToast';
-                toast.className = 'shift-toast';
-                document.body.appendChild(toast);
-            }
+            const cleanMessage = String(message || '')
+                .replace(/^\s*[✅❌⚠️ℹ️🔄]+\s*/u, '')
+                .trim();
 
-            toast.textContent = message;
-            toast.className = `shift-toast ${type}`;
-            toast.style.display = 'block';
-
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => {
-                toast.style.display = 'none';
-            }, duration);
+            showToast(
+                cleanMessage || 'Informasi berhasil diperbarui.',
+                type,
+                duration
+            );
         }
 
         function parseShiftHistoryPayload(rawData) {
