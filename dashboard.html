@@ -39034,24 +39034,48 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
             return voucherData[formattedNama] || 0;
         }
 
-        function addVoucher(nama) {
+        async function addVoucher(nama) {
             const formattedNama = formatName(nama);
-            voucherData[formattedNama] = (voucherData[formattedNama] || 0) + 1;
+            const previousValue = getVoucherCount(formattedNama);
 
-            if (!TEST_MODE) {
-                supabaseDashboard
-                    .from('vouchers')
-                    .upsert({
-                        nama: formattedNama,
-                        jumlah: voucherData[formattedNama]
-                    }, { onConflict: 'nama' })
-                    .then(({ error }) => {
-                        if (error) console.error('❌ Gagal simpan voucher:', error);
-                    });
+            if (TEST_MODE) {
+                voucherData[formattedNama] = previousValue + 1;
+                updateSidebarBadge();
+                updateQuickStats();
+                return { success: true, jumlah: voucherData[formattedNama] };
             }
 
-            updateSidebarBadge();
-            updateQuickStats();
+            try {
+                const { data, error } = await supabaseDashboard.rpc(
+                    'manage_voucher_by_permission',
+                    {
+                        p_nama: formattedNama,
+                        p_delta: 1
+                    }
+                );
+
+                if (error) throw error;
+
+                const rawValue = Array.isArray(data) ? data[0] : data;
+                const parsedValue = Number(
+                    rawValue?.jumlah ?? rawValue?.manage_voucher_by_permission ?? rawValue
+                );
+
+                if (!Number.isFinite(parsedValue)) {
+                    throw new Error('Database tidak mengembalikan jumlah voucher yang valid.');
+                }
+
+                voucherData[formattedNama] = Math.max(0, parsedValue);
+                updateSidebarBadge();
+                updateQuickStats();
+                return { success: true, jumlah: voucherData[formattedNama] };
+            } catch (error) {
+                voucherData[formattedNama] = previousValue;
+                updateSidebarBadge();
+                updateQuickStats();
+                console.error('❌ Gagal menambah voucher:', error);
+                throw error;
+            }
         }
 
         async function removeVoucher(nama) {
@@ -39062,9 +39086,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                 return { success: false, jumlah: previousValue };
             }
 
-            const nextValue = Math.max(0, previousValue - 1);
-
             if (TEST_MODE) {
+                const nextValue = Math.max(0, previousValue - 1);
                 voucherData[formattedNama] = nextValue;
                 updateSidebarBadge();
                 updateQuickStats();
@@ -39072,9 +39095,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
             }
 
             try {
-                let persistedValue = null;
-
-                const rpcResult = await supabaseDashboard.rpc(
+                const { data, error } = await supabaseDashboard.rpc(
                     'manage_voucher_by_permission',
                     {
                         p_nama: formattedNama,
@@ -39082,57 +39103,18 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                     }
                 );
 
-                if (!rpcResult.error) {
-                    const rawValue = Array.isArray(rpcResult.data)
-                        ? rpcResult.data[0]
-                        : rpcResult.data;
-                    const parsedValue = Number(
-                        rawValue?.jumlah ?? rawValue?.manage_voucher_by_permission ?? rawValue
-                    );
-                    if (Number.isFinite(parsedValue)) {
-                        persistedValue = Math.max(0, parsedValue);
-                    }
-                } else {
-                    const missingRpc =
-                        rpcResult.error.code === 'PGRST202' ||
-                        rpcResult.error.code === '42883' ||
-                        (/manage_voucher_by_permission/i.test(rpcResult.error.message || '') &&
-                         /not found|does not exist|schema cache/i.test(rpcResult.error.message || ''));
+                if (error) throw error;
 
-                    if (!missingRpc) {
-                        throw rpcResult.error;
-                    }
+                const rawValue = Array.isArray(data) ? data[0] : data;
+                const parsedValue = Number(
+                    rawValue?.jumlah ?? rawValue?.manage_voucher_by_permission ?? rawValue
+                );
 
-                    const { data, error } = await supabaseDashboard
-                        .from('vouchers')
-                        .upsert({
-                            nama: formattedNama,
-                            jumlah: nextValue
-                        }, { onConflict: 'nama' })
-                        .select('jumlah')
-                        .maybeSingle();
-
-                    if (error) throw error;
-                    persistedValue = Number(data?.jumlah);
+                if (!Number.isFinite(parsedValue)) {
+                    throw new Error('Database tidak mengembalikan jumlah voucher yang valid.');
                 }
 
-                if (!Number.isFinite(persistedValue)) {
-                    const { data: verifyRow, error: verifyError } = await supabaseDashboard
-                        .from('vouchers')
-                        .select('jumlah')
-                        .eq('nama', formattedNama)
-                        .maybeSingle();
-
-                    if (verifyError) throw verifyError;
-                    persistedValue = Number(verifyRow?.jumlah);
-                }
-
-                if (!Number.isFinite(persistedValue) || persistedValue !== nextValue) {
-                    throw new Error(
-                        'Perubahan voucher belum tersimpan. Terapkan SQL Permission Voucher V37 di Supabase.'
-                    );
-                }
-
+                const persistedValue = Math.max(0, parsedValue);
                 voucherData[formattedNama] = persistedValue;
                 updateSidebarBadge();
                 updateQuickStats();
@@ -44885,52 +44867,41 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         window.hapusUser = async function(userId, userEmail) {
             if (!userPermissions.canManage) {
                 showToast('Akun Anda belum memiliki permission Kelola User.', 'error');
-                return;
+                return false;
             }
 
             if (!userEmail) {
                 showToast('Email tidak valid!', 'error');
-                return;
+                return false;
             }
 
             const formattedEmail = formatEmail(userEmail);
-
             const confirmed = await requestDeleteConfirmation({
                 title: 'Hapus User',
                 message: `User ${formattedEmail} beserta data izin, history, dan voucher terkait akan dihapus permanen.`
             });
-            if (!confirmed) return;
+            if (!confirmed) return false;
 
             try {
                 const userToDelete = listUsers.find(u => u.email === formattedEmail);
                 if (!userToDelete) {
                     showToast('User tidak ditemukan!', 'error');
-                    return;
+                    return false;
                 }
 
                 const userName = userToDelete.name || '';
 
                 if (!TEST_MODE) {
-                    await supabaseDashboard
-                        .from('users')
-                        .delete()
-                        .eq('email', formattedEmail);
+                    const { data, error } = await supabaseDashboard.rpc(
+                        'delete_dashboard_user_by_permission',
+                        { p_email: formattedEmail }
+                    );
 
-                    if (userName) {
-                        await supabaseDashboard
-                            .from('izin_anggota')
-                            .delete()
-                            .eq('nama', userName);
+                    if (error) throw error;
 
-                        await supabaseDashboard
-                            .from('history')
-                            .delete()
-                            .eq('nama', userName);
-
-                        await supabaseDashboard
-                            .from('vouchers')
-                            .delete()
-                            .eq('nama', userName);
+                    const response = Array.isArray(data) ? data[0] : data;
+                    if (response && response.success === false) {
+                        throw new Error(response.message || 'User belum berhasil dihapus.');
                     }
                 }
 
@@ -44938,23 +44909,23 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 
                 if (userName) {
                     const index = daftarAnggota.indexOf(userName);
-                    if (index !== -1) {
-                        daftarAnggota.splice(index, 1);
-                        delete dataIzin[userName];
-                        delete quotaData[userName];
-                        delete voucherData[userName];
-                        historyData = historyData.filter(h => h.nama !== userName);
-                    }
+                    if (index !== -1) daftarAnggota.splice(index, 1);
+                    delete dataIzin[userName];
+                    delete quotaData[userName];
+                    delete voucherData[userName];
+                    historyData = historyData.filter(h => h.nama !== userName);
                 }
 
                 renderUsers();
                 renderAll();
                 updateQuickStats();
                 showToast(`User "${formattedEmail}" berhasil dihapus!`, 'success');
-
+                return true;
             } catch (err) {
                 console.error('❌ Gagal hapus user:', err);
-                showToast('Gagal menghapus user: ' + err.message, 'error');
+                showToast('Gagal menghapus user: ' + (err?.message || 'Terjadi kesalahan.'), 'error', 5000);
+                await loadDataFromDatabase(true).catch(() => {});
+                return false;
             }
         };
 
@@ -45031,51 +45002,25 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 
             try {
                 if (!TEST_MODE) {
-                    await supabaseDashboard
-                        .from('history')
-                        .delete()
-                        .neq('id', 0);
-                }
+                    const { data, error } = await supabaseDashboard.rpc(
+                        'clear_dashboard_history_by_permission'
+                    );
 
-                historyData = [];
+                    if (error) throw error;
 
-                for (const nama of daftarAnggota) {
-                    const data = dataIzin[nama];
-                    if (data && data.status === 'selesai') {
-                        data.status = 'none';
-                        data.mulai = null;
-                        data.selesai = null;
-                        data.tanggal = null;
-                        data.emoticon = null;
-
-                        if (!TEST_MODE) {
-                            await supabaseDashboard
-                                .from('izin_anggota')
-                                .upsert({
-                                    nama: nama,
-                                    status: 'none',
-                                    mulai: null,
-                                    selesai: null,
-                                    tanggal: null,
-                                    role: getRoleForUser(nama),
-                                    emoticon: null
-                                }, { onConflict: 'nama' });
-                        }
+                    const response = Array.isArray(data) ? data[0] : data;
+                    if (response && response.success === false) {
+                        throw new Error(response.message || 'History belum berhasil dihapus.');
                     }
                 }
 
-                const today = new Date().toDateString();
-                daftarAnggota.forEach(nama => {
-                    if (quotaData[nama]) {
-                        quotaData[nama] = { count: 0, date: today };
-                    }
-                });
-
+                await loadDataFromDatabase(true);
                 renderAll();
                 showToast('Semua history berhasil dihapus!', 'success');
             } catch (err) {
                 console.error('Gagal hapus history:', err);
-                showToast('Gagal menghapus history: ' + err.message, 'error');
+                showToast('Gagal menghapus history: ' + (err?.message || 'Terjadi kesalahan.'), 'error', 5000);
+                await loadDataFromDatabase(true).catch(() => {});
             }
         };
 
@@ -46845,6 +46790,11 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         // UPDATE SHIFT AKTIF KE DATABASE - PASTIKAN NOTE TERSIMPAN
         // ============================================================
         async function updateShiftActive(changeType = 'DATA') {
+            if (!canEditShift()) {
+                shiftSaveQueued = false;
+                return false;
+            }
+
             if (!shiftActiveId) {
                 console.warn('No shiftActiveId, update dibatalkan.');
                 return false;
@@ -48613,6 +48563,10 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
             if (existing?.id) {
                 shiftActiveId = existing.id;
                 return shiftActiveId;
+            }
+
+            if (!canEditShift()) {
+                throw new Error('Akun ini tidak memiliki permission Edit Shift.');
             }
 
             const { data: inserted, error: insertError } =
@@ -51687,7 +51641,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         window.deleteEmployeeUser = async function(userId) {
             const user = employeeUserDirectory.find(item => String(item.id) === String(userId));
             if (!user) return;
-            await hapusUser(user.id, user.email);
+            const deleted = await hapusUser(user.id, user.email);
+            if (!deleted) return;
             employeeProfilesByUserId.delete(String(user.id));
             await loadEmployeeDirectory(true);
             renderUsersPage();
@@ -52719,6 +52674,11 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         });
     };
 })();
+</script>
+
+
+<script id="permission-matrix-v40-marker">
+window.DASHBOARD_PERMISSION_SYNC_VERSION = 'V40';
 </script>
 
 </body>
