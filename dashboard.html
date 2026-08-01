@@ -35388,6 +35388,241 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 }
 </style>
 
+
+<style id="dashboard-ui-refinement-v41">
+/* ================================================================
+   V41 — Venom confirmation, Monitoring quota + tooltip cleanup,
+   overflow name tooltip, and clean empty operational cells.
+   ================================================================ */
+
+/* Sisa Izin: 2 / total uses orange, while segment colour stays cobalt. */
+#tab-monitoring .monitoring-members-panel .quota-badge-modern.mid .remaining {
+    color: #f97316 !important;
+}
+
+/* Empty operational cells remain visually clean. */
+#tab-monitoring .monitoring-members-panel td.col-voucher:empty,
+#tab-monitoring .monitoring-members-panel td.col-mulai:empty,
+#tab-monitoring .monitoring-members-panel td.col-progress:empty {
+    min-height: 1px;
+}
+#tab-monitoring .monitoring-members-panel .voucher-empty {
+    display: none !important;
+}
+
+/* Shared modern tooltip surface for Monitoring and Users. */
+#startTooltipGlobal,
+#voucherTooltipGlobal,
+#historyActionTooltip {
+    --shared-tooltip-bg: color-mix(in srgb, var(--bg-card) 94%, var(--bg-secondary));
+    --shared-tooltip-border: color-mix(in srgb, var(--accent) 18%, var(--border-color));
+    background: var(--shared-tooltip-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--shared-tooltip-border) !important;
+    border-top-width: 1px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 14px 36px rgba(2, 8, 23, .18), inset 0 1px 0 rgba(255,255,255,.04) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+}
+
+#startTooltipGlobal,
+#voucherTooltipGlobal {
+    min-width: 190px !important;
+    max-width: 265px !important;
+    padding: 11px 12px !important;
+    line-height: 1.4 !important;
+    transform: translateY(4px) scale(.985) !important;
+    transition: opacity .15s ease, transform .15s ease, visibility .15s ease !important;
+}
+#startTooltipGlobal.visible,
+#voucherTooltipGlobal.visible {
+    transform: translateY(0) scale(1) !important;
+}
+#startTooltipGlobal .tooltip-header,
+#voucherTooltipGlobal .tooltip-header {
+    gap: 8px !important;
+    margin: 0 0 5px !important;
+}
+#startTooltipGlobal .tooltip-icon,
+#voucherTooltipGlobal .tooltip-icon {
+    width: 24px !important;
+    height: 24px !important;
+    flex: 0 0 24px !important;
+    border-radius: 7px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+}
+#startTooltipGlobal .tooltip-icon svg,
+#voucherTooltipGlobal .tooltip-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.9 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+#startTooltipGlobal .tooltip-title,
+#voucherTooltipGlobal .tooltip-title {
+    color: var(--text-primary) !important;
+    font-size: 10.5px !important;
+    font-weight: 780 !important;
+    letter-spacing: .01em !important;
+}
+#startTooltipGlobal .tooltip-desc,
+#voucherTooltipGlobal .tooltip-desc {
+    margin: 0 !important;
+    color: var(--text-secondary) !important;
+    font-size: 9.5px !important;
+    line-height: 1.45 !important;
+}
+#startTooltipGlobal .tooltip-divider,
+#voucherTooltipGlobal .tooltip-divider {
+    height: 1px !important;
+    margin: 7px 0 6px !important;
+    background: var(--border-color) !important;
+    opacity: .7 !important;
+}
+#startTooltipGlobal .tooltip-status,
+#voucherTooltipGlobal .tooltip-status {
+    padding: 0 !important;
+    font-size: 9px !important;
+    font-weight: 670 !important;
+    line-height: 1.35 !important;
+}
+#startTooltipGlobal .tooltip-footer {
+    margin-top: 3px !important;
+    color: var(--text-muted) !important;
+    font-size: 8.5px !important;
+}
+
+/* Shared arrow follows the exact trigger center. */
+#historyActionTooltip::after,
+#startTooltipGlobal::after,
+#voucherTooltipGlobal::after {
+    left: var(--tooltip-arrow-x, 50%) !important;
+    width: 10px !important;
+    height: 10px !important;
+    bottom: -6px !important;
+    top: auto !important;
+    border: 0 !important;
+    border-right: 1px solid var(--shared-tooltip-border) !important;
+    border-bottom: 1px solid var(--shared-tooltip-border) !important;
+    border-radius: 1px !important;
+    background: var(--shared-tooltip-bg) !important;
+    transform: translateX(-50%) rotate(45deg) !important;
+}
+#historyActionTooltip.place-bottom::after,
+#startTooltipGlobal[data-placement="bottom"]::after,
+#voucherTooltipGlobal[data-placement="bottom"]::after {
+    top: -6px !important;
+    bottom: auto !important;
+    border: 0 !important;
+    border-left: 1px solid var(--shared-tooltip-border) !important;
+    border-top: 1px solid var(--shared-tooltip-border) !important;
+}
+
+#historyActionTooltip {
+    gap: 7px !important;
+    padding: 7px 9px !important;
+    max-width: min(320px, calc(100vw - 20px)) !important;
+    font-size: 9.5px !important;
+    font-weight: 680 !important;
+    letter-spacing: .01em !important;
+    white-space: nowrap !important;
+}
+#historyActionTooltip .history-tooltip-icon {
+    width: 14px !important;
+    height: 14px !important;
+    flex: 0 0 14px !important;
+    color: var(--accent) !important;
+}
+#historyActionTooltip .history-tooltip-icon svg {
+    width: 13px !important;
+    height: 13px !important;
+}
+#historyActionTooltip .history-tooltip-text {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.smart-name-tooltip {
+    cursor: help;
+}
+.smart-name-tooltip:focus-visible {
+    outline: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+/* Venom: Reset Semua Shift and other premium confirmations. */
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-overlay {
+    background: rgba(0, 0, 0, .70) !important;
+    backdrop-filter: blur(9px) !important;
+    -webkit-backdrop-filter: blur(9px) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-card {
+    background:
+        radial-gradient(circle at 100% 0, rgba(68,214,44,.065), transparent 38%),
+        linear-gradient(180deg, #121612 0%, #0b0e0b 100%) !important;
+    border-color: rgba(68,214,44,.14) !important;
+    box-shadow: 0 28px 75px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-copy h3 {
+    color: #e9f0e6 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-copy p {
+    color: #9ba899 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-note {
+    color: #b6c3b3 !important;
+    background: rgba(68,214,44,.045) !important;
+    border-color: rgba(68,214,44,.11) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-actions {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-button.secondary {
+    color: #b8c5b5 !important;
+    background: linear-gradient(180deg, rgba(31,38,31,.96), rgba(20,25,20,.96)) !important;
+    border-color: rgba(68,214,44,.14) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-button.secondary:hover {
+    color: #e4ece1 !important;
+    background: linear-gradient(180deg, rgba(38,48,38,.98), rgba(24,30,24,.98)) !important;
+    border-color: rgba(68,214,44,.26) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .premium-confirm-card.danger .premium-confirm-icon {
+    background: rgba(210,74,86,.09) !important;
+    border-color: rgba(210,74,86,.22) !important;
+}
+
+/* Venom tooltip surface is dedicated to the theme, not Cyber Dark. */
+html[data-theme="dark"][data-theme-variant="venom"] #startTooltipGlobal,
+html[data-theme="dark"][data-theme-variant="venom"] #voucherTooltipGlobal,
+html[data-theme="dark"][data-theme-variant="venom"] #historyActionTooltip {
+    --shared-tooltip-bg: rgba(15,19,15,.98);
+    --shared-tooltip-border: rgba(68,214,44,.15);
+    color: #dce6d9 !important;
+    box-shadow: 0 16px 38px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #startTooltipGlobal .tooltip-title,
+html[data-theme="dark"][data-theme-variant="venom"] #voucherTooltipGlobal .tooltip-title {
+    color: #edf3eb !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #startTooltipGlobal .tooltip-desc,
+html[data-theme="dark"][data-theme-variant="venom"] #voucherTooltipGlobal .tooltip-desc {
+    color: #9eaa9b !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #historyActionTooltip .history-tooltip-icon {
+    color: #72c865 !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -36351,7 +36586,9 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
     <!-- ============================================================ -->
     <div id="voucherTooltipGlobal">
         <div class="tooltip-header">
-            <span class="tooltip-icon">🎁</span>
+            <span class="tooltip-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M3 8a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2Z"/><path d="M13 4v2M13 10v2M13 16v2"/></svg>
+            </span>
             <span class="tooltip-title">Voucher</span>
         </div>
         <div class="tooltip-desc" id="voucherTooltipDesc">Kutip Sampah Office</div>
@@ -37942,6 +38179,18 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
         });
 
         const HISTORY_TOOLTIP_ICONS = {
+            user: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>
+                </svg>
+            `,
+            quota: `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="3"/>
+                    <path d="M7 10h10M7 14h6"/>
+                </svg>
+            `,
             open: `
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M3 6h6l2 2h10v11H3Z"/>
@@ -38045,31 +38294,47 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
 
             if (!tooltip || !text || !icon || !target) return;
 
-            text.textContent =
+            if (
+                target.dataset.tooltipOverflow === 'true' &&
+                target.scrollWidth <= target.clientWidth + 1
+            ) {
+                hideHistoryActionTooltip();
+                return;
+            }
+
+            const rawTooltip =
                 target.dataset.tooltip ||
                 target.getAttribute('aria-label') ||
                 '';
 
+            if (target.dataset.tooltipEncoded === 'true') {
+                try {
+                    text.textContent = decodeURIComponent(rawTooltip);
+                } catch (error) {
+                    text.textContent = rawTooltip;
+                }
+            } else {
+                text.textContent = rawTooltip;
+            }
+
             icon.innerHTML =
                 HISTORY_TOOLTIP_ICONS[
                     target.dataset.tooltipIcon || 'preview'
-                ] || '';
+                ] || HISTORY_TOOLTIP_ICONS.info || '';
 
             tooltip.classList.remove('visible', 'place-bottom');
             tooltip.style.left = '0px';
             tooltip.style.top = '0px';
+            tooltip.style.setProperty('--tooltip-arrow-x', '50%');
             tooltip.setAttribute('aria-hidden', 'false');
 
             requestAnimationFrame(() => {
                 const targetRect = target.getBoundingClientRect();
                 const tooltipRect = tooltip.getBoundingClientRect();
                 const viewportPadding = 10;
+                const targetCenter = targetRect.left + targetRect.width / 2;
 
-                let left =
-                    targetRect.left +
-                    targetRect.width / 2 -
-                    tooltipRect.width / 2;
-
+                let left = targetCenter - tooltipRect.width / 2;
                 left = Math.max(
                     viewportPadding,
                     Math.min(
@@ -38078,14 +38343,20 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                     )
                 );
 
-                let top = targetRect.top - tooltipRect.height - 9;
+                let top = targetRect.top - tooltipRect.height - 10;
                 let placeBottom = false;
 
                 if (top < viewportPadding) {
-                    top = targetRect.bottom + 9;
+                    top = targetRect.bottom + 10;
                     placeBottom = true;
                 }
 
+                const arrowX = Math.max(
+                    14,
+                    Math.min(targetCenter - left, tooltipRect.width - 14)
+                );
+
+                tooltip.style.setProperty('--tooltip-arrow-x', `${arrowX}px`);
                 tooltip.style.left = `${Math.round(left)}px`;
                 tooltip.style.top = `${Math.round(top)}px`;
                 tooltip.classList.toggle('place-bottom', placeBottom);
@@ -40853,8 +41124,15 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
             if (!tooltipEl) return;
 
             const iconEl = document.getElementById('tooltipIcon');
-            iconEl.textContent = tooltipData.icon || '⏳';
-            iconEl.className = 'tooltip-icon ' + (tooltipData.statusClass || 'info');
+            const statusClass = tooltipData.statusClass || 'info';
+            const statusIcons = {
+                danger: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg>`,
+                warning: `<svg viewBox="0 0 24 24"><path d="M12 3 22 20H2Z"/><path d="M12 9v5M12 17h.01"/></svg>`,
+                success: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>`,
+                info: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>`
+            };
+            iconEl.innerHTML = statusIcons[statusClass] || statusIcons.info;
+            iconEl.className = 'tooltip-icon ' + statusClass;
 
             document.getElementById('tooltipTitle').textContent = tooltipData.title || 'Informasi';
             document.getElementById('tooltipDesc').textContent = tooltipData.desc || '';
@@ -43767,11 +44045,11 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                 const quotaTooltip = `${normalizedRemaining} izin masih tersedia dari total ${normalizedMaxQuota}`;
 
                 let statusHTML = '';
-                let timerHTML = '-';
+                let timerHTML = '';
                 let actionHTML = '';
                 let rowClass = '';
-                let progressHTML = '-';
-                let mulaiHTML = '-';
+                let progressHTML = '';
+                let mulaiHTML = '';
 
                 const isCurrentUser = isUserCurrent(nama);
                 const canStart = (isLeaderOrCsLine || isCurrentUser) &&
@@ -43913,15 +44191,11 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                         </button>
                     `;
 
-                    progressHTML = `
-                        <div class="progress-container" style="justify-content:center;">
-                            <span style="color:var(--text-muted);font-size:11px;font-weight:300;">-</span>
-                        </div>
-                    `;
-                    mulaiHTML = `<span style="color:var(--text-muted);font-size:11px;">-</span>`;
+                    progressHTML = '';
+                    mulaiHTML = '';
                 }
 
-                let voucherDisplay = '<span class="voucher-empty" aria-label="Tidak ada voucher">—</span>';
+                let voucherDisplay = '';
                 if (voucher > 0) {
                     voucherDisplay = `<span class="voucher-badge" data-voucher="${voucher}" style="cursor:pointer;" aria-label="${voucher} voucher">
                         <span class="voucher-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 8a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2Z"/><path d="M13 4v2M13 10v2M13 16v2"/></svg></span>
@@ -43929,26 +44203,41 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                     </span>`;
                 }
 
+                const progressCellHTML = status === 'izin' ? `
+                    <div class="member-progress-line">
+                        <span class="progress-timer">${timerHTML}</span>
+                        ${progressHTML}
+                    </div>
+                ` : '';
+
                 return `
                     <tr class="${rowClass} monitoring-role-${role}" data-nama="${nama}">
                         <td class="col-status">${statusHTML}</td>
                         <td class="col-nama">
                             <div class="member-identity">
                                 <button type="button"
-                                        class="member-avatar role-${role} ${memberAvatarClass}"
+                                        class="member-avatar role-${role} ${memberAvatarClass} history-tooltip-target"
                                         onclick="openAnimalEmojiPicker(decodeURIComponent('${encodedMemberName}'))"
                                         aria-label="Pilih emoticon untuk ${displayName}"
-                                        title="Klik untuk memilih emoticon">
+                                        data-tooltip="Pilih emoticon profil"
+                                        data-tooltip-icon="user">
                                     ${memberAvatarContent}
                                 </button>
-                                <span class="nama-cell" title="${displayName}">${displayName}</span>
+                                <span class="nama-cell history-tooltip-target smart-name-tooltip"
+                                      data-tooltip="${encodeURIComponent(displayName)}"
+                                      data-tooltip-encoded="true"
+                                      data-tooltip-overflow="true"
+                                      data-tooltip-icon="user"
+                                      tabindex="0">${displayName}</span>
                             </div>
                         </td>
                         <td class="col-role" style="text-align:left;"><span class="role-tag ${role}">${roleLabel}</span></td>
                         <td class="col-quota" style="text-align:center;">
-                            <span class="quota-badge-modern ${quotaClass}"
-                                  title="${quotaTooltip}"
+                            <span class="quota-badge-modern ${quotaClass} history-tooltip-target"
                                   aria-label="${quotaTooltip}"
+                                  data-tooltip="${encodeURIComponent(quotaTooltip)}"
+                                  data-tooltip-encoded="true"
+                                  data-tooltip-icon="quota"
                                   data-remaining="${normalizedRemaining}"
                                   data-total="${normalizedMaxQuota}">
                                 <span class="quota-value">
@@ -43961,12 +44250,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                         </td>
                         <td class="col-voucher" style="text-align:center;">${voucherDisplay}</td>
                         <td class="col-mulai" style="text-align:center;">${mulaiHTML}</td>
-                        <td class="col-progress" style="text-align:center;">
-                            <div class="member-progress-line">
-                                <span class="progress-timer">${timerHTML}</span>
-                                ${progressHTML}
-                            </div>
-                        </td>
+                        <td class="col-progress" style="text-align:center;">${progressCellHTML}</td>
                         <td class="col-aksi" style="text-align:center;">${actionHTML}</td>
                     </tr>
                 `;
@@ -44089,7 +44373,12 @@ html[data-theme="dark"][data-theme-variant="venom"] .animal-emoji-random-button:
                         <tr>
                             <td>${index + 1}</td>
                             <td>
-                                <span class="nama-cell">${user.name}</span>
+                                <span class="nama-cell history-tooltip-target smart-name-tooltip"
+                                      data-tooltip="${encodeURIComponent(user.name)}"
+                                      data-tooltip-encoded="true"
+                                      data-tooltip-overflow="true"
+                                      data-tooltip-icon="user"
+                                      tabindex="0">${user.name}</span>
                                 ${isCurrentUser ? '<span style="font-size:10px;color:var(--text-muted);margin-left:4px;">(Anda)</span>' : ''}
                             </td>
                             <td style="text-transform:lowercase;font-size:12px;color:var(--text-secondary);">${user.email}</td>
