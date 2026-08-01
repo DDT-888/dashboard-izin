@@ -37838,7 +37838,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .popup-limit-premium .popup-
 
 <style id="v59-custom-dropdown-venom-fix">
 /* ============================================================
-   V59 — Correct Users Rank scrollbar, Venom START footer colours,
+   V60 — Unified dropdown and scrollbar foundation, Venom START footer colours,
    and true custom dropdown menus across every theme.
    ============================================================ */
 
@@ -38156,6 +38156,273 @@ html[data-theme="dark"][data-theme-variant="venom"] .premium-select-menu::-webki
     .premium-select-chevron,
     .premium-select-menu,
     .premium-select-option { transition: none !important; }
+}
+</style>
+
+
+<style id="v60-unified-dropdown-scrollbar">
+/* ============================================================
+   V60 — One filter/dropdown component + unified Venom scrollbar
+   ============================================================ */
+
+/* Venom scrollbar tokens. New Venom scrollable components should use these. */
+html[data-theme="dark"][data-theme-variant="venom"] {
+    --venom-scroll-thumb: rgba(68, 214, 44, .42);
+    --venom-scroll-thumb-hover: rgba(68, 214, 44, .62);
+    --venom-scroll-track: transparent;
+}
+
+/* Rank menu copies the exact Prioritas Visa scrollbar behaviour:
+   hidden at rest, slim on hover, same opacity and transparent track. */
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-users .employee-custom-filter-menu {
+    scrollbar-gutter: auto !important;
+    scrollbar-width: none !important;
+    scrollbar-color: var(--venom-scroll-thumb) var(--venom-scroll-track) !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-users .employee-custom-filter-menu:hover {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(68,214,44,.46) transparent !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-users .employee-custom-filter-menu::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-users .employee-custom-filter-menu:hover::-webkit-scrollbar {
+    width: 5px !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-users .employee-custom-filter-menu::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-users .employee-custom-filter-menu::-webkit-scrollbar-thumb {
+    border: 1px solid transparent !important;
+    border-radius: 999px !important;
+    background: var(--venom-scroll-thumb) !important;
+    background-clip: padding-box !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-users .employee-custom-filter-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--venom-scroll-thumb-hover) !important;
+    background-clip: padding-box !important;
+}
+
+/* Future Venom custom menus inherit the same scrollbar colours. Width and
+   visibility remain controlled by each component. */
+html[data-theme="dark"][data-theme-variant="venom"]
+:is(.premium-select-menu, .unified-custom-filter-menu, .employee-custom-filter-menu) {
+    scrollbar-color: var(--venom-scroll-thumb) var(--venom-scroll-track) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+:is(.premium-select-menu, .unified-custom-filter-menu, .employee-custom-filter-menu)::-webkit-scrollbar-track {
+    background: var(--venom-scroll-track) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+:is(.premium-select-menu, .unified-custom-filter-menu, .employee-custom-filter-menu)::-webkit-scrollbar-thumb {
+    background: var(--venom-scroll-thumb) !important;
+    background-clip: padding-box !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+:is(.premium-select-menu, .unified-custom-filter-menu, .employee-custom-filter-menu)::-webkit-scrollbar-thumb:hover {
+    background: var(--venom-scroll-thumb-hover) !important;
+    background-clip: padding-box !important;
+}
+
+/* Premium selects now use exactly the same shell geometry as the filter. */
+.premium-select.unified-custom-filter {
+    --unified-filter-width: 100%;
+    position: relative !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 34px !important;
+    z-index: 38 !important;
+}
+.premium-select.unified-custom-filter.open {
+    z-index: 1200 !important;
+}
+
+.premium-select .premium-select-trigger.unified-custom-filter-trigger {
+    width: 100% !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 8px 0 6px !important;
+    display: grid !important;
+    grid-template-columns: 22px minmax(0, 1fr) 12px !important;
+    align-items: center !important;
+    gap: 6px !important;
+    border: 1.25px solid color-mix(in srgb, var(--accent) 30%, var(--border-light)) !important;
+    border-radius: 9px !important;
+    color: var(--text-primary) !important;
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--bg-primary) 96%, white),
+        color-mix(in srgb, var(--accent-soft) 16%, var(--bg-primary))
+    ) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.62), 0 2px 6px rgba(9,34,48,.035) !important;
+    font-family: inherit !important;
+    font-size: 9.7px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    outline: none !important;
+}
+
+.premium-select .premium-select-leading.unified-custom-filter-leading {
+    width: 22px !important;
+    height: 22px !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 6px !important;
+    color: var(--accent-dark) !important;
+    background: color-mix(in srgb, var(--accent-soft) 72%, var(--bg-primary)) !important;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent) !important;
+}
+.premium-select-leading-icon {
+    width: 11px !important;
+    height: 11px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
+.premium-select .premium-select-value.unified-custom-filter-value {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+}
+
+.premium-select .premium-select-chevron.unified-custom-filter-chevron {
+    width: 12px !important;
+    height: 12px !important;
+    fill: none !important;
+    stroke: var(--text-muted) !important;
+    stroke-width: 1.9 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
+.premium-select.open .premium-select-trigger,
+.premium-select .premium-select-trigger:focus-visible {
+    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-light)) !important;
+    background: color-mix(in srgb, var(--accent-soft) 32%, var(--bg-primary)) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-soft) 58%, transparent), inset 0 1px 0 rgba(255,255,255,.68) !important;
+}
+
+/* Opened dropdown is now the same component as an opened filter. */
+.premium-select .premium-select-menu.unified-custom-filter-menu {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    left: 0 !important;
+    width: max(100%, 178px) !important;
+    max-height: 250px !important;
+    padding: 5px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    scrollbar-gutter: stable !important;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-light)) !important;
+    border-radius: 11px !important;
+    color: var(--text-primary) !important;
+    background: color-mix(in srgb, var(--bg-primary) 98%, var(--accent-soft)) !important;
+    box-shadow: 0 18px 38px rgba(7,25,38,.20), 0 0 0 1px rgba(255,255,255,.42) inset !important;
+    transform-origin: top left !important;
+}
+
+.premium-select .premium-select-option.unified-custom-filter-option {
+    width: 100% !important;
+    min-height: 29px !important;
+    padding: 0 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    color: var(--text-secondary) !important;
+    background: transparent !important;
+    font-family: inherit !important;
+    font-size: 9.7px !important;
+    font-weight: 500 !important;
+    line-height: 1.1 !important;
+    text-align: left !important;
+    cursor: pointer !important;
+}
+.premium-select .premium-select-option.unified-custom-filter-option:hover,
+.premium-select .premium-select-option.unified-custom-filter-option:focus-visible {
+    color: var(--text-primary) !important;
+    background: color-mix(in srgb, var(--accent-soft) 62%, var(--bg-primary)) !important;
+    outline: none !important;
+    transform: translateX(1px) !important;
+}
+.premium-select .premium-select-option.unified-custom-filter-option.active {
+    color: var(--accent-dark) !important;
+    background: color-mix(in srgb, var(--accent-soft) 82%, var(--bg-primary)) !important;
+    font-weight: 720 !important;
+}
+.premium-select .premium-select-option-check {
+    display: none !important;
+}
+
+/* Dedicated Venom colours, while preserving identical filter geometry. */
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select .premium-select-trigger.unified-custom-filter-trigger {
+    color: #dce8d8 !important;
+    border-color: rgba(68,214,44,.22) !important;
+    background: linear-gradient(180deg, rgba(255,255,255,.014), transparent), #111511 !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select .premium-select-leading.unified-custom-filter-leading {
+    color: #9ce790 !important;
+    background: rgba(68,214,44,.075) !important;
+    border-color: rgba(68,214,44,.18) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select.open .premium-select-trigger,
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select .premium-select-trigger:focus-visible {
+    color: #edf7ea !important;
+    border-color: rgba(68,214,44,.62) !important;
+    background: #151b15 !important;
+    box-shadow: 0 0 0 3px rgba(68,214,44,.075) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select .premium-select-menu.unified-custom-filter-menu {
+    color: #dce8d8 !important;
+    border-color: rgba(68,214,44,.22) !important;
+    background: linear-gradient(180deg, rgba(255,255,255,.012), transparent 34%), #0d100d !important;
+    box-shadow: 0 18px 38px rgba(0,0,0,.48), inset 0 0 0 1px rgba(255,255,255,.018) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select .premium-select-option.unified-custom-filter-option {
+    color: #aab9a6 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select .premium-select-option.unified-custom-filter-option:hover,
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select .premium-select-option.unified-custom-filter-option:focus-visible {
+    color: #edf7ea !important;
+    background: rgba(68,214,44,.075) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+.premium-select .premium-select-option.unified-custom-filter-option.active {
+    color: #b9f4ad !important;
+    background: rgba(68,214,44,.11) !important;
 }
 </style>
 
@@ -55873,7 +56140,7 @@ window.DASHBOARD_PERMISSION_SYNC_VERSION = 'V40';
         Array.from(select.options).forEach((option, index) => {
             const button = document.createElement('button');
             button.type = 'button';
-            button.className = 'premium-select-option';
+            button.className = 'premium-select-option unified-custom-filter-option';
             button.dataset.value = option.value;
             button.dataset.index = String(index);
             button.setAttribute('role', 'option');
@@ -55885,10 +56152,6 @@ window.DASHBOARD_PERMISSION_SYNC_VERSION = 'V40';
             const label = document.createElement('span');
             label.textContent = option.textContent.trim();
             button.appendChild(label);
-
-            button.insertAdjacentHTML('beforeend',
-                '<svg class="premium-select-option-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"/></svg>'
-            );
 
             button.addEventListener('click', () => {
                 if (button.disabled || select.disabled) return;
@@ -55913,21 +56176,26 @@ window.DASHBOARD_PERMISSION_SYNC_VERSION = 'V40';
         if (select.closest('.premium-select')) return;
 
         const wrapper = document.createElement('div');
-        wrapper.className = WRAP_CLASS;
+        wrapper.className = `${WRAP_CLASS} unified-custom-filter`;
         wrapper.dataset.selectId = select.id || '';
 
         const trigger = document.createElement('button');
         trigger.type = 'button';
-        trigger.className = 'premium-select-trigger';
+        trigger.className = 'premium-select-trigger unified-custom-filter-trigger';
         trigger.setAttribute('aria-haspopup', 'listbox');
         trigger.setAttribute('aria-expanded', 'false');
         trigger.innerHTML = `
-            <span class="premium-select-value">Pilih</span>
-            <svg class="premium-select-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+            <span class="premium-select-leading unified-custom-filter-leading" aria-hidden="true">
+                <svg class="premium-select-leading-icon" viewBox="0 0 24 24">
+                    <path d="M5 7h14M8 12h8M10 17h4"/>
+                </svg>
+            </span>
+            <span class="premium-select-value unified-custom-filter-value">Pilih</span>
+            <svg class="premium-select-chevron unified-custom-filter-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
         `;
 
         const menu = document.createElement('div');
-        menu.className = 'premium-select-menu';
+        menu.className = 'premium-select-menu unified-custom-filter-menu';
         menu.setAttribute('role', 'listbox');
 
         select.parentNode.insertBefore(wrapper, select);
@@ -56034,4 +56302,4 @@ window.DASHBOARD_PERMISSION_SYNC_VERSION = 'V40';
 </script>
 
 </body>
-</html>
+</html>s
