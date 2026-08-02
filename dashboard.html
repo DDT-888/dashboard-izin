@@ -40148,6 +40148,53 @@ html:not([data-theme-variant="venom"]) .topbar-right.topbar-inline-actions {
 }
 </style>
 
+
+
+<style id="v64-9-opaque-sticky-header-fix">
+/* =====================================================================
+   Dashboard Izin V64.9
+   Definitive opaque sticky-header fix.
+
+   V64.8 used .topbar::before, but the earlier theme-specific selectors
+   disabled that pseudo-element with higher specificity. The sticky header
+   therefore remained transparent. V64.9 paints the actual .topbar box
+   directly with the active content-area base color.
+   ===================================================================== */
+
+/* Remove the failed pseudo backdrop so it cannot create stacking conflicts. */
+html:not([data-theme-variant="venom"]) .topbar::before,
+html[data-theme="dark"][data-theme-variant="venom"] .topbar::before {
+    content: none !important;
+    display: none !important;
+}
+
+/* The sticky element itself is now fully opaque. Its existing padding is
+   retained, so the background behaves as the requested content-colored
+   padding behind the complete header. */
+html:not([data-theme-variant="venom"]) .topbar,
+html[data-theme="dark"][data-theme-variant="venom"] .topbar {
+    background: var(--bg-primary) !important;
+    background-color: var(--bg-primary) !important;
+    background-image: none !important;
+    background-clip: border-box !important;
+    opacity: 1 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    mix-blend-mode: normal !important;
+}
+
+/* Fill the small outer breathing space created by the header's negative
+   desktop margin with the exact same content color, without making a card. */
+@media (min-width: 1024px) {
+    html:not([data-theme-variant="venom"]) .topbar,
+    html[data-theme="dark"][data-theme-variant="venom"] .topbar {
+        box-shadow:
+            0 -10px 0 10px var(--bg-primary),
+            0 1px 0 var(--border-color) !important;
+    }
+}
+</style>
+
 </head>
 
 <body>
