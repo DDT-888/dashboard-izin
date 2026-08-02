@@ -40213,6 +40213,67 @@ html body .main-content > .topbar .profile-dropdown {
 }
 </style>
 
+
+
+<style id="v64-12-full-bleed-gradient-header">
+/* =====================================================================
+   Dashboard Izin V64.12
+   Full-bleed sticky gradient header.
+
+   The desktop layout gives .main-content 30px horizontal padding while
+   the legacy topbar only offsets 10px, leaving a visible 20px gap on
+   both sides. This patch expands the topbar surface to the exact content
+   viewport edges while preserving the existing alignment of all header
+   controls. The same shared fixed gradient from V64.11 remains in use.
+   ===================================================================== */
+
+/* Tablet / compact desktop: main content uses 28px horizontal padding. */
+html {
+    --v64-12-header-bleed: 28px;
+    --v64-12-header-total-bleed: 56px;
+    --v64-12-header-inner-pad: 28px;
+}
+
+/* Large desktop: main content uses 30px padding. The previous -10px
+   topbar margin placed its controls 10px outside the content box, so a
+   20px inner pad preserves their exact current position after full bleed. */
+@media (min-width: 1024px) {
+    html {
+        --v64-12-header-bleed: 30px;
+        --v64-12-header-total-bleed: 60px;
+        --v64-12-header-inner-pad: 20px;
+    }
+}
+
+html body .main-content > .topbar {
+    align-self: stretch !important;
+    width: calc(100% + var(--v64-12-header-total-bleed)) !important;
+    max-width: none !important;
+    margin-left: calc(-1 * var(--v64-12-header-bleed)) !important;
+    margin-right: calc(-1 * var(--v64-12-header-bleed)) !important;
+    padding-left: var(--v64-12-header-inner-pad) !important;
+    padding-right: var(--v64-12-header-inner-pad) !important;
+    overflow: visible !important;
+}
+
+/* Keep the background and lower divider clipped to the expanded box,
+   never to the former inset header width. */
+html:not([data-theme-variant="venom"]) body .main-content > .topbar,
+html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar {
+    background-origin: border-box !important;
+    background-clip: border-box !important;
+}
+
+/* Very narrow screens use a smaller content gutter. */
+@media (max-width: 600px) {
+    html {
+        --v64-12-header-bleed: 16px;
+        --v64-12-header-total-bleed: 32px;
+        --v64-12-header-inner-pad: 16px;
+    }
+}
+</style>
+
 </head>
 
 <body>
