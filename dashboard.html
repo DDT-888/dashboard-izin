@@ -40101,116 +40101,21 @@ html:not([data-theme-variant="venom"]) .topbar-right.topbar-inline-actions {
 </style>
 
 
-
-<style id="v64-8-header-content-backdrop-fix">
+<style id="v64-11-seamless-gradient-cascade-fix">
 /* =====================================================================
-   Dashboard Izin V64.8
-   Sticky header backdrop follows the active content-area base color.
-   Applies to every theme, including Venom Green, without changing the
-   existing header controls, divider, or theme-specific command-bar style.
+   Dashboard Izin V64.11
+   Final seamless-gradient sticky-header cascade correction.
+
+   V64.10 used generic .topbar/.main-content selectors. Earlier V64.7,
+   V64.9, and Venom rules also used !important with higher specificity,
+   so the old solid/transparent header surfaces continued to win.
+   This final block uses explicit high-specificity selectors and one shared,
+   viewport-anchored canvas for the content area and sticky header.
    ===================================================================== */
 
-/* A dedicated backdrop fills the padding around the sticky header so
-   scrolled content never shows through. The header itself keeps the visual
-   treatment defined by each theme. */
-.topbar {
-    isolation: isolate !important;
-    overflow: visible !important;
-}
-
-.topbar::before {
-    content: "" !important;
-    display: block !important;
-    position: absolute !important;
-    z-index: -1 !important;
-    top: -18px !important;
-    right: -20px !important;
-    bottom: -13px !important;
-    left: -20px !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: var(--bg-primary) !important;
-    background-image: none !important;
-    box-shadow: none !important;
-    opacity: 1 !important;
-    pointer-events: none !important;
-}
-
-/* Keep the backdrop aligned with the narrower content padding on tablets
-   and mobile layouts. */
-@media (max-width: 1023px) {
-    .topbar::before {
-        top: -16px !important;
-        right: -16px !important;
-        bottom: -12px !important;
-        left: -16px !important;
-    }
-}
-</style>
-
-
-
-<style id="v64-9-opaque-sticky-header-fix">
-/* =====================================================================
-   Dashboard Izin V64.9
-   Definitive opaque sticky-header fix.
-
-   V64.8 used .topbar::before, but the earlier theme-specific selectors
-   disabled that pseudo-element with higher specificity. The sticky header
-   therefore remained transparent. V64.9 paints the actual .topbar box
-   directly with the active content-area base color.
-   ===================================================================== */
-
-/* Remove the failed pseudo backdrop so it cannot create stacking conflicts. */
-html:not([data-theme-variant="venom"]) .topbar::before,
-html[data-theme="dark"][data-theme-variant="venom"] .topbar::before {
-    content: none !important;
-    display: none !important;
-}
-
-/* The sticky element itself is now fully opaque. Its existing padding is
-   retained, so the background behaves as the requested content-colored
-   padding behind the complete header. */
-html:not([data-theme-variant="venom"]) .topbar,
-html[data-theme="dark"][data-theme-variant="venom"] .topbar {
-    background: var(--bg-primary) !important;
-    background-color: var(--bg-primary) !important;
-    background-image: none !important;
-    background-clip: border-box !important;
-    opacity: 1 !important;
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    mix-blend-mode: normal !important;
-}
-
-/* Fill the small outer breathing space created by the header's negative
-   desktop margin with the exact same content color, without making a card. */
-@media (min-width: 1024px) {
-    html:not([data-theme-variant="venom"]) .topbar,
-    html[data-theme="dark"][data-theme-variant="venom"] .topbar {
-        box-shadow:
-            0 -10px 0 10px var(--bg-primary),
-            0 1px 0 var(--border-color) !important;
-    }
-}
-</style>
-
-
-
-<style id="v64-10-seamless-gradient-sticky-header">
-/* =====================================================================
-   Dashboard Izin V64.10
-   Seamless gradient continuation for the sticky header on every theme.
-
-   The content canvas and the sticky topbar now share the same background
-   layers, size, position, and fixed attachment. This keeps the header fully
-   opaque during scrolling without making it look like a separate solid box.
-   ===================================================================== */
-
-/* Standard Light themes, DDT Original, and Cyber Dark. Variables resolve
-   against each active theme's own accent and base colors. */
+/* Default canvas for DDT Original, Cyber Dark, and all alternate light themes. */
 html {
-    --v64-content-canvas:
+    --v64-11-content-canvas:
         radial-gradient(
             circle at 94% 2%,
             rgba(var(--accent-rgb), .075),
@@ -40222,31 +40127,29 @@ html {
             transparent 190px
         ),
         var(--bg-primary);
-    --v64-content-canvas-size: auto, auto, auto;
-    --v64-content-canvas-repeat: no-repeat, no-repeat, no-repeat;
+    --v64-11-content-size: auto, auto, auto;
+    --v64-11-content-repeat: no-repeat, no-repeat, no-repeat;
 }
 
-/* Venom Green keeps its own gaming canvas: subtle tactical grid, green
-   ambience, and matte black vertical gradient. It is deliberately isolated
-   from Cyber Dark. */
+/* Venom remains isolated from Cyber Dark and reuses its tactical gaming canvas. */
 html[data-theme="dark"][data-theme-variant="venom"] {
-    --v64-content-canvas:
+    --v64-11-content-canvas:
         linear-gradient(rgba(68, 214, 44, .010) 1px, transparent 1px),
         linear-gradient(90deg, rgba(68, 214, 44, .010) 1px, transparent 1px),
         radial-gradient(circle at 84% -10%, rgba(68, 214, 44, .075), transparent 29%),
         linear-gradient(180deg, #060706 0%, #090b09 100%);
-    --v64-content-canvas-size: 32px 32px, 32px 32px, auto, auto;
-    --v64-content-canvas-repeat: repeat, repeat, no-repeat, no-repeat;
+    --v64-11-content-size: 32px 32px, 32px 32px, auto, auto;
+    --v64-11-content-repeat: repeat, repeat, no-repeat, no-repeat;
 }
 
-/* Paint both surfaces from the same viewport-anchored canvas. The fixed
-   attachment is what prevents a visible gradient jump when the header becomes
-   sticky while the page content continues scrolling underneath it. */
-.main-content,
-.topbar {
-    background: var(--v64-content-canvas) !important;
-    background-size: var(--v64-content-canvas-size) !important;
-    background-repeat: var(--v64-content-canvas-repeat) !important;
+/* Non-Venom: these selectors intentionally outrank the older V64.7/V64.9
+   !important header declarations. */
+html:not([data-theme-variant="venom"]) body .main-content,
+html:not([data-theme-variant="venom"]) body .main-content > .topbar {
+    background-image: var(--v64-11-content-canvas) !important;
+    background-color: var(--bg-primary) !important;
+    background-size: var(--v64-11-content-size) !important;
+    background-repeat: var(--v64-11-content-repeat) !important;
     background-position: 0 0 !important;
     background-attachment: fixed !important;
     background-origin: border-box !important;
@@ -40255,50 +40158,59 @@ html[data-theme="dark"][data-theme-variant="venom"] {
     mix-blend-mode: normal !important;
 }
 
-/* Remove the former solid-color filler and card-like separation. The header
-   remains compact and receives only a very soft depth fade at its lower edge. */
-html:not([data-theme-variant="venom"]) .topbar,
-html[data-theme="dark"][data-theme-variant="venom"] .topbar {
+/* Venom: this selector outranks all prior Venom command-bar and transparent
+   main-content rules while retaining Venom's own canvas and controls. */
+html[data-theme="dark"][data-theme-variant="venom"] body .main-content,
+html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar {
+    background-image: var(--v64-11-content-canvas) !important;
+    background-color: var(--bg-primary) !important;
+    background-size: var(--v64-11-content-size) !important;
+    background-repeat: var(--v64-11-content-repeat) !important;
+    background-position: 0 0 !important;
+    background-attachment: fixed !important;
+    background-origin: border-box !important;
+    background-clip: border-box !important;
+    opacity: 1 !important;
+    mix-blend-mode: normal !important;
+}
+
+/* One restrained lower-edge fade, without a card-like solid box. */
+html:not([data-theme-variant="venom"]) body .main-content > .topbar,
+html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar {
     border-top: 0 !important;
-    border-bottom-color: color-mix(
+    border-bottom: 1px solid color-mix(
         in srgb,
-        var(--border-color) 42%,
+        var(--border-color) 38%,
         transparent
     ) !important;
-    box-shadow:
-        0 14px 20px -24px color-mix(
-            in srgb,
-            var(--text-primary) 22%,
-            transparent
-        ) !important;
+    border-radius: 0 !important;
+    box-shadow: 0 15px 22px -25px color-mix(
+        in srgb,
+        var(--text-primary) 24%,
+        transparent
+    ) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
+    isolation: isolate !important;
 }
 
-/* V64.9 used a solid-color shadow to fill the desktop negative margin.
-   Disable it; the parent canvas now paints the exact same gradient underneath. */
-@media (min-width: 1024px) {
-    html:not([data-theme-variant="venom"]) .topbar,
-    html[data-theme="dark"][data-theme-variant="venom"] .topbar {
-        box-shadow:
-            0 14px 20px -24px color-mix(
-                in srgb,
-                var(--text-primary) 22%,
-                transparent
-            ) !important;
-    }
-}
-
-/* Keep pseudo backdrops disabled. The actual sticky element is now the
-   seamless opaque surface, avoiding stacking and dropdown conflicts. */
-html:not([data-theme-variant="venom"]) .topbar::before,
-html[data-theme="dark"][data-theme-variant="venom"] .topbar::before {
+/* Prevent all older pseudo backdrops or Venom decorative rails from painting
+   another surface over the shared canvas. */
+html:not([data-theme-variant="venom"]) body .main-content > .topbar::before,
+html:not([data-theme-variant="venom"]) body .main-content > .topbar::after,
+html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar::before,
+html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar::after {
     content: none !important;
     display: none !important;
+    background: none !important;
+    box-shadow: none !important;
 }
 
-/* The viewport-fixed canvas is retained on all breakpoints so the gradient
-   remains continuous even while the compact mobile header is sticky. */
+/* The menus must remain outside normal flow so the sticky header stays compact. */
+html body .main-content > .topbar .theme-menu,
+html body .main-content > .topbar .profile-dropdown {
+    position: absolute !important;
+}
 </style>
 
 </head>
