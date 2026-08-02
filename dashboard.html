@@ -40404,7 +40404,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                         <span class="menu-label">Monitoring Izin</span>
                         <span class="sidebar-parent-tail">
                             <span class="badge" id="sidebarBadgeIzin">0</span>
-                            <button class="sidebar-group-toggle" id="sidebarGroupToggleMonitoring" type="button" onclick="event.stopPropagation(); toggleSidebarGroup('monitoring')" aria-expanded="false" aria-controls="sidebarSubmenuMonitoring" aria-label="Buka submenu Monitoring Izin">
+                            <button class="sidebar-group-toggle" id="sidebarGroupToggleMonitoring" type="button" onclick="return handleSidebarGroupChevron(event, 'monitoring')" aria-expanded="false" aria-controls="sidebarSubmenuMonitoring" aria-label="Buka submenu Monitoring Izin">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                             </button>
                         </span>
@@ -40435,7 +40435,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                         <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/><path d="M8 15h.01"/><path d="M12 15h.01"/><path d="M16 15h.01"/></svg></span>
                         <span class="menu-label">Shift Kerja</span>
                         <span class="sidebar-parent-tail">
-                            <button class="sidebar-group-toggle" id="sidebarGroupToggleShifts" type="button" onclick="event.stopPropagation(); toggleSidebarGroup('shifts')" aria-expanded="false" aria-controls="sidebarSubmenuShifts" aria-label="Buka submenu Shift Kerja">
+                            <button class="sidebar-group-toggle" id="sidebarGroupToggleShifts" type="button" onclick="return handleSidebarGroupChevron(event, 'shifts')" aria-expanded="false" aria-controls="sidebarSubmenuShifts" aria-label="Buka submenu Shift Kerja">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                             </button>
                         </span>
@@ -62684,6 +62684,702 @@ html body #tab-settings .permission-group-row > td {
 </style>
 
 
+
+<style id="v64-16-settings-sidebar-history-final">
+/* =====================================================================
+   Dashboard Izin V64.16 — FINAL SETTINGS / SIDEBAR / HISTORY FIX
+   This is the last override layer. It intentionally wins over V64.13–15.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   SIDEBAR GROUPS
+   - Parent label opens the main page.
+   - Chevron only toggles the submenu.
+   - Badge and chevron stay compact and flush right.
+   - Chevron has no box, border, fill, or hover capsule.
+   --------------------------------------------------------------------- */
+html body .sidebar-menu .sidebar-group-row {
+    display: block !important;
+    width: 100% !important;
+}
+
+html body .sidebar-menu .sidebar-parent-item {
+    display: grid !important;
+    grid-template-columns: 28px minmax(0, 1fr) max-content !important;
+    align-items: center !important;
+    column-gap: 9px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-right: 10px !important;
+    box-sizing: border-box !important;
+}
+
+html body .sidebar-menu .sidebar-parent-item > .icon {
+    grid-column: 1 !important;
+}
+
+html body .sidebar-menu .sidebar-parent-item > .menu-label {
+    grid-column: 2 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+html body .sidebar-menu .sidebar-parent-tail {
+    grid-column: 3 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    justify-self: end !important;
+    gap: 5px !important;
+    width: max-content !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+}
+
+html body .sidebar-menu .sidebar-parent-tail > .badge {
+    position: static !important;
+    inset: auto !important;
+    order: 1 !important;
+    flex: 0 0 auto !important;
+    justify-self: end !important;
+    margin: 0 !important;
+}
+
+html body .sidebar-menu .sidebar-group-toggle,
+html body .sidebar-menu .sidebar-group-toggle:hover,
+html body .sidebar-menu .sidebar-group-toggle:active,
+html body .sidebar-menu .sidebar-group-toggle:focus,
+html body .sidebar-menu .sidebar-group-toggle:focus-visible,
+html[data-theme="dark"][data-theme-variant="venom"] body .sidebar-menu .sidebar-group-toggle,
+html[data-theme="dark"][data-theme-variant="venom"] body .sidebar-menu .sidebar-group-toggle:hover,
+html[data-theme="dark"][data-theme-variant="venom"] body .sidebar-menu .sidebar-group-toggle:focus-visible {
+    position: static !important;
+    inset: auto !important;
+    order: 2 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 17px !important;
+    width: 17px !important;
+    min-width: 17px !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--text-muted) !important;
+    background: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: .82 !important;
+    cursor: pointer !important;
+}
+
+html body .sidebar-menu .sidebar-group-toggle:hover,
+html body .sidebar-menu .sidebar-group-toggle:focus-visible {
+    color: var(--accent) !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body .sidebar-menu .sidebar-group-toggle:hover,
+html[data-theme="dark"][data-theme-variant="venom"] body .sidebar-menu .sidebar-group-toggle:focus-visible {
+    color: #8ce77c !important;
+}
+
+html body .sidebar-menu .sidebar-group-toggle svg {
+    display: block !important;
+    width: 13px !important;
+    height: 13px !important;
+    margin: 0 !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    transition: transform .2s cubic-bezier(.22,.61,.36,1), color .16s ease !important;
+}
+
+html body .sidebar-menu .sidebar-group.is-open .sidebar-group-toggle svg {
+    transform: rotate(90deg) !important;
+}
+
+html body .sidebar.collapsed .sidebar-parent-item {
+    display: flex !important;
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+html body .sidebar.collapsed .sidebar-parent-tail,
+html body .sidebar.collapsed .sidebar-group-toggle {
+    display: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   SETTINGS WORKSPACE
+   - One clean left stack for normal settings.
+   - Permission Matrix occupies its own right column.
+   - Natural page height; no forced internal panel scrolling.
+   --------------------------------------------------------------------- */
+html body.settings-mode .main-content {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+}
+
+html body.settings-mode #tab-settings.active {
+    display: block !important;
+    flex: none !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+html body #tab-settings .settings-workspace.settings-workspace-final {
+    display: grid !important;
+    grid-template-columns: minmax(420px, .88fr) minmax(610px, 1.12fr) !important;
+    grid-template-areas: "primary permission" !important;
+    align-items: start !important;
+    align-content: start !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    zoom: 1 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+}
+
+html body #tab-settings .settings-primary-column {
+    grid-area: primary !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: start !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+html body #tab-settings .settings-primary-column > .settings-system-table,
+html body #tab-settings .permission-matrix-panel,
+html body #tab-settings .cs-eval-settings-panel {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    overflow: visible !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 14px !important;
+    background: var(--bg-card) !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .045), inset 0 1px 0 rgba(255,255,255,.035) !important;
+    box-sizing: border-box !important;
+}
+
+html body #tab-settings .permission-matrix-panel {
+    grid-area: permission !important;
+    position: static !important;
+    inset: auto !important;
+    align-self: start !important;
+}
+
+html body #tab-settings :is(.settings-table-heading, .permission-matrix-heading, .cs-eval-settings-heading) {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    min-height: 0 !important;
+    margin: 0 0 12px !important;
+    padding: 0 0 11px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+html body #tab-settings :is(.settings-access-content, .settings-ticker-content, .cs-eval-settings-content) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+html body #tab-settings :is(.settings-access-section, .cs-eval-settings-group) {
+    box-shadow: none !important;
+}
+
+html body #tab-settings .settings-limit-pair {
+    align-items: stretch !important;
+}
+
+html body #tab-settings .settings-role-grid-four label {
+    min-width: 0 !important;
+}
+
+html body.settings-mode .footer-premium {
+    flex: 0 0 auto !important;
+    margin-top: 14px !important;
+}
+
+/* ---------------------------------------------------------------------
+   PERMISSION MATRIX
+   Restore real table semantics. Previous versions converted table parts
+   to block/grid, which caused misalignment and inherited layout clashes.
+   --------------------------------------------------------------------- */
+html body #tab-settings .permission-matrix-scroll {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    scrollbar-gutter: auto !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 10px !important;
+    background: var(--bg-card) !important;
+    box-sizing: border-box !important;
+}
+
+html body #tab-settings .permission-matrix-table {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+html body #tab-settings .permission-matrix-table colgroup {
+    display: table-column-group !important;
+}
+
+html body #tab-settings .permission-matrix-table col {
+    display: table-column !important;
+}
+
+html body #tab-settings .permission-matrix-table thead {
+    display: table-header-group !important;
+    position: static !important;
+}
+
+html body #tab-settings .permission-matrix-table tbody {
+    display: table-row-group !important;
+    width: auto !important;
+}
+
+html body #tab-settings .permission-matrix-table tr,
+html body #tab-settings .permission-matrix-table thead tr,
+html body #tab-settings .permission-matrix-table tbody tr,
+html body #tab-settings .permission-matrix-table tbody tr:not(.permission-group-row),
+html body #tab-settings .permission-group-row {
+    display: table-row !important;
+    width: auto !important;
+    grid-template-columns: none !important;
+}
+
+html body #tab-settings .permission-matrix-table th,
+html body #tab-settings .permission-matrix-table td,
+html body #tab-settings .permission-matrix-table tbody tr:not(.permission-group-row) > td,
+html body #tab-settings .permission-group-row > td {
+    display: table-cell !important;
+    width: auto !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+html body #tab-settings .permission-feature-col {
+    width: auto !important;
+}
+
+html body #tab-settings .permission-role-col {
+    width: 38px !important;
+}
+
+html body #tab-settings .permission-matrix-table thead th {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+    color: var(--text-white) !important;
+    background: var(--bg-table-header) !important;
+    border-bottom: 0 !important;
+}
+
+html body #tab-settings .permission-matrix-table thead th:first-child {
+    padding-left: 12px !important;
+    padding-right: 8px !important;
+    text-align: left !important;
+    border-top-left-radius: 9px !important;
+}
+
+html body #tab-settings .permission-matrix-table thead th:last-child {
+    border-top-right-radius: 9px !important;
+}
+
+html body #tab-settings .permission-feature-header-label {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    color: var(--text-white) !important;
+    font-size: 10px !important;
+    font-weight: 850 !important;
+    line-height: 1.15 !important;
+}
+
+html body #tab-settings .permission-role-header {
+    display: grid !important;
+    place-items: center !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 0 2px !important;
+    color: var(--text-white) !important;
+    font-size: 7.7px !important;
+    font-weight: 820 !important;
+    line-height: 1.05 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+}
+
+html body #tab-settings .permission-matrix-table :is(th:nth-child(2), td:nth-child(2)) {
+    border-left: 1px solid rgba(var(--accent-rgb), .12) !important;
+}
+
+html body #tab-settings .permission-matrix-table tbody tr:not(.permission-group-row) > td {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid var(--border-light) !important;
+}
+
+html body #tab-settings .permission-feature-cell,
+html body #tab-settings :is(.permission-feature-column, .permission-feature-cell) {
+    width: auto !important;
+    min-width: 0 !important;
+    padding-left: 12px !important;
+    padding-right: 8px !important;
+    text-align: left !important;
+}
+
+html body #tab-settings .permission-feature-content {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+}
+
+html body #tab-settings .permission-feature-cell strong {
+    display: block !important;
+    margin: 0 !important;
+    color: var(--text-primary) !important;
+    font-size: 10.5px !important;
+    font-weight: 770 !important;
+    line-height: 1.18 !important;
+}
+
+html body #tab-settings .permission-feature-cell .permission-feature-content > span {
+    display: block !important;
+    margin-top: 2px !important;
+    overflow: hidden !important;
+    color: var(--text-muted) !important;
+    font-size: 8.2px !important;
+    line-height: 1.18 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+}
+
+html body #tab-settings .permission-role-cell,
+html body #tab-settings .permission-matrix-table tbody tr:not(.permission-group-row) > .permission-role-cell {
+    width: 38px !important;
+    min-width: 38px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+html body #tab-settings .permission-cell-tooltip {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    line-height: 1 !important;
+}
+
+html body #tab-settings .permission-status-cell {
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border-radius: 5px !important;
+}
+
+html body #tab-settings .permission-cell-icon,
+html body #tab-settings .permission-cell-main-icon {
+    width: 9px !important;
+    height: 9px !important;
+}
+
+html body #tab-settings .permission-cell-lock {
+    width: 6px !important;
+    height: 6px !important;
+    right: -1px !important;
+    bottom: -1px !important;
+}
+
+html body #tab-settings .permission-group-row td,
+html body #tab-settings .permission-group-row > td {
+    height: 23px !important;
+    min-height: 23px !important;
+    padding: 0 10px !important;
+    vertical-align: middle !important;
+    background: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border-light) !important;
+}
+
+html body #tab-settings .permission-group-label {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    height: 23px !important;
+    min-height: 23px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--text-muted) !important;
+    font-size: 7.3px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    letter-spacing: .75px !important;
+}
+
+html body #tab-settings .permission-matrix-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin: 11px 0 0 !important;
+    padding: 11px 0 0 !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+/* ---------------------------------------------------------------------
+   RIWAYAT SHIFT
+   No inner vertical scrolling or scrollbar shadow when the table fits.
+   Desktop table is fitted to one natural page. Horizontal scrolling is
+   reserved only for genuinely narrow screens.
+   --------------------------------------------------------------------- */
+html body #tab-historyshift.active,
+html body #tab-historyshift #historyShiftContent,
+html body #tab-historyshift .history-shift-container {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+html body #tab-historyshift .history-shift-container,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-historyshift .history-shift-container {
+    padding-bottom: 0 !important;
+    box-shadow: none !important;
+}
+
+html body #tab-historyshift .history-shift-container::before,
+html body #tab-historyshift .history-shift-container::after,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-historyshift .history-shift-container::before,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-historyshift .history-shift-container::after {
+    content: none !important;
+    display: none !important;
+    box-shadow: none !important;
+}
+
+html body #tab-historyshift .history-table-wrap,
+html body #tab-historyshift .history-table-wrap.has-horizontal-overflow,
+html body #tab-historyshift .history-table-wrap:not(.has-horizontal-overflow),
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-historyshift .history-table-wrap {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin-bottom: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    scrollbar-width: none !important;
+    scrollbar-gutter: auto !important;
+    box-shadow: none !important;
+}
+
+html body #tab-historyshift .history-table-wrap::-webkit-scrollbar,
+html body #tab-historyshift .history-table-wrap.has-horizontal-overflow::-webkit-scrollbar,
+html body #tab-historyshift .history-table-wrap:not(.has-horizontal-overflow)::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+html body #tab-historyshift .history-table-wrap table {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+}
+
+html body #tab-historyshift .history-table-wrap th,
+html body #tab-historyshift .history-table-wrap td {
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+}
+
+html body #tab-historyshift .history-table-wrap th:nth-child(1),
+html body #tab-historyshift .history-table-wrap td:nth-child(1) { width: 38px !important; }
+html body #tab-historyshift .history-table-wrap th:nth-child(2),
+html body #tab-historyshift .history-table-wrap td:nth-child(2) { width: 17% !important; }
+html body #tab-historyshift .history-table-wrap th:nth-child(3),
+html body #tab-historyshift .history-table-wrap td:nth-child(3) { width: 22% !important; }
+html body #tab-historyshift .history-table-wrap th:nth-child(4),
+html body #tab-historyshift .history-table-wrap td:nth-child(4) { width: 7% !important; }
+html body #tab-historyshift .history-table-wrap th:nth-child(5),
+html body #tab-historyshift .history-table-wrap td:nth-child(5) { width: 7% !important; }
+html body #tab-historyshift .history-table-wrap th:nth-child(6),
+html body #tab-historyshift .history-table-wrap td:nth-child(6) { width: 12% !important; }
+html body #tab-historyshift .history-table-wrap th:nth-child(7),
+html body #tab-historyshift .history-table-wrap td:nth-child(7) { width: 16% !important; }
+html body #tab-historyshift .history-table-wrap th:nth-child(8),
+html body #tab-historyshift .history-table-wrap td:nth-child(8) { width: 148px !important; }
+
+html body #tab-historyshift .shift-history-note-heading,
+html body #tab-historyshift .shift-history-note-column {
+    width: 22% !important;
+    min-width: 0 !important;
+}
+
+html body #tab-historyshift .col-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+}
+
+/* Responsive fallback: only narrow viewports get a real horizontal scroll. */
+@media (max-width: 1260px) {
+    html body #tab-settings .settings-workspace.settings-workspace-final {
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-areas:
+            "primary"
+            "permission" !important;
+    }
+}
+
+@media (max-width: 760px) {
+    html body #tab-settings .permission-matrix-scroll {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        scrollbar-width: thin !important;
+    }
+
+    html body #tab-settings .permission-matrix-table {
+        min-width: 620px !important;
+    }
+
+    html body #tab-settings .permission-matrix-table col.permission-role-col {
+        width: 38px !important;
+    }
+}
+
+@media (max-width: 1100px) {
+    html body #tab-historyshift .history-table-wrap,
+    html body #tab-historyshift .history-table-wrap.has-horizontal-overflow,
+    html body #tab-historyshift .history-table-wrap:not(.has-horizontal-overflow) {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        scrollbar-width: thin !important;
+    }
+
+    html body #tab-historyshift .history-table-wrap::-webkit-scrollbar,
+    html body #tab-historyshift .history-table-wrap.has-horizontal-overflow::-webkit-scrollbar,
+    html body #tab-historyshift .history-table-wrap:not(.has-horizontal-overflow)::-webkit-scrollbar {
+        display: block !important;
+        height: 6px !important;
+    }
+
+    html body #tab-historyshift .history-table-wrap table {
+        min-width: 980px !important;
+        table-layout: fixed !important;
+    }
+}
+
+</style>
+
+<script id="v64-16-sidebar-click-isolation">
+/* Dashboard Izin V64.16 — isolate parent navigation from chevron toggles. */
+(function () {
+    'use strict';
+
+    window.handleSidebarGroupChevron = function handleSidebarGroupChevron(event, groupName) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+        }
+
+        if (typeof window.toggleSidebarGroup === 'function') {
+            window.toggleSidebarGroup(groupName);
+        }
+
+        return false;
+    };
+
+    function normalizeSidebarGroupControls() {
+        document.querySelectorAll('.sidebar-group-toggle').forEach(function (button) {
+            button.setAttribute('type', 'button');
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', normalizeSidebarGroupControls, { once: true });
+    } else {
+        normalizeSidebarGroupControls();
+    }
+})();
+
+</script>
+
+<!-- Dashboard Izin V64.16 — Final Settings, Sidebar & Riwayat Shift Fix -->
 <!-- Dashboard Izin V64.15 — Settings Focus & Matrix Right Alignment -->
 <!-- Dashboard Izin V64.14 — Integrated Sidebar & Settings Redesign -->
 </body>
