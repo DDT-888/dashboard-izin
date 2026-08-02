@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.17-settings-history-final">
+    <meta name="dashboard-build" content="v64.18-settings-three-column">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -40976,7 +40976,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
 
         <!-- ===== TAB SETTINGS ===== -->
         <div class="tab-content" id="tab-settings">
-            <div class="settings-workspace settings-workspace-final settings-v6417">
+            <div class="settings-workspace settings-workspace-final settings-v6418">
                 <div class="settings-primary-column" id="settingsPrimaryColumn">
                 <!-- KIRI: PENGATURAN AKSES & IZIN -->
                 <section class="settings-system-table settings-access-table">
@@ -41231,6 +41231,9 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 </section>
 
                 </div>
+
+                <!-- TENGAH: PENGATURAN EVALUASI CS -->
+                <div class="settings-evaluation-column" id="settingsEvaluationColumn"></div>
 
                 <!-- KANAN: PERMISSION MATRIX -->
                 <aside class="permission-matrix-panel" id="permissionMatrixPanel">
@@ -60429,14 +60432,15 @@ ${appeal.reason}`.trim();
     function ensureCsEvaluationSettingsPanel() {
         const tab = document.getElementById('tab-settings');
         if (!tab || document.getElementById('csEvaluationSettingsPanel')) return;
-        const host = document.getElementById('settingsPrimaryColumn')
+        const host = document.getElementById('settingsEvaluationColumn')
+            || document.getElementById('settingsPrimaryColumn')
             || tab.querySelector('.settings-workspace')
             || tab;
         host.insertAdjacentHTML('beforeend', `
             <section class="settings-system-table cs-eval-settings-panel" id="csEvaluationSettingsPanel">
                 <div class="settings-table-heading cs-eval-settings-heading">
                     <div>
-                        <span class="settings-table-kicker">EVALUASI CS & BONUS</span>
+                        <span class="settings-table-kicker">PENGATURAN EVALUASI CS</span>
                         <h3>Evaluasi CS & Bonus</h3>
                         <p>Atur perhitungan poin, bonus, dan sinkronisasi data Spreadsheet.</p>
                     </div>
@@ -63852,8 +63856,225 @@ html body.historyshift-mode #tab-historyshift .history-table-wrap::after {
 }
 
 </style>
-<script id="v64-17-build-marker">document.documentElement.dataset.dashboardBuild='v64.17';</script>
-<!-- Dashboard Izin V64.17 — Settings Cascade Reset & Riwayat Shift Overflow Fix -->
+<script id="v64-17-build-marker">document.documentElement.dataset.dashboardBuild='v64.18';</script>
+<!-- Dashboard Izin V64.18 — Three-column Settings Workspace -->
+
+
+<style id="v64-18-settings-three-column-final">
+/* =====================================================================
+   Dashboard Izin V64.18 — FINAL THREE-COLUMN SETTINGS WORKSPACE
+   A dedicated DOM column is used for each section so legacy grid-area,
+   order and two-column overrides cannot move the panels back together.
+   ===================================================================== */
+
+html body.settings-mode #tab-settings.active .settings-workspace.settings-workspace-final.settings-v6418 {
+    display: grid !important;
+    grid-template-columns:
+        minmax(360px, .86fr)
+        minmax(390px, .96fr)
+        minmax(540px, 1.38fr) !important;
+    grid-template-areas: "primary evaluation permission" !important;
+    align-items: start !important;
+    align-content: start !important;
+    column-gap: 14px !important;
+    row-gap: 14px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    zoom: 1 !important;
+    box-sizing: border-box !important;
+}
+
+html body.settings-mode #tab-settings.active #settingsPrimaryColumn,
+html body.settings-mode #tab-settings.active #settingsEvaluationColumn {
+    position: static !important;
+    inset: auto !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-flow: row !important;
+    grid-auto-rows: auto !important;
+    align-items: start !important;
+    align-content: start !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+}
+
+html body.settings-mode #tab-settings.active #settingsPrimaryColumn {
+    grid-area: primary !important;
+}
+
+html body.settings-mode #tab-settings.active #settingsEvaluationColumn {
+    grid-area: evaluation !important;
+}
+
+html body.settings-mode #tab-settings.active #permissionMatrixPanel {
+    grid-area: permission !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    place-self: start stretch !important;
+}
+
+/* Lock every card to its own column and clear legacy named-grid placement. */
+html body.settings-mode #tab-settings.active #settingsPrimaryColumn > .settings-system-table,
+html body.settings-mode #tab-settings.active #settingsEvaluationColumn > #csEvaluationSettingsPanel,
+html body.settings-mode #tab-settings.active #permissionMatrixPanel {
+    grid-area: auto !important;
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    order: initial !important;
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+}
+
+/* Preserve the requested left-column order. */
+html body.settings-mode #tab-settings.active #settingsPrimaryColumn > .settings-access-table {
+    order: 1 !important;
+}
+html body.settings-mode #tab-settings.active #settingsPrimaryColumn > .settings-ticker-table {
+    order: 2 !important;
+}
+
+/* Restore the right panel after the generic card reset above. */
+html body.settings-mode #tab-settings.active #permissionMatrixPanel {
+    grid-area: permission !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    order: initial !important;
+    place-self: start stretch !important;
+}
+
+/* The middle panel keeps exactly the same card typography and spacing. */
+html body.settings-mode #tab-settings.active #settingsEvaluationColumn > #csEvaluationSettingsPanel {
+    padding: 14px !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 14px !important;
+    background: var(--bg-card) !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .045), inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+
+html body.settings-mode #tab-settings.active #settingsEvaluationColumn :is(
+    .cs-eval-settings-heading,
+    .cs-eval-settings-content,
+    .cs-eval-settings-group,
+    .cs-eval-settings-grid,
+    .cs-eval-settings-field,
+    .cs-eval-range-table,
+    .cs-eval-range-row,
+    .cs-eval-settings-actions
+) {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Use two fields per row in the narrower middle column without changing text sizes. */
+html body.settings-mode #tab-settings.active #settingsEvaluationColumn .cs-eval-settings-grid-three {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+html body.settings-mode #tab-settings.active #settingsEvaluationColumn .cs-eval-range-row {
+    grid-template-columns: minmax(68px, .9fr) repeat(3, minmax(58px, 1fr)) !important;
+    gap: 6px !important;
+}
+
+html body.settings-mode #tab-settings.active #settingsEvaluationColumn .cs-eval-range-row :is(input, .cs-eval-percent-field) {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+/* Prevent the left column's duration controls from becoming compressed. */
+html body.settings-mode #tab-settings.active #settingsPrimaryColumn .settings-duration-standalone {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
+}
+
+html body.settings-mode #tab-settings.active #settingsPrimaryColumn .settings-duration-actions {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    width: 100% !important;
+}
+
+/* Permission roles stay compact at the right edge of the third column. */
+html body.settings-mode #tab-settings.active #permissionMatrixPanel table.permission-matrix-table > thead > tr,
+html body.settings-mode #tab-settings.active #permissionMatrixPanel table.permission-matrix-table > tbody > tr:not(.permission-group-row) {
+    grid-template-columns: minmax(0, 1fr) repeat(5, 38px) !important;
+}
+
+html body.settings-mode #tab-settings.active #permissionMatrixPanel .permission-role-header {
+    max-width: 38px !important;
+}
+
+/* Laptop: left and middle share the first row; Permission Matrix gets full width below. */
+@media (max-width: 1500px) {
+    html body.settings-mode #tab-settings.active .settings-workspace.settings-workspace-final.settings-v6418 {
+        grid-template-columns: minmax(360px, .9fr) minmax(400px, 1.1fr) !important;
+        grid-template-areas:
+            "primary evaluation"
+            "permission permission" !important;
+    }
+
+    html body.settings-mode #tab-settings.active #permissionMatrixPanel table.permission-matrix-table > thead > tr,
+    html body.settings-mode #tab-settings.active #permissionMatrixPanel table.permission-matrix-table > tbody > tr:not(.permission-group-row) {
+        grid-template-columns: minmax(0, 1fr) repeat(5, 40px) !important;
+    }
+}
+
+/* Tablet and small laptop: natural single-column Settings flow. */
+@media (max-width: 1180px) {
+    html body.settings-mode #tab-settings.active .settings-workspace.settings-workspace-final.settings-v6418 {
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-areas:
+            "primary"
+            "evaluation"
+            "permission" !important;
+    }
+}
+
+@media (max-width: 620px) {
+    html body.settings-mode #tab-settings.active #settingsEvaluationColumn .cs-eval-settings-grid-three,
+    html body.settings-mode #tab-settings.active #settingsEvaluationColumn .cs-eval-settings-grid-two {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    html body.settings-mode #tab-settings.active #settingsEvaluationColumn .cs-eval-range-table {
+        overflow-x: auto !important;
+    }
+
+    html body.settings-mode #tab-settings.active #settingsEvaluationColumn .cs-eval-range-row {
+        min-width: 390px !important;
+    }
+}
+</style>
+<script id="v64-18-build-marker">document.documentElement.dataset.dashboardBuild='v64.18';</script>
 
 </body>
 </html>
