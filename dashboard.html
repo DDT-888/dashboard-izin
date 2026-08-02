@@ -39927,6 +39927,179 @@ html:not([data-theme-variant="venom"]) .topbar .profile-dropdown {
 }
 </style>
 
+
+<style id="v64-7-header-form-manual-appeal-fix">
+/* =====================================================================
+   Dashboard Izin V64.7
+   - Non-Venom sticky header uses the content background directly.
+   - Premium searchable staff picker for manual deduction reports.
+   - Venom Green header styling is intentionally untouched.
+   ===================================================================== */
+
+/* Non-Venom header: keep sticky behavior, remove the card/dock surface. */
+html:not([data-theme-variant="venom"]) .topbar {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+html:not([data-theme-variant="venom"]) .topbar::before {
+    display: none !important;
+}
+
+html:not([data-theme-variant="venom"]) .topbar-right.topbar-inline-actions {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+}
+
+/* Manual-report staff selector. */
+.cs-eval-staff-picker-shell {
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border-light));
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--accent-soft) 9%, var(--bg-primary));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.34);
+}
+
+.cs-eval-staff-picker-toolbar {
+    min-height: 47px;
+    padding: 6px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border-light));
+    background: color-mix(in srgb, var(--accent-soft) 15%, var(--bg-primary));
+}
+
+.cs-eval-staff-search {
+    min-width: 0;
+}
+
+.cs-eval-staff-search input {
+    height: 34px !important;
+    border-radius: 8px !important;
+    background: var(--bg-primary) !important;
+}
+
+.cs-eval-staff-selected-count {
+    min-width: 88px;
+    height: 27px;
+    padding: 0 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: var(--text-secondary);
+    border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--border-light));
+    background: color-mix(in srgb, var(--accent-soft) 34%, var(--bg-primary));
+    font-size: 7.8px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.cs-eval-staff-picker-shell .cs-eval-staff-picker {
+    max-height: 210px;
+    padding: 6px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.cs-eval-staff-option {
+    min-height: 42px;
+    padding: 6px 8px;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    line-height: 1.2;
+}
+
+.cs-eval-staff-option + .cs-eval-staff-option {
+    margin-top: 3px;
+}
+
+.cs-eval-staff-option:hover {
+    border-color: color-mix(in srgb, var(--accent) 14%, transparent);
+    background: color-mix(in srgb, var(--accent-soft) 34%, transparent);
+}
+
+.cs-eval-staff-option:has(input:checked) {
+    border-color: color-mix(in srgb, var(--accent) 32%, var(--border-light));
+    background: color-mix(in srgb, var(--accent-soft) 52%, var(--bg-primary));
+}
+
+.cs-eval-staff-option input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    align-self: center;
+    justify-self: center;
+    flex: none;
+    accent-color: var(--accent);
+}
+
+.cs-eval-staff-option-copy {
+    min-width: 0;
+    min-height: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
+
+.cs-eval-staff-option-copy strong,
+.cs-eval-staff-option-copy small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cs-eval-staff-option-copy strong {
+    color: var(--text-primary);
+    font-size: 8.8px;
+    font-weight: 760;
+}
+
+.cs-eval-staff-option-copy small {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 7.2px;
+    line-height: 1.2;
+}
+
+.cs-eval-staff-picker-empty {
+    padding: 18px 12px;
+    color: var(--text-muted);
+    border-top: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border-light));
+    font-size: 8.4px;
+    text-align: center;
+}
+
+@media (max-width: 680px) {
+    .cs-eval-staff-picker-toolbar {
+        grid-template-columns: 1fr;
+    }
+    .cs-eval-staff-selected-count {
+        justify-self: start;
+    }
+}
+</style>
+
 </head>
 
 <body>
@@ -40990,7 +41163,7 @@ html:not([data-theme-variant="venom"]) .topbar .profile-dropdown {
     </div>
 
     <!-- EVALUASI CS: BANDING -->
-    <div class="cs-eval-modal-overlay" id="csEvalAppealOverlay" aria-hidden="true" onclick="handleCsEvalOverlayClick(event, 'csEvalAppealOverlay')">
+    <div class="cs-eval-modal-overlay" id="csEvalAppealOverlay" data-close-mode="x-only" aria-hidden="true" onclick="handleCsEvalOverlayClick(event, 'csEvalAppealOverlay')">
         <div class="cs-eval-modal wide" role="dialog" aria-modal="true" aria-labelledby="csEvalAppealTitle">
             <div class="cs-eval-modal-header">
                 <div><h3 id="csEvalAppealTitle">Ajukan Banding</h3><p id="csEvalAppealSubtitle">Laporan tersimpan dan dapat dibaca seluruh CS Line dan CS.</p></div>
@@ -41005,14 +41178,13 @@ html:not([data-theme-variant="venom"]) .topbar .profile-dropdown {
             </div>
             <div class="cs-eval-modal-footer">
                 <button class="cs-eval-button" type="button" onclick="copyCsAppealPreview()">Salin Preview</button>
-                <button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalAppealOverlay')">Batal</button>
                 <button class="cs-eval-button primary" type="button" id="csEvalAppealSubmitButton" onclick="submitCsEvaluationAppeal()">Ajukan Banding</button>
             </div>
         </div>
     </div>
 
     <!-- EVALUASI CS: POTONGAN MANUAL -->
-    <div class="cs-eval-modal-overlay" id="csEvalManualOverlay" aria-hidden="true" onclick="handleCsEvalOverlayClick(event, 'csEvalManualOverlay')">
+    <div class="cs-eval-modal-overlay" id="csEvalManualOverlay" data-close-mode="x-only" aria-hidden="true" onclick="handleCsEvalOverlayClick(event, 'csEvalManualOverlay')">
         <div class="cs-eval-modal wide" role="dialog" aria-modal="true" aria-labelledby="csEvalManualTitle">
             <div class="cs-eval-modal-header">
                 <div><h3 id="csEvalManualTitle">Laporan Potongan Manual</h3><p id="csEvalManualSubtitle">Satu laporan dapat diterapkan otomatis kepada beberapa staff.</p></div>
@@ -41024,7 +41196,20 @@ html:not([data-theme-variant="venom"]) .topbar .profile-dropdown {
                     <div class="cs-eval-field"><label>Persentase Potongan</label><input id="csEvalManualPercent" type="number" min="0" max="100" step="0.01" value="10" oninput="updateCsManualPreview()" /><small>Dipakai untuk perhitungan, tidak ditambahkan otomatis ke preview.</small></div>
                     <div class="cs-eval-field full"><label>Perihal</label><input id="csEvalManualSubject" type="text" value="Pemotongan Bonus 3 Bulan Sebesar 10%" oninput="updateCsManualPreview()" /></div>
                     <div class="cs-eval-field full"><label>Kasus</label><input id="csEvalManualCase" type="text" placeholder="Contoh: Melakukan pergantian rekening akun referral" oninput="updateCsManualPreview()" /></div>
-                    <div class="cs-eval-field full"><label>Staff terkait</label><div class="cs-eval-staff-picker" id="csEvalManualStaffPicker"></div></div>
+                    <div class="cs-eval-field full">
+                        <label>Staff terkait</label>
+                        <div class="cs-eval-staff-picker-shell">
+                            <div class="cs-eval-staff-picker-toolbar">
+                                <div class="cs-eval-staff-search cs-eval-search">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                                    <input id="csEvalManualStaffSearch" type="search" autocomplete="off" placeholder="Cari nama, passport, atau email..." oninput="filterCsManualStaffPicker()" />
+                                </div>
+                                <span class="cs-eval-staff-selected-count" id="csEvalManualStaffCount">0 staff dipilih</span>
+                            </div>
+                            <div class="cs-eval-staff-picker" id="csEvalManualStaffPicker"></div>
+                            <div class="cs-eval-staff-picker-empty" id="csEvalManualStaffEmpty" hidden>Tidak ada staff yang cocok.</div>
+                        </div>
+                    </div>
                     <div class="cs-eval-field full"><label>Keterangan</label><textarea id="csEvalManualDescription" oninput="updateCsManualPreview()" placeholder="Tuliskan laporan lengkap..."></textarea></div>
                     <div class="cs-eval-field full"><label>Lampiran</label><textarea id="csEvalManualEvidence" oninput="updateCsManualPreview()" placeholder="Satu link per baris"></textarea></div>
                     <div class="cs-eval-field full"><label>Preview yang dapat disalin</label><div class="cs-eval-report-preview" id="csEvalManualPreview"></div><div class="cs-eval-report-meta" id="csEvalManualMeta"></div></div>
@@ -58989,25 +59174,64 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         renderCsEvalErrors();
     }
 
+    function resolveCsEvaluationPeriodId() {
+        const validIds = new Set((csEvalState.periods || []).map(period => String(period.id)));
+        const candidates = [
+            csEvalState.selectedPeriodId,
+            csEvalState.filters?.period,
+            csEvalState.activePeriod?.id,
+            csEvalState.periods?.[0]?.id
+        ].map(value => String(value || '')).filter(Boolean);
+        const resolved = candidates.find(value => !validIds.size || validIds.has(value)) || '';
+        if (resolved) {
+            csEvalState.selectedPeriodId = resolved;
+            csEvalState.filters.period = resolved;
+        }
+        return resolved;
+    }
+
     async function loadCsEvalAppeals() {
-        if (!csEvalState.selectedPeriodId) {
+        const periodId = resolveCsEvaluationPeriodId();
+        if (!periodId) {
             csEvalState.rows = [];
             csEvalState.total = 0;
             renderCsEvalAppeals();
             return;
         }
+
         const from = csEvalState.page * csEvalState.pageSize;
         const to = from + csEvalState.pageSize - 1;
         let query = supabaseDashboard
             .from('cs_error_appeals')
-            .select('id,error_id,period_id,submitted_by_email,submitted_by_name,submitted_by_passport,status,processed_by,processed_at,created_at,cs_errors!inner(staff_email,staff_name,passport_text,error_date,error_type,chat_id,status,source_present)', { count: 'exact' })
-            .eq('period_id', csEvalState.selectedPeriodId);
+            .select('id,error_id,period_id,submitted_by_email,submitted_by_name,submitted_by_passport,status,processed_by,processed_at,created_at', { count: 'exact' })
+            .eq('period_id', periodId);
+
         if (csEvalState.filters.status) query = query.eq('status', csEvalState.filters.status);
         const search = sanitizePostgrestSearch(csEvalState.filters.search);
         if (search) query = query.or(`submitted_by_name.ilike.%${search}%,submitted_by_passport.ilike.%${search}%`);
-        const { data, error, count } = await query.order('created_at', { ascending: false }).range(from, to);
+
+        const { data, error, count } = await query
+            .order('created_at', { ascending: false })
+            .range(from, to);
         if (error) throw error;
-        csEvalState.rows = data || [];
+
+        const appeals = data || [];
+        const errorIds = [...new Set(appeals.map(item => item.error_id).filter(Boolean))];
+        const errorMap = new Map();
+
+        if (errorIds.length) {
+            const { data: errorRows, error: errorRowsError } = await supabaseDashboard
+                .from('cs_errors')
+                .select('id,staff_email,staff_name,passport_text,error_date,error_type,chat_id,status,source_present,evidence_links')
+                .in('id', errorIds);
+            if (errorRowsError) throw errorRowsError;
+            (errorRows || []).forEach(item => errorMap.set(String(item.id), item));
+        }
+
+        csEvalState.rows = appeals.map(appeal => ({
+            ...appeal,
+            cs_errors: errorMap.get(String(appeal.error_id)) || null
+        }));
         csEvalState.total = Number(count || 0);
         renderCsEvalAppeals();
     }
@@ -59316,12 +59540,16 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
             button.classList.toggle('active', button.dataset.csEvalTab === subtab);
         });
 
+        const savedPeriodId = String(csEvalState.filters.period || '');
+        const savedPeriodValid = csEvalState.periods.some(period => String(period.id) === savedPeriodId);
         if (subtab === 'current') {
-            csEvalState.selectedPeriodId = csEvalState.activePeriod?.id || '';
-            csEvalState.filters.period = csEvalState.selectedPeriodId;
-        } else if (!csEvalState.selectedPeriodId) {
-            csEvalState.selectedPeriodId = csEvalState.periods[0]?.id || '';
+            csEvalState.selectedPeriodId = csEvalState.activePeriod?.id || csEvalState.periods[0]?.id || '';
+        } else if (savedPeriodValid) {
+            csEvalState.selectedPeriodId = savedPeriodId;
+        } else if (!csEvalState.periods.some(period => String(period.id) === String(csEvalState.selectedPeriodId || ''))) {
+            csEvalState.selectedPeriodId = csEvalState.activePeriod?.id || csEvalState.periods[0]?.id || '';
         }
+        csEvalState.filters.period = csEvalState.selectedPeriodId;
         applyCsEvalFiltersToUI();
         updateCsEvalViewMeta();
         updateCsEvalPeriodIndicator();
@@ -59401,6 +59629,8 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
     }
 
     function handleCsEvalOverlayClick(event, id) {
+        const overlay = document.getElementById(id);
+        if (!overlay || overlay.dataset.closeMode === 'x-only') return;
         if (event.target?.id === id) closeCsEvalModal(id);
     }
 
@@ -59539,26 +59769,39 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
 
     async function viewCsEvaluationAppeal(id) {
         try {
-            const { data, error } = await supabaseDashboard
+            const { data: appeal, error: appealError } = await supabaseDashboard
                 .from('cs_error_appeals')
-                .select('*,cs_errors(*)')
+                .select('*')
                 .eq('id', id)
                 .single();
-            if (error) throw error;
-            const errorRow = Array.isArray(data.cs_errors) ? data.cs_errors[0] : data.cs_errors || {};
+            if (appealError) throw appealError;
+
+            const { data: errorRow, error: errorRowError } = await supabaseDashboard
+                .from('cs_errors')
+                .select('*')
+                .eq('id', appeal.error_id)
+                .single();
+            if (errorRowError) throw errorRowError;
+
             const title = document.getElementById('csEvalDetailTitle');
             const subtitle = document.getElementById('csEvalDetailSubtitle');
             const body = document.getElementById('csEvalDetailBody');
             const footer = document.getElementById('csEvalDetailFooter');
             if (title) title.textContent = 'Laporan Banding';
-            if (subtitle) subtitle.textContent = `${errorRow.staff_name || data.submitted_by_name} · ${data.status}`;
-            const preview = `TANGGAL ${formatCsEvalLongDate(errorRow.error_date)} DINGDONGTOGEL\n${errorRow.staff_name || data.submitted_by_name} ${errorRow.passport_text || data.submitted_by_passport || ''}\n${normalizeLinks(errorRow.evidence_links).concat(normalizeLinks(data.evidence_links)).filter((v,i,a)=>a.indexOf(v)===i).join('\n')}\n\nPerihal banding kesalahan :\n\n${data.reason}`.trim();
-            if (body) body.innerHTML = `<div class="cs-eval-report-preview">${esc(preview)}</div><div class="cs-eval-report-meta">Diajukan oleh: ${esc(data.submitted_by_name)} · ${esc(formatCsEvalDate(data.created_at, true))}<br>Status: ${esc(statusMeta[data.status]?.label || data.status)}${data.processed_by ? `<br>Diproses oleh: ${esc(data.processed_by)}` : ''}${data.processed_note ? `<br>Catatan: ${esc(data.processed_note)}` : ''}</div>`;
+            if (subtitle) subtitle.textContent = `${errorRow.staff_name || appeal.submitted_by_name} · ${appeal.status}`;
+            const preview = `TANGGAL ${formatCsEvalLongDate(errorRow.error_date)} DINGDONGTOGEL
+${errorRow.staff_name || appeal.submitted_by_name} ${errorRow.passport_text || appeal.submitted_by_passport || ''}
+${normalizeLinks(errorRow.evidence_links).concat(normalizeLinks(appeal.evidence_links)).filter((v,i,a)=>a.indexOf(v)===i).join('\n')}
+
+Perihal banding kesalahan :
+
+${appeal.reason}`.trim();
+            if (body) body.innerHTML = `<div class="cs-eval-report-preview">${esc(preview)}</div><div class="cs-eval-report-meta">Diajukan oleh: ${esc(appeal.submitted_by_name)} · ${esc(formatCsEvalDate(appeal.created_at, true))}<br>Status: ${esc(statusMeta[appeal.status]?.label || appeal.status)}${appeal.processed_by ? `<br>Diproses oleh: ${esc(appeal.processed_by)}` : ''}${appeal.processed_note ? `<br>Catatan: ${esc(appeal.processed_note)}` : ''}</div>`;
             csEvalState.detailCopyText = preview;
             const actions = [`<button class="cs-eval-button" type="button" onclick="copyCsEvalDetailText()">Salin</button>`];
-            if (csEvalCan('cs_appeal_process') && data.status === 'submitted') {
-                actions.push(`<button class="cs-eval-button" type="button" onclick="processCsEvaluationAppeal('${data.id}','rejected')">Tolak</button>`);
-                if (!errorRow.source_present) actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${data.id}','approved')">Banding Berhasil</button>`);
+            if (csEvalCan('cs_appeal_process') && appeal.status === 'submitted') {
+                actions.push(`<button class="cs-eval-button" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','rejected')">Tolak</button>`);
+                if (!errorRow.source_present) actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Banding Berhasil</button>`);
             }
             if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
             openCsEvalModal('csEvalDetailOverlay');
@@ -59639,6 +59882,11 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
     async function openCsManualReportModal(reportId = '') {
         if (!csEvalCan(reportId ? 'cs_manual_report_edit' : 'cs_manual_report_create')) return;
         await ensureCsEvalUserDirectory();
+        const periodId = resolveCsEvaluationPeriodId();
+        if (!periodId) {
+            showShiftToast('Periode Evaluasi CS belum tersedia. Jalankan sinkronisasi Spreadsheet terlebih dahulu.', 'warning', 4200);
+            return;
+        }
 
         let editing = null;
         if (reportId) {
@@ -59670,8 +59918,14 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
             const profile = typeof employeeProfilesByUserId !== 'undefined' ? employeeProfilesByUserId.get(String(user.id)) : null;
             const passport = profile?.passport_number || '';
             const checked = selectedEmails.has(lower(user.email)) ? ' checked' : '';
-            return `<label class="cs-eval-staff-option"><input type="checkbox" data-user-id="${esc(user.id)}" data-email="${esc(user.email)}" data-name="${esc(user.name)}" data-passport="${esc(passport)}" onchange="updateCsManualPreview()"${checked}/><span><strong>${esc(user.name)}</strong>${passport ? ` · ${esc(passport)}` : ''}</span></label>`;
+            const searchText = `${user.name || ''} ${user.email || ''} ${passport || ''}`.toLowerCase();
+            return `<label class="cs-eval-staff-option" data-search="${esc(searchText)}"><input type="checkbox" data-user-id="${esc(user.id)}" data-email="${esc(user.email)}" data-name="${esc(user.name)}" data-passport="${esc(passport)}" onchange="updateCsManualStaffSelection()"${checked}/><span class="cs-eval-staff-option-copy"><strong>${esc(user.name)}</strong><small>${esc(passport || 'Passport belum diisi')}${user.email ? ` · ${esc(user.email)}` : ''}</small></span></label>`;
         }).join('');
+
+        const staffSearch = document.getElementById('csEvalManualStaffSearch');
+        if (staffSearch) staffSearch.value = '';
+        filterCsManualStaffPicker();
+        updateCsManualStaffSelection();
 
         document.getElementById('csEvalManualInfo').value = editing?.info || 'DINGDONGTOGEL';
         document.getElementById('csEvalManualPercent').value = Number(editing?.deduction_percent ?? 10);
@@ -59699,6 +59953,30 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         updateCsManualPreview();
         closeCsEvalModal('csEvalDetailOverlay');
         openCsEvalModal('csEvalManualOverlay');
+    }
+
+    function filterCsManualStaffPicker() {
+        const query = cleanText(document.getElementById('csEvalManualStaffSearch')?.value || '').toLowerCase();
+        const options = Array.from(document.querySelectorAll('#csEvalManualStaffPicker .cs-eval-staff-option'));
+        let visible = 0;
+        options.forEach(option => {
+            const match = !query || String(option.dataset.search || '').includes(query);
+            option.hidden = !match;
+            if (match) visible += 1;
+        });
+        const empty = document.getElementById('csEvalManualStaffEmpty');
+        if (empty) empty.hidden = visible > 0;
+    }
+
+    function updateCsManualStaffCount() {
+        const selected = document.querySelectorAll('#csEvalManualStaffPicker input[type="checkbox"]:checked').length;
+        const count = document.getElementById('csEvalManualStaffCount');
+        if (count) count.textContent = `${selected} staff dipilih`;
+    }
+
+    function updateCsManualStaffSelection() {
+        updateCsManualStaffCount();
+        updateCsManualPreview();
     }
 
     function selectedManualStaff() {
@@ -59743,9 +60021,19 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         const caseTitle = cleanText(document.getElementById('csEvalManualCase')?.value || '');
         const description = cleanText(document.getElementById('csEvalManualDescription')?.value || '');
         const links = normalizeLinks(document.getElementById('csEvalManualEvidence')?.value || '');
-        const percent = Number(document.getElementById('csEvalManualPercent')?.value || 0);
-        if (!csEvalState.selectedPeriodId || !subject || !caseTitle || description.length < 10 || !staff.length || percent < 0 || percent > 100) {
-            showShiftToast('Lengkapi Perihal, Kasus, Staff, Keterangan, dan persentase potongan.', 'warning', 3500);
+        const percentRaw = document.getElementById('csEvalManualPercent')?.value;
+        const percent = Number(percentRaw);
+        const periodId = resolveCsEvaluationPeriodId();
+
+        const missing = [];
+        if (!periodId) missing.push('Periode');
+        if (!subject) missing.push('Perihal');
+        if (!caseTitle) missing.push('Kasus');
+        if (!staff.length) missing.push('Staff');
+        if (description.length < 10) missing.push('Keterangan minimal 10 karakter');
+        if (percentRaw === '' || !Number.isFinite(percent) || percent <= 0 || percent > 100) missing.push('Persentase 0,01–100');
+        if (missing.length) {
+            showShiftToast(`Belum lengkap: ${missing.join(', ')}.`, 'warning', 4200);
             return;
         }
         try {
@@ -59764,7 +60052,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
                 });
             } else {
                 result = await supabaseDashboard.rpc('create_cs_manual_report', {
-                    p_period_id: csEvalState.selectedPeriodId,
+                    p_period_id: periodId,
                     p_info: info,
                     p_subject: subject,
                     p_case_title: caseTitle,
@@ -60070,6 +60358,8 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         deleteCsEvaluationError,
         openCsManualReportModal,
         updateCsManualPreview,
+        filterCsManualStaffPicker,
+        updateCsManualStaffSelection,
         copyCsManualPreview,
         saveCsManualReport,
         viewCsManualReport,
@@ -60088,7 +60378,10 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
 
     document.addEventListener('keydown', event => {
         if (event.key !== 'Escape') return;
-        document.querySelectorAll('.cs-eval-modal-overlay.show').forEach(overlay => closeCsEvalModal(overlay.id));
+        document.querySelectorAll('.cs-eval-modal-overlay.show').forEach(overlay => {
+            if (overlay.dataset.closeMode === 'x-only') return;
+            closeCsEvalModal(overlay.id);
+        });
     });
 
     document.addEventListener('visibilitychange', () => {
