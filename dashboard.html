@@ -40195,6 +40195,112 @@ html[data-theme="dark"][data-theme-variant="venom"] .topbar {
 }
 </style>
 
+
+
+<style id="v64-10-seamless-gradient-sticky-header">
+/* =====================================================================
+   Dashboard Izin V64.10
+   Seamless gradient continuation for the sticky header on every theme.
+
+   The content canvas and the sticky topbar now share the same background
+   layers, size, position, and fixed attachment. This keeps the header fully
+   opaque during scrolling without making it look like a separate solid box.
+   ===================================================================== */
+
+/* Standard Light themes, DDT Original, and Cyber Dark. Variables resolve
+   against each active theme's own accent and base colors. */
+html {
+    --v64-content-canvas:
+        radial-gradient(
+            circle at 94% 2%,
+            rgba(var(--accent-rgb), .075),
+            transparent 26%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(var(--accent-rgb), .025),
+            transparent 190px
+        ),
+        var(--bg-primary);
+    --v64-content-canvas-size: auto, auto, auto;
+    --v64-content-canvas-repeat: no-repeat, no-repeat, no-repeat;
+}
+
+/* Venom Green keeps its own gaming canvas: subtle tactical grid, green
+   ambience, and matte black vertical gradient. It is deliberately isolated
+   from Cyber Dark. */
+html[data-theme="dark"][data-theme-variant="venom"] {
+    --v64-content-canvas:
+        linear-gradient(rgba(68, 214, 44, .010) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(68, 214, 44, .010) 1px, transparent 1px),
+        radial-gradient(circle at 84% -10%, rgba(68, 214, 44, .075), transparent 29%),
+        linear-gradient(180deg, #060706 0%, #090b09 100%);
+    --v64-content-canvas-size: 32px 32px, 32px 32px, auto, auto;
+    --v64-content-canvas-repeat: repeat, repeat, no-repeat, no-repeat;
+}
+
+/* Paint both surfaces from the same viewport-anchored canvas. The fixed
+   attachment is what prevents a visible gradient jump when the header becomes
+   sticky while the page content continues scrolling underneath it. */
+.main-content,
+.topbar {
+    background: var(--v64-content-canvas) !important;
+    background-size: var(--v64-content-canvas-size) !important;
+    background-repeat: var(--v64-content-canvas-repeat) !important;
+    background-position: 0 0 !important;
+    background-attachment: fixed !important;
+    background-origin: border-box !important;
+    background-clip: border-box !important;
+    opacity: 1 !important;
+    mix-blend-mode: normal !important;
+}
+
+/* Remove the former solid-color filler and card-like separation. The header
+   remains compact and receives only a very soft depth fade at its lower edge. */
+html:not([data-theme-variant="venom"]) .topbar,
+html[data-theme="dark"][data-theme-variant="venom"] .topbar {
+    border-top: 0 !important;
+    border-bottom-color: color-mix(
+        in srgb,
+        var(--border-color) 42%,
+        transparent
+    ) !important;
+    box-shadow:
+        0 14px 20px -24px color-mix(
+            in srgb,
+            var(--text-primary) 22%,
+            transparent
+        ) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* V64.9 used a solid-color shadow to fill the desktop negative margin.
+   Disable it; the parent canvas now paints the exact same gradient underneath. */
+@media (min-width: 1024px) {
+    html:not([data-theme-variant="venom"]) .topbar,
+    html[data-theme="dark"][data-theme-variant="venom"] .topbar {
+        box-shadow:
+            0 14px 20px -24px color-mix(
+                in srgb,
+                var(--text-primary) 22%,
+                transparent
+            ) !important;
+    }
+}
+
+/* Keep pseudo backdrops disabled. The actual sticky element is now the
+   seamless opaque surface, avoiding stacking and dropdown conflicts. */
+html:not([data-theme-variant="venom"]) .topbar::before,
+html[data-theme="dark"][data-theme-variant="venom"] .topbar::before {
+    content: none !important;
+    display: none !important;
+}
+
+/* The viewport-fixed canvas is retained on all breakpoints so the gradient
+   remains continuous even while the compact mobile header is sticky. */
+</style>
+
 </head>
 
 <body>
