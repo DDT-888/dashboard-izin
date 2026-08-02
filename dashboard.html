@@ -39784,7 +39784,7 @@ html[data-theme="light"] :is(
 
 <style id="v64-5-sticky-header-theme-button-fix">
 /* =====================================================================
-   Dashboard Izin V64.5 — Sticky page header + targeted theme button fixes
+   Dashboard Izin V64.6 — Compact sticky header correction + prior theme button fixes
    Visual-only patch. Existing Venom Green styling is intentionally kept.
    ===================================================================== */
 
@@ -39809,12 +39809,12 @@ html:not([data-theme-variant="venom"]) .topbar {
     isolation: isolate !important;
 }
 
-/* Keep header controls/dropdowns above the scrolling page content. */
+/* Keep only the dropdown anchor containers in the header flow.
+   The menus themselves must remain absolutely positioned; making them
+   relative causes their full hidden height to enlarge the sticky header. */
 html:not([data-theme-variant="venom"]) .topbar :is(
     .theme-picker,
-    .profile-container,
-    .theme-menu,
-    .profile-dropdown
+    .profile-container
 ) {
     position: relative;
     z-index: 2;
@@ -39919,6 +39919,11 @@ html:is(
 ) .employee-editor-footer .primary:disabled {
     color: rgba(255, 255, 255, .76) !important;
     opacity: .58 !important;
+}
+/* V64.6 regression guard: dropdown panels stay out of normal document flow. */
+html:not([data-theme-variant="venom"]) .topbar .theme-menu,
+html:not([data-theme-variant="venom"]) .topbar .profile-dropdown {
+    position: absolute !important;
 }
 </style>
 
