@@ -61005,7 +61005,7 @@ ${appeal.reason}`.trim();
     function setCsEvalDetailCompact(compact) {
         const overlay = document.getElementById('csEvalDetailOverlay');
         if (!overlay) return;
-        overlay.classList.remove('manual-report-detail');
+        overlay.classList.remove('manual-report-detail', 'appeal-report-detail');
         overlay.classList.toggle('compact-error-detail', Boolean(compact));
     }
 
@@ -61091,6 +61091,7 @@ ${appeal.reason}`.trim();
                 .from('cs_errors').select('*').eq('id', appeal.error_id).single();
             if (errorRowError) throw errorRowError;
             setCsEvalDetailCompact(false);
+            document.getElementById('csEvalDetailOverlay')?.classList.add('appeal-report-detail');
             const title = document.getElementById('csEvalDetailTitle');
             const subtitle = document.getElementById('csEvalDetailSubtitle');
             const body = document.getElementById('csEvalDetailBody');
@@ -67903,6 +67904,91 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
 </script>
 
 <script id="v64-28-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.28';</script>
+
+
+<!-- ================================================================
+     V64.29 — Appeal report preview parity + exact Dashboard header parity
+     ================================================================ -->
+<style id="v64-29-appeal-preview-dashboard-header-fix">
+/* Lihat Laporan Banding uses the exact same portrait geometry and text
+   treatment as Lihat Laporan Potongan Manual. */
+#csEvalDetailOverlay:is(.manual-report-detail, .appeal-report-detail) .cs-eval-modal {
+    width: min(500px, 92vw) !important;
+    max-height: min(90vh, 790px) !important;
+}
+#csEvalDetailOverlay:is(.manual-report-detail, .appeal-report-detail) .cs-eval-modal-body {
+    max-height: 65vh !important;
+    overflow-y: auto !important;
+}
+#csEvalDetailOverlay:is(.manual-report-detail, .appeal-report-detail) .cs-eval-report-preview {
+    min-height: 260px !important;
+    padding: 16px !important;
+    font-size: 10px !important;
+    line-height: 1.68 !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-report-preview.is-structured-preview {
+    white-space: normal !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-justified {
+    width: 100% !important;
+    display: inline-block !important;
+    margin: 0 !important;
+    text-align: justify !important;
+    text-align-last: left !important;
+}
+
+/* Banding Livechat header must use the same opaque base and gradient as
+   Passport, Visa and Training. The previous V64.27/V64.28 shorthand
+   background rules are fully reset here. */
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead {
+    position: static !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: none !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30 !important;
+    height: 29px !important;
+    padding: 0 10px !important;
+    color: color-mix(in srgb, var(--text-secondary) 86%, var(--accent-strong)) !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(180deg,
+        rgba(var(--accent-rgb), .16) 0%,
+        rgba(var(--accent-rgb), .09) 100%) !important;
+    background-repeat: no-repeat !important;
+    background-size: 100% 100% !important;
+    background-position: 0 0 !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
+    border-top: 0 !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-light) 75%, rgba(var(--accent-rgb), .25)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.52),
+        0 1px 0 color-mix(in srgb, var(--border-light) 75%, rgba(var(--accent-rgb), .25)),
+        0 3px 8px rgba(21,52,68,.055) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    font-size: 8px !important;
+    font-weight: 690 !important;
+    line-height: 1.2 !important;
+    letter-spacing: .01em !important;
+    text-transform: none !important;
+}
+html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th {
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(180deg,
+        rgba(var(--accent-rgb), .22) 0%,
+        rgba(var(--accent-rgb), .12) 100%) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.045),
+        0 1px 0 color-mix(in srgb, var(--border-light) 72%, rgba(var(--accent-rgb), .28)),
+        0 3px 8px rgba(0,0,0,.15) !important;
+}
+</style>
+<script id="v64-29-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.29';</script>
 
 </body>
 </html>
