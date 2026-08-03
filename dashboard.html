@@ -60362,7 +60362,7 @@ ${appeal.reason}`.trim();
         return `${before ? `<span class="cs-eval-preview-plain">${withBreaks(before)}</span><br><br>` : ''}
             <span class="cs-eval-preview-section-label">${esc(sectionLabel)}</span><br>
             <span class="cs-eval-preview-justified">${withBreaks(explanation)}</span>
-            ${after ? `<br><br><span class="cs-eval-preview-after">${withBreaks(after)}</span>` : ''}`;
+            ${after ? `<br><span class="cs-eval-preview-after">${withBreaks(after)}</span>` : ''}`;
     }
 
     function updateCsManualPreview() {
@@ -67501,7 +67501,7 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
         return `${before ? `<span class="cs-eval-preview-plain">${withBreaks(before)}</span><br><br>` : ''}`
             + `<span class="cs-eval-preview-section-label">${htmlEscape(sectionLabel)}</span><br>`
             + `<span class="cs-eval-preview-justified">${withBreaks(explanation)}</span>`
-            + `${after ? `<br><br><span class="cs-eval-preview-after">${withBreaks(after)}</span>` : ''}`;
+            + `${after ? `<br><span class="cs-eval-preview-after">${withBreaks(after)}</span>` : ''}`;
     }
 
     function decorateOpenReportPreview(overlayClass, sectionLabel) {
@@ -67545,7 +67545,68 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
         cancelled: ['Dibatalkan', 'cancelled']
     };
 
+    const LIVECHAT_APPEAL_CACHE_KEY_V6428 = 'dashboard_livechat_appeals_v6428';
+    let livechatAppealCacheV6428 = (() => {
+        try {
+            const cached = JSON.parse(localStorage.getItem(LIVECHAT_APPEAL_CACHE_KEY_V6428) || '{}');
+            return {
+                rows: Array.isArray(cached.rows) ? cached.rows : [],
+                total: Number(cached.total || 0)
+            };
+        } catch (_) {
+            return { rows: [], total: 0 };
+        }
+    })();
+
+    function canOpenDashboardLivechatAppealsV6428() {
+        const menu = document.getElementById('menuEvaluation');
+        if (!menu || getComputedStyle(menu).display === 'none') return false;
+        try {
+            return Boolean(getPermission(currentUserRole, 'cs_evaluation_view'))
+                && Boolean(getPermission(currentUserRole, 'cs_appeal_view_all'));
+        } catch (_) {
+            return true;
+        }
+    }
+
+    window.openDashboardLivechatAppealsV6428 = function openDashboardLivechatAppealsV6428() {
+        if (!canOpenDashboardLivechatAppealsV6428()) return;
+        if (typeof switchTab === 'function') switchTab('evaluation');
+        window.setTimeout(() => {
+            if (typeof window.switchCsEvaluationSubtab === 'function') {
+                window.switchCsEvaluationSubtab('appeals');
+            }
+        }, 40);
+    };
+
+    function normalizeSubmittedLivechatRowsV6428(rows) {
+        return (Array.isArray(rows) ? rows : [])
+            .filter(row => String(row?.appeal_status || 'submitted').toLowerCase() === 'submitted')
+            .slice(0, 8);
+    }
+
+    function livechatAppealRowsMarkupV6428(rows) {
+        const submittedRows = normalizeSubmittedLivechatRowsV6428(rows);
+        if (!submittedRows.length) {
+            return '<tr><td colspan="3" class="employee-priority-empty">Belum ada banding berstatus diajukan.</td></tr>';
+        }
+        const clickable = canOpenDashboardLivechatAppealsV6428();
+        return submittedRows.map((row, index) => {
+            const passport = String(row.passport_text || '').trim();
+            const actionAttrs = clickable
+                ? ' class="livechat-appeal-row is-clickable" tabindex="0" role="button" onclick="openDashboardLivechatAppealsV6428()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openDashboardLivechatAppealsV6428()}"'
+                : ' class="livechat-appeal-row"';
+            return `<tr${actionAttrs}>
+                <td class="employee-priority-index">${index + 1}</td>
+                <td title="${htmlEscape(row.staff_name || '')}${passport ? ` · ${htmlEscape(passport)}` : ''}">${htmlEscape(row.staff_name || '—')}</td>
+                <td><span class="employee-priority-status submitted">Diajukan</span></td>
+            </tr>`;
+        }).join('');
+    }
+
     function livechatAppealCardMarkup() {
+        const cachedRows = normalizeSubmittedLivechatRowsV6428(livechatAppealCacheV6428.rows);
+        const cachedTotal = Number(livechatAppealCacheV6428.total || cachedRows.length || 0);
         return `
             <article class="employee-priority-card livechat-appeal" id="employeeLivechatAppealCard">
                 <div class="employee-priority-heading">
@@ -67561,7 +67622,7 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
                             <strong>Pengajuan terbaru</strong>
                         </span>
                     </div>
-                    <span class="employee-priority-count appeal" id="employeeLivechatAppealCount" style="display:none">0</span>
+                    <span class="employee-priority-count appeal" id="employeeLivechatAppealCount" style="${cachedTotal > 0 ? '' : 'display:none'}">${cachedTotal}</span>
                 </div>
                 <div class="employee-priority-table-wrap">
                     <table class="employee-priority-table">
@@ -67572,9 +67633,7 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody id="employeeLivechatAppealRows">
-                            <tr><td colspan="3" class="employee-priority-empty">Memuat data banding...</td></tr>
-                        </tbody>
+                        <tbody id="employeeLivechatAppealRows">${livechatAppealRowsMarkupV6428(cachedRows)}</tbody>
                     </table>
                 </div>
             </article>`;
@@ -67587,30 +67646,25 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
         if (!rowsNode || !countNode || typeof supabaseDashboard === 'undefined') return;
         const serial = ++livechatRequestSerial;
         try {
-            const { data, error } = await supabaseDashboard.rpc('get_dashboard_livechat_appeals_v6427', { p_limit: 8 });
-            if (error) throw error;
+            let response = await supabaseDashboard.rpc('get_dashboard_livechat_appeals_v6428', { p_limit: 8 });
+            if (response.error && String(response.error.code || '') === 'PGRST202') {
+                response = await supabaseDashboard.rpc('get_dashboard_livechat_appeals_v6427', { p_limit: 30 });
+            }
+            if (response.error) throw response.error;
             if (serial !== livechatRequestSerial || !rowsNode.isConnected) return;
-            const rows = Array.isArray(data) ? data : [];
+            const rows = normalizeSubmittedLivechatRowsV6428(response.data);
             const total = Number(rows[0]?.total_count || rows.length || 0);
+            livechatAppealCacheV6428 = { rows, total };
+            try {
+                localStorage.setItem(LIVECHAT_APPEAL_CACHE_KEY_V6428, JSON.stringify(livechatAppealCacheV6428));
+            } catch (_) {}
             countNode.textContent = String(total);
             countNode.style.display = total > 0 ? '' : 'none';
-            if (!rows.length) {
-                rowsNode.innerHTML = '<tr><td colspan="3" class="employee-priority-empty">Belum ada banding pada periode aktif.</td></tr>';
-                return;
-            }
-            rowsNode.innerHTML = rows.map((row, index) => {
-                const meta = appealStatus[String(row.appeal_status || '').toLowerCase()] || [String(row.appeal_status || 'Diajukan'), 'submitted'];
-                const passport = String(row.passport_text || '').trim();
-                return `<tr>
-                    <td class="employee-priority-index">${index + 1}</td>
-                    <td title="${htmlEscape(row.staff_name || '')}${passport ? ` · ${htmlEscape(passport)}` : ''}">${htmlEscape(row.staff_name || '—')}</td>
-                    <td><span class="employee-priority-status ${meta[1]}">${htmlEscape(meta[0])}</span></td>
-                </tr>`;
-            }).join('');
+            rowsNode.innerHTML = livechatAppealRowsMarkupV6428(rows);
         } catch (error) {
             if (serial !== livechatRequestSerial || !rowsNode.isConnected) return;
-            countNode.style.display = 'none';
-            rowsNode.innerHTML = '<tr><td colspan="3" class="employee-priority-empty">Data banding belum tersedia.</td></tr>';
+            // Keep the last rendered/cached content so the card never jumps back to "Memuat".
+            if (!rowsNode.children.length) rowsNode.innerHTML = livechatAppealRowsMarkupV6428(livechatAppealCacheV6428.rows);
             console.warn('Banding Livechat Dashboard:', error);
         }
     }
@@ -67662,7 +67716,193 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
     else start();
 })();
 </script>
-<script id="v64-27-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.27';</script>
+
+
+
+<!-- ================================================================
+     V64.28 — Evaluasi CS filter states/report spacing/detail proof row,
+     stable submitted-only Dashboard livechat appeal card
+     ================================================================ -->
+<style id="v64-28-evaluation-dashboard-fix">
+/* Active Evaluasi CS filters are visibly different from their neutral state. */
+#tab-evaluation .cs-eval-toolbar .premium-select.has-active-filter .premium-select-trigger,
+#tab-evaluation .cs-eval-toolbar .unified-custom-filter.has-active-filter .unified-custom-filter-trigger,
+#tab-evaluation .cs-eval-toolbar .cs-eval-search.has-active-filter {
+    color: var(--accent-dark) !important;
+    border-color: color-mix(in srgb, var(--accent) 68%, var(--border-light)) !important;
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent-soft) 68%, var(--bg-primary)),
+        color-mix(in srgb, var(--accent-soft) 42%, var(--bg-primary))) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.66),
+        0 0 0 2px color-mix(in srgb, var(--accent-soft) 34%, transparent) !important;
+}
+#tab-evaluation .cs-eval-toolbar .has-active-filter .cs-eval-filter-leading,
+#tab-evaluation .cs-eval-toolbar .cs-eval-search.has-active-filter > svg {
+    color: var(--accent-strong) !important;
+    stroke: currentColor !important;
+}
+#tab-evaluation .cs-eval-toolbar .has-active-filter :is(.premium-select-value,.unified-custom-filter-value) {
+    color: color-mix(in srgb, var(--accent-strong) 76%, var(--text-primary)) !important;
+    font-weight: 720 !important;
+}
+
+/* Popup report: a single blank line between justified explanation and Lampiran. */
+#csEvalDetailOverlay :is(.manual-report-detail,.appeal-report-detail) .cs-eval-preview-after,
+#csEvalDetailOverlay.manual-report-detail .cs-eval-preview-after,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-after {
+    margin-top: 0 !important;
+}
+
+/* Detail Kesalahan proof row: modal is outside #tab-evaluation, so it needs its own geometry. */
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dt:has(+ dd .cs-eval-evidence-list),
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd:has(.cs-eval-evidence-list) {
+    min-height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+    align-self: stretch !important;
+    overflow: visible !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd .cs-eval-evidence-list {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 7px !important;
+    min-height: 30px !important;
+    margin: 0 !important;
+    overflow: visible !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-evidence-button {
+    --cs-proof-accent: var(--accent-strong);
+    --cs-proof-surface: color-mix(in srgb, var(--accent-soft) 38%, var(--bg-card));
+    --cs-proof-border: color-mix(in srgb, var(--accent) 32%, var(--border-light));
+    position: relative !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    color: var(--cs-proof-accent) !important;
+    text-decoration: none !important;
+    vertical-align: middle !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-evidence-surface {
+    width: 28px !important;
+    height: 28px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 1px solid var(--cs-proof-border) !important;
+    border-radius: 8px !important;
+    color: var(--cs-proof-accent) !important;
+    background: var(--cs-proof-surface) !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-evidence-icon {
+    width: 14px !important;
+    height: 14px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.65 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-evidence-number {
+    position: absolute !important;
+    top: -3px !important;
+    right: -3px !important;
+    z-index: 4 !important;
+    min-width: 14px !important;
+    height: 14px !important;
+    padding: 0 3px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1.5px solid var(--bg-card) !important;
+    border-radius: 999px !important;
+    color: #fff !important;
+    background: var(--accent-strong) !important;
+    font-size: 7px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    box-shadow: 0 2px 5px rgba(12,32,40,.18) !important;
+}
+
+/* Banding Livechat uses exactly the same table header language as the other three cards. */
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table th {
+    height: 29px !important;
+    padding: 0 10px !important;
+    color: color-mix(in srgb, var(--text-secondary) 86%, var(--accent-strong)) !important;
+    background: color-mix(in srgb, var(--bg-secondary) 84%, rgba(var(--accent-rgb), .16)) !important;
+    border-top: 0 !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-light) 78%, rgba(var(--accent-rgb), .24)) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.46), 0 1px 0 rgba(var(--accent-rgb), .035) !important;
+    font-size: 8px !important;
+    font-weight: 690 !important;
+    line-height: 1.2 !important;
+    letter-spacing: .01em !important;
+    text-transform: none !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table th.employee-priority-index-heading {
+    font-size: 7px !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-status.submitted {
+    color: color-mix(in srgb, var(--accent-strong) 82%, var(--text-primary)) !important;
+    background: color-mix(in srgb, var(--accent-soft) 54%, var(--bg-card)) !important;
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-light)) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45) !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-count.appeal {
+    color: color-mix(in srgb, var(--accent-strong) 78%, var(--text-primary)) !important;
+    background: color-mix(in srgb, var(--accent-soft) 52%, var(--bg-card)) !important;
+    border-color: color-mix(in srgb, var(--accent) 25%, var(--border-light)) !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .livechat-appeal-row.is-clickable {
+    cursor: pointer !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .livechat-appeal-row.is-clickable:hover,
+#tab-dashboard .employee-priority-card.livechat-appeal .livechat-appeal-row.is-clickable:focus-visible {
+    background: color-mix(in srgb, var(--accent-soft) 42%, transparent) !important;
+    outline: none !important;
+}
+</style>
+<script id="v64-28-evaluation-filter-state">
+(() => {
+    const selectIds = ['csEvalPeriodFilter','csEvalStaffFilter','csEvalTypeFilter','csEvalStatusFilter'];
+    function syncActiveEvaluationFilters() {
+        selectIds.forEach(id => {
+            const select = document.getElementById(id);
+            const wrapper = select?.closest('.premium-select, .unified-custom-filter');
+            if (wrapper) wrapper.classList.toggle('has-active-filter', Boolean(String(select.value || '').trim()));
+        });
+        const search = document.getElementById('csEvalSearch');
+        search?.closest('.cs-eval-search')?.classList.toggle('has-active-filter', Boolean(String(search.value || '').trim()));
+    }
+    document.addEventListener('change', event => {
+        if (event.target instanceof HTMLSelectElement && selectIds.includes(event.target.id)) {
+            requestAnimationFrame(syncActiveEvaluationFilters);
+        }
+    }, true);
+    document.addEventListener('input', event => {
+        if (event.target?.id === 'csEvalSearch') syncActiveEvaluationFilters();
+    }, true);
+    const start = () => {
+        syncActiveEvaluationFilters();
+        const toolbar = document.getElementById('csEvalToolbar');
+        if (toolbar) new MutationObserver(syncActiveEvaluationFilters).observe(toolbar, { childList: true, subtree: true, attributes: true });
+        window.setTimeout(syncActiveEvaluationFilters, 250);
+        window.setTimeout(syncActiveEvaluationFilters, 900);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+    else start();
+})();
+</script>
+
+<script id="v64-28-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.28';</script>
 
 </body>
 </html>
