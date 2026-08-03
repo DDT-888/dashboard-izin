@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.19-settings-three-column-balanced">
+    <meta name="dashboard-build" content="v64.27-evaluasi-dashboard-polish">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -67251,6 +67251,418 @@ html body #tab-settings :is(.settings-table-heading,.permission-matrix-heading,.
 })();
 </script>
 <script id="v64-26-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.26';</script>
+
+
+
+<!-- ================================================================
+     V64.27 — Evaluasi CS theme proof colours, report/detail polish,
+     Settings preview height, and four dashboard monitoring tables
+     ================================================================ -->
+<style id="v64-27-evaluasi-dashboard-polish">
+/* ---------------------------------------------------------------
+   EVALUASI CS — proof/evidence colours per saved theme.
+   Geometry from V64.26 is retained; only the palette is corrected.
+   --------------------------------------------------------------- */
+html[data-selected-theme="light"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #2b7470;
+    --cs-proof-surface: #f4faf9;
+    --cs-proof-border: rgba(43,116,112,.34);
+}
+html[data-selected-theme="dark"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #79bcca;
+    --cs-proof-surface: #16252d;
+    --cs-proof-border: rgba(121,188,202,.38);
+}
+html[data-selected-theme="venom"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #69c95c;
+    --cs-proof-surface: #142619;
+    --cs-proof-border: rgba(105,201,92,.40);
+}
+html[data-selected-theme="pink"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #b45c84;
+    --cs-proof-surface: #fff5f9;
+    --cs-proof-border: rgba(180,92,132,.34);
+}
+html[data-selected-theme="emerald"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #2a8d70;
+    --cs-proof-surface: #f2faf6;
+    --cs-proof-border: rgba(42,141,112,.34);
+}
+html[data-selected-theme="purple"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #7463b7;
+    --cs-proof-surface: #f7f4fd;
+    --cs-proof-border: rgba(116,99,183,.34);
+}
+html[data-selected-theme="ocean"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #287f9d;
+    --cs-proof-surface: #f1f8fb;
+    --cs-proof-border: rgba(40,127,157,.35);
+}
+html[data-selected-theme="rose-gold"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #a96f66;
+    --cs-proof-surface: #fff6f3;
+    --cs-proof-border: rgba(169,111,102,.34);
+}
+#tab-evaluation .cs-eval-evidence-number {
+    color: #fff !important;
+    background: color-mix(in srgb, var(--cs-proof-accent) 88%, #172026) !important;
+    border-color: var(--bg-primary) !important;
+}
+html[data-selected-theme="light"] #tab-evaluation .cs-eval-evidence-number,
+html[data-selected-theme="emerald"] #tab-evaluation .cs-eval-evidence-number,
+html[data-selected-theme="ocean"] #tab-evaluation .cs-eval-evidence-number,
+html[data-selected-theme="rose-gold"] #tab-evaluation .cs-eval-evidence-number,
+html[data-selected-theme="pink"] #tab-evaluation .cs-eval-evidence-number,
+html[data-selected-theme="purple"] #tab-evaluation .cs-eval-evidence-number {
+    box-shadow: 0 2px 5px rgba(21,43,48,.16) !important;
+}
+
+/* Never allow an action tooltip to float above an Evaluasi CS modal. */
+body:has(.cs-eval-modal-overlay.show) #historyActionTooltip {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateY(2px) !important;
+}
+
+/* Report detail uses the same structured typography as the live preview. */
+#csEvalDetailOverlay.manual-report-detail .cs-eval-report-preview.is-structured-preview {
+    white-space: normal !important;
+}
+#csEvalDetailOverlay.manual-report-detail .cs-eval-preview-justified,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-justified {
+    display: block !important;
+    width: 100% !important;
+    text-align: justify !important;
+    text-align-last: left !important;
+    white-space: normal !important;
+}
+#csEvalDetailOverlay.manual-report-detail .cs-eval-preview-plain,
+#csEvalDetailOverlay.manual-report-detail .cs-eval-preview-after,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-plain,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-after {
+    text-align: left !important;
+}
+
+/* Detail Kesalahan: label Bukti and its attachments stay on the same row. */
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dt:has(+ dd .cs-eval-evidence-list),
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd:has(.cs-eval-evidence-list) {
+    display: flex !important;
+    align-items: center !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd:has(.cs-eval-evidence-list) {
+    min-height: 44px !important;
+    overflow: visible !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd .cs-eval-evidence-list {
+    margin: 0 !important;
+    min-height: 30px !important;
+    align-self: center !important;
+}
+
+/* ---------------------------------------------------------------
+   SETTINGS — Hasil Preview is only one compact text row and its
+   contents are vertically centered.
+   --------------------------------------------------------------- */
+html body #tab-settings .settings-preview-window {
+    height: 30px !important;
+    min-height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+html body #tab-settings .settings-preview-track {
+    top: 50% !important;
+    height: auto !important;
+    min-height: 20px !important;
+    align-items: center !important;
+    transform: translateY(-50%);
+}
+html body #tab-settings .settings-preview-track.is-animated,
+html body #tab-settings .settings-preview-track[style*="animation"] {
+    top: 0 !important;
+    height: 100% !important;
+    transform: none;
+}
+html body #tab-settings .settings-preview-item,
+html body #tab-settings .settings-preview-empty {
+    line-height: 1.25 !important;
+}
+
+/* ---------------------------------------------------------------
+   DASHBOARD — four equal monitoring cards.
+   --------------------------------------------------------------- */
+#tab-dashboard .employee-priority-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-heading-icon {
+    color: #347e98 !important;
+    background: color-mix(in srgb, #347e98 10%, var(--bg-card)) !important;
+    border-color: color-mix(in srgb, #347e98 24%, var(--border-light)) !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-count {
+    color: color-mix(in srgb, #347e98 78%, var(--text-primary)) !important;
+    background: color-mix(in srgb, #347e98 10%, var(--bg-card)) !important;
+    border-color: color-mix(in srgb, #347e98 22%, var(--border-light)) !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table th {
+    background: color-mix(in srgb, var(--bg-secondary) 82%, rgba(52,126,152,.18)) !important;
+    border-bottom-color: color-mix(in srgb, var(--border-light) 74%, rgba(52,126,152,.28)) !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-status {
+    display: inline-flex !important;
+    align-items: center !important;
+    max-width: 100% !important;
+    min-height: 20px !important;
+    padding: 0 6px !important;
+    border-radius: 999px !important;
+    font-size: 7.7px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+#tab-dashboard .employee-priority-status.submitted {
+    color: #a66d18 !important;
+    background: rgba(166,109,24,.10) !important;
+    border: 1px solid rgba(166,109,24,.18) !important;
+}
+#tab-dashboard .employee-priority-status.approved {
+    color: #277e4e !important;
+    background: rgba(39,126,78,.10) !important;
+    border: 1px solid rgba(39,126,78,.18) !important;
+}
+#tab-dashboard .employee-priority-status.rejected,
+#tab-dashboard .employee-priority-status.cancelled {
+    color: #b24f5b !important;
+    background: rgba(178,79,91,.10) !important;
+    border: 1px solid rgba(178,79,91,.18) !important;
+}
+html[data-selected-theme="venom"] #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-heading-icon,
+html[data-selected-theme="venom"] #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-count {
+    color: #6bcf5e !important;
+}
+html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-heading-icon,
+html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-count {
+    color: #75bdcc !important;
+}
+@media (max-width: 1450px) {
+    #tab-dashboard .employee-priority-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+@media (max-width: 760px) {
+    #tab-dashboard .employee-priority-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+<script id="v64-27-evaluasi-dashboard-script">
+(() => {
+    const htmlEscape = value => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+
+    function hideEvaluationActionTooltip() {
+        const tooltip = document.getElementById('historyActionTooltip');
+        if (!tooltip) return;
+        tooltip.classList.remove('visible', 'place-bottom');
+        tooltip.setAttribute('aria-hidden', 'true');
+    }
+
+    function anyEvaluationModalOpen() {
+        return Boolean(document.querySelector('.cs-eval-modal-overlay.show'));
+    }
+
+    function watchEvaluationModals() {
+        const overlays = document.querySelectorAll('.cs-eval-modal-overlay');
+        if (!overlays.length) return;
+        const observer = new MutationObserver(() => {
+            if (anyEvaluationModalOpen()) hideEvaluationActionTooltip();
+        });
+        overlays.forEach(overlay => observer.observe(overlay, { attributes: true, attributeFilter: ['class', 'aria-hidden'] }));
+    }
+
+    function structuredPreviewMarkup(rawText, sectionLabel) {
+        const text = String(rawText || '').replace(/\r\n?/g, '\n').trim();
+        const marker = `${sectionLabel}\n`;
+        const markerIndex = text.indexOf(marker);
+        const withBreaks = value => htmlEscape(String(value || '')).replace(/\n/g, '<br>');
+        if (markerIndex < 0) return `<span class="cs-eval-preview-plain">${withBreaks(text)}</span>`;
+        const before = text.slice(0, markerIndex).replace(/\n+$/, '');
+        const remainder = text.slice(markerIndex + marker.length);
+        const attachmentMatch = remainder.match(/\n{2,}Lampiran\s*:/);
+        const attachmentIndex = attachmentMatch ? attachmentMatch.index : -1;
+        const explanation = (attachmentIndex >= 0 ? remainder.slice(0, attachmentIndex) : remainder).trim();
+        const after = attachmentIndex >= 0 ? remainder.slice(attachmentIndex).replace(/^\n+/, '').trim() : '';
+        return `${before ? `<span class="cs-eval-preview-plain">${withBreaks(before)}</span><br><br>` : ''}`
+            + `<span class="cs-eval-preview-section-label">${htmlEscape(sectionLabel)}</span><br>`
+            + `<span class="cs-eval-preview-justified">${withBreaks(explanation)}</span>`
+            + `${after ? `<br><br><span class="cs-eval-preview-after">${withBreaks(after)}</span>` : ''}`;
+    }
+
+    function decorateOpenReportPreview(overlayClass, sectionLabel) {
+        const overlay = document.getElementById('csEvalDetailOverlay');
+        const preview = overlay?.querySelector('.cs-eval-report-preview');
+        if (!overlay || !preview) return;
+        overlay.classList.add(overlayClass);
+        preview.classList.add('is-structured-preview');
+        preview.innerHTML = structuredPreviewMarkup(preview.textContent, sectionLabel);
+    }
+
+    function wrapReportViewers() {
+        if (typeof window.viewCsManualReport === 'function' && !window.viewCsManualReport.__v6427Wrapped) {
+            const original = window.viewCsManualReport;
+            const wrapped = async function(...args) {
+                const result = await original.apply(this, args);
+                hideEvaluationActionTooltip();
+                requestAnimationFrame(() => decorateOpenReportPreview('manual-report-detail', 'Keterangan :'));
+                return result;
+            };
+            wrapped.__v6427Wrapped = true;
+            window.viewCsManualReport = wrapped;
+        }
+        if (typeof window.viewCsEvaluationAppeal === 'function' && !window.viewCsEvaluationAppeal.__v6427Wrapped) {
+            const original = window.viewCsEvaluationAppeal;
+            const wrapped = async function(...args) {
+                const result = await original.apply(this, args);
+                hideEvaluationActionTooltip();
+                requestAnimationFrame(() => decorateOpenReportPreview('appeal-report-detail', 'Perihal banding kesalahan :'));
+                return result;
+            };
+            wrapped.__v6427Wrapped = true;
+            window.viewCsEvaluationAppeal = wrapped;
+        }
+    }
+
+    const appealStatus = {
+        submitted: ['Diajukan', 'submitted'],
+        approved: ['Berhasil', 'approved'],
+        rejected: ['Ditolak', 'rejected'],
+        cancelled: ['Dibatalkan', 'cancelled']
+    };
+
+    function livechatAppealCardMarkup() {
+        return `
+            <article class="employee-priority-card livechat-appeal" id="employeeLivechatAppealCard">
+                <div class="employee-priority-heading">
+                    <div class="employee-priority-heading-main">
+                        <span class="employee-priority-heading-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 5h16v12H8l-4 3z"/>
+                                <path d="M8 9h8M8 13h5"/>
+                            </svg>
+                        </span>
+                        <span>
+                            <small>BANDING LIVECHAT</small>
+                            <strong>Pengajuan terbaru</strong>
+                        </span>
+                    </div>
+                    <span class="employee-priority-count appeal" id="employeeLivechatAppealCount" style="display:none">0</span>
+                </div>
+                <div class="employee-priority-table-wrap">
+                    <table class="employee-priority-table">
+                        <thead>
+                            <tr>
+                                <th class="employee-priority-index-heading">#</th>
+                                <th>Nama</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeLivechatAppealRows">
+                            <tr><td colspan="3" class="employee-priority-empty">Memuat data banding...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>`;
+    }
+
+    let livechatRequestSerial = 0;
+    async function loadLivechatAppeals() {
+        const rowsNode = document.getElementById('employeeLivechatAppealRows');
+        const countNode = document.getElementById('employeeLivechatAppealCount');
+        if (!rowsNode || !countNode || typeof supabaseDashboard === 'undefined') return;
+        const serial = ++livechatRequestSerial;
+        try {
+            const { data, error } = await supabaseDashboard.rpc('get_dashboard_livechat_appeals_v6427', { p_limit: 8 });
+            if (error) throw error;
+            if (serial !== livechatRequestSerial || !rowsNode.isConnected) return;
+            const rows = Array.isArray(data) ? data : [];
+            const total = Number(rows[0]?.total_count || rows.length || 0);
+            countNode.textContent = String(total);
+            countNode.style.display = total > 0 ? '' : 'none';
+            if (!rows.length) {
+                rowsNode.innerHTML = '<tr><td colspan="3" class="employee-priority-empty">Belum ada banding pada periode aktif.</td></tr>';
+                return;
+            }
+            rowsNode.innerHTML = rows.map((row, index) => {
+                const meta = appealStatus[String(row.appeal_status || '').toLowerCase()] || [String(row.appeal_status || 'Diajukan'), 'submitted'];
+                const passport = String(row.passport_text || '').trim();
+                return `<tr>
+                    <td class="employee-priority-index">${index + 1}</td>
+                    <td title="${htmlEscape(row.staff_name || '')}${passport ? ` · ${htmlEscape(passport)}` : ''}">${htmlEscape(row.staff_name || '—')}</td>
+                    <td><span class="employee-priority-status ${meta[1]}">${htmlEscape(meta[0])}</span></td>
+                </tr>`;
+            }).join('');
+        } catch (error) {
+            if (serial !== livechatRequestSerial || !rowsNode.isConnected) return;
+            countNode.style.display = 'none';
+            rowsNode.innerHTML = '<tr><td colspan="3" class="employee-priority-empty">Data banding belum tersedia.</td></tr>';
+            console.warn('Banding Livechat Dashboard:', error);
+        }
+    }
+
+    function patchDashboardMonitoring() {
+        const grid = document.querySelector('#employeeDashboardPanel .employee-priority-grid');
+        if (!grid) return;
+        const labelMap = {
+            'PRIORITAS PASSPORT': 'PASSPORT',
+            'PRIORITAS VISA': 'VISA',
+            'PRIORITAS TRAINING': 'TRAINING'
+        };
+        grid.querySelectorAll('.employee-priority-heading small').forEach(node => {
+            const current = node.textContent.trim().toUpperCase();
+            if (labelMap[current]) node.textContent = labelMap[current];
+        });
+        if (!grid.querySelector('#employeeLivechatAppealCard')) {
+            grid.insertAdjacentHTML('beforeend', livechatAppealCardMarkup());
+            loadLivechatAppeals();
+        }
+    }
+
+    function startDashboardObserver() {
+        const tab = document.getElementById('tab-dashboard');
+        if (!tab) return;
+        let queued = false;
+        const run = () => {
+            queued = false;
+            patchDashboardMonitoring();
+        };
+        const observer = new MutationObserver(() => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(run);
+        });
+        observer.observe(tab, { childList: true, subtree: true });
+        patchDashboardMonitoring();
+    }
+
+    function start() {
+        wrapReportViewers();
+        watchEvaluationModals();
+        startDashboardObserver();
+        window.setTimeout(wrapReportViewers, 300);
+        window.setTimeout(patchDashboardMonitoring, 500);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+    else start();
+})();
+</script>
+<script id="v64-27-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.27';</script>
 
 </body>
 </html>
