@@ -60132,12 +60132,13 @@ ${normalizeLinks(errorRow.evidence_links).concat(normalizeLinks(appeal.evidence_
 Perihal banding kesalahan :
 
 ${appeal.reason}`.trim();
-            if (body) body.innerHTML = `<div class="cs-eval-report-preview">${esc(preview)}</div><div class="cs-eval-report-meta">Diajukan oleh: ${esc(appeal.submitted_by_name)} · ${esc(formatCsEvalDate(appeal.created_at, true))}<br>Status: ${esc(statusMeta[appeal.status]?.label || appeal.status)}${appeal.processed_by ? `<br>Diproses oleh: ${esc(appeal.processed_by)}` : ''}${appeal.processed_note ? `<br>Catatan: ${esc(appeal.processed_note)}` : ''}</div>`;
+            if (body) body.innerHTML = `<div class="cs-eval-report-preview is-structured-preview">${formatCsEvalStructuredPreview(preview, 'Perihal banding kesalahan :')}</div><div class="cs-eval-report-meta">Diajukan oleh: ${esc(appeal.submitted_by_name)} · ${esc(formatCsEvalDate(appeal.created_at, true))}<br>Status: ${esc(statusMeta[appeal.status]?.label || appeal.status)}${appeal.processed_by ? `<br>Diproses oleh: ${esc(appeal.processed_by)}` : ''}${appeal.processed_note ? `<br>Catatan: ${esc(appeal.processed_note)}` : ''}</div>`;
             csEvalState.detailCopyText = preview;
             const actions = [`<button class="cs-eval-button" type="button" onclick="copyCsEvalDetailText()">Salin</button>`];
-            if (csEvalCan('cs_appeal_process') && appeal.status === 'submitted') {
+            const canProcessAppeal = isCsEvalManagerRole() || csEvalCan('cs_appeal_process');
+            if (canProcessAppeal && appeal.status === 'submitted') {
                 actions.push(`<button class="cs-eval-button" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','rejected')">Tolak</button>`);
-                if (!errorRow.source_present) actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Banding Berhasil</button>`);
+                actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Setujui</button>`);
             }
             if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
             openCsEvalModal('csEvalDetailOverlay');
@@ -61105,12 +61106,13 @@ ${appeal.reason}`.trim();
             const attachmentSection = formatCsEvalAttachmentSection(extraLinks);
             if (attachmentSection) sections.push(attachmentSection);
             const preview = sections.join('\n\n').trim();
-            if (body) body.innerHTML = `<div class="cs-eval-report-preview">${esc(preview)}</div><div class="cs-eval-report-meta">Diajukan oleh: ${esc(appeal.submitted_by_name)} · ${esc(formatCsEvalDate(appeal.created_at, true))}<br>Status: ${esc(statusMeta[appeal.status]?.label || appeal.status)}${appeal.processed_by ? `<br>Diproses oleh: ${esc(appeal.processed_by)}` : ''}${appeal.processed_note ? `<br>Catatan: ${esc(appeal.processed_note)}` : ''}</div>`;
+            if (body) body.innerHTML = `<div class="cs-eval-report-preview is-structured-preview">${formatCsEvalStructuredPreview(preview, 'Perihal banding kesalahan :')}</div><div class="cs-eval-report-meta">Diajukan oleh: ${esc(appeal.submitted_by_name)} · ${esc(formatCsEvalDate(appeal.created_at, true))}<br>Status: ${esc(statusMeta[appeal.status]?.label || appeal.status)}${appeal.processed_by ? `<br>Diproses oleh: ${esc(appeal.processed_by)}` : ''}${appeal.processed_note ? `<br>Catatan: ${esc(appeal.processed_note)}` : ''}</div>`;
             csEvalState.detailCopyText = preview;
             const actions = [`<button class="cs-eval-button" type="button" onclick="copyCsEvalDetailText()">Salin</button>`];
-            if (csEvalCan('cs_appeal_process') && appeal.status === 'submitted') {
+            const canProcessAppeal = isCsEvalManagerRole() || csEvalCan('cs_appeal_process');
+            if (canProcessAppeal && appeal.status === 'submitted') {
                 actions.push(`<button class="cs-eval-button" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','rejected')">Tolak</button>`);
-                if (!errorRow.source_present) actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Banding Berhasil</button>`);
+                actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Setujui</button>`);
             }
             if (csEvalCan('cs_appeal_delete')) actions.push(`<button class="cs-eval-button danger" type="button" onclick="deleteCsEvaluationAppeal('${appeal.id}')">Hapus</button>`);
             if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
@@ -67510,6 +67512,7 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
         const preview = overlay?.querySelector('.cs-eval-report-preview');
         if (!overlay || !preview) return;
         overlay.classList.add(overlayClass);
+        if (preview.classList.contains('is-structured-preview')) return;
         preview.classList.add('is-structured-preview');
         preview.innerHTML = structuredPreviewMarkup(preview.textContent, sectionLabel);
     }
@@ -68143,3 +68146,31 @@ html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .
 
 </body>
 </html>
+
+<!-- ================================================================
+     V64.31 — Appeal report structured rendering + manager approval action
+     ================================================================ -->
+<style id="v64-31-appeal-report-action-fix">
+/* The popup is rendered as structured HTML directly by the active module.
+   Keep one intentional empty line before Lampiran. */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-report-preview.is-structured-preview {
+    white-space: normal !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-plain,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-section-label,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-justified,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-after {
+    color: inherit !important;
+    font: inherit !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-justified {
+    display: inline-block !important;
+    width: 100% !important;
+    text-align: justify !important;
+    text-align-last: left !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-modal-footer .cs-eval-button.primary {
+    min-width: 64px !important;
+}
+</style>
+<script id="v64-31-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.31';</script>
