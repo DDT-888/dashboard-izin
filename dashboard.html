@@ -59740,8 +59740,16 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         }[csEvalState.subtab];
         if (title) title.textContent = meta[0];
         if (description) description.textContent = meta[1];
-        if (create) create.hidden = !(csEvalState.subtab === 'manual' && csEvalCan('cs_manual_report_create'));
-        if (exportButton) exportButton.hidden = !csEvalCan('cs_evaluation_export');
+        // V64.38: action buttons are contextual to the active Evaluasi CS tab.
+        // Export is only relevant to Periode Berjalan and Riwayat Periode.
+        // Buat Laporan is only relevant to Potongan Manual.
+        if (create) {
+            create.hidden = !(csEvalState.subtab === 'manual' && csEvalCan('cs_manual_report_create'));
+        }
+        if (exportButton) {
+            const exportSubtabAllowed = csEvalState.subtab === 'current' || csEvalState.subtab === 'history';
+            exportButton.hidden = !(exportSubtabAllowed && csEvalCan('cs_evaluation_export'));
+        }
         if (staffFilter) staffFilter.style.display = ['current', 'history'].includes(csEvalState.subtab) ? '' : 'none';
         if (typeFilter) typeFilter.style.display = ['current', 'history'].includes(csEvalState.subtab) ? '' : 'none';
         if (periodFilter) periodFilter.style.display = csEvalState.subtab === 'current' && csEvalState.activePeriod ? 'none' : '';
@@ -68227,6 +68235,11 @@ html[data-theme="dark"][data-theme-variant="venom"] body #tab-dashboard .employe
 document.documentElement.dataset.dashboardBuild = 'v64.36';
 </script>
 
+
+<!-- V64.38 — contextual Evaluasi CS action buttons -->
+<script id="v64-38-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.38';
+</script>
 </body>
 </html>
 
