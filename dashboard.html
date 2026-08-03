@@ -40650,9 +40650,13 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 </div>
                 <div class="welcome-right">
                     <div class="quick-stats" aria-label="Statistik singkat pengguna">
-                        <span class="stat-item cs-eval-quick-stat" id="quickCsEvaluationCard" title="Poin kesalahan Livechat dan estimasi persentase bonus periode berjalan">
+                        <span class="stat-item cs-eval-quick-stat" id="quickCsPointsCard" title="Total poin kesalahan Livechat periode berjalan">
                             <span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/><path d="m4 7 6-4 6 6 6-4"/></svg></span>
-                            <span class="stat-copy"><strong class="stat-value" id="quickCsPoints">—</strong><small id="quickCsBonus">Poin Livechat · Bonus —</small></span>
+                            <span class="stat-copy"><strong class="stat-value" id="quickCsPoints">—</strong><small>Poin LC</small></span>
+                        </span>
+                        <span class="stat-item cs-eval-quick-stat" id="quickCsBonusCard" title="Estimasi persentase bonus periode berjalan">
+                            <span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/><path d="M18 5 6 19"/></svg></span>
+                            <span class="stat-copy"><strong class="stat-value" id="quickCsBonus">—%</strong><small>Bonus</small></span>
                         </span>
                         <span class="stat-item">
                             <span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg></span>
@@ -41389,11 +41393,18 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 <div><h3 id="csEvalAppealTitle">Pengajuan Banding</h3><p id="csEvalAppealSubtitle">Laporan tersimpan dan dapat dibaca seluruh CS Line dan CS.</p></div>
                 <button class="cs-eval-modal-close" type="button" onclick="closeCsEvalModal('csEvalAppealOverlay')" aria-label="Tutup"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
             </div>
-            <div class="cs-eval-modal-body">
-                <div class="cs-eval-form-grid">
-                    <div class="cs-eval-field full"><label>Alasan dan penjelasan banding</label><textarea id="csEvalAppealReason" oninput="updateCsAppealPreview()" placeholder="Tuliskan kronologi dan alasan banding secara lengkap..."></textarea></div>
-                    <div class="cs-eval-field full"><label>Bukti tambahan</label><textarea id="csEvalAppealEvidence" oninput="updateCsAppealPreview()" placeholder="Satu link per baris"></textarea><small>Link sumber kesalahan tetap ikut ditampilkan pada preview.</small></div>
-                    <div class="cs-eval-field full"><label>Preview yang dapat disalin</label><div class="cs-eval-report-preview" id="csEvalAppealPreview"></div></div>
+            <div class="cs-eval-modal-body cs-eval-live-modal-body">
+                <div class="cs-eval-live-layout cs-eval-appeal-live-layout">
+                    <div class="cs-eval-live-form-pane">
+                        <div class="cs-eval-form-grid">
+                            <div class="cs-eval-field full"><label>Alasan dan penjelasan banding</label><textarea id="csEvalAppealReason" oninput="updateCsAppealPreview()" placeholder="Tuliskan kronologi dan alasan banding secara lengkap..."></textarea></div>
+                            <div class="cs-eval-field full"><label>Bukti tambahan</label><textarea id="csEvalAppealEvidence" oninput="updateCsAppealPreview()" placeholder="Satu link per baris"></textarea><small>Link sumber kesalahan tetap ikut ditampilkan pada bagian awal preview.</small></div>
+                        </div>
+                    </div>
+                    <aside class="cs-eval-live-preview-pane" aria-label="Preview pengajuan banding">
+                        <div class="cs-eval-live-preview-heading"><strong>Preview Laporan</strong><span>Diperbarui otomatis saat form diisi.</span></div>
+                        <div class="cs-eval-report-preview" id="csEvalAppealPreview"></div>
+                    </aside>
                 </div>
             </div>
             <div class="cs-eval-modal-footer">
@@ -41410,38 +41421,46 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 <div><h3 id="csEvalManualTitle">Laporan Potongan Manual</h3><p id="csEvalManualSubtitle">Satu laporan dapat diterapkan otomatis kepada beberapa staff.</p></div>
                 <button class="cs-eval-modal-close" type="button" onclick="closeCsEvalModal('csEvalManualOverlay')" aria-label="Tutup"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
             </div>
-            <div class="cs-eval-modal-body">
-                <div class="cs-eval-form-grid">
-                    <div class="cs-eval-field"><label>Info</label><input id="csEvalManualInfo" type="text" value="DINGDONGTOGEL" oninput="updateCsManualPreview()" /></div>
-                    <div class="cs-eval-field"><label>Persentase Potongan</label><input id="csEvalManualPercent" type="number" min="0" max="100" step="0.01" value="10" oninput="updateCsManualPreview()" /><small>Dipakai untuk perhitungan, tidak ditambahkan otomatis ke preview.</small></div>
-                    <div class="cs-eval-field full"><label>Perihal</label><input id="csEvalManualSubject" type="text" value="Pemotongan Bonus 3 Bulan Sebesar 10%" oninput="updateCsManualPreview()" /></div>
-                    <div class="cs-eval-field full"><label>Kasus</label><input id="csEvalManualCase" type="text" placeholder="Contoh: Melakukan pergantian rekening akun referral" oninput="updateCsManualPreview()" /></div>
-                    <div class="cs-eval-field full">
-                        <label>Staff terkait</label>
-                        <div class="cs-eval-staff-picker-shell" id="csEvalManualStaffShell">
-                            <div class="cs-eval-staff-picker-toolbar">
-                                <div class="cs-eval-staff-search cs-eval-search">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                                    <input id="csEvalManualStaffSearch" type="search" autocomplete="off" placeholder="Klik untuk melihat semua staff atau ketik nama/passport..." onfocus="openCsManualStaffPicker()" onclick="openCsManualStaffPicker()" oninput="filterCsManualStaffPicker()" />
+            <div class="cs-eval-modal-body cs-eval-live-modal-body">
+                <div class="cs-eval-live-layout cs-eval-manual-live-layout">
+                    <div class="cs-eval-live-form-pane">
+                        <div class="cs-eval-form-grid">
+                            <div class="cs-eval-field"><label>Info</label><input id="csEvalManualInfo" type="text" value="DINGDONGTOGEL" oninput="updateCsManualPreview()" /></div>
+                            <div class="cs-eval-field"><label>Persentase Potongan</label><input id="csEvalManualPercent" type="number" min="0" max="100" step="0.01" value="10" oninput="updateCsManualPreview()" /><small>Dipakai untuk perhitungan, tidak ditambahkan otomatis ke preview.</small></div>
+                            <div class="cs-eval-field full"><label>Perihal</label><input id="csEvalManualSubject" type="text" value="Pemotongan Bonus 3 Bulan Sebesar 10%" oninput="updateCsManualPreview()" /></div>
+                            <div class="cs-eval-field full"><label>Kasus</label><input id="csEvalManualCase" type="text" placeholder="Contoh: Melakukan pergantian rekening akun referral" oninput="updateCsManualPreview()" /></div>
+                            <div class="cs-eval-field full">
+                                <label>Staff terkait</label>
+                                <div class="cs-eval-staff-picker-shell" id="csEvalManualStaffShell">
+                                    <div class="cs-eval-staff-picker-toolbar">
+                                        <div class="cs-eval-staff-search cs-eval-search">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                                            <input id="csEvalManualStaffSearch" type="search" autocomplete="off" placeholder="Klik untuk melihat semua staff atau ketik nama/passport..." onfocus="openCsManualStaffPicker()" onclick="openCsManualStaffPicker()" oninput="filterCsManualStaffPicker()" />
+                                            <div class="cs-eval-staff-picker" id="csEvalManualStaffPicker" hidden></div>
+                                            <div class="cs-eval-staff-picker-empty" id="csEvalManualStaffEmpty" hidden>Tidak ada staff yang cocok.</div>
+                                        </div>
+                                        <span class="cs-eval-staff-selected-count" id="csEvalManualStaffCount">0 staff dipilih</span>
+                                    </div>
+                                    <div class="cs-eval-selected-staff-list" id="csEvalManualSelectedStaff" aria-live="polite"></div>
                                 </div>
-                                <span class="cs-eval-staff-selected-count" id="csEvalManualStaffCount">0 staff dipilih</span>
                             </div>
-                            <div class="cs-eval-staff-picker" id="csEvalManualStaffPicker" hidden></div>
-                            <div class="cs-eval-staff-picker-empty" id="csEvalManualStaffEmpty" hidden>Tidak ada staff yang cocok.</div>
-                            <div class="cs-eval-selected-staff-list" id="csEvalManualSelectedStaff" aria-live="polite"></div>
+                            <div class="cs-eval-field full">
+                                <label>Tambahan <span class="cs-eval-optional-label">Opsional</span></label>
+                                <div class="cs-eval-extra-row">
+                                    <input id="csEvalManualExtraLabel" type="text" placeholder="Contoh: Tanggal / User ID" oninput="updateCsManualPreview()" />
+                                    <input id="csEvalManualExtraValue" type="text" placeholder="Isi tambahan" oninput="updateCsManualPreview()" />
+                                </div>
+                                <small>Baris tambahan hanya tampil pada preview apabila label dan isinya diisi.</small>
+                            </div>
+                            <div class="cs-eval-field full"><label>Keterangan</label><textarea id="csEvalManualDescription" oninput="updateCsManualPreview()" placeholder="Tuliskan laporan lengkap..."></textarea></div>
+                            <div class="cs-eval-field full"><label>Lampiran</label><textarea id="csEvalManualEvidence" oninput="updateCsManualPreview()" placeholder="Satu link per baris"></textarea></div>
                         </div>
                     </div>
-                    <div class="cs-eval-field full">
-                        <label>Tambahan <span class="cs-eval-optional-label">Opsional</span></label>
-                        <div class="cs-eval-extra-row">
-                            <input id="csEvalManualExtraLabel" type="text" placeholder="Contoh: Tanggal / User ID" oninput="updateCsManualPreview()" />
-                            <input id="csEvalManualExtraValue" type="text" placeholder="Isi tambahan" oninput="updateCsManualPreview()" />
-                        </div>
-                        <small>Baris tambahan hanya tampil pada preview apabila label dan isinya diisi.</small>
-                    </div>
-                    <div class="cs-eval-field full"><label>Keterangan</label><textarea id="csEvalManualDescription" oninput="updateCsManualPreview()" placeholder="Tuliskan laporan lengkap..."></textarea></div>
-                    <div class="cs-eval-field full"><label>Lampiran</label><textarea id="csEvalManualEvidence" oninput="updateCsManualPreview()" placeholder="Satu link per baris"></textarea></div>
-                    <div class="cs-eval-field full"><label>Preview yang dapat disalin</label><div class="cs-eval-report-preview" id="csEvalManualPreview"></div><div class="cs-eval-report-meta" id="csEvalManualMeta"></div></div>
+                    <aside class="cs-eval-live-preview-pane" aria-label="Preview laporan potongan manual">
+                        <div class="cs-eval-live-preview-heading"><strong>Preview Laporan</strong><span>Diperbarui otomatis saat form diisi.</span></div>
+                        <div class="cs-eval-report-preview" id="csEvalManualPreview"></div>
+                        <div class="cs-eval-report-meta" id="csEvalManualMeta"></div>
+                    </aside>
                 </div>
             </div>
             <div class="cs-eval-modal-footer">
@@ -59233,11 +59252,16 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
     }
 
     function evidenceButtons(links) {
-        const clean = normalizeLinks(links);
+        const clean = uniqueCsEvalLinks(typeof links === 'undefined' ? [] : links);
         if (!clean.length) return '';
         return `<div class="cs-eval-evidence-list">${clean.map((url, index) => `
-            <a class="cs-eval-evidence-button" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="Buka bukti ${index + 1}">
-                ${iconSvg('link')}<small>${index + 1}</small>
+            <a class="cs-eval-evidence-button" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="Buka bukti ${index + 1}" title="Bukti ${index + 1}">
+                <svg class="cs-eval-evidence-svg" viewBox="0 0 32 32" aria-hidden="true">
+                    <rect class="cs-eval-evidence-frame" x="2.5" y="2.5" width="27" height="27" rx="7"/>
+                    <path class="cs-eval-evidence-link" d="M9.6 16.2 13 12.8a4 4 0 0 1 5.7 0 4 4 0 0 1 0 5.7l-2.2 2.2M22.4 15.8 19 19.2a4 4 0 0 1-5.7 0 4 4 0 0 1 0-5.7l2.2-2.2"/>
+                    <rect class="cs-eval-evidence-count-box" x="19" y="18.5" width="8.5" height="8.5" rx="2.6"/>
+                    <text class="cs-eval-evidence-count-text" x="23.25" y="24.9" text-anchor="middle">${index + 1}</text>
+                </svg>
             </a>`).join('')}</div>`;
     }
 
@@ -59978,6 +60002,12 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         } catch (error) {
             showShiftToast(`Form banding gagal dibuka: ${error.message}`, 'error');
         }
+    }
+
+    function formatCsEvalAttachmentSection(links) {
+        const clean = uniqueCsEvalLinks(links);
+        if (!clean.length) return '';
+        return clean.length === 1 ? `Lampiran : ${clean[0]}` : `Lampiran :\n${clean.join('\n')}`;
     }
 
     function buildCsAppealPreview() {
@@ -60739,6 +60769,12 @@ ${appeal.reason}`.trim();
         return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
 
+    function nextCsEvalIsoDate(isoDate) {
+        const date = new Date(`${isoDate}T00:00:00Z`);
+        date.setUTCDate(date.getUTCDate() + 1);
+        return date.toISOString().slice(0, 10);
+    }
+
     function buildCsErrorsQuery() {
         let query = supabaseDashboard
             .from('cs_errors')
@@ -60752,17 +60788,17 @@ ${appeal.reason}`.trim();
 
         const rawSearch = cleanText(csEvalState.filters.search || '');
         const search = sanitizePostgrestSearch(rawSearch);
-        if (search) {
+        const dateSearch = parseCsEvalSearchDate(rawSearch);
+        if (dateSearch) {
+            query = query.gte('error_date', dateSearch).lt('error_date', nextCsEvalIsoDate(dateSearch));
+        } else if (search) {
             const pattern = `%${search}%`;
-            const dateSearch = parseCsEvalSearchDate(rawSearch);
-            const terms = [
+            query = query.or([
                 `staff_name.ilike.${pattern}`,
                 `passport_text.ilike.${pattern}`,
                 `error_type.ilike.${pattern}`,
                 `chat_id.ilike.${pattern}`
-            ];
-            if (dateSearch) terms.unshift(`error_date.eq.${dateSearch}`);
-            query = query.or(terms.join(','));
+            ].join(','));
         }
 
         const from = csEvalState.page * csEvalState.pageSize;
@@ -60815,7 +60851,7 @@ ${appeal.reason}`.trim();
         const body = document.getElementById('csEvalTableBody');
         if (!head || !body) return;
         head.innerHTML = `<tr>
-            <th style="width:46px">#</th>
+            <th class="cs-eval-number-header" style="width:46px">#</th>
             <th style="width:92px">Tanggal</th>
             <th style="width:175px">Nama & Passport</th>
             <th style="width:230px">Jenis Kesalahan</th>
@@ -60978,8 +61014,9 @@ ${appeal.reason}`.trim();
         const reason = cleanText(document.getElementById('csEvalAppealReason')?.value || '');
         const passport = row.passport_text ? ` ${row.passport_text}` : '';
         const header = [`TANGGAL ${formatCsEvalLongDate(row.error_date)} DINGDONGTOGEL`, `${row.staff_name}${passport}`, ...sourceLinks].join('\n');
-        const sections = [header, `Perihal banding kesalahan :\n\n${reason}`];
-        if (extraLinks.length) sections.push(`Lampiran : ${extraLinks.join('\n')}`);
+        const sections = [header, `Perihal banding kesalahan :\n${reason}`];
+        const attachmentSection = formatCsEvalAttachmentSection(extraLinks);
+        if (attachmentSection) sections.push(attachmentSection);
         return sections.join('\n\n').trim();
     }
 
@@ -61001,8 +61038,9 @@ ${appeal.reason}`.trim();
             const sourceLinks = uniqueCsEvalLinks(errorRow.evidence_links);
             const extraLinks = uniqueCsEvalLinks(appeal.evidence_links).filter(link => !sourceLinks.includes(link));
             const header = [`TANGGAL ${formatCsEvalLongDate(errorRow.error_date)} DINGDONGTOGEL`, `${errorRow.staff_name || appeal.submitted_by_name}${(errorRow.passport_text || appeal.submitted_by_passport) ? ` ${errorRow.passport_text || appeal.submitted_by_passport}` : ''}`, ...sourceLinks].join('\n');
-            const sections = [header, `Perihal banding kesalahan :\n\n${appeal.reason}`];
-            if (extraLinks.length) sections.push(`Lampiran : ${extraLinks.join('\n')}`);
+            const sections = [header, `Perihal banding kesalahan :\n${appeal.reason}`];
+            const attachmentSection = formatCsEvalAttachmentSection(extraLinks);
+            if (attachmentSection) sections.push(attachmentSection);
             const preview = sections.join('\n\n').trim();
             if (body) body.innerHTML = `<div class="cs-eval-report-preview">${esc(preview)}</div><div class="cs-eval-report-meta">Diajukan oleh: ${esc(appeal.submitted_by_name)} · ${esc(formatCsEvalDate(appeal.created_at, true))}<br>Status: ${esc(statusMeta[appeal.status]?.label || appeal.status)}${appeal.processed_by ? `<br>Diproses oleh: ${esc(appeal.processed_by)}` : ''}${appeal.processed_note ? `<br>Catatan: ${esc(appeal.processed_note)}` : ''}</div>`;
             csEvalState.detailCopyText = preview;
@@ -61354,7 +61392,8 @@ ${appeal.reason}`.trim();
         if (extra) lines.push(extra);
         let preview = lines.join('\n');
         if (description) preview += `\n\nKeterangan :\n${description}`;
-        if (links.length) preview += `\n\nLampiran : ${links.join('\n')}`;
+        const attachmentSection = formatCsEvalAttachmentSection(links);
+        if (attachmentSection) preview += `\n\n${attachmentSection}`;
         return preview.trim();
     }
 
@@ -61417,7 +61456,8 @@ ${appeal.reason}`.trim();
         if (extra) lines.push(extra);
         let preview = lines.join('\n');
         if (cleanText(report.description || '')) preview += `\n\nKeterangan :\n${report.description}`;
-        if (links.length) preview += `\n\nLampiran : ${links.join('\n')}`;
+        const attachmentSection = formatCsEvalAttachmentSection(links);
+        if (attachmentSection) preview += `\n\n${attachmentSection}`;
         return preview.trim();
     }
 
@@ -61509,7 +61549,7 @@ ${appeal.reason}`.trim();
         const role = lower(currentUserRole);
         if (!['cs', 'csline'].includes(role)) {
             pointsNode.textContent = '—';
-            bonusNode.textContent = 'Poin Livechat · Bonus —';
+            bonusNode.textContent = '—%';
             return;
         }
         const email = currentUserEmailLower();
@@ -61519,7 +61559,7 @@ ${appeal.reason}`.trim();
             const baseBonus = Number(csEvalState.settings.base_bonus || CS_EVAL_DEFAULT_SETTINGS.base_bonus || 0);
             const percent = baseBonus > 0 ? Math.max(0, Math.min(100, Math.round(Number(cache.row.estimated_bonus || 0) / baseBonus * 100))) : 0;
             pointsNode.textContent = Number(cache.row.lc_points || 0);
-            bonusNode.textContent = `Poin Livechat · Bonus ${percent}%`;
+            bonusNode.textContent = `${percent}%`;
             return;
         }
         try {
@@ -61541,11 +61581,11 @@ ${appeal.reason}`.trim();
             const baseBonus = Number(csEvalState.settings.base_bonus || CS_EVAL_DEFAULT_SETTINGS.base_bonus || 0);
             const percent = baseBonus > 0 ? Math.max(0, Math.min(100, Math.round(Number(row.estimated_bonus || 0) / baseBonus * 100))) : 0;
             pointsNode.textContent = Number(row.lc_points || 0);
-            bonusNode.textContent = `Poin Livechat · Bonus ${percent}%`;
+            bonusNode.textContent = `${percent}%`;
             csEvalState.dashboardStatCache = { periodId, email, loadedAt: now, row };
         } catch (_) {
             pointsNode.textContent = '—';
-            bonusNode.textContent = 'Poin Livechat · Bonus —';
+            bonusNode.textContent = '—%';
         }
     }
 
@@ -65373,7 +65413,7 @@ html body .sidebar.collapsed .sidebar-menu .sidebar-chevron-slot {
 })();
 </script>
 
-<script id="v64-20-build-marker">document.documentElement.dataset.dashboardBuild='v64.21';</script>
+<script id="v64-20-build-marker">document.documentElement.dataset.dashboardBuild='v64.22';</script>
 
 
 <style id="v64-21-evaluasi-cs-final">
@@ -65769,6 +65809,424 @@ html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-selected-staff-chip
 }
 </style>
 
-<script id="v64-21-build-marker">document.documentElement.dataset.dashboardBuild='v64.21';</script>
+<script id="v64-21-build-marker">document.documentElement.dataset.dashboardBuild='v64.22';</script>
+
+<style id="v64-22-evaluasi-cs-visual-live-preview">
+/* ================================================================
+   V64.22 — Evaluasi CS visual polish, live preview and no ghost gutter
+   ================================================================ */
+
+/* Dashboard: Poin LC and Bonus are two independent standard cards. */
+.welcome-banner .quick-stats .stat-item.cs-eval-quick-stat {
+    width: auto !important;
+    min-width: 82px !important;
+}
+.welcome-banner .quick-stats .stat-item.cs-eval-quick-stat .stat-copy small {
+    white-space: nowrap;
+}
+
+/* Filters follow the same flexible filter-bar rhythm used elsewhere. */
+#tab-evaluation .cs-eval-toolbar {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    overflow: visible !important;
+}
+#tab-evaluation .cs-eval-toolbar > .cs-eval-search {
+    flex: 1 1 310px;
+    min-width: 240px;
+}
+#tab-evaluation .cs-eval-toolbar > .premium-select,
+#tab-evaluation .cs-eval-toolbar > .unified-custom-filter {
+    flex: 0 0 156px;
+    width: 156px;
+    min-width: 142px;
+    --unified-filter-width: 156px;
+}
+#tab-evaluation .cs-eval-toolbar > .premium-select[data-select-id="csEvalStaffFilter"] {
+    flex-basis: 184px;
+    width: 184px;
+    --unified-filter-width: 184px;
+}
+#tab-evaluation .cs-eval-toolbar .cs-eval-search input {
+    height: 34px !important;
+    min-height: 34px !important;
+    font-size: 9.7px !important;
+    font-weight: 500 !important;
+}
+
+/* New compact SVG evidence tile. Number stays inside the SVG artwork. */
+.cs-eval-evidence-list {
+    gap: 5px;
+}
+.cs-eval-evidence-button {
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    color: var(--accent-dark) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transition: transform .15s ease, filter .15s ease;
+}
+.cs-eval-evidence-button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+.cs-eval-evidence-svg {
+    width: 30px !important;
+    height: 30px !important;
+    overflow: visible;
+}
+.cs-eval-evidence-frame {
+    fill: color-mix(in srgb, var(--accent-soft) 48%, var(--bg-primary));
+    stroke: color-mix(in srgb, var(--accent) 46%, var(--border-light));
+    stroke-width: 1.35;
+}
+.cs-eval-evidence-link {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.55;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.cs-eval-evidence-count-box {
+    fill: var(--accent);
+    stroke: var(--bg-primary);
+    stroke-width: 1.2;
+}
+.cs-eval-evidence-count-text {
+    fill: var(--button-text, #fff);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 6.8px;
+    font-weight: 850;
+    dominant-baseline: auto;
+}
+html[data-theme="dark"] .cs-eval-evidence-frame {
+    fill: #142534;
+    stroke: rgba(82,213,255,.55);
+}
+html[data-theme="dark"] .cs-eval-evidence-button {
+    color: #72dcff !important;
+}
+html[data-theme="dark"] .cs-eval-evidence-count-box {
+    fill: #52d5ff;
+    stroke: #0a1721;
+}
+html[data-theme="dark"] .cs-eval-evidence-count-text {
+    fill: #06121b;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-evidence-frame {
+    fill: #18321a;
+    stroke: rgba(134,245,107,.56);
+}
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-evidence-button {
+    color: #9bf383 !important;
+    background: transparent !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-evidence-count-box {
+    fill: #86f56b;
+    stroke: #08120a;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-evidence-count-text {
+    fill: #041007;
+}
+
+/* 60/40 live form-preview workspace. */
+.cs-eval-modal.wide {
+    width: min(1180px, 98vw) !important;
+    max-height: min(92vh, 850px) !important;
+}
+.cs-eval-live-modal-body {
+    padding: 12px !important;
+}
+.cs-eval-live-layout {
+    min-height: 430px;
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(330px, 2fr);
+    gap: 12px;
+    align-items: start;
+}
+.cs-eval-live-form-pane {
+    min-width: 0;
+}
+.cs-eval-live-preview-pane {
+    position: sticky;
+    top: 0;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--cs-eval-border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent-soft) 12%, var(--bg-primary));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+}
+.cs-eval-live-preview-heading {
+    min-height: 38px;
+    margin: -2px -1px 9px;
+    padding: 2px 3px 9px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid var(--cs-eval-border);
+}
+.cs-eval-live-preview-heading strong {
+    color: var(--text-primary);
+    font-size: 9.5px;
+}
+.cs-eval-live-preview-heading span {
+    color: var(--text-muted);
+    font-size: 7px;
+    text-align: right;
+}
+.cs-eval-live-preview-pane .cs-eval-report-preview {
+    min-height: 390px;
+    max-height: 540px;
+    overflow: auto;
+    background: var(--bg-primary);
+}
+.cs-eval-appeal-live-layout .cs-eval-live-preview-pane .cs-eval-report-preview {
+    min-height: 320px;
+}
+
+/* Staff selector: opaque, aligned exactly to the search field. */
+.cs-eval-staff-picker-shell,
+.cs-eval-staff-search {
+    position: relative;
+    overflow: visible !important;
+}
+.cs-eval-staff-picker-toolbar {
+    align-items: center;
+}
+.cs-eval-staff-search {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.cs-eval-staff-picker {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    left: 0 !important;
+    right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 238px !important;
+    padding: 6px !important;
+    z-index: 350 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    opacity: 1 !important;
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-light)) !important;
+    border-radius: 10px !important;
+    color: var(--text-primary) !important;
+    background: var(--bg-primary) !important;
+    box-shadow: 0 18px 46px rgba(5,18,30,.26), inset 0 1px 0 rgba(255,255,255,.54) !important;
+    backdrop-filter: none !important;
+}
+.cs-eval-staff-picker-empty {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 351;
+    width: 100%;
+    min-height: 46px;
+    padding: 14px 12px;
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border-light));
+    border-radius: 10px;
+    color: var(--text-muted);
+    background: var(--bg-primary);
+    box-shadow: 0 16px 38px rgba(5,18,30,.22);
+    font-size: 8px;
+}
+.cs-eval-staff-option {
+    width: 100%;
+    min-height: 43px;
+    padding: 6px 8px;
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    color: var(--text-secondary) !important;
+    background: var(--bg-primary) !important;
+}
+.cs-eval-staff-option + .cs-eval-staff-option {
+    margin-top: 3px;
+    border-top-color: transparent !important;
+}
+.cs-eval-staff-option:hover,
+.cs-eval-staff-option:focus-visible {
+    color: var(--text-primary) !important;
+    border-color: color-mix(in srgb, var(--accent) 20%, var(--border-light)) !important;
+    background: color-mix(in srgb, var(--accent-soft) 52%, var(--bg-primary)) !important;
+    outline: none;
+}
+.cs-eval-staff-option-add svg {
+    width: 13px;
+    height: 13px;
+}
+.cs-eval-selected-staff-chip {
+    background: color-mix(in srgb, var(--accent-soft) 22%, var(--bg-primary)) !important;
+}
+.cs-eval-selected-staff-chip button {
+    width: 25px !important;
+    height: 25px !important;
+    border: 1px solid rgba(200,76,89,.22) !important;
+    border-radius: 7px !important;
+    color: #c84c59 !important;
+    background: rgba(200,76,89,.075) !important;
+    box-shadow: none !important;
+}
+.cs-eval-selected-staff-chip button:hover {
+    color: #b73e4b !important;
+    border-color: rgba(200,76,89,.38) !important;
+    background: rgba(200,76,89,.13) !important;
+}
+.cs-eval-selected-staff-chip button svg {
+    width: 12px !important;
+    height: 12px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+}
+html[data-theme="dark"] .cs-eval-staff-picker,
+html[data-theme="dark"] .cs-eval-staff-picker-empty,
+html[data-theme="dark"] .cs-eval-staff-option {
+    background: #101923 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-staff-picker,
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-staff-picker-empty,
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-staff-option {
+    color: #dcefd6 !important;
+    border-color: rgba(126,238,104,.18) !important;
+    background: #102313 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-staff-option:hover {
+    background: #1a3b1e !important;
+}
+
+/* Perfect number-column alignment. */
+.cs-eval-table th.cs-eval-number-header,
+.cs-eval-table td.cs-eval-row-number {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    text-align: center !important;
+}
+.cs-eval-table th.cs-eval-number-header {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Solid premium summary surfaces: one tone per module, no rainbow cards. */
+#tab-evaluation {
+    --cs-summary-surface: color-mix(in srgb, var(--accent-soft) 34%, var(--bg-primary));
+    --cs-ranking-surface: color-mix(in srgb, #e9edf4 62%, var(--bg-primary));
+    --cs-bonus-surface: color-mix(in srgb, #f3eee2 58%, var(--bg-primary));
+}
+.cs-eval-summary-panel {
+    overflow: visible !important;
+    scrollbar-gutter: auto !important;
+    background: var(--bg-primary) !important;
+}
+.cs-eval-summary-heading,
+.cs-eval-stats-grid {
+    background: var(--cs-summary-surface) !important;
+}
+.cs-eval-summary-heading {
+    border-radius: 0 !important;
+}
+.cs-eval-stat-card,
+.cs-eval-stat-card:nth-child(n) {
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--border-light)) !important;
+    background: var(--bg-primary) !important;
+}
+.cs-eval-summary-section:nth-of-type(1) {
+    background: var(--cs-ranking-surface) !important;
+}
+.cs-eval-summary-section:nth-of-type(2) {
+    background: var(--cs-bonus-surface) !important;
+}
+.cs-eval-rank-row {
+    border: 1px solid color-mix(in srgb, var(--border-light) 82%, transparent) !important;
+    background: var(--bg-primary) !important;
+}
+html[data-theme="dark"] #tab-evaluation {
+    --cs-summary-surface: #182b3c;
+    --cs-ranking-surface: #1b2432;
+    --cs-bonus-surface: #2b261d;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation {
+    --cs-summary-surface: #19351d;
+    --cs-ranking-surface: #142b18;
+    --cs-bonus-surface: #29301a;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-summary-panel,
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-summary-heading,
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-stats-grid,
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-summary-section {
+    background-image: none !important;
+}
+
+/* No reserved scrollbar gutter when desktop content already fits. */
+@media (min-width: 1281px) {
+    #tab-evaluation .cs-eval-table-scroll {
+        min-height: 0 !important;
+        overflow: visible !important;
+        scrollbar-gutter: auto !important;
+    }
+    #tab-evaluation .cs-eval-table {
+        min-width: 0 !important;
+    }
+}
+@media (max-width: 1280px) {
+    #tab-evaluation .cs-eval-table-scroll {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scrollbar-gutter: auto !important;
+    }
+    #tab-evaluation .cs-eval-table {
+        min-width: 1080px !important;
+    }
+}
+
+/* Detail Kesalahan CS follows its content instead of stretching. */
+#csEvalDetailOverlay.compact-error-detail .cs-eval-modal {
+    width: min(570px, 94vw) !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid {
+    grid-template-columns: 104px minmax(0, 1fr) !important;
+    gap: 7px 10px !important;
+}
+
+@media (max-width: 900px) {
+    .cs-eval-live-layout {
+        grid-template-columns: 1fr;
+    }
+    .cs-eval-live-preview-pane {
+        position: static;
+    }
+    .cs-eval-live-preview-pane .cs-eval-report-preview {
+        min-height: 260px;
+        max-height: none;
+    }
+}
+@media (max-width: 680px) {
+    #tab-evaluation .cs-eval-toolbar > .cs-eval-search,
+    #tab-evaluation .cs-eval-toolbar > .premium-select,
+    #tab-evaluation .cs-eval-toolbar > .unified-custom-filter {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 100%;
+    }
+    .cs-eval-staff-picker-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .cs-eval-staff-selected-count {
+        align-self: flex-end;
+    }
+}
+</style>
+
+<script id="v64-22-build-marker">document.documentElement.dataset.dashboardBuild='v64.22';</script>
 </body>
 </html>
