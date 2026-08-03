@@ -69553,3 +69553,107 @@ document.documentElement.dataset.dashboardBuild = 'v64.42';
 <script id="v64-44-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.44';
 </script>
+
+<!-- ================================================================
+     V64.45 — Theme-tinted appeal history + matte typography
+     ================================================================ -->
+<style id="v64-45-appeal-history-matte-theme">
+/*
+ * History rows use a quiet tint derived from the active dashboard accent.
+ * The surface is no longer plain white, while semantic status colours remain
+ * limited to the status text so the list stays premium and easy on the eyes.
+ */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history {
+    --appeal-history-row-bg: color-mix(in srgb, var(--bg-secondary) 88%, var(--accent) 12%);
+    --appeal-history-row-hover: color-mix(in srgb, var(--bg-secondary) 84%, var(--accent) 16%);
+    --appeal-history-row-open: color-mix(in srgb, var(--bg-secondary) 80%, var(--accent) 20%);
+    --appeal-history-row-border: color-mix(in srgb, var(--border-color) 68%, var(--accent) 32%);
+    --appeal-history-row-border-open: color-mix(in srgb, var(--border-color) 48%, var(--accent) 52%);
+    --appeal-history-title-matte: color-mix(in srgb, var(--text-primary) 88%, var(--bg-secondary) 12%);
+    --appeal-history-muted-matte: color-mix(in srgb, var(--text-secondary) 84%, var(--bg-secondary) 16%);
+    --appeal-history-chevron-matte: color-mix(in srgb, var(--text-secondary) 64%, var(--accent) 36%);
+}
+
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-heading {
+    color: var(--appeal-history-title-matte) !important;
+    font-weight: 600 !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-heading small {
+    color: var(--appeal-history-muted-matte) !important;
+    font-weight: 500 !important;
+}
+
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item {
+    overflow: hidden !important;
+    border-color: var(--appeal-history-row-border) !important;
+    background: var(--appeal-history-row-bg) !important;
+    box-shadow: none !important;
+    transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item:hover {
+    border-color: color-mix(in srgb, var(--appeal-history-row-border) 68%, var(--accent) 32%) !important;
+    background: var(--appeal-history-row-hover) !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item[open] {
+    border-color: var(--appeal-history-row-border-open) !important;
+    background: var(--appeal-history-row-open) !important;
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 76%, transparent) !important;
+}
+
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item > summary {
+    background: transparent !important;
+    color: var(--appeal-history-title-matte) !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item > summary > .cs-eval-appeal-history-attempt {
+    color: var(--appeal-history-title-matte) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item > summary > small {
+    color: var(--appeal-history-muted-matte) !important;
+    font-weight: 450 !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item > summary::before {
+    color: var(--appeal-history-chevron-matte) !important;
+}
+
+/* Expanded details stay in the same themed surface instead of creating a new
+   bright-white block. */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-content {
+    border-top-color: color-mix(in srgb, var(--appeal-history-row-border) 78%, transparent) !important;
+    background: color-mix(in srgb, var(--appeal-history-row-open) 86%, var(--bg-secondary) 14%) !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-content > .cs-eval-report-preview,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-meta {
+    color: var(--appeal-history-title-matte) !important;
+    border-color: color-mix(in srgb, var(--appeal-history-row-border) 84%, transparent) !important;
+    background: color-mix(in srgb, var(--bg-secondary) 82%, var(--accent) 18%) !important;
+    box-shadow: none !important;
+}
+
+/* Dark themes need a little more surface separation without becoming neon. */
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history {
+    --appeal-history-row-bg: color-mix(in srgb, var(--bg-secondary) 91%, var(--accent) 9%);
+    --appeal-history-row-hover: color-mix(in srgb, var(--bg-secondary) 87%, var(--accent) 13%);
+    --appeal-history-row-open: color-mix(in srgb, var(--bg-secondary) 83%, var(--accent) 17%);
+    --appeal-history-title-matte: color-mix(in srgb, var(--text-primary) 91%, var(--bg-secondary) 9%);
+    --appeal-history-muted-matte: color-mix(in srgb, var(--text-secondary) 86%, var(--bg-secondary) 14%);
+}
+html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history {
+    --appeal-history-row-bg: color-mix(in srgb, #07120a 91%, var(--accent) 9%);
+    --appeal-history-row-hover: color-mix(in srgb, #07120a 86%, var(--accent) 14%);
+    --appeal-history-row-open: color-mix(in srgb, #07120a 81%, var(--accent) 19%);
+    --appeal-history-title-matte: #d7e6d7;
+    --appeal-history-muted-matte: #94aa96;
+    --appeal-history-chevron-matte: #7fa96f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item {
+        transition: none !important;
+    }
+}
+</style>
+<script id="v64-45-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.45';
+</script>
