@@ -59460,7 +59460,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
     function buildCsErrorsQuery() {
         let query = supabaseDashboard
             .from('cs_errors')
-            .select('id,sync_id,period_id,error_date,staff_user_id,staff_email,staff_name,passport_text,error_type,chat_id,evidence_links,source_present,status,is_counted,created_at,updated_at,cs_error_appeals(id,status,created_at)', { count: 'exact' })
+            .select('id,sync_id,period_id,error_date,staff_user_id,staff_email,staff_name,passport_text,error_type,chat_id,evidence_links,source_present,status,is_counted,created_at,updated_at,cs_error_appeals(id,status,created_at,attempt_no,processed_at)', { count: 'exact' })
             .eq('period_id', csEvalState.selectedPeriodId)
             .neq('status', 'deleted');
 
@@ -59508,52 +59508,54 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         }
         return resolved;
     }
-
-    async function loadCsEvalAppeals() {
-        const periodId = resolveCsEvaluationPeriodId();
-        if (!periodId) {
-            csEvalState.rows = [];
-            csEvalState.total = 0;
-            renderCsEvalAppeals();
-            return;
-        }
-
-        const from = csEvalState.page * csEvalState.pageSize;
-        const to = from + csEvalState.pageSize - 1;
-        let query = supabaseDashboard
-            .from('cs_error_appeals')
-            .select('id,error_id,period_id,submitted_by_email,submitted_by_name,submitted_by_passport,status,processed_by,processed_at,created_at', { count: 'exact' })
-            .eq('period_id', periodId);
-
-        if (csEvalState.filters.status) query = query.eq('status', csEvalState.filters.status);
-        const search = sanitizePostgrestSearch(csEvalState.filters.search);
-        if (search) query = query.or(`submitted_by_name.ilike.%${search}%,submitted_by_passport.ilike.%${search}%`);
-
-        const { data, error, count } = await query
-            .order('created_at', { ascending: false })
-            .range(from, to);
-        if (error) throw error;
-
-        const appeals = data || [];
-        const errorIds = [...new Set(appeals.map(item => item.error_id).filter(Boolean))];
-        const errorMap = new Map();
-
-        if (errorIds.length) {
-            const { data: errorRows, error: errorRowsError } = await supabaseDashboard
-                .from('cs_errors')
-                .select('id,staff_email,staff_name,passport_text,error_date,error_type,chat_id,status,source_present,evidence_links')
-                .in('id', errorIds);
-            if (errorRowsError) throw errorRowsError;
-            (errorRows || []).forEach(item => errorMap.set(String(item.id), item));
-        }
-
-        csEvalState.rows = appeals.map(appeal => ({
-            ...appeal,
-            cs_errors: errorMap.get(String(appeal.error_id)) || null
-        }));
-        csEvalState.total = Number(count || 0);
+async function loadCsEvalAppeals() {
+    const periodId = resolveCsEvaluationPeriodId();
+    if (!periodId) {
+        csEvalState.rows = [];
+        csEvalState.total = 0;
         renderCsEvalAppeals();
+        return;
     }
+
+    const { data, error } = await supabaseDashboard.rpc('get_cs_error_appeals_latest_v6440', {
+        p_period_id: periodId,
+        p_search: cleanText(csEvalState.filters.search || '') || null,
+        p_status: cleanText(csEvalState.filters.status || '') || null,
+        p_limit: csEvalState.pageSize,
+        p_offset: csEvalState.page * csEvalState.pageSize
+    });
+    if (error) throw error;
+
+    const rows = Array.isArray(data) ? data : [];
+    csEvalState.rows = rows.map(row => ({
+        id: row.id,
+        error_id: row.error_id,
+        period_id: row.period_id,
+        submitted_by_email: row.submitted_by_email,
+        submitted_by_name: row.submitted_by_name,
+        submitted_by_passport: row.submitted_by_passport,
+        status: row.status,
+        processed_by: row.processed_by,
+        processed_at: row.processed_at,
+        processed_note: row.processed_note,
+        created_at: row.created_at,
+        attempt_no: row.attempt_no,
+        previous_appeal_id: row.previous_appeal_id,
+        cs_errors: {
+            id: row.error_id,
+            staff_name: row.error_staff_name,
+            passport_text: row.error_passport_text,
+            error_date: row.error_date,
+            error_type: row.error_type,
+            chat_id: row.chat_id,
+            status: row.error_status,
+            source_present: row.source_present,
+            evidence_links: row.error_evidence_links
+        }
+    }));
+    csEvalState.total = Number(rows[0]?.total_count || 0);
+    renderCsEvalAppeals();
+}
 
     async function loadCsEvalManualReports() {
         if (!csEvalState.selectedPeriodId) {
@@ -59577,11 +59579,14 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         csEvalState.total = Number(count || 0);
         renderCsEvalManualReports();
     }
-
-    function latestCsAppeal(row) {
-        const appeals = Array.isArray(row?.cs_error_appeals) ? row.cs_error_appeals : [];
-        return [...appeals].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))[0] || null;
-    }
+function latestCsAppeal(row) {
+    const appeals = Array.isArray(row?.cs_error_appeals) ? row.cs_error_appeals : [];
+    return [...appeals].sort((a, b) => {
+        const attemptDiff = Number(b?.attempt_no || 0) - Number(a?.attempt_no || 0);
+        if (attemptDiff) return attemptDiff;
+        return String(b?.created_at || '').localeCompare(String(a?.created_at || ''));
+    })[0] || null;
+}
 
     function errorAppealCell(row) {
         const appeal = latestCsAppeal(row);
@@ -59981,7 +59986,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
     async function fetchErrorDetail(id) {
         const { data, error } = await supabaseDashboard
             .from('cs_errors')
-            .select('*,cs_error_appeals(id,status,created_at)')
+            .select('*,cs_error_appeals(id,status,created_at,attempt_no,processed_at)')
             .eq('id', id)
             .single();
         if (error) throw error;
@@ -60092,34 +60097,34 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
     function copyCsAppealPreview() {
         copyText(buildCsAppealPreview(), 'Preview banding berhasil disalin.');
     }
-
-    async function submitCsEvaluationAppeal() {
-        const row = csEvalState.selectedError;
-        const reason = cleanText(document.getElementById('csEvalAppealReason')?.value || '');
-        const evidence = normalizeLinks(document.getElementById('csEvalAppealEvidence')?.value || '');
-        if (!row || reason.length < 10) {
-            showShiftToast('Isi alasan banding minimal 10 karakter.', 'warning');
-            return;
-        }
-        const button = document.getElementById('csEvalAppealSubmitButton');
-        if (button) button.disabled = true;
-        try {
-            const { error } = await supabaseDashboard.rpc('submit_cs_error_appeal', {
-                p_error_id: row.id,
-                p_reason: reason,
-                p_evidence_links: evidence
-            });
-            if (error) throw error;
-            closeCsEvalModal('csEvalAppealOverlay');
-            showShiftToast('Laporan banding berhasil diajukan dan tersedia di tab Laporan Banding.', 'success');
-            markCsEvaluationDirty();
-            await switchCsEvaluationSubtab('appeals');
-        } catch (error) {
-            showShiftToast(`Banding gagal dikirim: ${error.message}`, 'error', 4000);
-        } finally {
-            if (button) button.disabled = false;
-        }
+async function submitCsEvaluationAppeal() {
+    const row = csEvalState.selectedError;
+    const reason = cleanText(document.getElementById('csEvalAppealReason')?.value || '');
+    const evidence = normalizeLinks(document.getElementById('csEvalAppealEvidence')?.value || '');
+    if (!row || reason.length < 10) {
+        showShiftToast('Isi alasan banding minimal 10 karakter.', 'warning');
+        return;
     }
+    const button = document.getElementById('csEvalAppealSubmitButton');
+    if (button) button.disabled = true;
+    try {
+        const { data, error } = await supabaseDashboard.rpc('submit_cs_error_appeal_v6440', {
+            p_error_id: row.id,
+            p_reason: reason,
+            p_evidence_links: evidence
+        });
+        if (error) throw error;
+        const attempt = Number(data?.attempt_no || csEvalState.nextAppealAttempt || 1);
+        closeCsEvalModal('csEvalAppealOverlay');
+        showShiftToast(`Pengajuan banding #${attempt} berhasil dikirim.`, 'success');
+        markCsEvaluationDirty();
+        await switchCsEvaluationSubtab('appeals');
+    } catch (error) {
+        showShiftToast(`Banding gagal dikirim: ${error.message}`, 'error', 4200);
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
 
     async function viewCsEvaluationAppeal(id) {
         try {
@@ -60789,13 +60794,15 @@ ${appeal.reason}`.trim();
     function isCsEvalManagerRole() {
         return ['leader', 'csline'].includes(lower(currentUserRole));
     }
-
-    function canSubmitCsAppealForRow(row) {
-        return csEvalCan('cs_appeal_submit')
-            && (isCsEvalManagerRole() || ownError(row))
-            && latestCsAppeal(row)?.status !== 'submitted'
-            && !['appeal_success', 'deleted'].includes(row.status);
-    }
+function canSubmitCsAppealForRow(row) {
+    const latest = latestCsAppeal(row);
+    const latestStatus = lower(latest?.status || '');
+    const canStartOrRetry = !latest || latestStatus === 'rejected' || latestStatus === 'cancelled';
+    return csEvalCan('cs_appeal_submit')
+        && (isCsEvalManagerRole() || ownError(row))
+        && canStartOrRetry
+        && !['appeal_success', 'deleted'].includes(lower(row?.status));
+}
 
     function uniqueCsEvalLinks(values) {
         return [...new Set(normalizeLinks(values))];
@@ -60853,7 +60860,7 @@ ${appeal.reason}`.trim();
     function buildCsErrorsQuery() {
         let query = supabaseDashboard
             .from('cs_errors')
-            .select('id,sync_id,period_id,error_date,staff_user_id,staff_email,staff_name,passport_text,error_type,chat_id,evidence_links,source_present,status,is_counted,created_at,updated_at,cs_error_appeals(id,status,created_at)', { count: 'exact' })
+            .select('id,sync_id,period_id,error_date,staff_user_id,staff_email,staff_name,passport_text,error_type,chat_id,evidence_links,source_present,status,is_counted,created_at,updated_at,cs_error_appeals(id,status,created_at,attempt_no,processed_at)', { count: 'exact' })
             .eq('period_id', csEvalState.selectedPeriodId)
             .neq('status', 'deleted');
 
@@ -60908,18 +60915,19 @@ ${appeal.reason}`.trim();
         if (!appeal) return '<span class="cs-eval-muted">—</span>';
         return `<div class="cs-eval-row-actions">${statusBadge(appeal.status)}<button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationAppeal('${appeal.id}')" aria-label="Lihat banding" data-tooltip="Lihat banding" data-tooltip-icon="preview">${iconSvg('eye')}</button></div>`;
     }
-
-    function errorRowActions(row) {
-        const canAppeal = canSubmitCsAppealForRow(row);
-        const canResolve = csEvalCan('cs_error_resolve') && ['source_missing', 'appeal_pending', 'appeal_rejected'].includes(row.status);
-        const canDelete = csEvalCan('cs_error_delete');
-        return `<div class="cs-eval-row-actions">
-            <button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationError('${row.id}')" aria-label="Lihat detail" data-tooltip="Lihat detail" data-tooltip-icon="preview">${iconSvg('eye')}</button>
-            ${canAppeal ? `<button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="openCsEvaluationAppeal('${row.id}')" aria-label="Pengajuan banding" data-tooltip="Pengajuan banding" data-tooltip-icon="edit">${iconSvg('message')}</button>` : ''}
-            ${canResolve ? `<button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationError('${row.id}', true)" aria-label="Proses status" data-tooltip="Proses status" data-tooltip-icon="edit">${iconSvg('edit')}</button>` : ''}
-            ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsEvaluationError('${row.id}')" aria-label="Hapus record" data-tooltip="Hapus record" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
-        </div>`;
-    }
+function errorRowActions(row) {
+    const latest = latestCsAppeal(row);
+    const canAppeal = canSubmitCsAppealForRow(row);
+    const canResolve = csEvalCan('cs_error_resolve') && ['source_missing', 'appeal_pending', 'appeal_rejected'].includes(row.status);
+    const canDelete = csEvalCan('cs_error_delete');
+    const appealLabel = latest ? 'Ajukan banding lagi' : 'Pengajuan banding';
+    return `<div class="cs-eval-row-actions">
+        <button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationError('${row.id}')" aria-label="Lihat detail" data-tooltip="Lihat detail" data-tooltip-icon="preview">${iconSvg('eye')}</button>
+        ${canAppeal ? `<button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="openCsEvaluationAppeal('${row.id}')" aria-label="${appealLabel}" data-tooltip="${appealLabel}" data-tooltip-icon="edit">${iconSvg('message')}</button>` : ''}
+        ${canResolve ? `<button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationError('${row.id}', true)" aria-label="Proses status" data-tooltip="Proses status" data-tooltip-icon="edit">${iconSvg('edit')}</button>` : ''}
+        ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsEvaluationError('${row.id}')" aria-label="Hapus record" data-tooltip="Hapus record" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
+    </div>`;
+}
 
     function renderCsEvalErrors() {
         const head = document.getElementById('csEvalTableHead');
@@ -60951,40 +60959,45 @@ ${appeal.reason}`.trim();
             </tr>`).join('') : `<tr><td colspan="9"><div class="cs-eval-empty">${iconSvg('file')}<strong>Tidak ada data</strong><span>Tidak ditemukan kesalahan untuk filter dan periode ini.</span></div></td></tr>`;
         renderCsEvalPagination();
     }
-
-    function renderCsEvalAppeals() {
-        const head = document.getElementById('csEvalTableHead');
-        const body = document.getElementById('csEvalTableBody');
-        if (!head || !body) return;
-        head.innerHTML = `<tr>
-            <th style="width:100px">Diajukan</th>
-            <th style="width:175px">Nama CS</th>
-            <th style="width:210px">Kesalahan</th>
-            <th style="width:118px">ID Chat</th>
-            <th style="width:112px">Bukti</th>
-            <th style="width:138px">Status</th>
-            <th style="width:126px">Diproses</th>
-            <th style="width:108px">Aksi</th>
+function renderCsEvalAppeals() {
+    const head = document.getElementById('csEvalTableHead');
+    const body = document.getElementById('csEvalTableBody');
+    if (!head || !body) return;
+    head.innerHTML = `<tr>
+        <th style="width:100px">Diajukan</th>
+        <th style="width:165px">Nama CS</th>
+        <th style="width:198px">Kesalahan</th>
+        <th style="width:112px">ID Chat</th>
+        <th style="width:106px">Bukti</th>
+        <th class="cs-eval-appeal-attempt-heading" style="width:78px">Pengajuan</th>
+        <th style="width:126px">Status</th>
+        <th style="width:142px">Diproses</th>
+        <th style="width:104px">Aksi</th>
+    </tr>`;
+    const canDelete = csEvalCan('cs_appeal_delete');
+    body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map(row => {
+        const error = Array.isArray(row.cs_errors) ? row.cs_errors[0] : row.cs_errors || {};
+        const processedBy = cleanText(row.processed_by || '');
+        const processedCell = processedBy
+            ? `<div class="cs-eval-user"><strong>${esc(processedBy)}</strong><span>${esc(formatCsEvalDate(row.processed_at, true))}</span></div>`
+            : '<span class="cs-eval-muted">Belum diproses</span>';
+        return `<tr>
+            <td>${esc(formatCsEvalDate(row.created_at, true))}</td>
+            <td><div class="cs-eval-user"><strong>${esc(error.staff_name || row.submitted_by_name)}</strong><span>${esc(error.passport_text || row.submitted_by_passport || '')}</span></div></td>
+            <td><span class="cs-eval-error-type">${esc(error.error_type || '')}</span></td>
+            <td>${esc(error.chat_id || '')}</td>
+            <td>${evidenceButtons(error.evidence_links)}</td>
+            <td class="cs-eval-appeal-attempt">#${Number(row.attempt_no || 1)}</td>
+            <td>${statusBadge(row.status)}</td>
+            <td>${processedCell}</td>
+            <td><div class="cs-eval-row-actions">
+                <button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationAppeal('${row.id}')" aria-label="Lihat laporan" data-tooltip="Lihat laporan" data-tooltip-icon="preview">${iconSvg('eye')}</button>
+                ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsEvaluationAppeal('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
+            </div></td>
         </tr>`;
-        const canDelete = csEvalCan('cs_appeal_delete');
-        body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map(row => {
-            const error = Array.isArray(row.cs_errors) ? row.cs_errors[0] : row.cs_errors || {};
-            return `<tr>
-                <td>${esc(formatCsEvalDate(row.created_at, true))}</td>
-                <td><div class="cs-eval-user"><strong>${esc(error.staff_name || row.submitted_by_name)}</strong><span>${esc(error.passport_text || row.submitted_by_passport || '')}</span></div></td>
-                <td><span class="cs-eval-error-type">${esc(error.error_type || '')}</span></td>
-                <td>${esc(error.chat_id || '')}</td>
-                <td>${evidenceButtons(error.evidence_links)}</td>
-                <td>${statusBadge(row.status)}</td>
-                <td>${esc(row.processed_by || '')}</td>
-                <td><div class="cs-eval-row-actions">
-                    <button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationAppeal('${row.id}')" aria-label="Lihat laporan" data-tooltip="Lihat laporan" data-tooltip-icon="preview">${iconSvg('eye')}</button>
-                    ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsEvaluationAppeal('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
-                </div></td>
-            </tr>`;
-        }).join('') : `<tr><td colspan="8"><div class="cs-eval-empty">${iconSvg('message')}<strong>Belum ada laporan banding</strong></div></td></tr>`;
-        renderCsEvalPagination();
-    }
+    }).join('') : `<tr><td colspan="9"><div class="cs-eval-empty">${iconSvg('message')}<strong>Belum ada laporan banding</strong></div></td></tr>`;
+    renderCsEvalPagination();
+}
 
     function renderCsEvalManualReports() {
         const head = document.getElementById('csEvalTableHead');
@@ -61055,7 +61068,8 @@ ${appeal.reason}`.trim();
             </dl>`;
             const actions = [];
             if (canSubmitCsAppealForRow(row)) {
-                actions.push(`<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay');openCsEvaluationAppeal('${row.id}')">Pengajuan Banding</button>`);
+                const retryLabel = latestCsAppeal(row) ? 'Ajukan Banding Lagi' : 'Pengajuan Banding';
+                actions.push(`<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay');openCsEvaluationAppeal('${row.id}')">${retryLabel}</button>`);
             }
             if ((showActions || ['source_missing', 'appeal_pending', 'appeal_rejected'].includes(row.status)) && csEvalCan('cs_error_resolve')) {
                 actions.push(`<button class="cs-eval-button" type="button" onclick="resolveCsEvaluationError('${row.id}','audit_correction')">Koreksi Audit</button>`);
@@ -61069,24 +61083,41 @@ ${appeal.reason}`.trim();
             showShiftToast(`Detail kesalahan gagal dibuka: ${error.message}`, 'error');
         }
     }
-
-    async function openCsEvaluationAppeal(id) {
-        try {
-            const row = await fetchErrorDetail(id);
-            if (!isCsEvalManagerRole() && !ownError(row)) {
-                showShiftToast('Banding hanya dapat diajukan untuk kesalahan akun sendiri.', 'warning');
-                return;
-            }
-            csEvalState.selectedError = row;
-            document.getElementById('csEvalAppealReason').value = '';
-            document.getElementById('csEvalAppealEvidence').value = '';
-            document.getElementById('csEvalAppealSubtitle').textContent = `${row.staff_name} · ${row.error_type}`;
-            updateCsAppealPreview();
-            openCsEvalModal('csEvalAppealOverlay');
-        } catch (error) {
-            showShiftToast(`Form banding gagal dibuka: ${error.message}`, 'error');
+async function openCsEvaluationAppeal(id) {
+    try {
+        const row = await fetchErrorDetail(id);
+        if (!isCsEvalManagerRole() && !ownError(row)) {
+            showShiftToast('Banding hanya dapat diajukan untuk kesalahan akun sendiri.', 'warning');
+            return;
         }
+        const latest = latestCsAppeal(row);
+        const latestStatus = lower(latest?.status || '');
+        if (latestStatus === 'submitted') {
+            showShiftToast('Masih ada pengajuan banding yang menunggu keputusan.', 'warning');
+            return;
+        }
+        if (latestStatus === 'approved' || lower(row.status) === 'appeal_success') {
+            showShiftToast('Banding untuk kesalahan ini sudah disetujui.', 'warning');
+            return;
+        }
+        if (latest && !['rejected', 'cancelled'].includes(latestStatus)) {
+            showShiftToast('Pengajuan ulang hanya tersedia setelah banding sebelumnya ditolak.', 'warning');
+            return;
+        }
+        csEvalState.selectedError = row;
+        csEvalState.nextAppealAttempt = Number(latest?.attempt_no || 0) + 1;
+        document.getElementById('csEvalAppealReason').value = '';
+        document.getElementById('csEvalAppealEvidence').value = '';
+        const subtitle = document.getElementById('csEvalAppealSubtitle');
+        if (subtitle) subtitle.textContent = `${row.staff_name} · ${row.error_type} · Pengajuan #${csEvalState.nextAppealAttempt}`;
+        const submitButton = document.getElementById('csEvalAppealSubmitButton');
+        if (submitButton) submitButton.textContent = latest ? 'Ajukan Banding Lagi' : 'Ajukan Banding';
+        updateCsAppealPreview();
+        openCsEvalModal('csEvalAppealOverlay');
+    } catch (error) {
+        showShiftToast(`Form banding gagal dibuka: ${error.message}`, 'error');
     }
+}
 
     function buildCsAppealPreview() {
         const row = csEvalState.selectedError;
@@ -61102,45 +61133,98 @@ ${appeal.reason}`.trim();
         if (attachmentSection) sections.push(attachmentSection);
         return sections.map(section => String(section || '').trim()).filter(Boolean).join('\n\n');
     }
+async function viewCsEvaluationAppeal(id) {
+    try {
+        const { data: appeal, error: appealError } = await supabaseDashboard
+            .from('cs_error_appeals').select('*').eq('id', id).single();
+        if (appealError) throw appealError;
+        const { data: errorRow, error: errorRowError } = await supabaseDashboard
+            .from('cs_errors').select('*').eq('id', appeal.error_id).single();
+        if (errorRowError) throw errorRowError;
+        const { data: appealHistory, error: historyError } = await supabaseDashboard
+            .from('cs_error_appeals')
+            .select('*')
+            .eq('error_id', appeal.error_id)
+            .order('attempt_no', { ascending: false })
+            .order('created_at', { ascending: false });
+        if (historyError) throw historyError;
 
-    async function viewCsEvaluationAppeal(id) {
-        try {
-            const { data: appeal, error: appealError } = await supabaseDashboard
-                .from('cs_error_appeals').select('*').eq('id', id).single();
-            if (appealError) throw appealError;
-            const { data: errorRow, error: errorRowError } = await supabaseDashboard
-                .from('cs_errors').select('*').eq('id', appeal.error_id).single();
-            if (errorRowError) throw errorRowError;
-            setCsEvalDetailCompact(false);
-            document.getElementById('csEvalDetailOverlay')?.classList.add('appeal-report-detail');
-            const title = document.getElementById('csEvalDetailTitle');
-            const subtitle = document.getElementById('csEvalDetailSubtitle');
-            const body = document.getElementById('csEvalDetailBody');
-            const footer = document.getElementById('csEvalDetailFooter');
-            if (title) title.textContent = 'Laporan Banding';
-            if (subtitle) subtitle.textContent = `${errorRow.staff_name || appeal.submitted_by_name} · ${appeal.status}`;
+        setCsEvalDetailCompact(false);
+        document.getElementById('csEvalDetailOverlay')?.classList.add('appeal-report-detail');
+        const title = document.getElementById('csEvalDetailTitle');
+        const subtitle = document.getElementById('csEvalDetailSubtitle');
+        const body = document.getElementById('csEvalDetailBody');
+        const footer = document.getElementById('csEvalDetailFooter');
+        const attemptNo = Number(appeal.attempt_no || 1);
+        if (title) title.textContent = 'Laporan Banding';
+        if (subtitle) subtitle.textContent = `${errorRow.staff_name || appeal.submitted_by_name} · Pengajuan #${attemptNo} · ${statusMeta[appeal.status]?.label || appeal.status}`;
+
+        const buildAppealText = item => {
             const sourceLinks = uniqueCsEvalLinks(errorRow.evidence_links);
-            const extraLinks = uniqueCsEvalLinks(appeal.evidence_links).filter(link => !sourceLinks.includes(link));
-            const header = [`TANGGAL ${formatCsEvalLongDate(errorRow.error_date)} DINGDONGTOGEL`, `${errorRow.staff_name || appeal.submitted_by_name}${(errorRow.passport_text || appeal.submitted_by_passport) ? ` ${errorRow.passport_text || appeal.submitted_by_passport}` : ''}`, ...sourceLinks].join('\n');
-            const sections = [header, `Perihal banding kesalahan :\n${appeal.reason}`];
+            const extraLinks = uniqueCsEvalLinks(item.evidence_links).filter(link => !sourceLinks.includes(link));
+            const header = [
+                `TANGGAL ${formatCsEvalLongDate(errorRow.error_date)} DINGDONGTOGEL`,
+                `${errorRow.staff_name || item.submitted_by_name}${(errorRow.passport_text || item.submitted_by_passport) ? ` ${errorRow.passport_text || item.submitted_by_passport}` : ''}`,
+                ...sourceLinks
+            ].join('\n');
+            const sections = [header, `Perihal banding kesalahan :\n${item.reason || ''}`];
             const attachmentSection = formatCsEvalAttachmentSection(extraLinks);
             if (attachmentSection) sections.push(attachmentSection);
-            const preview = sections.join('\n\n').trim();
-            if (body) body.innerHTML = `<div class="cs-eval-report-preview is-structured-preview">${formatCsEvalStructuredPreview(preview, 'Perihal banding kesalahan :')}</div><div class="cs-eval-report-meta">Diajukan oleh: ${esc(appeal.submitted_by_name)} · ${esc(formatCsEvalDate(appeal.created_at, true))}<br>Status: ${esc(statusMeta[appeal.status]?.label || appeal.status)}${appeal.processed_by ? `<br>Diproses oleh: ${esc(appeal.processed_by)}` : ''}${appeal.processed_note ? `<br>Catatan: ${esc(appeal.processed_note)}` : ''}</div>`;
-            csEvalState.detailCopyText = preview;
-            const actions = [`<button class="cs-eval-button" type="button" onclick="copyCsEvalDetailText()">Salin</button>`];
-            const canProcessAppeal = isCsEvalManagerRole() || csEvalCan('cs_appeal_process');
-            if (canProcessAppeal && appeal.status === 'submitted') {
-                actions.push(`<button class="cs-eval-button" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','rejected')">Tolak</button>`);
-                actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Setujui</button>`);
-            }
-            if (csEvalCan('cs_appeal_delete')) actions.push(`<button class="cs-eval-button danger" type="button" onclick="deleteCsEvaluationAppeal('${appeal.id}')">Hapus</button>`);
-            if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
-            openCsEvalModal('csEvalDetailOverlay');
-        } catch (error) {
-            showShiftToast(`Laporan banding gagal dibuka: ${error.message}`, 'error');
+            return sections.join('\n\n').trim();
+        };
+
+        const preview = buildAppealText(appeal);
+        const currentDecisionLabel = appeal.status === 'rejected' ? 'Alasan penolakan' : 'Catatan keputusan';
+        const currentMeta = `<div class="cs-eval-report-meta cs-eval-appeal-current-meta">
+            <div><span>Pengajuan</span><strong>#${attemptNo}</strong></div>
+            <div><span>Diajukan oleh</span><strong>${esc(appeal.submitted_by_name || '—')}</strong><small>${esc(formatCsEvalDate(appeal.created_at, true))}</small></div>
+            <div><span>Status</span><strong>${esc(statusMeta[appeal.status]?.label || appeal.status)}</strong></div>
+            ${appeal.processed_by ? `<div><span>Diproses oleh</span><strong>${esc(appeal.processed_by)}</strong><small>${esc(formatCsEvalDate(appeal.processed_at, true))}</small></div>` : ''}
+            ${appeal.processed_note ? `<div class="is-full"><span>${currentDecisionLabel}</span><p>${esc(appeal.processed_note)}</p></div>` : ''}
+        </div>`;
+
+        const historyRows = (appealHistory || []).filter(item => String(item.id) !== String(appeal.id));
+        const historyHtml = historyRows.length ? `<section class="cs-eval-appeal-history">
+            <div class="cs-eval-appeal-history-heading"><span>Riwayat Banding</span><small>${historyRows.length} pengajuan sebelumnya</small></div>
+            <div class="cs-eval-appeal-history-list">${historyRows.map(item => {
+                const itemAttempt = Number(item.attempt_no || 1);
+                const itemStatus = statusMeta[item.status]?.label || item.status;
+                const decisionLabel = item.status === 'rejected' ? 'Alasan penolakan' : 'Catatan keputusan';
+                const itemPreview = buildAppealText(item);
+                return `<details class="cs-eval-appeal-history-item">
+                    <summary><span>Pengajuan #${itemAttempt}</span><span class="cs-eval-appeal-history-status">${esc(itemStatus)}</span><small>${esc(formatCsEvalDate(item.created_at, true))}</small></summary>
+                    <div class="cs-eval-appeal-history-content">
+                        <div class="cs-eval-report-preview is-structured-preview">${formatCsEvalStructuredPreview(itemPreview, 'Perihal banding kesalahan :')}</div>
+                        <div class="cs-eval-appeal-history-meta">
+                            <div><span>Diajukan oleh</span><strong>${esc(item.submitted_by_name || '—')}</strong></div>
+                            ${item.processed_by ? `<div><span>Diproses oleh</span><strong>${esc(item.processed_by)}</strong><small>${esc(formatCsEvalDate(item.processed_at, true))}</small></div>` : ''}
+                            ${item.processed_note ? `<div class="is-full"><span>${decisionLabel}</span><p>${esc(item.processed_note)}</p></div>` : ''}
+                        </div>
+                    </div>
+                </details>`;
+            }).join('')}</div>
+        </section>` : '';
+
+        if (body) body.innerHTML = `<section class="cs-eval-appeal-current">
+            <div class="cs-eval-appeal-current-label">Pengajuan terbaru <strong>#${attemptNo}</strong></div>
+            <div class="cs-eval-report-preview is-structured-preview">${formatCsEvalStructuredPreview(preview, 'Perihal banding kesalahan :')}</div>
+            ${currentMeta}
+        </section>${historyHtml}`;
+        csEvalState.detailCopyText = preview;
+
+        const actions = [`<button class="cs-eval-button" type="button" onclick="copyCsEvalDetailText()">Salin</button>`];
+        const canProcessAppeal = isCsEvalManagerRole() || csEvalCan('cs_appeal_process');
+        if (canProcessAppeal && appeal.status === 'submitted') {
+            actions.push(`<button class="cs-eval-button" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','rejected')">Tolak</button>`);
+            actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Setujui</button>`);
         }
+        if (csEvalCan('cs_appeal_delete')) actions.push(`<button class="cs-eval-button danger" type="button" onclick="deleteCsEvaluationAppeal('${appeal.id}')">Hapus</button>`);
+        if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
+        openCsEvalModal('csEvalDetailOverlay');
+    } catch (error) {
+        showShiftToast(`Laporan banding gagal dibuka: ${error.message}`, 'error');
     }
+}
 
     function requestCsEvalInput(options = {}) {
         const overlay = document.getElementById('csEvalPromptOverlay');
@@ -61204,26 +61288,36 @@ ${appeal.reason}`.trim();
     function handleCsEvalPromptOverlayClick(event) {
         if (event.target?.id === 'csEvalPromptOverlay') closeCsEvalPrompt(null);
     }
-
-    async function processCsEvaluationAppeal(id, status) {
-        const label = status === 'approved' ? 'Banding Berhasil' : 'Banding Ditolak';
-        const note = await requestCsEvalInput({
-            title: label,
-            message: `Tambahkan catatan ${label.toLowerCase()} apabila diperlukan.`,
-            label: 'Catatan (Opsional)',
-            confirmText: 'Simpan Status'
+async function processCsEvaluationAppeal(id, status) {
+    const approved = status === 'approved';
+    const label = approved ? 'Banding Berhasil' : 'Banding Ditolak';
+    const note = await requestCsEvalInput({
+        title: label,
+        message: approved
+            ? 'Catatan persetujuan bersifat opsional.'
+            : 'Isi alasan penolakan agar staff memahami bagian yang perlu diperbaiki sebelum mengajukan kembali.',
+        label: approved ? 'Catatan (Opsional)' : 'Alasan penolakan (Wajib)',
+        required: !approved,
+        minLength: approved ? 0 : 3,
+        confirmText: approved ? 'Setujui Banding' : 'Tolak Banding',
+        variant: approved ? 'default' : 'danger'
+    });
+    if (note === null) return;
+    try {
+        const { error } = await supabaseDashboard.rpc('process_cs_error_appeal_v6440', {
+            p_appeal_id: id,
+            p_status: status,
+            p_note: note
         });
-        if (note === null) return;
-        try {
-            const { error } = await supabaseDashboard.rpc('process_cs_error_appeal', { p_appeal_id: id, p_status: status, p_note: note });
-            if (error) throw error;
-            closeCsEvalModal('csEvalDetailOverlay');
-            showShiftToast(`Status diubah menjadi ${label}.`, 'success');
-            await refreshCsEvaluation(false);
-        } catch (error) {
-            showShiftToast(`Status banding gagal diubah: ${error.message}`, 'error', 4000);
-        }
+        if (error) throw error;
+        closeCsEvalModal('csEvalDetailOverlay');
+        showShiftToast(`Status diubah menjadi ${label}.`, 'success');
+        markCsEvaluationDirty();
+        await refreshCsEvaluation(false);
+    } catch (error) {
+        showShiftToast(`Status banding gagal diubah: ${error.message}`, 'error', 4200);
     }
+}
 
     async function resolveCsEvaluationError(id, action) {
         const labels = { appeal_success: 'Banding Berhasil', audit_correction: 'Koreksi Audit', appeal_rejected: 'Banding Ditolak', reactivate: 'Aktifkan Kembali' };
@@ -68974,4 +69068,178 @@ document.documentElement.dataset.dashboardBuild = 'v64.37';
 </style>
 <script id="v64-39-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.39';
+</script>
+
+
+<!-- ================================================================
+     V64.40 — Repeated CS appeals with immutable history
+     ================================================================ -->
+<style id="v64-40-repeated-appeals">
+#tab-evaluation .cs-eval-appeal-attempt-heading,
+#tab-evaluation .cs-eval-appeal-attempt {
+    text-align: center;
+    white-space: nowrap;
+}
+#tab-evaluation .cs-eval-appeal-attempt {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .01em;
+    color: var(--text-primary);
+}
+
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current {
+    display: grid;
+    gap: 12px;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-label,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 2px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: .02em;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-label strong {
+    color: var(--text-primary);
+    font-size: 12px;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-meta,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    padding: 11px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--bg-secondary) 92%, transparent);
+}
+#csEvalDetailOverlay.appeal-report-detail :is(.cs-eval-appeal-current-meta,.cs-eval-appeal-history-meta) > div {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+#csEvalDetailOverlay.appeal-report-detail :is(.cs-eval-appeal-current-meta,.cs-eval-appeal-history-meta) > div.is-full {
+    grid-column: 1 / -1;
+    padding-top: 7px;
+    border-top: 1px solid var(--border-color);
+}
+#csEvalDetailOverlay.appeal-report-detail :is(.cs-eval-appeal-current-meta,.cs-eval-appeal-history-meta) span {
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 600;
+}
+#csEvalDetailOverlay.appeal-report-detail :is(.cs-eval-appeal-current-meta,.cs-eval-appeal-history-meta) strong {
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 700;
+}
+#csEvalDetailOverlay.appeal-report-detail :is(.cs-eval-appeal-current-meta,.cs-eval-appeal-history-meta) small {
+    color: var(--text-secondary);
+    font-size: 10px;
+}
+#csEvalDetailOverlay.appeal-report-detail :is(.cs-eval-appeal-current-meta,.cs-eval-appeal-history-meta) p {
+    width: 100%;
+    margin: 2px 0 0;
+    color: var(--text-primary);
+    font-size: 11px;
+    line-height: 1.55;
+    text-align: justify;
+}
+
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history {
+    display: grid;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-heading small {
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 500;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-list {
+    display: grid;
+    gap: 8px;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item {
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary {
+    list-style: none;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 700;
+    user-select: none;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary::-webkit-details-marker { display: none; }
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary::before {
+    content: '›';
+    width: 16px;
+    color: var(--primary-color);
+    font-size: 18px;
+    line-height: 1;
+    transition: transform .16s ease;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item[open] summary::before { transform: rotate(90deg); }
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary > span:first-of-type { margin-left: -16px; }
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status {
+    justify-self: start;
+    color: var(--text-secondary) !important;
+    font-size: 10px !important;
+    font-weight: 650 !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary small {
+    color: var(--text-secondary);
+    font-size: 9px;
+    font-weight: 500;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-content {
+    display: grid;
+    gap: 10px;
+    padding: 0 10px 10px;
+    border-top: 1px solid var(--border-color);
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-content > .cs-eval-report-preview {
+    margin-top: 10px;
+    max-height: none;
+    min-height: 0;
+    font-size: 11px;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item,
+html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-meta,
+html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-meta {
+    border-color: rgba(102,255,0,.22);
+    background: rgba(7,18,10,.92);
+}
+
+@media (max-width: 620px) {
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-meta,
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-meta { grid-template-columns: 1fr; }
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary {
+        grid-template-columns: auto 1fr;
+    }
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary small {
+        grid-column: 2;
+    }
+}
+</style>
+<script id="v64-40-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.40';
 </script>
