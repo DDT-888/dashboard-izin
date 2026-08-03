@@ -68377,3 +68377,131 @@ html body #tab-dashboard .employee-priority-card .employee-priority-table tbody 
 <script id="v64-34-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.34';
 </script>
+
+<!-- ================================================================
+     V64.35 — Restore opaque sticky headers on all four priority tables
+     ================================================================ -->
+<style id="v64-35-priority-thead-sticky-final">
+/*
+ * V64.34 painted each <th> as an independent sticky layer. In Chromium,
+ * that cell-level compositing can stop the table header from tracking the
+ * scroll container consistently. Use one sticky <thead> surface instead,
+ * while every header cell remains fully opaque.
+ */
+html body #tab-dashboard .employee-priority-card .employee-priority-table-wrap {
+    position: relative !important;
+    width: 100% !important;
+    max-height: 226px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    isolation: isolate !important;
+}
+
+html body #tab-dashboard .employee-priority-card .employee-priority-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+/* One sticky layer for #, Nama, Sisa / Status. */
+html body #tab-dashboard .employee-priority-card .employee-priority-table > thead {
+    display: table-header-group !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 120 !important;
+    opacity: 1 !important;
+    isolation: isolate !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(
+        180deg,
+        rgba(var(--accent-rgb), .16) 0%,
+        rgba(var(--accent-rgb), .09) 100%
+    ) !important;
+    background-repeat: no-repeat !important;
+    background-position: 0 0 !important;
+    background-size: 100% 100% !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.52),
+        0 1px 0 color-mix(in srgb, var(--border-light) 75%, rgba(var(--accent-rgb), .25)),
+        0 3px 8px rgba(21,52,68,.055) !important;
+}
+
+html body #tab-dashboard .employee-priority-card .employee-priority-table > thead > tr {
+    position: static !important;
+    z-index: auto !important;
+    opacity: 1 !important;
+    background: transparent !important;
+}
+
+html body #tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th,
+html body #tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th:first-child,
+html body #tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th.employee-priority-index-heading {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    isolation: auto !important;
+    color: color-mix(in srgb, var(--text-secondary) 86%, var(--accent-strong)) !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(
+        180deg,
+        rgba(var(--accent-rgb), .16) 0%,
+        rgba(var(--accent-rgb), .09) 100%
+    ) !important;
+    background-repeat: no-repeat !important;
+    background-position: 0 0 !important;
+    background-size: 100% 100% !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-light) 75%, rgba(var(--accent-rgb), .25)) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+}
+
+/* Disable the old per-cell paint layer from V64.34. */
+html body #tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th::before,
+html body #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr > th::before {
+    content: none !important;
+    display: none !important;
+}
+
+/* The V64.32 Banding-only underlay stays disabled. */
+html body #tab-dashboard .employee-priority-card.livechat-appeal .livechat-appeal-header-underlay {
+    display: none !important;
+}
+
+/* Rows remain in the normal table stacking context, below the sticky thead. */
+html body #tab-dashboard .employee-priority-card .employee-priority-table > tbody,
+html body #tab-dashboard .employee-priority-card .employee-priority-table > tbody > tr,
+html body #tab-dashboard .employee-priority-card .employee-priority-table > tbody > tr > td {
+    position: static !important;
+    z-index: auto !important;
+}
+
+html[data-theme="dark"] body #tab-dashboard .employee-priority-card .employee-priority-table > thead,
+html[data-theme="dark"] body #tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th {
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(
+        180deg,
+        rgba(var(--accent-rgb), .22) 0%,
+        rgba(var(--accent-rgb), .12) 100%
+    ) !important;
+}
+
+/* Preserve Venom's dedicated theme treatment while keeping thead sticky. */
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-dashboard .employee-priority-card .employee-priority-table > thead,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th {
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(
+        180deg,
+        rgba(var(--accent-rgb), .24) 0%,
+        rgba(var(--accent-rgb), .13) 100%
+    ) !important;
+}
+</style>
+<script id="v64-35-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.35';
+</script>
