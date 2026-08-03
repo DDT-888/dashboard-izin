@@ -65413,7 +65413,7 @@ html body .sidebar.collapsed .sidebar-menu .sidebar-chevron-slot {
 })();
 </script>
 
-<script id="v64-20-build-marker">document.documentElement.dataset.dashboardBuild='v64.22';</script>
+<script id="v64-20-build-marker">document.documentElement.dataset.dashboardBuild='v64.23';</script>
 
 
 <style id="v64-21-evaluasi-cs-final">
@@ -65809,7 +65809,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-selected-staff-chip
 }
 </style>
 
-<script id="v64-21-build-marker">document.documentElement.dataset.dashboardBuild='v64.22';</script>
+<script id="v64-21-build-marker">document.documentElement.dataset.dashboardBuild='v64.23';</script>
 
 <style id="v64-22-evaluasi-cs-visual-live-preview">
 /* ================================================================
@@ -66227,6 +66227,606 @@ html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-summary-section {
 }
 </style>
 
-<script id="v64-22-build-marker">document.documentElement.dataset.dashboardBuild='v64.22';</script>
+
+
+<!-- ================================================================
+     V64.23 — Evaluasi CS evidence, summary, staff picker and UX polish
+     ================================================================ -->
+<style id="v64-23-evaluasi-cs-polish">
+/* Evidence: compact paperclip tile with a numbered circular badge, matching the supplied reference. */
+.cs-eval-evidence-list {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    min-height: 36px;
+}
+.cs-eval-evidence-button {
+    --cs-evidence-accent: var(--accent, #129da1);
+    --cs-evidence-soft: color-mix(in srgb, var(--cs-evidence-accent) 9%, var(--bg-primary));
+    --cs-evidence-line: color-mix(in srgb, var(--cs-evidence-accent) 64%, var(--border-light));
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    color: var(--cs-evidence-accent) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    transition: transform .16s ease, filter .16s ease !important;
+}
+.cs-eval-evidence-button:hover,
+.cs-eval-evidence-button:focus-visible {
+    transform: translateY(-1px);
+    filter: brightness(1.035);
+    outline: none;
+}
+.cs-eval-evidence-svg {
+    width: 36px !important;
+    height: 36px !important;
+    overflow: visible !important;
+}
+.cs-eval-evidence-tile {
+    fill: var(--cs-evidence-soft);
+    stroke: var(--cs-evidence-line);
+    stroke-width: 1.15;
+}
+.cs-eval-evidence-clip {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.cs-eval-evidence-badge {
+    fill: var(--cs-evidence-accent);
+    stroke: var(--bg-primary);
+    stroke-width: 1.7;
+    filter: drop-shadow(0 1.5px 2.5px rgba(4, 26, 34, .24));
+}
+.cs-eval-evidence-badge-text {
+    fill: #fff;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 7px;
+    font-weight: 900;
+    dominant-baseline: middle;
+    pointer-events: none;
+}
+html[data-theme="dark"] .cs-eval-evidence-button {
+    --cs-evidence-accent: #55d6f3;
+    --cs-evidence-soft: #112731;
+    --cs-evidence-line: rgba(85, 214, 243, .52);
+}
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-evidence-button {
+    --cs-evidence-accent: #77ed65;
+    --cs-evidence-soft: #122c17;
+    --cs-evidence-line: rgba(119, 237, 101, .5);
+}
+html:not([data-theme="dark"]) .cs-eval-evidence-button {
+    --cs-evidence-accent: #268f8c;
+    --cs-evidence-soft: #f0fbfa;
+    --cs-evidence-line: rgba(38, 143, 140, .43);
+}
+
+/* Search and filters: one desktop row, no unused lower padding, same visual language as Users. */
+#tab-evaluation .cs-eval-toolbar {
+    padding: 7px 7px 0 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 7px !important;
+    overflow: visible !important;
+}
+#tab-evaluation .cs-eval-toolbar > .cs-eval-search {
+    flex: 1 1 auto !important;
+    min-width: 260px !important;
+}
+#tab-evaluation .cs-eval-toolbar > .premium-select,
+#tab-evaluation .cs-eval-toolbar > .unified-custom-filter {
+    flex: 0 0 148px !important;
+    width: 148px !important;
+    min-width: 148px !important;
+    --unified-filter-width: 148px !important;
+}
+#tab-evaluation .cs-eval-toolbar > [data-select-id="csEvalStaffFilter"] {
+    flex-basis: 178px !important;
+    width: 178px !important;
+    min-width: 178px !important;
+    --unified-filter-width: 178px !important;
+}
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-trigger, .unified-custom-filter-trigger) {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0 9px !important;
+    display: grid !important;
+    grid-template-columns: 16px minmax(0, 1fr) 13px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    border-radius: 9px !important;
+}
+#tab-evaluation .cs-eval-toolbar .cs-eval-v6423-filter-leading {
+    width: 16px;
+    height: 16px;
+    display: grid;
+    place-items: center;
+    color: var(--accent-dark);
+}
+#tab-evaluation .cs-eval-toolbar .cs-eval-v6423-filter-leading svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-value, .unified-custom-filter-value) {
+    min-width: 0;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Manual staff picker: all content aligned left, no inconsistent avatar/+ decoration. */
+.cs-eval-staff-picker {
+    padding: 6px !important;
+}
+.cs-eval-staff-option,
+.cs-eval-staff-option:nth-child(n) {
+    width: 100% !important;
+    min-height: 43px !important;
+    padding: 7px 9px !important;
+    display: block !important;
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    color: var(--text-secondary) !important;
+    background: var(--bg-primary) !important;
+    text-align: left !important;
+}
+.cs-eval-staff-option + .cs-eval-staff-option {
+    margin-top: 3px !important;
+    border-top-color: transparent !important;
+}
+.cs-eval-staff-option:hover,
+.cs-eval-staff-option:focus-visible {
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--border-light)) !important;
+    color: var(--text-primary) !important;
+    background: color-mix(in srgb, var(--accent-soft) 48%, var(--bg-primary)) !important;
+    outline: none !important;
+}
+.cs-eval-staff-option-copy {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: grid !important;
+    justify-items: start !important;
+    gap: 2px !important;
+    text-align: left !important;
+}
+.cs-eval-staff-option-copy strong,
+.cs-eval-staff-option-copy small {
+    width: 100% !important;
+    display: block !important;
+    overflow: hidden !important;
+    text-align: left !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+.cs-eval-staff-option-avatar,
+.cs-eval-staff-option-add {
+    display: none !important;
+}
+.cs-eval-selected-staff-chip {
+    justify-content: flex-start !important;
+    text-align: left !important;
+}
+.cs-eval-selected-staff-chip > span {
+    min-width: 0;
+    justify-items: start;
+    text-align: left;
+}
+.cs-eval-selected-staff-chip button {
+    color: #c95461 !important;
+    border-color: rgba(201, 84, 97, .24) !important;
+    background: rgba(201, 84, 97, .08) !important;
+}
+html[data-theme="dark"] .cs-eval-staff-option,
+html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-staff-option {
+    background: transparent !important;
+}
+
+/* Live preview: +1px and justified explanatory text. */
+.cs-eval-live-preview-pane .cs-eval-report-preview {
+    font-size: 10px !important;
+    line-height: 1.68 !important;
+}
+.cs-eval-report-preview.is-structured-preview {
+    white-space: normal !important;
+    text-align: left !important;
+}
+.cs-eval-preview-plain,
+.cs-eval-preview-after {
+    white-space: pre-wrap;
+}
+.cs-eval-preview-section {
+    margin: 0;
+}
+.cs-eval-preview-section-label {
+    display: block;
+    white-space: pre-wrap;
+}
+.cs-eval-preview-justified {
+    display: block;
+    white-space: pre-wrap;
+    text-align: justify;
+    text-align-last: left;
+    hyphens: auto;
+}
+
+/* One solid theme-aware visual language for Summary, Ranking and Bonus. */
+#tab-evaluation {
+    --cs-v6423-module-surface: color-mix(in srgb, var(--accent-soft) 46%, var(--bg-primary));
+    --cs-v6423-inner-surface: color-mix(in srgb, var(--accent-soft) 24%, var(--bg-primary));
+    --cs-v6423-module-border: color-mix(in srgb, var(--accent) 22%, var(--border-light));
+}
+#tab-evaluation .cs-eval-summary-panel,
+#tab-evaluation .cs-eval-summary-heading,
+#tab-evaluation .cs-eval-stats-grid,
+#tab-evaluation .cs-eval-summary-section,
+#tab-evaluation .cs-eval-summary-section:nth-of-type(n) {
+    background: var(--cs-v6423-module-surface) !important;
+    background-image: none !important;
+}
+#tab-evaluation .cs-eval-summary-heading,
+#tab-evaluation .cs-eval-stats-grid,
+#tab-evaluation .cs-eval-summary-section {
+    border-color: var(--cs-v6423-module-border) !important;
+}
+#tab-evaluation .cs-eval-stat-card,
+#tab-evaluation .cs-eval-stat-card:nth-child(n),
+#tab-evaluation .cs-eval-rank-row,
+#tab-evaluation .cs-eval-ranking-list .cs-eval-rank-row {
+    border-color: var(--cs-v6423-module-border) !important;
+    background: var(--cs-v6423-inner-surface) !important;
+    background-image: none !important;
+}
+html[data-theme="dark"] #tab-evaluation {
+    --cs-v6423-module-surface: #172b3a;
+    --cs-v6423-inner-surface: #11222f;
+    --cs-v6423-module-border: rgba(82, 213, 255, .18);
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation {
+    --cs-v6423-module-surface: #18351d;
+    --cs-v6423-inner-surface: #112916;
+    --cs-v6423-module-border: rgba(126, 238, 104, .2);
+}
+
+/* Detail Kesalahan CS: portrait and content-led. */
+#csEvalDetailOverlay.compact-error-detail .cs-eval-modal {
+    width: min(440px, 92vw) !important;
+    max-height: min(88vh, 760px) !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-modal-body {
+    max-height: 64vh !important;
+    overflow-y: auto !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dt {
+    padding: 8px 0 2px !important;
+    color: var(--text-muted) !important;
+    font-size: 7.4px !important;
+    font-weight: 750 !important;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd {
+    padding: 0 0 8px !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-light) 78%, transparent) !important;
+    font-size: 9px !important;
+    line-height: 1.55 !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd:last-child {
+    border-bottom: 0 !important;
+}
+
+@media (max-width: 1280px) {
+    #tab-evaluation .cs-eval-toolbar {
+        flex-wrap: wrap !important;
+    }
+    #tab-evaluation .cs-eval-toolbar > .cs-eval-search {
+        flex: 1 1 100% !important;
+    }
+}
+@media (max-width: 680px) {
+    #tab-evaluation .cs-eval-toolbar {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    #tab-evaluation .cs-eval-toolbar > .premium-select,
+    #tab-evaluation .cs-eval-toolbar > .unified-custom-filter {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+}
+</style>
+
+<script id="v64-23-evaluasi-cs-functions">
+/* V64.23 functions intentionally override the previous Evaluasi CS renderers. */
+csEvalState.appealSuccessCount = Number(csEvalState.appealSuccessCount || 0);
+
+function evidenceButtons(links) {
+    const clean = uniqueCsEvalLinks(typeof links === 'undefined' ? [] : links);
+    if (!clean.length) return '';
+    return `<div class="cs-eval-evidence-list">${clean.map((url, index) => `
+        <a class="cs-eval-evidence-button history-tooltip-target" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="Buka bukti ${index + 1}" data-tooltip="Bukti ${index + 1}" data-tooltip-icon="preview">
+            <svg class="cs-eval-evidence-svg" viewBox="0 0 38 38" aria-hidden="true">
+                <rect class="cs-eval-evidence-tile" x="2.5" y="5.5" width="29" height="29" rx="8"/>
+                <path class="cs-eval-evidence-clip" d="M20.7 14.1 15 19.8a3.5 3.5 0 1 0 5 5l6.2-6.2a5.1 5.1 0 0 0-7.2-7.2l-6.8 6.8a6.6 6.6 0 0 0 9.3 9.3l5.8-5.8"/>
+                <circle class="cs-eval-evidence-badge" cx="30.2" cy="7.8" r="6.3"/>
+                <text class="cs-eval-evidence-badge-text" x="30.2" y="8.15" text-anchor="middle">${index + 1}</text>
+            </svg>
+        </a>`).join('')}</div>`;
+}
+
+async function loadCsEvalSummary() {
+    if (!csEvalState.selectedPeriodId) {
+        csEvalState.summary = [];
+        csEvalState.appealSuccessCount = 0;
+        renderCsEvalSummary();
+        return;
+    }
+
+    const summaryRequest = supabaseDashboard.rpc('get_cs_evaluation_summary', {
+        p_period_id: csEvalState.selectedPeriodId
+    });
+    const successRequest = supabaseDashboard
+        .from('cs_errors')
+        .select('id', { count: 'exact', head: true })
+        .eq('period_id', csEvalState.selectedPeriodId)
+        .eq('status', 'appeal_success');
+
+    const [summaryResult, successResult] = await Promise.all([summaryRequest, successRequest]);
+    if (summaryResult.error) throw summaryResult.error;
+    csEvalState.summary = Array.isArray(summaryResult.data) ? summaryResult.data : [];
+    if (!successResult.error) {
+        csEvalState.appealSuccessCount = Number(successResult.count || 0);
+    } else {
+        csEvalState.appealSuccessCount = csEvalState.summary.reduce(
+            (sum, row) => sum + Number(row.appeal_success_count || row.appeal_approved_count || 0), 0
+        );
+    }
+    renderCsEvalSummary();
+    updateCsEvalFilterOptions();
+}
+
+function renderCsEvalSummary() {
+    const summary = [...csEvalState.summary].sort((a, b) => {
+        const pointDiff = Number(a.lc_points || 0) - Number(b.lc_points || 0);
+        if (pointDiff) return pointDiff;
+        const recordDiff = Number(a.total_records || 0) - Number(b.total_records || 0);
+        if (recordDiff) return recordDiff;
+        return String(a.staff_name || '').localeCompare(String(b.staff_name || ''), 'id', { sensitivity: 'base' });
+    });
+
+    const totalRecords = summary.reduce((sum, row) => sum + Number(row.total_records || 0), 0);
+    const totalPoints = summary.reduce((sum, row) => sum + Number(row.lc_points || 0), 0);
+    const appealCount = summary.reduce((sum, row) => sum + Number(row.appeal_open_count || 0), 0);
+    const successCount = Number(csEvalState.appealSuccessCount || 0);
+    const stats = document.getElementById('csEvalStatsGrid');
+    if (stats) stats.innerHTML = `
+        <div class="cs-eval-stat-card"><span>Total Record</span><strong>${totalRecords}</strong></div>
+        <div class="cs-eval-stat-card"><span>Total Kesalahan LC</span><strong>${totalPoints}</strong></div>
+        <div class="cs-eval-stat-card"><span>Total Banding Berhasil</span><strong>${successCount}</strong></div>
+        <div class="cs-eval-stat-card"><span>Banding Aktif</span><strong>${appealCount}</strong></div>`;
+
+    const ranking = document.getElementById('csEvalRankingList');
+    if (ranking) {
+        ranking.innerHTML = summary.length
+            ? summary.map((row, index) => `
+                <div class="cs-eval-rank-row">
+                    <span class="cs-eval-rank-number">${index + 1}</span>
+                    <div class="cs-eval-rank-user"><strong>${esc(row.staff_name)}</strong><span>${esc(String(row.role || '').toUpperCase())} · ${esc(row.passport_text || '')}</span></div>
+                    <div class="cs-eval-rank-score"><strong>${Number(row.lc_points || 0)} poin</strong><span>${formatCurrency(row.estimated_bonus)}</span></div>
+                </div>`).join('')
+            : '<div class="cs-eval-empty" style="min-height:90px"><span>Belum ada data ranking.</span></div>';
+    }
+
+    const s = csEvalState.settings;
+    const rules = document.getElementById('csEvalBonusRules');
+    if (rules) rules.innerHTML = `
+        <div class="cs-eval-ranking-list">
+            <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">0</span><div class="cs-eval-rank-user"><strong>0–25 poin</strong><span>Tanpa potongan LC</span></div><div class="cs-eval-rank-score"><strong>0%</strong></div></div>
+            <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">1</span><div class="cs-eval-rank-user"><strong>${s.bracket_1_min}–${s.bracket_1_max} poin</strong><span>Potongan bonus</span></div><div class="cs-eval-rank-score"><strong>${s.bracket_1_percent}%</strong></div></div>
+            <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">2</span><div class="cs-eval-rank-user"><strong>${s.bracket_2_min}–${s.bracket_2_max} poin</strong><span>Potongan bonus</span></div><div class="cs-eval-rank-score"><strong>${s.bracket_2_percent}%</strong></div></div>
+            <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">3</span><div class="cs-eval-rank-user"><strong>${s.bracket_3_min}–${s.bracket_3_max} poin</strong><span>Potongan bonus</span></div><div class="cs-eval-rank-score"><strong>${s.bracket_3_percent}%</strong></div></div>
+            <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">4</span><div class="cs-eval-rank-user"><strong>${s.bracket_4_min}–${s.bracket_4_max} poin</strong><span>Potongan bonus</span></div><div class="cs-eval-rank-score"><strong>${s.bracket_4_percent}%</strong></div></div>
+            <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">5</span><div class="cs-eval-rank-user"><strong>≥ ${s.over_85_min} poin</strong><span>Potongan manual diabaikan</span></div><div class="cs-eval-rank-score"><strong>${formatCurrency(s.over_85_bonus)}</strong></div></div>
+        </div>`;
+}
+
+function renderCsManualStaffPicker() {
+    const picker = document.getElementById('csEvalManualStaffPicker');
+    const empty = document.getElementById('csEvalManualStaffEmpty');
+    if (!picker) return;
+    const query = cleanText(document.getElementById('csEvalManualStaffSearch')?.value || '').toLowerCase();
+    const selected = new Set(csEvalState.manualSelectedStaff.map(item => lower(item.email)));
+    const matches = [...csEvalState.manualStaffDirectory]
+        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'id', { sensitivity: 'base' }))
+        .filter(item => {
+            if (selected.has(lower(item.email))) return false;
+            const haystack = `${item.name || ''} ${item.passport || ''} ${item.email || ''}`.toLowerCase();
+            return !query || haystack.includes(query);
+        });
+
+    picker.innerHTML = matches.map(item => `<button class="cs-eval-staff-option" type="button" data-search="${esc(`${item.name || ''} ${item.passport || ''} ${item.email || ''}`.toLowerCase())}" onclick="selectCsManualStaff('${encodeURIComponent(item.email)}')">
+        <span class="cs-eval-staff-option-copy">
+            <strong>${esc(item.name || 'Tanpa nama')}</strong>
+            <small>${esc(item.passport || 'Passport belum diisi')}${item.email ? ` · ${esc(item.email)}` : ''}</small>
+        </span>
+    </button>`).join('');
+    picker.hidden = false;
+    picker.classList.add('open');
+    if (empty) empty.hidden = matches.length > 0;
+}
+
+function filterCsManualStaffPicker() {
+    openCsManualStaffPicker();
+    renderCsManualStaffPicker();
+}
+
+function formatCsEvalPreviewHtmlV6423(rawText, sectionLabel) {
+    const text = String(rawText || '').replace(/\r\n?/g, '\n');
+    const marker = `${sectionLabel}\n`;
+    const markerIndex = text.indexOf(marker);
+    if (markerIndex < 0) return `<div class="cs-eval-preview-plain">${esc(text)}</div>`;
+
+    const before = text.slice(0, markerIndex);
+    const remainder = text.slice(markerIndex + marker.length);
+    const attachmentMarker = '\n\nLampiran';
+    const attachmentIndex = remainder.indexOf(attachmentMarker);
+    const explanation = attachmentIndex >= 0 ? remainder.slice(0, attachmentIndex) : remainder;
+    const after = attachmentIndex >= 0 ? remainder.slice(attachmentIndex) : '';
+
+    return `${before ? `<div class="cs-eval-preview-plain">${esc(before)}</div>` : ''}
+        <div class="cs-eval-preview-section">
+            <span class="cs-eval-preview-section-label">${esc(sectionLabel)}</span>
+            <span class="cs-eval-preview-justified">${esc(explanation)}</span>
+        </div>
+        ${after ? `<div class="cs-eval-preview-after">${esc(after)}</div>` : ''}`;
+}
+
+function updateCsManualPreview() {
+    const preview = document.getElementById('csEvalManualPreview');
+    const meta = document.getElementById('csEvalManualMeta');
+    const percent = Number(document.getElementById('csEvalManualPercent')?.value || 0);
+    const rawPreview = buildCsManualPreview();
+    if (preview) {
+        preview.classList.add('is-structured-preview');
+        preview.innerHTML = formatCsEvalPreviewHtmlV6423(rawPreview, 'Keterangan :');
+    }
+    if (meta) meta.innerHTML = `Periode: ${esc(selectedPeriod()?.label || 'Belum tersedia')}<br>Potongan sistem: ${percent}% per staff terkait<br>Dibuat oleh: ${esc(getCurrentUserName?.() || currentUser?.email || '')}`;
+}
+
+function updateCsAppealPreview() {
+    const preview = document.getElementById('csEvalAppealPreview');
+    const rawPreview = buildCsAppealPreview();
+    if (preview) {
+        preview.classList.add('is-structured-preview');
+        preview.innerHTML = formatCsEvalPreviewHtmlV6423(rawPreview, 'Perihal banding kesalahan :');
+    }
+}
+
+function renderCsEvalManualReports() {
+    const head = document.getElementById('csEvalTableHead');
+    const body = document.getElementById('csEvalTableBody');
+    if (!head || !body) return;
+    head.innerHTML = `<tr>
+        <th style="width:112px">ID Laporan</th>
+        <th style="width:188px">Perihal</th>
+        <th style="width:178px">Staff</th>
+        <th style="width:78px">Potongan</th>
+        <th style="width:104px">Status</th>
+        <th style="width:120px">Dibuat Oleh</th>
+        <th style="width:120px">Disetujui Oleh</th>
+        <th style="width:104px">Aksi</th>
+    </tr>`;
+    const canDelete = csEvalCan('cs_manual_report_delete');
+    body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map(row => {
+        const staff = Array.isArray(row.cs_manual_report_staff) ? row.cs_manual_report_staff : [];
+        const names = staff.map(item => item.staff_name).join(', ');
+        const reportLabel = row.report_code || 'DRAFT';
+        return `<tr>
+            <td><span class="cs-eval-report-code${row.report_code ? '' : ' draft'}">${esc(reportLabel)}</span></td>
+            <td><span class="cs-eval-error-type">${esc(row.subject)}</span></td>
+            <td><div class="cs-eval-user"><strong>${esc(names || 'Belum ada staff')}</strong><span>${staff.length} peserta</span></div></td>
+            <td><strong>${Number(row.deduction_percent || 0)}%</strong></td>
+            <td>${statusBadge(row.status)}</td>
+            <td><div class="cs-eval-user"><strong>${esc(row.created_by_name || '—')}</strong><span>${esc(formatCsEvalDate(row.created_at, true))}</span></div></td>
+            <td>${row.approved_by ? `<div class="cs-eval-user"><strong>${esc(row.approved_by)}</strong><span>${row.approved_at ? esc(formatCsEvalDate(row.approved_at, true)) : ''}</span></div>` : '<span class="cs-eval-muted">—</span>'}</td>
+            <td><div class="cs-eval-row-actions">
+                <button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsManualReport('${row.id}')" aria-label="Lihat laporan" data-tooltip="Lihat laporan" data-tooltip-icon="preview">${iconSvg('eye')}</button>
+                ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsManualReport('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
+            </div></td>
+        </tr>`;
+    }).join('') : `<tr><td colspan="8"><div class="cs-eval-empty">${iconSvg('file')}<strong>Belum ada laporan potongan manual</strong></div></td></tr>`;
+    renderCsEvalPagination();
+}
+
+function decorateCsEvalFilterTriggersV6423(root = document) {
+    root.querySelectorAll?.('#tab-evaluation .cs-eval-toolbar :is(.premium-select, .unified-custom-filter)').forEach(wrapper => {
+        const trigger = wrapper.querySelector('.premium-select-trigger, .unified-custom-filter-trigger');
+        if (!trigger || trigger.querySelector('.cs-eval-v6423-filter-leading, .unified-custom-filter-leading')) return;
+        const leading = document.createElement('span');
+        leading.className = 'cs-eval-v6423-filter-leading';
+        leading.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16l-6.4 7.1v4.4l-3.2 1.7v-6.1Z"/></svg>';
+        const value = trigger.querySelector('.premium-select-value, .unified-custom-filter-value');
+        trigger.insertBefore(leading, value || trigger.firstChild);
+    });
+}
+
+(function bindCsEvalTypeAheadV6423() {
+    if (window.__csEvalTypeAheadV6423Bound) return;
+    window.__csEvalTypeAheadV6423Bound = true;
+    let buffer = '';
+    let resetTimer = 0;
+
+    document.addEventListener('keydown', event => {
+        if (event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1 || /\s/.test(event.key)) return;
+        const wrapper = event.target.closest?.('.premium-select, .unified-custom-filter');
+        if (!wrapper) return;
+        const trigger = wrapper.querySelector('.premium-select-trigger, .unified-custom-filter-trigger');
+        const menu = wrapper.querySelector('.premium-select-menu, .unified-custom-filter-menu');
+        if (!trigger || !menu) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (!wrapper.classList.contains('open')) trigger.click();
+
+        buffer += event.key.toLocaleLowerCase('id-ID');
+        window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => { buffer = ''; }, 700);
+        const options = [...menu.querySelectorAll('.premium-select-option:not(:disabled), .unified-custom-filter-option:not(:disabled)')];
+        const normalized = node => String(node.textContent || '').trim().toLocaleLowerCase('id-ID');
+        const match = options.find(option => normalized(option).startsWith(buffer))
+            || options.find(option => normalized(option).includes(buffer));
+        if (match) {
+            match.focus({ preventScroll: true });
+            match.scrollIntoView({ block: 'nearest' });
+        }
+    }, true);
+
+    const start = () => {
+        decorateCsEvalFilterTriggersV6423(document);
+        const tab = document.getElementById('tab-evaluation');
+        if (tab) {
+            new MutationObserver(() => decorateCsEvalFilterTriggersV6423(tab))
+                .observe(tab, { childList: true, subtree: true });
+        }
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+    else start();
+})();
+
+window.evidenceButtons = evidenceButtons;
+window.loadCsEvalSummary = loadCsEvalSummary;
+window.renderCsEvalSummary = renderCsEvalSummary;
+window.renderCsManualStaffPicker = renderCsManualStaffPicker;
+window.filterCsManualStaffPicker = filterCsManualStaffPicker;
+window.updateCsManualPreview = updateCsManualPreview;
+window.updateCsAppealPreview = updateCsAppealPreview;
+window.renderCsEvalManualReports = renderCsEvalManualReports;
+
+document.documentElement.dataset.dashboardBuild = 'v64.23';
+</script>
+
+<script id="v64-22-build-marker">document.documentElement.dataset.dashboardBuild='v64.23';</script>
 </body>
 </html>
