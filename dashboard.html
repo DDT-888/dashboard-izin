@@ -68577,3 +68577,351 @@ html[data-theme="dark"][data-theme-variant="venom"] body #tab-dashboard .employe
 <script id="v64-35-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.35';
 </script>
+
+
+<!-- ================================================================
+     V64.37 — Multi-character typeahead for Evaluasi CS and Users
+     ================================================================ -->
+<style id="v64-37-multichar-typeahead">
+/* Keyboard typeahead highlights a candidate without changing the value.
+   Selection still happens only through Enter or a pointer click. */
+:is(
+    #tab-evaluation .premium-select-option,
+    #tab-evaluation .unified-custom-filter-option,
+    #tab-users .premium-select-option,
+    #tab-users .unified-custom-filter-option,
+    #tab-users .employee-custom-filter-option,
+    #employeeEditorModal .premium-select-option,
+    .cs-eval-modal-overlay .premium-select-option,
+    [data-select-id^="csEval"] .premium-select-option,
+    [data-select-id^="csEval"] .unified-custom-filter-option,
+    [data-select-id^="employeeEdit"] .premium-select-option,
+    [data-select-id="inputUserRole"] .premium-select-option
+).v6437-typeahead-match {
+    background: rgba(var(--accent-rgb), .15) !important;
+    color: var(--text-primary) !important;
+    border-color: rgba(var(--accent-rgb), .38) !important;
+    box-shadow:
+        inset 3px 0 0 var(--accent-strong),
+        inset 0 0 0 1px rgba(var(--accent-rgb), .14) !important;
+    outline: 1px solid rgba(var(--accent-rgb), .22) !important;
+    outline-offset: -1px !important;
+}
+
+html[data-theme="dark"] :is(
+    #tab-evaluation .premium-select-option,
+    #tab-evaluation .unified-custom-filter-option,
+    #tab-users .premium-select-option,
+    #tab-users .unified-custom-filter-option,
+    #tab-users .employee-custom-filter-option,
+    #employeeEditorModal .premium-select-option,
+    .cs-eval-modal-overlay .premium-select-option,
+    [data-select-id^="csEval"] .premium-select-option,
+    [data-select-id^="csEval"] .unified-custom-filter-option,
+    [data-select-id^="employeeEdit"] .premium-select-option,
+    [data-select-id="inputUserRole"] .premium-select-option
+).v6437-typeahead-match {
+    background: rgba(var(--accent-rgb), .22) !important;
+    border-color: rgba(var(--accent-rgb), .48) !important;
+    box-shadow:
+        inset 3px 0 0 var(--accent-strong),
+        inset 0 0 0 1px rgba(var(--accent-rgb), .20) !important;
+}
+</style>
+<script id="v64-37-multichar-typeahead-script">
+(() => {
+    'use strict';
+
+    if (window.__v6437MultiCharacterTypeaheadInstalled) return;
+    window.__v6437MultiCharacterTypeaheadInstalled = true;
+
+    const BUFFER_TIMEOUT_MS = 1800;
+    const MAX_QUERY_LENGTH = 64;
+    const wrapperStates = new WeakMap();
+    const activeWrappers = new Set();
+    let generatedOptionId = 0;
+
+    const WRAPPER_SELECTOR = '.employee-custom-filter, .premium-select, .unified-custom-filter';
+
+    function normalize(value) {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLocaleLowerCase('id-ID');
+    }
+
+    function isEligibleWrapper(wrapper) {
+        if (!(wrapper instanceof Element)) return false;
+        if (wrapper.classList.contains('employee-custom-filter')) return true;
+
+        const selectId = String(
+            wrapper.dataset.selectId || wrapper.querySelector('select')?.id || ''
+        );
+
+        if (/^(csEval|employeeEdit)/.test(selectId) || selectId === 'inputUserRole') {
+            return true;
+        }
+
+        return Boolean(wrapper.closest(
+            '#tab-evaluation, #tab-users, #employeeEditorModal, .cs-eval-modal-overlay'
+        ));
+    }
+
+    function optionSelector(wrapper) {
+        if (wrapper.classList.contains('employee-custom-filter')) {
+            return '.employee-custom-filter-option:not(:disabled)';
+        }
+        if (wrapper.classList.contains('premium-select')) {
+            return '.premium-select-option:not(:disabled)';
+        }
+        return '.unified-custom-filter-option:not(:disabled)';
+    }
+
+    function triggerFor(wrapper) {
+        return wrapper.querySelector(
+            '.employee-custom-filter-trigger, .premium-select-trigger, .unified-custom-filter-trigger'
+        );
+    }
+
+    function menuFor(wrapper) {
+        return wrapper.querySelector(
+            '.employee-custom-filter-menu, .premium-select-menu, .unified-custom-filter-menu'
+        );
+    }
+
+    function optionsFor(wrapper) {
+        const menu = menuFor(wrapper);
+        if (!menu) return [];
+        return Array.from(menu.querySelectorAll(optionSelector(wrapper)))
+            .filter(option => option.getAttribute('aria-disabled') !== 'true' && !option.hidden);
+    }
+
+    function optionLabel(option) {
+        const primary = option.querySelector(':scope > span')?.textContent || option.textContent || '';
+        return normalize(primary);
+    }
+
+    function optionSearchText(option) {
+        return normalize(option.textContent || '');
+    }
+
+    function stateFor(wrapper) {
+        let state = wrapperStates.get(wrapper);
+        if (!state) {
+            state = { query: '', lastInputAt: 0, timer: 0, match: null };
+            wrapperStates.set(wrapper, state);
+        }
+        return state;
+    }
+
+    function removeMatch(wrapper) {
+        wrapper.querySelectorAll('.v6437-typeahead-match').forEach(option => {
+            option.classList.remove('v6437-typeahead-match');
+            option.removeAttribute('data-typeahead-match');
+        });
+        triggerFor(wrapper)?.removeAttribute('aria-activedescendant');
+        const state = wrapperStates.get(wrapper);
+        if (state) state.match = null;
+    }
+
+    function resetWrapper(wrapper) {
+        const state = wrapperStates.get(wrapper);
+        if (state?.timer) window.clearTimeout(state.timer);
+        if (state) {
+            state.query = '';
+            state.lastInputAt = 0;
+            state.timer = 0;
+            state.match = null;
+        }
+        removeMatch(wrapper);
+        wrapper.removeAttribute('data-typeahead-query');
+        activeWrappers.delete(wrapper);
+    }
+
+    function resetOthers(except = null) {
+        [...activeWrappers].forEach(wrapper => {
+            if (wrapper !== except) resetWrapper(wrapper);
+        });
+    }
+
+    function scheduleReset(wrapper, state) {
+        if (state.timer) window.clearTimeout(state.timer);
+        state.timer = window.setTimeout(() => {
+            resetWrapper(wrapper);
+        }, BUFFER_TIMEOUT_MS);
+    }
+
+    function ensureOpen(wrapper) {
+        if (wrapper.classList.contains('open')) return true;
+        const trigger = triggerFor(wrapper);
+        if (!trigger || trigger.disabled) return false;
+        trigger.click();
+        return wrapper.classList.contains('open');
+    }
+
+    function scoreOption(option, query) {
+        const label = optionLabel(option);
+        const allText = optionSearchText(option);
+        if (!query || !label) return Number.POSITIVE_INFINITY;
+        if (label === query) return 0;
+        if (label.startsWith(query)) return 1;
+        if (label.split(' ').some(word => word.startsWith(query))) return 2;
+        if (label.includes(query)) return 3;
+        if (allText.includes(query)) return 4;
+        return Number.POSITIVE_INFINITY;
+    }
+
+    function highlightBestMatch(wrapper, rawQuery) {
+        const query = normalize(rawQuery);
+        removeMatch(wrapper);
+        if (!query) return null;
+
+        let best = null;
+        let bestScore = Number.POSITIVE_INFINITY;
+        for (const option of optionsFor(wrapper)) {
+            const score = scoreOption(option, query);
+            if (score < bestScore) {
+                best = option;
+                bestScore = score;
+                if (score === 0) break;
+            }
+        }
+
+        if (!best || !Number.isFinite(bestScore)) return null;
+
+        if (!best.id) best.id = `v6437-typeahead-option-${++generatedOptionId}`;
+        best.classList.add('v6437-typeahead-match');
+        best.setAttribute('data-typeahead-match', 'true');
+        triggerFor(wrapper)?.setAttribute('aria-activedescendant', best.id);
+
+        const state = stateFor(wrapper);
+        state.match = best;
+        best.focus({ preventScroll: true });
+        best.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        return best;
+    }
+
+    function appendCharacter(wrapper, character) {
+        if (!ensureOpen(wrapper)) return;
+
+        const now = Date.now();
+        const state = stateFor(wrapper);
+        const expired = now - state.lastInputAt > BUFFER_TIMEOUT_MS;
+        const base = expired ? '' : state.query;
+        state.query = `${base}${character}`.replace(/\s+/g, ' ').slice(0, MAX_QUERY_LENGTH);
+        state.lastInputAt = now;
+        wrapper.dataset.typeaheadQuery = state.query;
+        activeWrappers.add(wrapper);
+        resetOthers(wrapper);
+        highlightBestMatch(wrapper, state.query);
+        scheduleReset(wrapper, state);
+    }
+
+    function removeLastCharacter(wrapper) {
+        const state = stateFor(wrapper);
+        if (!state.query) return false;
+        state.query = state.query.slice(0, -1);
+        state.lastInputAt = Date.now();
+        wrapper.dataset.typeaheadQuery = state.query;
+        activeWrappers.add(wrapper);
+        highlightBestMatch(wrapper, state.query);
+        scheduleReset(wrapper, state);
+        return true;
+    }
+
+    function wrapperFromEventTarget(target) {
+        const wrapper = target instanceof Element ? target.closest(WRAPPER_SELECTOR) : null;
+        return isEligibleWrapper(wrapper) ? wrapper : null;
+    }
+
+    document.addEventListener('keydown', event => {
+        if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+
+        const wrapper = wrapperFromEventTarget(event.target);
+        if (!wrapper) return;
+
+        if (event.key === 'Escape' || event.key === 'Tab') {
+            resetWrapper(wrapper);
+            return;
+        }
+
+        if (['ArrowDown', 'ArrowUp', 'Home', 'End', 'PageDown', 'PageUp'].includes(event.key)) {
+            resetWrapper(wrapper);
+            return;
+        }
+
+        if (event.key === 'Backspace') {
+            if (!removeLastCharacter(wrapper)) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            // The highlighted option owns focus. Existing button/select handlers
+            // perform the actual selection; typeahead itself never auto-selects.
+            resetWrapper(wrapper);
+            return;
+        }
+
+        const state = stateFor(wrapper);
+        const isSpaceContinuation = event.key === ' ' && Boolean(state.query);
+        const isPrintable = event.key.length === 1 && /[\p{L}\p{N}._'\-/]/u.test(event.key);
+        if (!isPrintable && !isSpaceContinuation) return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        appendCharacter(wrapper, isSpaceContinuation ? ' ' : event.key);
+    }, true);
+
+    document.addEventListener('pointerdown', event => {
+        const wrapper = wrapperFromEventTarget(event.target);
+        const option = event.target.closest?.(
+            '.employee-custom-filter-option, .premium-select-option, .unified-custom-filter-option'
+        );
+        const trigger = event.target.closest?.(
+            '.employee-custom-filter-trigger, .premium-select-trigger, .unified-custom-filter-trigger'
+        );
+
+        if (wrapper && (option || trigger)) {
+            resetWrapper(wrapper);
+            resetOthers(wrapper);
+            return;
+        }
+        resetOthers();
+    }, true);
+
+    // Menus can be rebuilt after filters or staff data refresh. Remove stale
+    // references while preserving the current query for the newly rendered list.
+    const observer = new MutationObserver(mutations => {
+        const touched = new Set();
+        mutations.forEach(mutation => {
+            const wrapper = mutation.target instanceof Element
+                ? mutation.target.closest(WRAPPER_SELECTOR)
+                : null;
+            if (isEligibleWrapper(wrapper) && wrapperStates.get(wrapper)?.query) touched.add(wrapper);
+        });
+        touched.forEach(wrapper => {
+            const state = stateFor(wrapper);
+            window.requestAnimationFrame(() => highlightBestMatch(wrapper, state.query));
+        });
+    });
+
+    function start() {
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+        start();
+    }
+})();
+</script>
+<script id="v64-37-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.37';
+</script>
