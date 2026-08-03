@@ -41435,7 +41435,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                                     <div class="cs-eval-staff-picker-toolbar">
                                         <div class="cs-eval-staff-search cs-eval-search">
                                             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                                            <input id="csEvalManualStaffSearch" type="search" autocomplete="off" placeholder="Klik untuk melihat semua staff atau ketik nama/passport..." onfocus="openCsManualStaffPicker()" onclick="openCsManualStaffPicker()" oninput="filterCsManualStaffPicker()" />
+                                            <input id="csEvalManualStaffSearch" type="search" autocomplete="off" placeholder="Klik untuk melihat semua staff atau ketik nama/passport..." onclick="openCsManualStaffPicker()" oninput="filterCsManualStaffPicker()" />
                                             <div class="cs-eval-staff-picker" id="csEvalManualStaffPicker" hidden></div>
                                             <div class="cs-eval-staff-picker-empty" id="csEvalManualStaffEmpty" hidden>Tidak ada staff yang cocok.</div>
                                         </div>
@@ -61320,6 +61320,10 @@ ${appeal.reason}`.trim();
         const picker = document.getElementById('csEvalManualStaffPicker');
         const empty = document.getElementById('csEvalManualStaffEmpty');
         if (!picker) return;
+
+        // Preserve the current visibility state. Rendering selected staff while
+        // opening Edit must not implicitly open the dropdown.
+        const shouldRemainOpen = !picker.hidden && picker.classList.contains('open');
         const query = cleanText(document.getElementById('csEvalManualStaffSearch')?.value || '').toLowerCase();
         const selected = new Set(csEvalState.manualSelectedStaff.map(item => lower(item.email)));
         const matches = [...csEvalState.manualStaffDirectory]
@@ -61336,9 +61340,10 @@ ${appeal.reason}`.trim();
                 <small>${esc(item.passport || 'Passport belum diisi')}${item.email ? ` · ${esc(item.email)}` : ''}</small>
             </span>
         </button>`).join('');
-        picker.hidden = false;
-        picker.classList.add('open');
-        if (empty) empty.hidden = matches.length > 0;
+
+        picker.hidden = !shouldRemainOpen;
+        picker.classList.toggle('open', shouldRemainOpen);
+        if (empty) empty.hidden = !shouldRemainOpen || matches.length > 0;
     }
 
     function openCsManualStaffPicker() {
@@ -61421,9 +61426,14 @@ ${appeal.reason}`.trim();
             };
         });
         const staffSearch = document.getElementById('csEvalManualStaffSearch');
-        if (staffSearch) staffSearch.value = '';
+        if (staffSearch) {
+            staffSearch.value = '';
+            staffSearch.blur();
+        }
         closeCsManualStaffPicker();
         updateCsManualStaffSelection();
+        // Guard against any renderer or focus side effect reopening the list.
+        closeCsManualStaffPicker();
 
         document.getElementById('csEvalManualInfo').value = editing?.info || 'DINGDONGTOGEL';
         document.getElementById('csEvalManualPercent').value = Number(editing?.deduction_percent ?? 10);
@@ -68265,3 +68275,105 @@ html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .
 }
 </style>
 <script id="v64-32-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.32';</script>
+
+
+<!-- ================================================================
+     V64.33 — Manual report edit keeps staff dropdown closed
+     ================================================================ -->
+<script id="v64-33-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.33';
+</script>
+
+<!-- ================================================================
+     V64.34 — Priority table header cells use their own opaque paint layer
+     ================================================================ -->
+<style id="v64-34-priority-header-opaque-cell-fix">
+/*
+ * The screenshot showed row number 10 bleeding through the narrow # header
+ * of the VISA table. The old fix only added a shared underlay to Banding
+ * Livechat, while Chromium composites each sticky <th> independently.
+ * Every Dashboard priority header cell now owns a fully opaque paint layer,
+ * so scrolling text cannot appear through #, Nama, Sisa, or Status.
+ */
+html body #tab-dashboard .employee-priority-card .employee-priority-table-wrap {
+    isolation: isolate !important;
+}
+
+/* The V64.32 Banding-only underlay is no longer needed. */
+html body #tab-dashboard .employee-priority-card.livechat-appeal .livechat-appeal-header-underlay {
+    display: none !important;
+}
+
+html body #tab-dashboard .employee-priority-card .employee-priority-table thead th,
+html body #tab-dashboard .employee-priority-card .employee-priority-table thead th:first-child,
+html body #tab-dashboard .employee-priority-card .employee-priority-table thead th.employee-priority-index-heading,
+html body #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th,
+html body #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th:first-child,
+html body #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th.employee-priority-index-heading {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 80 !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
+    opacity: 1 !important;
+    background: var(--bg-secondary) !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: none !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-light) 75%, rgba(var(--accent-rgb), .25)) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+}
+
+html body #tab-dashboard .employee-priority-card .employee-priority-table thead th::before,
+html body #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: -1 !important;
+    display: block !important;
+    pointer-events: none !important;
+    opacity: 1 !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(
+        180deg,
+        rgba(var(--accent-rgb), .16) 0%,
+        rgba(var(--accent-rgb), .09) 100%
+    ) !important;
+    background-repeat: no-repeat !important;
+    background-position: 0 0 !important;
+    background-size: 100% 100% !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.52),
+        0 1px 0 color-mix(in srgb, var(--border-light) 75%, rgba(var(--accent-rgb), .25)),
+        0 3px 8px rgba(21,52,68,.055) !important;
+}
+
+html[data-theme="dark"] body #tab-dashboard .employee-priority-card .employee-priority-table thead th::before,
+html[data-theme="dark"] body #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th::before {
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(
+        180deg,
+        rgba(var(--accent-rgb), .22) 0%,
+        rgba(var(--accent-rgb), .12) 100%
+    ) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.045),
+        0 1px 0 color-mix(in srgb, var(--border-light) 72%, rgba(var(--accent-rgb), .28)),
+        0 3px 8px rgba(0,0,0,.15) !important;
+}
+
+/* Keep scrolling rows below every sticky heading layer. */
+html body #tab-dashboard .employee-priority-card .employee-priority-table tbody,
+html body #tab-dashboard .employee-priority-card .employee-priority-table tbody tr,
+html body #tab-dashboard .employee-priority-card .employee-priority-table tbody td {
+    position: relative !important;
+    z-index: 0 !important;
+}
+</style>
+<script id="v64-34-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.34';
+</script>
