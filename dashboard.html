@@ -61175,11 +61175,11 @@ async function viewCsEvaluationAppeal(id) {
 
         const preview = buildAppealText(appeal);
         const currentDecisionLabel = appeal.status === 'rejected' ? 'Alasan penolakan' : 'Catatan keputusan';
+        const currentStatusMeta = statusMeta[appeal.status] || { label: appeal.status || '—', className: 'correction' };
         const currentMeta = `<div class="cs-eval-report-meta cs-eval-appeal-current-meta">
-            <div><span>Pengajuan</span><strong>#${attemptNo}</strong></div>
+            <div class="cs-eval-appeal-current-status"><span>Status</span><strong class="cs-eval-appeal-status-text is-${esc(currentStatusMeta.className || 'correction')}">${esc(currentStatusMeta.label || appeal.status || '—')}</strong></div>
             <div><span>Diajukan oleh</span><strong>${esc(appeal.submitted_by_name || '—')}</strong><small>${esc(formatCsEvalDate(appeal.created_at, true))}</small></div>
-            <div><span>Status</span><strong>${esc(statusMeta[appeal.status]?.label || appeal.status)}</strong></div>
-            ${appeal.processed_by ? `<div><span>Diproses oleh</span><strong>${esc(appeal.processed_by)}</strong><small>${esc(formatCsEvalDate(appeal.processed_at, true))}</small></div>` : ''}
+            ${appeal.processed_by ? `<div class="is-full cs-eval-appeal-processed"><span>Diproses oleh</span><strong>${esc(appeal.processed_by)}</strong><small>${esc(formatCsEvalDate(appeal.processed_at, true))}</small></div>` : ''}
             ${appeal.processed_note ? `<div class="is-full"><span>${currentDecisionLabel}</span><p>${esc(appeal.processed_note)}</p></div>` : ''}
         </div>`;
 
@@ -61188,11 +61188,12 @@ async function viewCsEvaluationAppeal(id) {
             <div class="cs-eval-appeal-history-heading"><span>Riwayat Banding</span><small>${historyRows.length} pengajuan sebelumnya</small></div>
             <div class="cs-eval-appeal-history-list">${historyRows.map(item => {
                 const itemAttempt = Number(item.attempt_no || 1);
-                const itemStatus = statusMeta[item.status]?.label || item.status;
+                const itemStatusMeta = statusMeta[item.status] || { label: item.status || '—', className: 'correction' };
+                const itemStatus = itemStatusMeta.label || item.status || '—';
                 const decisionLabel = item.status === 'rejected' ? 'Alasan penolakan' : 'Catatan keputusan';
                 const itemPreview = buildAppealText(item);
                 return `<details class="cs-eval-appeal-history-item">
-                    <summary><span>Pengajuan #${itemAttempt}</span><span class="cs-eval-appeal-history-status">${esc(itemStatus)}</span><small>${esc(formatCsEvalDate(item.created_at, true))}</small></summary>
+                    <summary><span class="cs-eval-appeal-history-attempt">Pengajuan #${itemAttempt}</span><small>${esc(formatCsEvalDate(item.created_at, true))}</small><span class="cs-eval-appeal-history-status cs-eval-appeal-status-text is-${esc(itemStatusMeta.className || 'correction')}">${esc(itemStatus)}</span></summary>
                     <div class="cs-eval-appeal-history-content">
                         <div class="cs-eval-report-preview is-structured-preview">${formatCsEvalStructuredPreview(itemPreview, 'Perihal banding kesalahan :')}</div>
                         <div class="cs-eval-appeal-history-meta">
@@ -69243,3 +69244,120 @@ html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-
 <script id="v64-40-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.40';
 </script>
+
+<!-- ================================================================
+     V64.41 — Compact appeal history + two-column latest summary
+     ================================================================ -->
+<style id="v64-41-appeal-preview-summary">
+/* Latest submission: exactly two primary columns (status / submitted by). */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-status {
+    justify-content: flex-start;
+}
+
+/* Status remains plain text, with semantic color matching the active status. */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text {
+    display: inline-block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.35;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-active,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-success {
+    color: #27824b;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-pending,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-missing {
+    color: #a86a0d;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-rejected,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-deleted {
+    color: #be4f5a;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-correction {
+    color: var(--text-secondary);
+}
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-active,
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-success {
+    color: #65d58a;
+}
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-pending,
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-missing {
+    color: #e5b85e;
+}
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-rejected,
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-deleted {
+    color: #ff8994;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-active,
+html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-status-text.is-success {
+    color: #78ff35;
+}
+
+/* Closed history rows stay on one compact line: attempt, date, status. */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary {
+    grid-template-columns: 16px minmax(105px, 1fr) auto minmax(62px, auto);
+    gap: 9px;
+    min-height: 38px;
+    padding: 8px 11px;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary::before {
+    grid-column: 1;
+    width: 16px;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary > .cs-eval-appeal-history-attempt {
+    grid-column: 2;
+    min-width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 700;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary > small {
+    grid-column: 3;
+    justify-self: end;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-size: 9px;
+    font-weight: 500;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status {
+    grid-column: 4;
+    justify-self: end;
+    min-width: 58px;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+}
+
+@media (max-width: 620px) {
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary {
+        grid-template-columns: 16px minmax(88px, 1fr) auto;
+        gap: 7px;
+    }
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary > small {
+        display: none;
+    }
+    #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status {
+        grid-column: 3;
+    }
+}
+</style>
+<script id="v64-41-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.41';
+</script>
+
