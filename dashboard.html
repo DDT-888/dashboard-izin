@@ -59743,13 +59743,23 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         // V64.38: action buttons are contextual to the active Evaluasi CS tab.
         // Export is only relevant to Periode Berjalan and Riwayat Periode.
         // Buat Laporan is only relevant to Potongan Manual.
-        if (create) {
-            create.hidden = !(csEvalState.subtab === 'manual' && csEvalCan('cs_manual_report_create'));
-        }
-        if (exportButton) {
-            const exportSubtabAllowed = csEvalState.subtab === 'current' || csEvalState.subtab === 'history';
-            exportButton.hidden = !(exportSubtabAllowed && csEvalCan('cs_evaluation_export'));
-        }
+        const setContextActionVisibility = (button, visible) => {
+            if (!button) return;
+            const shouldShow = Boolean(visible);
+            button.hidden = !shouldShow;
+            button.style.display = shouldShow ? 'inline-flex' : 'none';
+            button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+            button.tabIndex = shouldShow ? 0 : -1;
+        };
+        setContextActionVisibility(
+            create,
+            csEvalState.subtab === 'manual' && csEvalCan('cs_manual_report_create')
+        );
+        setContextActionVisibility(
+            exportButton,
+            (csEvalState.subtab === 'current' || csEvalState.subtab === 'history')
+                && csEvalCan('cs_evaluation_export')
+        );
         if (staffFilter) staffFilter.style.display = ['current', 'history'].includes(csEvalState.subtab) ? '' : 'none';
         if (typeFilter) typeFilter.style.display = ['current', 'history'].includes(csEvalState.subtab) ? '' : 'none';
         if (periodFilter) periodFilter.style.display = csEvalState.subtab === 'current' && csEvalState.activePeriod ? 'none' : '';
@@ -60949,10 +60959,11 @@ ${appeal.reason}`.trim();
         head.innerHTML = `<tr>
             <th style="width:100px">Diajukan</th>
             <th style="width:175px">Nama CS</th>
-            <th style="width:230px">Kesalahan</th>
-            <th style="width:125px">ID Chat</th>
-            <th style="width:145px">Status</th>
-            <th style="width:130px">Diproses</th>
+            <th style="width:210px">Kesalahan</th>
+            <th style="width:118px">ID Chat</th>
+            <th style="width:112px">Bukti</th>
+            <th style="width:138px">Status</th>
+            <th style="width:126px">Diproses</th>
             <th style="width:108px">Aksi</th>
         </tr>`;
         const canDelete = csEvalCan('cs_appeal_delete');
@@ -60963,6 +60974,7 @@ ${appeal.reason}`.trim();
                 <td><div class="cs-eval-user"><strong>${esc(error.staff_name || row.submitted_by_name)}</strong><span>${esc(error.passport_text || row.submitted_by_passport || '')}</span></div></td>
                 <td><span class="cs-eval-error-type">${esc(error.error_type || '')}</span></td>
                 <td>${esc(error.chat_id || '')}</td>
+                <td>${evidenceButtons(error.evidence_links)}</td>
                 <td>${statusBadge(row.status)}</td>
                 <td>${esc(row.processed_by || '')}</td>
                 <td><div class="cs-eval-row-actions">
@@ -60970,7 +60982,7 @@ ${appeal.reason}`.trim();
                     ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsEvaluationAppeal('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
                 </div></td>
             </tr>`;
-        }).join('') : `<tr><td colspan="7"><div class="cs-eval-empty">${iconSvg('message')}<strong>Belum ada laporan banding</strong></div></td></tr>`;
+        }).join('') : `<tr><td colspan="8"><div class="cs-eval-empty">${iconSvg('message')}<strong>Belum ada laporan banding</strong></div></td></tr>`;
         renderCsEvalPagination();
     }
 
@@ -68937,4 +68949,29 @@ html[data-theme="dark"] :is(
 </script>
 <script id="v64-37-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.37';
+</script>
+
+
+<!-- ================================================================
+     V64.39 — Evaluasi CS contextual actions + appeal evidence column
+     ================================================================ -->
+<style id="v64-39-evaluation-context-actions">
+/* Author display rules on .cs-eval-button override the browser's default
+   [hidden] presentation. Keep contextual actions truly absent per tab. */
+#csEvalExportButton[hidden],
+#csEvalCreateManualButton[hidden],
+#csEvalExportButton[aria-hidden="true"],
+#csEvalCreateManualButton[aria-hidden="true"] {
+    display: none !important;
+}
+
+/* Keep the appeal evidence cell compact and aligned with the active table. */
+#tab-evaluation #csEvalTableBody td .cs-eval-evidence-list {
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 30px;
+}
+</style>
+<script id="v64-39-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.39';
 </script>
