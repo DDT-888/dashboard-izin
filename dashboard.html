@@ -59255,12 +59255,12 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         const clean = uniqueCsEvalLinks(typeof links === 'undefined' ? [] : links);
         if (!clean.length) return '';
         return `<div class="cs-eval-evidence-list">${clean.map((url, index) => `
-            <a class="cs-eval-evidence-button" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="Buka bukti ${index + 1}" title="Bukti ${index + 1}">
-                <svg class="cs-eval-evidence-svg" viewBox="0 0 32 32" aria-hidden="true">
-                    <rect class="cs-eval-evidence-frame" x="2.5" y="2.5" width="27" height="27" rx="7"/>
-                    <path class="cs-eval-evidence-link" d="M9.6 16.2 13 12.8a4 4 0 0 1 5.7 0 4 4 0 0 1 0 5.7l-2.2 2.2M22.4 15.8 19 19.2a4 4 0 0 1-5.7 0 4 4 0 0 1 0-5.7l2.2-2.2"/>
-                    <rect class="cs-eval-evidence-count-box" x="19" y="18.5" width="8.5" height="8.5" rx="2.6"/>
-                    <text class="cs-eval-evidence-count-text" x="23.25" y="24.9" text-anchor="middle">${index + 1}</text>
+            <a class="cs-eval-evidence-button history-tooltip-target" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="Buka bukti ${index + 1}" data-tooltip="Bukti ${index + 1}" data-tooltip-icon="preview">
+                <svg class="cs-eval-evidence-svg" viewBox="0 0 38 38" aria-hidden="true">
+                    <rect class="cs-eval-evidence-tile" x="2.5" y="5.5" width="29" height="29" rx="8"/>
+                    <path class="cs-eval-evidence-clip" d="M20.7 14.1 15 19.8a3.5 3.5 0 1 0 5 5l6.2-6.2a5.1 5.1 0 0 0-7.2-7.2l-6.8 6.8a6.6 6.6 0 0 0 9.3 9.3l5.8-5.8"/>
+                    <circle class="cs-eval-evidence-badge" cx="30.2" cy="7.8" r="6.3"/>
+                    <text class="cs-eval-evidence-badge-text" x="30.2" y="8.15" text-anchor="middle">${index + 1}</text>
                 </svg>
             </a>`).join('')}</div>`;
     }
@@ -66828,5 +66828,100 @@ document.documentElement.dataset.dashboardBuild = 'v64.23';
 </script>
 
 <script id="v64-22-build-marker">document.documentElement.dataset.dashboardBuild='v64.23';</script>
+
+
+<!-- ================================================================
+     V64.24 — Evidence renderer scope fix
+     The Evaluasi CS module uses its own private renderer. V64.24 updates
+     that renderer and locks the final SVG appearance in every theme.
+     ================================================================ -->
+<style id="v64-24-evidence-renderer-scope-fix">
+#tab-evaluation .cs-eval-evidence-list {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 7px !important;
+    min-height: 38px !important;
+}
+#tab-evaluation .cs-eval-evidence-button {
+    --cs-evidence-accent: var(--accent, #268f8c);
+    --cs-evidence-soft: color-mix(in srgb, var(--cs-evidence-accent) 9%, var(--bg-primary));
+    --cs-evidence-line: color-mix(in srgb, var(--cs-evidence-accent) 58%, var(--border-light));
+    position: relative !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    color: var(--cs-evidence-accent) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    isolation: isolate;
+}
+#tab-evaluation .cs-eval-evidence-button:hover,
+#tab-evaluation .cs-eval-evidence-button:focus-visible {
+    transform: translateY(-1px) !important;
+    filter: brightness(1.045);
+    outline: none !important;
+}
+#tab-evaluation .cs-eval-evidence-svg {
+    width: 38px !important;
+    height: 38px !important;
+    display: block !important;
+    overflow: visible !important;
+}
+#tab-evaluation .cs-eval-evidence-tile {
+    fill: var(--cs-evidence-soft) !important;
+    stroke: var(--cs-evidence-line) !important;
+    stroke-width: 1.15 !important;
+}
+#tab-evaluation .cs-eval-evidence-clip {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.75 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+#tab-evaluation .cs-eval-evidence-badge {
+    fill: var(--cs-evidence-accent) !important;
+    stroke: var(--bg-primary) !important;
+    stroke-width: 1.8 !important;
+    filter: drop-shadow(0 1.5px 2.5px rgba(4, 26, 34, .26));
+}
+#tab-evaluation .cs-eval-evidence-badge-text {
+    fill: #fff !important;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+    font-size: 7px !important;
+    font-weight: 900 !important;
+    dominant-baseline: middle !important;
+    pointer-events: none !important;
+}
+html[data-theme="dark"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-evidence-accent: #55d6f3;
+    --cs-evidence-soft: #112731;
+    --cs-evidence-line: rgba(85, 214, 243, .56);
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-evidence-accent: #77ed65;
+    --cs-evidence-soft: #122c17;
+    --cs-evidence-line: rgba(119, 237, 101, .56);
+}
+html:not([data-theme="dark"]) #tab-evaluation .cs-eval-evidence-button {
+    --cs-evidence-accent: #268f8c;
+    --cs-evidence-soft: #f0fbfa;
+    --cs-evidence-line: rgba(38, 143, 140, .46);
+}
+</style>
+<script id="v64-24-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.24';
+</script>
+
 </body>
 </html>
