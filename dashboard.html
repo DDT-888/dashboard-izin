@@ -40892,10 +40892,16 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                     <button class="cs-eval-tab-button" type="button" data-cs-eval-tab="appeals" onclick="switchCsEvaluationSubtab('appeals')">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v14H8l-4 3z"/><path d="M8 9h8M8 13h5"/></svg>
                         <span>Laporan Banding</span>
+                        <span class="cs-eval-submitted-indicator" data-cs-eval-indicator="appeals" title="Ada laporan banding berstatus Diajukan" aria-hidden="true">
+                            <svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.25"/><path d="M6 3.7v2.55l1.65 1"/></svg>
+                        </span>
                     </button>
                     <button class="cs-eval-tab-button" type="button" data-cs-eval-tab="manual" onclick="switchCsEvaluationSubtab('manual')">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5H9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
                         <span>Potongan Manual</span>
+                        <span class="cs-eval-submitted-indicator" data-cs-eval-indicator="manual" title="Ada laporan potongan manual berstatus Diajukan" aria-hidden="true">
+                            <svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.25"/><path d="M6 3.7v2.55l1.65 1"/></svg>
+                        </span>
                     </button>
                     <span class="cs-eval-period-indicator" id="csEvalPeriodIndicator"><span class="dot"></span><span>Belum ada periode aktif</span></span>
                 </div>
@@ -68467,6 +68473,219 @@ html[data-theme="light"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appe
 </style>
 <script id="v64-48-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.48';
+</script>
+
+
+
+<!-- ================================================================
+     V64.49 — Compact appeal attempt text + submitted tab indicators
+     ================================================================ -->
+<style id="v64-49-evaluation-submitted-tab-indicators">
+/* Pengajuan number stays plain text, but slightly quieter and smaller. */
+#tab-evaluation .cs-eval-appeal-attempt {
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    color: color-mix(in srgb, var(--text-primary) 84%, var(--text-secondary) 16%) !important;
+}
+
+/* Small clock indicator shown only while the tab has at least one Submitted
+   item in the selected period. It intentionally has no count/badge. */
+#tab-evaluation .cs-eval-tab-button .cs-eval-submitted-indicator {
+    display: none;
+    width: 12px;
+    height: 12px;
+    flex: 0 0 12px;
+    margin-left: 1px;
+    align-items: center;
+    justify-content: center;
+    color: #b77918;
+    opacity: 0;
+    transform: scale(.88);
+    pointer-events: none;
+}
+#tab-evaluation .cs-eval-tab-button .cs-eval-submitted-indicator.is-visible {
+    display: inline-flex;
+    animation: csEvalSubmittedIndicatorPulseV6449 2.15s ease-in-out infinite;
+}
+#tab-evaluation .cs-eval-tab-button .cs-eval-submitted-indicator svg {
+    width: 11px;
+    height: 11px;
+    overflow: visible;
+    fill: color-mix(in srgb, currentColor 12%, transparent);
+    stroke: currentColor;
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+#tab-evaluation .cs-eval-tab-button.active .cs-eval-submitted-indicator {
+    color: color-mix(in srgb, var(--primary-color) 58%, #b77918 42%);
+}
+html[data-theme="dark"] #tab-evaluation .cs-eval-tab-button .cs-eval-submitted-indicator {
+    color: #e5b85e;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-tab-button .cs-eval-submitted-indicator {
+    color: #9bdd57;
+}
+@keyframes csEvalSubmittedIndicatorPulseV6449 {
+    0%, 100% { opacity: .42; transform: scale(.88); }
+    50% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+    #tab-evaluation .cs-eval-tab-button .cs-eval-submitted-indicator.is-visible {
+        animation: none;
+        opacity: .9;
+        transform: none;
+    }
+}
+</style>
+<script id="v64-49-evaluation-submitted-tab-indicators-script">
+(() => {
+    const state = {
+        timer: null,
+        refreshPromise: null,
+        lastPeriodId: ''
+    };
+
+    function indicatorNode(kind) {
+        return document.querySelector(`#tab-evaluation [data-cs-eval-indicator="${kind}"]`);
+    }
+
+    function setIndicator(kind, visible) {
+        const node = indicatorNode(kind);
+        if (!node) return;
+        node.classList.toggle('is-visible', Boolean(visible));
+        node.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    }
+
+    function selectedPeriodId() {
+        return String(document.getElementById('csEvalPeriodFilter')?.value || '').trim();
+    }
+
+    async function refreshSubmittedIndicatorsV6449() {
+        if (state.refreshPromise) return state.refreshPromise;
+        state.refreshPromise = (async () => {
+            const periodId = selectedPeriodId();
+            state.lastPeriodId = periodId;
+            if (!periodId || typeof supabaseDashboard === 'undefined' || !supabaseDashboard) {
+                setIndicator('appeals', false);
+                setIndicator('manual', false);
+                return;
+            }
+
+            const [appealResult, manualResult] = await Promise.allSettled([
+                supabaseDashboard.rpc('get_cs_error_appeals_latest_v6440', {
+                    p_period_id: periodId,
+                    p_search: null,
+                    p_status: 'submitted',
+                    p_limit: 1,
+                    p_offset: 0
+                }),
+                supabaseDashboard
+                    .from('cs_manual_reports')
+                    .select('id')
+                    .eq('period_id', periodId)
+                    .eq('status', 'submitted')
+                    .limit(1)
+            ]);
+
+            let hasSubmittedAppeal = false;
+            if (appealResult.status === 'fulfilled' && !appealResult.value?.error) {
+                hasSubmittedAppeal = Array.isArray(appealResult.value?.data)
+                    && appealResult.value.data.length > 0;
+            }
+
+            let hasSubmittedManual = false;
+            if (manualResult.status === 'fulfilled' && !manualResult.value?.error) {
+                hasSubmittedManual = Array.isArray(manualResult.value?.data)
+                    && manualResult.value.data.length > 0;
+            }
+
+            setIndicator('appeals', hasSubmittedAppeal);
+            setIndicator('manual', hasSubmittedManual);
+        })().catch(error => {
+            console.warn('Submitted indicator refresh skipped:', error);
+        }).finally(() => {
+            state.refreshPromise = null;
+        });
+        return state.refreshPromise;
+    }
+
+    function queueRefresh(delay = 180) {
+        clearTimeout(state.timer);
+        state.timer = setTimeout(refreshSubmittedIndicatorsV6449, delay);
+    }
+
+    function wrapAsyncWindowFunction(name) {
+        const original = window[name];
+        if (typeof original !== 'function' || original.__v6449IndicatorWrapped) return;
+        const wrapped = function(...args) {
+            let result;
+            try {
+                result = original.apply(this, args);
+            } catch (error) {
+                queueRefresh(350);
+                throw error;
+            }
+            Promise.resolve(result).finally(() => queueRefresh(350));
+            return result;
+        };
+        wrapped.__v6449IndicatorWrapped = true;
+        wrapped.__v6449Original = original;
+        window[name] = wrapped;
+    }
+
+    function initializeSubmittedIndicatorsV6449() {
+        [
+            'initializeCsEvaluation',
+            'refreshCsEvaluation',
+            'switchCsEvaluationSubtab',
+            'submitCsEvaluationAppeal',
+            'processCsEvaluationAppeal',
+            'deleteCsEvaluationAppeal',
+            'saveCsManualReport',
+            'processCsManualReport',
+            'deleteCsManualReport'
+        ].forEach(wrapAsyncWindowFunction);
+
+        document.getElementById('csEvalPeriodFilter')?.addEventListener('change', () => queueRefresh(250));
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) queueRefresh(120);
+        });
+
+        queueRefresh(650);
+        window.setInterval(() => {
+            if (!document.hidden && document.getElementById('tab-evaluation')) queueRefresh(0);
+        }, 45000);
+
+        try {
+            if (typeof supabaseDashboard !== 'undefined' && supabaseDashboard) {
+                window.__csEvalSubmittedIndicatorChannelV6449 = supabaseDashboard
+                    .channel('cs-eval-submitted-indicators-v6449')
+                    .on('postgres_changes', {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'cs_evaluation_realtime_state',
+                        filter: 'id=eq.1'
+                    }, () => queueRefresh(450))
+                    .subscribe();
+            }
+        } catch (error) {
+            console.warn('Submitted indicator realtime unavailable:', error);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(initializeSubmittedIndicatorsV6449, 0), { once: true });
+    } else {
+        setTimeout(initializeSubmittedIndicatorsV6449, 0);
+    }
+
+    window.refreshCsEvalSubmittedIndicatorsV6449 = refreshSubmittedIndicatorsV6449;
+})();
+</script>
+<script id="v64-49-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.49';
 </script>
 
 </body>
