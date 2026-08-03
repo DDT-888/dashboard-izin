@@ -59256,12 +59256,13 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         if (!clean.length) return '';
         return `<div class="cs-eval-evidence-list">${clean.map((url, index) => `
             <a class="cs-eval-evidence-button history-tooltip-target" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="Buka bukti ${index + 1}" data-tooltip="Bukti ${index + 1}" data-tooltip-icon="preview">
-                <svg class="cs-eval-evidence-svg" viewBox="0 0 32 32" aria-hidden="true">
-                    <rect class="cs-eval-evidence-tile" x="1.5" y="4.5" width="25" height="25" rx="7"/>
-                    <path class="cs-eval-evidence-clip" d="M17.2 11.2 12.5 16a2.8 2.8 0 1 0 4 4l5.1-5.1a4.1 4.1 0 0 0-5.8-5.8l-5.6 5.6a5.2 5.2 0 1 0 7.4 7.4l4.7-4.7"/>
-                    <circle class="cs-eval-evidence-badge" cx="25.5" cy="6.3" r="5.1"/>
-                    <text class="cs-eval-evidence-badge-text" x="25.5" y="6.55" text-anchor="middle">${index + 1}</text>
-                </svg>
+                <span class="cs-eval-evidence-surface" aria-hidden="true">
+                    <svg class="cs-eval-evidence-icon" viewBox="0 0 24 24" focusable="false">
+                        <path d="M8.7 12.8 14 7.5a3.25 3.25 0 1 1 4.6 4.6l-6.65 6.65a4.55 4.55 0 0 1-6.44-6.44l6.2-6.2"/>
+                        <path d="m10.25 15.2 6.05-6.05"/>
+                    </svg>
+                </span>
+                <span class="cs-eval-evidence-number" aria-hidden="true">${index + 1}</span>
             </a>`).join('')}</div>`;
     }
 
@@ -59448,7 +59449,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
                 <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">2</span><div class="cs-eval-rank-user"><strong>${s.bracket_2_min}–${s.bracket_2_max} poin</strong><span>Potongan bonus</span></div><div class="cs-eval-rank-score"><strong>${s.bracket_2_percent}%</strong></div></div>
                 <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">3</span><div class="cs-eval-rank-user"><strong>${s.bracket_3_min}–${s.bracket_3_max} poin</strong><span>Potongan bonus</span></div><div class="cs-eval-rank-score"><strong>${s.bracket_3_percent}%</strong></div></div>
                 <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">4</span><div class="cs-eval-rank-user"><strong>${s.bracket_4_min}–${s.bracket_4_max} poin</strong><span>Potongan bonus</span></div><div class="cs-eval-rank-score"><strong>${s.bracket_4_percent}%</strong></div></div>
-                <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">5</span><div class="cs-eval-rank-user"><strong>≥ ${s.over_85_min} poin</strong><span>Potongan manual diabaikan</span></div><div class="cs-eval-rank-score"><strong>${formatCurrency(s.over_85_bonus)}</strong></div></div>
+                <div class="cs-eval-rank-row"><span class="cs-eval-rank-number">5</span><div class="cs-eval-rank-user"><strong>≥ ${s.over_85_min} poin</strong><span>Bonus minimal</span></div><div class="cs-eval-rank-score"><strong>${formatCurrency(s.over_85_bonus)}</strong></div></div>
             </div>`;
     }
 
@@ -60341,25 +60342,27 @@ ${appeal.reason}`.trim();
     }
 
     function formatCsEvalStructuredPreview(rawText, sectionLabel) {
-        const text = String(rawText || '').replace(/\r\n?/g, '\n');
+        const text = String(rawText || '').replace(/\r\n?/g, '\n').trim();
         const marker = `${sectionLabel}\n`;
         const markerIndex = text.indexOf(marker);
+        const withBreaks = value => esc(String(value || '')).replace(/\n/g, '<br>');
         if (markerIndex < 0) {
-            return `<div class="cs-eval-preview-plain">${esc(text)}</div>`;
+            return `<span class="cs-eval-preview-plain">${withBreaks(text)}</span>`;
         }
 
-        const before = text.slice(0, markerIndex);
+        const before = text.slice(0, markerIndex).replace(/\n+$/, '');
         const remainder = text.slice(markerIndex + marker.length);
-        const attachmentIndex = remainder.indexOf('\n\nLampiran');
-        const explanation = attachmentIndex >= 0 ? remainder.slice(0, attachmentIndex) : remainder;
-        const after = attachmentIndex >= 0 ? remainder.slice(attachmentIndex) : '';
+        const attachmentMatch = remainder.match(/\n{2,}Lampiran\s*:/);
+        const attachmentIndex = attachmentMatch ? attachmentMatch.index : -1;
+        const explanation = (attachmentIndex >= 0 ? remainder.slice(0, attachmentIndex) : remainder).trim();
+        const after = attachmentIndex >= 0
+            ? remainder.slice(attachmentIndex).replace(/^\n+/, '').trim()
+            : '';
 
-        return `${before ? `<div class="cs-eval-preview-plain">${esc(before)}</div>` : ''}
-            <div class="cs-eval-preview-section">
-                <span class="cs-eval-preview-section-label">${esc(sectionLabel)}</span>
-                <span class="cs-eval-preview-justified">${esc(explanation)}</span>
-            </div>
-            ${after ? `<div class="cs-eval-preview-after">${esc(after)}</div>` : ''}`;
+        return `${before ? `<span class="cs-eval-preview-plain">${withBreaks(before)}</span><br><br>` : ''}
+            <span class="cs-eval-preview-section-label">${esc(sectionLabel)}</span><br>
+            <span class="cs-eval-preview-justified">${withBreaks(explanation)}</span>
+            ${after ? `<br><br><span class="cs-eval-preview-after">${withBreaks(after)}</span>` : ''}`;
     }
 
     function updateCsManualPreview() {
@@ -60612,14 +60615,14 @@ ${appeal.reason}`.trim();
                     <section class="settings-access-section cs-eval-settings-group">
                         <div class="settings-section-heading">
                             <div>
-                                <div class="section-title">Bonus & Level Tertinggi</div>
-                                <div class="section-desc">Nilai dasar bonus dan hasil akhir ketika poin melewati batas tertinggi.</div>
+                                <div class="section-title">Bonus & Batas Minimum</div>
+                                <div class="section-desc">Atur bonus awal dan bonus minimum ketika poin mencapai batas tertinggi.</div>
                             </div>
                         </div>
                         <div class="cs-eval-settings-grid cs-eval-settings-grid-three">
-                            <div class="cs-eval-settings-field"><label>Bonus Dasar</label><input id="csEvalSettingBaseBonus" type="number" min="0" step="100000"/></div>
-                            <div class="cs-eval-settings-field"><label>Bonus Level Tertinggi</label><input id="csEvalSettingOverBonus" type="number" min="0" step="100000"/></div>
-                            <div class="cs-eval-settings-field"><label>Mulai Poin Level Tertinggi</label><input id="csEvalSettingOverMin" type="number" min="1" max="999"/></div>
+                            <div class="cs-eval-settings-field"><label>Bonus Awal</label><input id="csEvalSettingBaseBonus" type="number" min="0" step="100000"/></div>
+                            <div class="cs-eval-settings-field"><label>Bonus Minimum</label><input id="csEvalSettingOverBonus" type="number" min="0" step="100000"/></div>
+                            <div class="cs-eval-settings-field"><label>Mulai Poin Bonus Minimum</label><input id="csEvalSettingOverMin" type="number" min="1" max="999"/></div>
                         </div>
                     </section>
 
@@ -60967,19 +60970,21 @@ ${appeal.reason}`.trim();
         const body = document.getElementById('csEvalTableBody');
         if (!head || !body) return;
         head.innerHTML = `<tr>
-            <th style="width:118px">ID Laporan</th>
-            <th style="width:210px">Perihal</th>
-            <th style="width:205px">Staff</th>
-            <th style="width:88px">Potongan</th>
-            <th style="width:120px">Status</th>
-            <th style="width:130px">Dibuat Oleh</th>
-            <th style="width:108px">Aksi</th>
+            <th style="width:112px">ID Laporan</th>
+            <th style="width:190px">Perihal</th>
+            <th style="width:180px">Staff</th>
+            <th style="width:78px">Potongan</th>
+            <th style="width:108px">Status</th>
+            <th style="width:118px">Dibuat Oleh</th>
+            <th style="width:118px">Disetujui Oleh</th>
+            <th style="width:104px">Aksi</th>
         </tr>`;
         const canDelete = csEvalCan('cs_manual_report_delete');
         body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map(row => {
             const staff = Array.isArray(row.cs_manual_report_staff) ? row.cs_manual_report_staff : [];
             const names = staff.map(item => item.staff_name).join(', ');
             const reportLabel = row.report_code || 'DRAFT';
+            const approver = cleanText(row.approved_by || '');
             return `<tr>
                 <td><span class="cs-eval-report-code${row.report_code ? '' : ' draft'}">${esc(reportLabel)}</span></td>
                 <td><span class="cs-eval-error-type">${esc(row.subject)}</span></td>
@@ -60987,17 +60992,21 @@ ${appeal.reason}`.trim();
                 <td><strong>${Number(row.deduction_percent || 0)}%</strong></td>
                 <td>${statusBadge(row.status)}</td>
                 <td><div class="cs-eval-user"><strong>${esc(row.created_by_name || '')}</strong><span>${esc(formatCsEvalDate(row.created_at, true))}</span></div></td>
+                <td>${approver ? `<div class="cs-eval-user"><strong>${esc(approver)}</strong><span>${esc(formatCsEvalDate(row.approved_at, true))}</span></div>` : '<span class="cs-eval-muted">—</span>'}</td>
                 <td><div class="cs-eval-row-actions">
                     <button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsManualReport('${row.id}')" aria-label="Lihat laporan" data-tooltip="Lihat laporan" data-tooltip-icon="preview">${iconSvg('eye')}</button>
                     ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsManualReport('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
                 </div></td>
             </tr>`;
-        }).join('') : `<tr><td colspan="7"><div class="cs-eval-empty">${iconSvg('file')}<strong>Belum ada laporan potongan manual</strong></div></td></tr>`;
+        }).join('') : `<tr><td colspan="8"><div class="cs-eval-empty">${iconSvg('file')}<strong>Belum ada laporan potongan manual</strong></div></td></tr>`;
         renderCsEvalPagination();
     }
 
     function setCsEvalDetailCompact(compact) {
-        document.getElementById('csEvalDetailOverlay')?.classList.toggle('compact-error-detail', Boolean(compact));
+        const overlay = document.getElementById('csEvalDetailOverlay');
+        if (!overlay) return;
+        overlay.classList.remove('manual-report-detail');
+        overlay.classList.toggle('compact-error-detail', Boolean(compact));
     }
 
     async function viewCsEvaluationError(id, showActions = false) {
@@ -61070,7 +61079,7 @@ ${appeal.reason}`.trim();
         const sections = [header, `Perihal banding kesalahan :\n${reason}`];
         const attachmentSection = formatCsEvalAttachmentSection(extraLinks);
         if (attachmentSection) sections.push(attachmentSection);
-        return sections.join('\n\n').trim();
+        return sections.map(section => String(section || '').trim()).filter(Boolean).join('\n\n');
     }
 
     async function viewCsEvaluationAppeal(id) {
@@ -61450,13 +61459,13 @@ ${appeal.reason}`.trim();
         const staff = selectedManualStaff();
         const staffLines = staff.map(item => `${item.name}${item.passport ? ` ${item.passport}` : ''}`);
         const staffBlock = staffLines.length === 1 ? `Staff : ${staffLines[0]}` : `Staff :\n${staffLines.join('\n')}`;
-        const lines = [`Info : ${info}`, `Perihal : ${subject}`, `Kasus : ${caseTitle}`, staffBlock];
-        if (extra) lines.push(extra);
-        let preview = lines.join('\n');
-        if (description) preview += `\n\nKeterangan :\n${description}`;
+        const headerLines = [`Info : ${info}`, `Perihal : ${subject}`, `Kasus : ${caseTitle}`, staffBlock];
+        if (extra) headerLines.push(extra);
+        const sections = [headerLines.join('\n')];
+        if (description) sections.push(`Keterangan :\n${description}`);
         const attachmentSection = formatCsEvalAttachmentSection(links);
-        if (attachmentSection) preview += `\n\n${attachmentSection}`;
-        return preview.trim();
+        if (attachmentSection) sections.push(attachmentSection);
+        return sections.map(section => String(section || '').trim()).filter(Boolean).join('\n\n');
     }
 
     async function saveCsManualReport(status) {
@@ -61514,13 +61523,14 @@ ${appeal.reason}`.trim();
         const staffBlock = staffLines.length === 1 ? `Staff : ${staffLines[0]}` : `Staff :\n${staffLines.join('\n')}`;
         const extra = normalizedCsManualExtraLine(report.extra_label, report.extra_value);
         const links = uniqueCsEvalLinks(report.evidence_links);
-        const lines = [`Info : ${report.info}`, `Perihal : ${report.subject}`, `Kasus : ${report.case_title}`, staffBlock];
-        if (extra) lines.push(extra);
-        let preview = lines.join('\n');
-        if (cleanText(report.description || '')) preview += `\n\nKeterangan :\n${report.description}`;
+        const headerLines = [`Info : ${report.info}`, `Perihal : ${report.subject}`, `Kasus : ${report.case_title}`, staffBlock];
+        if (extra) headerLines.push(extra);
+        const sections = [headerLines.join('\n')];
+        const description = cleanText(report.description || '');
+        if (description) sections.push(`Keterangan :\n${description}`);
         const attachmentSection = formatCsEvalAttachmentSection(links);
-        if (attachmentSection) preview += `\n\n${attachmentSection}`;
-        return preview.trim();
+        if (attachmentSection) sections.push(attachmentSection);
+        return sections.map(section => String(section || '').trim()).filter(Boolean).join('\n\n');
     }
 
     async function viewCsManualReport(id) {
@@ -61528,6 +61538,7 @@ ${appeal.reason}`.trim();
             const { data: report, error } = await supabaseDashboard.from('cs_manual_reports').select('*,cs_manual_report_staff(*)').eq('id', id).single();
             if (error) throw error;
             setCsEvalDetailCompact(false);
+            document.getElementById('csEvalDetailOverlay')?.classList.add('manual-report-detail');
             const staff = Array.isArray(report.cs_manual_report_staff) ? report.cs_manual_report_staff : [];
             const preview = buildManualReportPreviewFromData(report, staff);
             const title = document.getElementById('csEvalDetailTitle');
@@ -66878,8 +66889,368 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-evi
 }
 </style>
 <script id="v64-25-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.25';
+document.documentElement.dataset.dashboardBuild = 'v64.26';
 </script>
+
+
+<!-- ================================================================
+     V64.26 — Evaluasi CS evidence rebuild, preview spacing, filters,
+     detail layouts and Settings terminology/typography
+     ================================================================ -->
+<style id="v64-26-evaluasi-cs-settings-fix">
+/* Evidence: rebuilt from zero. Compact premium tile + separate top-right count. */
+#tab-evaluation .cs-eval-evidence-list {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 7px !important;
+    min-height: 30px !important;
+}
+#tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #276f6d;
+    --cs-proof-surface: #f3faf9;
+    --cs-proof-border: rgba(39,111,109,.32);
+    position: relative !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    color: var(--cs-proof-accent) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    text-decoration: none !important;
+    isolation: isolate;
+    transition: transform .16s ease, filter .16s ease !important;
+}
+#tab-evaluation .cs-eval-evidence-button:hover,
+#tab-evaluation .cs-eval-evidence-button:focus-visible {
+    transform: translateY(-1px) !important;
+    filter: brightness(1.025) !important;
+    outline: none !important;
+}
+#tab-evaluation .cs-eval-evidence-surface {
+    width: 28px !important;
+    height: 28px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 1px solid var(--cs-proof-border) !important;
+    border-radius: 8px !important;
+    color: var(--cs-proof-accent) !important;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--cs-proof-surface) 95%, white), var(--cs-proof-surface)) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 2px 5px rgba(12,47,51,.05) !important;
+}
+#tab-evaluation .cs-eval-evidence-icon {
+    width: 14px !important;
+    height: 14px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.65 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+#tab-evaluation .cs-eval-evidence-number {
+    position: absolute !important;
+    top: -4px !important;
+    right: -4px !important;
+    z-index: 3 !important;
+    min-width: 14px !important;
+    height: 14px !important;
+    padding: 0 3px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1.5px solid var(--bg-primary) !important;
+    border-radius: 999px !important;
+    color: #fff !important;
+    background: var(--cs-proof-accent) !important;
+    box-shadow: 0 2px 5px rgba(10,38,42,.22) !important;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+    font-size: 7px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    font-variant-numeric: tabular-nums !important;
+}
+html[data-theme="dark"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #68b9c8;
+    --cs-proof-surface: #142833;
+    --cs-proof-border: rgba(104,185,200,.38);
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-evidence-button {
+    --cs-proof-accent: #79c96e;
+    --cs-proof-surface: #152a19;
+    --cs-proof-border: rgba(121,201,110,.4);
+}
+
+/* Toolbar: same flat control row and filter geometry as Users. */
+#tab-evaluation .cs-eval-toolbar {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 7px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+#tab-evaluation .cs-eval-toolbar > .cs-eval-search {
+    flex: 1 1 300px !important;
+    min-width: 260px !important;
+}
+#tab-evaluation .cs-eval-toolbar > .premium-select,
+#tab-evaluation .cs-eval-toolbar > .unified-custom-filter {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+}
+#tab-evaluation .cs-eval-toolbar > [data-select-id="csEvalPeriodFilter"] { width: 164px !important; --unified-filter-width: 164px !important; }
+#tab-evaluation .cs-eval-toolbar > [data-select-id="csEvalStaffFilter"] { width: 210px !important; --unified-filter-width: 210px !important; }
+#tab-evaluation .cs-eval-toolbar > [data-select-id="csEvalTypeFilter"] { width: 194px !important; --unified-filter-width: 194px !important; }
+#tab-evaluation .cs-eval-toolbar > [data-select-id="csEvalStatusFilter"] { width: 184px !important; --unified-filter-width: 184px !important; }
+#tab-evaluation .cs-eval-toolbar .premium-select-trigger,
+#tab-evaluation .cs-eval-toolbar .unified-custom-filter-trigger {
+    width: 100% !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 8px 0 6px !important;
+    display: grid !important;
+    grid-template-columns: 22px minmax(0,1fr) 12px !important;
+    align-items: center !important;
+    gap: 6px !important;
+    border: 1.25px solid color-mix(in srgb, var(--accent) 30%, var(--border-light)) !important;
+    border-radius: 9px !important;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-primary) 96%, white), color-mix(in srgb, var(--accent-soft) 16%, var(--bg-primary))) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.62), 0 2px 6px rgba(9,34,48,.035) !important;
+    font-size: 9.7px !important;
+    font-weight: 500 !important;
+}
+#tab-evaluation .cs-eval-filter-leading {
+    width: 22px !important;
+    height: 22px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent) !important;
+    border-radius: 6px !important;
+    color: var(--accent-dark) !important;
+    background: color-mix(in srgb, var(--accent-soft) 72%, var(--bg-primary)) !important;
+}
+#tab-evaluation .cs-eval-filter-leading svg {
+    width: 11px !important;
+    height: 11px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-value,.unified-custom-filter-value) {
+    min-width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    text-align: left !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Summary: one clean rounded shell after removing the duplicated heading wrapper. */
+#tab-evaluation .cs-eval-summary-panel {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    clip-path: none !important;
+}
+#tab-evaluation .cs-eval-summary-heading {
+    border-radius: 0 !important;
+}
+
+/* Staff picker and selected badges: left aligned with balanced inner spacing. */
+#csEvalManualStaffShell {
+    padding: 0 0 9px !important;
+}
+#csEvalManualStaffPicker {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    padding: 6px !important;
+    text-align: left !important;
+}
+#csEvalManualStaffPicker .cs-eval-staff-option {
+    width: 100% !important;
+    min-height: 43px !important;
+    padding: 7px 9px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+}
+#csEvalManualStaffPicker .cs-eval-staff-option-copy,
+#csEvalManualStaffPicker .cs-eval-staff-option-copy strong,
+#csEvalManualStaffPicker .cs-eval-staff-option-copy small {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    text-align: left !important;
+}
+#csEvalManualSelectedStaff.cs-eval-selected-staff-list {
+    width: auto !important;
+    margin: 9px 8px 0 !important;
+    padding: 8px !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    border-radius: 9px !important;
+}
+#csEvalManualSelectedStaff .cs-eval-selected-staff-chip {
+    margin: 0 !important;
+    padding: 6px 6px 6px 10px !important;
+    align-self: flex-start !important;
+}
+
+/* Structured preview: explicit line breaks preserve exactly one blank line when copied. */
+.cs-eval-report-preview.is-structured-preview .cs-eval-preview-plain,
+.cs-eval-report-preview.is-structured-preview .cs-eval-preview-section-label,
+.cs-eval-report-preview.is-structured-preview .cs-eval-preview-after {
+    display: inline !important;
+    margin: 0 !important;
+    white-space: normal !important;
+}
+.cs-eval-report-preview.is-structured-preview .cs-eval-preview-justified {
+    width: 100% !important;
+    display: inline-block !important;
+    margin: 0 !important;
+    white-space: normal !important;
+    text-align: justify !important;
+    text-align-last: left !important;
+}
+
+/* Manual report detail uses the same portrait width as the live preview pane. */
+#csEvalDetailOverlay.manual-report-detail .cs-eval-modal {
+    width: min(500px, 92vw) !important;
+    max-height: min(90vh, 790px) !important;
+}
+#csEvalDetailOverlay.manual-report-detail .cs-eval-modal-body {
+    max-height: 65vh !important;
+    overflow-y: auto !important;
+}
+#csEvalDetailOverlay.manual-report-detail .cs-eval-report-preview {
+    min-height: 260px !important;
+    padding: 16px !important;
+    font-size: 10px !important;
+    line-height: 1.68 !important;
+}
+
+/* Detail Kesalahan stays portrait, but restores the familiar label/value layout. */
+#csEvalDetailOverlay.compact-error-detail .cs-eval-modal {
+    width: min(470px, 92vw) !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid {
+    grid-template-columns: 112px minmax(0,1fr) !important;
+    gap: 0 !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dt,
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd {
+    padding: 8px 0 !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-light) 78%, transparent) !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dt {
+    padding-right: 12px !important;
+    align-self: stretch !important;
+    font-size: 7.5px !important;
+    line-height: 1.45 !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd {
+    min-width: 0 !important;
+    font-size: 9px !important;
+    line-height: 1.55 !important;
+}
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dt:nth-last-of-type(1),
+#csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd:last-child {
+    border-bottom: 0 !important;
+}
+
+/* Settings main panel titles: slightly smaller and less heavy. */
+html body #tab-settings :is(.settings-table-heading,.permission-matrix-heading,.cs-eval-settings-heading) h3 {
+    font-size: 13.8px !important;
+    font-weight: 680 !important;
+    line-height: 1.18 !important;
+    letter-spacing: -.012em !important;
+}
+
+@media (max-width: 1360px) {
+    #tab-evaluation .cs-eval-toolbar { flex-wrap: wrap !important; }
+    #tab-evaluation .cs-eval-toolbar > .cs-eval-search { flex: 1 1 100% !important; }
+}
+@media (max-width: 680px) {
+    #tab-evaluation .cs-eval-toolbar > .premium-select,
+    #tab-evaluation .cs-eval-toolbar > .unified-custom-filter {
+        width: 100% !important;
+        --unified-filter-width: 100% !important;
+    }
+    #csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid {
+        grid-template-columns: 1fr !important;
+    }
+    #csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dt {
+        padding-bottom: 2px !important;
+        border-bottom: 0 !important;
+    }
+    #csEvalDetailOverlay.compact-error-detail .cs-eval-detail-grid dd {
+        padding-top: 0 !important;
+    }
+}
+</style>
+<script id="v64-26-evaluation-filter-icons">
+(() => {
+    const ids = ['csEvalPeriodFilter','csEvalStaffFilter','csEvalTypeFilter','csEvalStatusFilter'];
+    const funnel = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.1v5.2l-3.6 1.7v-6.9Z"/></svg>';
+    const buffers = new WeakMap();
+
+    function decorate() {
+        ids.forEach(id => {
+            const wrapper = document.querySelector(`#tab-evaluation [data-select-id="${id}"]`);
+            const trigger = wrapper?.querySelector('.premium-select-trigger, .unified-custom-filter-trigger');
+            if (!wrapper || !trigger) return;
+            if (!trigger.querySelector('.cs-eval-filter-leading')) {
+                trigger.insertAdjacentHTML('afterbegin', `<span class="cs-eval-filter-leading">${funnel}</span>`);
+            }
+            if (trigger.dataset.csEvalTypeaheadReady === 'true') return;
+            trigger.dataset.csEvalTypeaheadReady = 'true';
+            trigger.addEventListener('keydown', event => {
+                if (!/^[a-z0-9]$/i.test(event.key)) return;
+                event.preventDefault();
+                if (!wrapper.classList.contains('open')) trigger.click();
+                const now = Date.now();
+                const previous = buffers.get(trigger) || { value: '', time: 0 };
+                const value = now - previous.time > 650 ? event.key : previous.value + event.key;
+                buffers.set(trigger, { value, time: now });
+                const target = [...wrapper.querySelectorAll('.premium-select-option:not(:disabled), .unified-custom-filter-option:not(:disabled)')]
+                    .find(option => option.textContent.trim().toLocaleLowerCase('id').startsWith(value.toLocaleLowerCase('id')));
+                target?.focus({ preventScroll: true });
+                target?.scrollIntoView({ block: 'nearest' });
+            });
+        });
+    }
+
+    const start = () => {
+        decorate();
+        const toolbar = document.getElementById('csEvalToolbar');
+        if (toolbar) new MutationObserver(decorate).observe(toolbar, { childList: true, subtree: true });
+        window.setTimeout(decorate, 150);
+        window.setTimeout(decorate, 600);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+    else start();
+})();
+</script>
+<script id="v64-26-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.26';</script>
 
 </body>
 </html>
