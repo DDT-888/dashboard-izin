@@ -41382,7 +41382,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 <button class="cs-eval-modal-close" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')" aria-label="Tutup"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
             </div>
             <div class="cs-eval-modal-body" id="csEvalDetailBody"></div>
-            <div class="cs-eval-modal-footer" id="csEvalDetailFooter"><button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button></div>
+            <div class="cs-eval-modal-footer" id="csEvalDetailFooter"></div>
         </div>
     </div>
 
@@ -60026,7 +60026,7 @@ function latestCsAppeal(row) {
                 actions.push(`<button class="cs-eval-button" type="button" onclick="resolveCsEvaluationError('${row.id}','appeal_rejected')">Banding Ditolak</button>`);
                 actions.push(`<button class="cs-eval-button" type="button" onclick="resolveCsEvaluationError('${row.id}','reactivate')">Aktifkan Kembali</button>`);
             }
-            if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
+            if (footer) footer.innerHTML = `${actions.join('')}`;
             openCsEvalModal('csEvalDetailOverlay');
         } catch (error) {
             showShiftToast(`Detail kesalahan gagal dibuka: ${error.message}`, 'error');
@@ -60163,7 +60163,7 @@ ${appeal.reason}`.trim();
                 actions.push(`<button class="cs-eval-button" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','rejected')">Tolak</button>`);
                 actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Setujui</button>`);
             }
-            if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
+            if (footer) footer.innerHTML = `${actions.join('')}`;
             openCsEvalModal('csEvalDetailOverlay');
         } catch (error) {
             showShiftToast(`Laporan banding gagal dibuka: ${error.message}`, 'error');
@@ -60498,7 +60498,7 @@ ${appeal.reason}`.trim();
                 actions.push(`<button class="cs-eval-button" type="button" onclick="processCsManualReport('${report.id}','rejected')">Tolak</button>`);
                 actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsManualReport('${report.id}','approved')">Setujui</button>`);
             }
-            if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
+            if (footer) footer.innerHTML = `${actions.join('')}`;
             openCsEvalModal('csEvalDetailOverlay');
         } catch (error) {
             showShiftToast(`Laporan gagal dibuka: ${error.message}`, 'error');
@@ -61077,7 +61077,7 @@ function renderCsEvalAppeals() {
                 actions.push(`<button class="cs-eval-button" type="button" onclick="resolveCsEvaluationError('${row.id}','appeal_rejected')">Banding Ditolak</button>`);
                 actions.push(`<button class="cs-eval-button" type="button" onclick="resolveCsEvaluationError('${row.id}','reactivate')">Aktifkan Kembali</button>`);
             }
-            if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
+            if (footer) footer.innerHTML = `${actions.join('')}`;
             openCsEvalModal('csEvalDetailOverlay');
         } catch (error) {
             showShiftToast(`Detail kesalahan gagal dibuka: ${error.message}`, 'error');
@@ -61220,7 +61220,7 @@ async function viewCsEvaluationAppeal(id) {
             actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Setujui</button>`);
         }
         if (csEvalCan('cs_appeal_delete')) actions.push(`<button class="cs-eval-button danger" type="button" onclick="deleteCsEvaluationAppeal('${appeal.id}')">Hapus</button>`);
-        if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
+        if (footer) footer.innerHTML = `${actions.join('')}`;
         openCsEvalModal('csEvalDetailOverlay');
     } catch (error) {
         showShiftToast(`Laporan banding gagal dibuka: ${error.message}`, 'error');
@@ -61684,7 +61684,7 @@ async function processCsEvaluationAppeal(id, status) {
                 actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsManualReport('${report.id}','approved')">Setujui</button>`);
             }
             if (csEvalCan('cs_manual_report_delete')) actions.push(`<button class="cs-eval-button danger" type="button" onclick="deleteCsManualReport('${report.id}')">Hapus</button>`);
-            if (footer) footer.innerHTML = `${actions.join('')}<button class="cs-eval-button" type="button" onclick="closeCsEvalModal('csEvalDetailOverlay')">Tutup</button>`;
+            if (footer) footer.innerHTML = `${actions.join('')}`;
             openCsEvalModal('csEvalDetailOverlay');
         } catch (error) {
             showShiftToast(`Laporan gagal dibuka: ${error.message}`, 'error');
@@ -69361,3 +69361,95 @@ html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-
 document.documentElement.dataset.dashboardBuild = 'v64.41';
 </script>
 
+
+
+<!-- ================================================================
+     V64.42 — Appeal history alignment/format + redundant close cleanup
+     ================================================================ -->
+<style id="v64-42-appeal-history-modal-cleanup">
+/* Use a real masked chevron so its geometry is optically centered with the
+   Pengajuan text instead of depending on a font glyph baseline. */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item summary::before {
+    content: '' !important;
+    display: block !important;
+    align-self: center !important;
+    justify-self: center !important;
+    width: 14px !important;
+    height: 14px !important;
+    margin: 0 !important;
+    color: var(--primary-color) !important;
+    background: currentColor !important;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5.25 3.25 10 8l-4.75 4.75' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px 14px no-repeat !important;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5.25 3.25 10 8l-4.75 4.75' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px 14px no-repeat !important;
+    transform: none !important;
+    transform-origin: 50% 50% !important;
+    transition: transform .16s ease !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-item[open] summary::before {
+    transform: rotate(90deg) !important;
+}
+
+/* The older history rule used !important on a neutral colour. Override it
+   with the same semantic colours used by the latest-submission summary. */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-active,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-success {
+    color: #27824b !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-pending,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-missing {
+    color: #a86a0d !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-rejected,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-deleted {
+    color: #be4f5a !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-correction {
+    color: var(--text-secondary) !important;
+}
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-active,
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-success {
+    color: #65d58a !important;
+}
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-pending,
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-missing {
+    color: #e5b85e !important;
+}
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-rejected,
+html[data-theme="dark"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-deleted {
+    color: #ff8994 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-active,
+html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-status.is-success {
+    color: #78ff35 !important;
+}
+
+/* Expanded history uses the same report typography as the current report:
+   justified explanation and exactly one empty line before Lampiran. */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-content .cs-eval-preview-justified {
+    display: block !important;
+    width: 100% !important;
+    white-space: normal !important;
+    text-align: justify !important;
+    text-align-last: left !important;
+    hyphens: auto !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-content .cs-eval-preview-justified + br {
+    display: none !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-history-content .cs-eval-preview-after {
+    display: block !important;
+    margin-top: 1em !important;
+    white-space: pre-wrap !important;
+    text-align: left !important;
+}
+
+/* Detail/report popups already have the X control. Do not reserve an empty
+   footer when there are no contextual actions. Confirmation forms keep their
+   Batal/Lanjutkan controls because those are workflow actions, not duplicates. */
+#csEvalDetailFooter:empty {
+    display: none !important;
+}
+</style>
+<script id="v64-42-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.42';
+</script>
