@@ -67600,7 +67600,7 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
             return `<tr${actionAttrs}>
                 <td class="employee-priority-index">${index + 1}</td>
                 <td title="${htmlEscape(row.staff_name || '')}${passport ? ` · ${htmlEscape(passport)}` : ''}">${htmlEscape(row.staff_name || '—')}</td>
-                <td><span class="employee-priority-status submitted">Diajukan</span></td>
+                <td>Diajukan</td>
             </tr>`;
         }).join('');
     }
@@ -67989,6 +67989,157 @@ html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .
 }
 </style>
 <script id="v64-29-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.29';</script>
+
+
+
+<!-- ================================================================
+     V64.30 — Appeal spacing + plain livechat status + opaque # header
+     ================================================================ -->
+<style id="v64-30-appeal-dashboard-final-fix">
+/* Exactly one empty line between the final appeal explanation and Lampiran. */
+#csEvalAppealPreview .cs-eval-appeal-blank-line,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-blank-line {
+    display: block !important;
+    width: 100% !important;
+    height: 1.68em !important;
+    min-height: 1.68em !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    line-height: 1.68 !important;
+}
+#csEvalAppealPreview .cs-eval-preview-after,
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-preview-after {
+    display: block !important;
+    margin: 0 !important;
+}
+
+/* Banding Livechat status is plain table text, exactly like Sisa / Status
+   in Passport, Visa and Training — no pill or badge surface. */
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-status,
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-status.submitted {
+    display: inline !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    padding: 0 !important;
+    color: inherit !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font: inherit !important;
+    letter-spacing: inherit !important;
+    line-height: inherit !important;
+    white-space: normal !important;
+}
+
+/* The table body is the scrolling element, so the header cells do not need
+   individual sticky compositing. Keeping them relative and fully opaque
+   prevents the first # cell from becoming transparent while rows scroll. */
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead,
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead tr {
+    position: static !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+}
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th,
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th:first-child,
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th.employee-priority-index-heading {
+    position: relative !important;
+    top: auto !important;
+    z-index: 2 !important;
+    opacity: 1 !important;
+    isolation: isolate !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(180deg,
+        rgba(var(--accent-rgb), .16) 0%,
+        rgba(var(--accent-rgb), .09) 100%) !important;
+    background-repeat: no-repeat !important;
+    background-size: 100% 100% !important;
+    background-position: center !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: translateZ(0) !important;
+}
+html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th,
+html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th:first-child,
+html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th.employee-priority-index-heading {
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(180deg,
+        rgba(var(--accent-rgb), .22) 0%,
+        rgba(var(--accent-rgb), .12) 100%) !important;
+}
+</style>
+<script id="v64-30-appeal-spacing-fix">
+(() => {
+    function applyAppealBlankLine(root) {
+        const preview = root?.matches?.('.cs-eval-report-preview')
+            ? root
+            : root?.querySelector?.('.cs-eval-report-preview') || root;
+        if (!(preview instanceof HTMLElement)) return;
+        const after = preview.querySelector('.cs-eval-preview-after');
+        if (!after) return;
+
+        preview.querySelectorAll('.cs-eval-appeal-blank-line').forEach(node => node.remove());
+
+        let previous = after.previousSibling;
+        while (previous && previous.nodeType === Node.TEXT_NODE && !String(previous.textContent || '').trim()) {
+            const remove = previous;
+            previous = previous.previousSibling;
+            remove.remove();
+        }
+        if (previous instanceof HTMLBRElement) previous.remove();
+
+        const spacer = document.createElement('span');
+        spacer.className = 'cs-eval-appeal-blank-line';
+        spacer.setAttribute('aria-hidden', 'true');
+        after.before(spacer);
+    }
+
+    function wrapAppealPreviewUpdater() {
+        const original = window.updateCsAppealPreview;
+        if (typeof original !== 'function' || original.__v6430Wrapped) return;
+        const wrapped = function(...args) {
+            const result = original.apply(this, args);
+            requestAnimationFrame(() => applyAppealBlankLine(document.getElementById('csEvalAppealPreview')));
+            return result;
+        };
+        wrapped.__v6430Wrapped = true;
+        window.updateCsAppealPreview = wrapped;
+    }
+
+    function wrapAppealReportViewer() {
+        const original = window.viewCsEvaluationAppeal;
+        if (typeof original !== 'function' || original.__v6430Wrapped) return;
+        const wrapped = async function(...args) {
+            const result = await original.apply(this, args);
+            requestAnimationFrame(() => {
+                applyAppealBlankLine(document.querySelector('#csEvalDetailOverlay.appeal-report-detail .cs-eval-report-preview'));
+            });
+            return result;
+        };
+        wrapped.__v6430Wrapped = true;
+        window.viewCsEvaluationAppeal = wrapped;
+    }
+
+    function install() {
+        wrapAppealPreviewUpdater();
+        wrapAppealReportViewer();
+        applyAppealBlankLine(document.getElementById('csEvalAppealPreview'));
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', install, { once: true });
+    } else {
+        install();
+    }
+    window.setTimeout(install, 400);
+})();
+</script>
+<script id="v64-30-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.30';</script>
 
 </body>
 </html>
