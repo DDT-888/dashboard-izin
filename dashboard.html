@@ -67629,6 +67629,7 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
                     <span class="employee-priority-count appeal" id="employeeLivechatAppealCount" style="${cachedTotal > 0 ? '' : 'display:none'}">${cachedTotal}</span>
                 </div>
                 <div class="employee-priority-table-wrap">
+                    <div class="livechat-appeal-header-underlay" aria-hidden="true"></div>
                     <table class="employee-priority-table">
                         <thead>
                             <tr>
@@ -68174,3 +68175,93 @@ html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .
 }
 </style>
 <script id="v64-31-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.31';</script>
+
+
+<!-- ================================================================
+     V64.32 — Banding Livechat single opaque sticky header surface
+     ================================================================ -->
+<style id="v64-32-livechat-solid-header-final">
+/*
+ * The header now uses one dedicated opaque layer behind all three cells.
+ * This avoids separate sticky-cell compositing, which previously allowed
+ * the scrolling rows to show through the narrow # column.
+ */
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table-wrap {
+    position: relative !important;
+    isolation: isolate !important;
+}
+
+#tab-dashboard .employee-priority-card.livechat-appeal .livechat-appeal-header-underlay {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 40 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 29px !important;
+    min-height: 29px !important;
+    margin: 0 0 -29px 0 !important;
+    pointer-events: none !important;
+    opacity: 1 !important;
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(
+        180deg,
+        rgba(var(--accent-rgb), .16) 0%,
+        rgba(var(--accent-rgb), .09) 100%
+    ) !important;
+    background-repeat: no-repeat !important;
+    background-position: 0 0 !important;
+    background-size: 100% 100% !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-light) 75%, rgba(var(--accent-rgb), .25)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.52),
+        0 1px 0 color-mix(in srgb, var(--border-light) 75%, rgba(var(--accent-rgb), .25)),
+        0 3px 8px rgba(21,52,68,.055) !important;
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+}
+
+/* All header cells share the same underlay, so #, Nama and Status can no
+ * longer receive different or transparent surfaces from older selectors. */
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead,
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead tr {
+    position: relative !important;
+    z-index: 41 !important;
+    background: transparent !important;
+    opacity: 1 !important;
+}
+
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th,
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th:first-child,
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table thead th.employee-priority-index-heading {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 42 !important;
+    height: 29px !important;
+    opacity: 1 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    background: transparent !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+}
+
+html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .livechat-appeal-header-underlay {
+    background-color: var(--bg-secondary) !important;
+    background-image: linear-gradient(
+        180deg,
+        rgba(var(--accent-rgb), .22) 0%,
+        rgba(var(--accent-rgb), .12) 100%
+    ) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.045),
+        0 1px 0 color-mix(in srgb, var(--border-light) 72%, rgba(var(--accent-rgb), .28)),
+        0 3px 8px rgba(0,0,0,.15) !important;
+}
+</style>
+<script id="v64-32-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.32';</script>
