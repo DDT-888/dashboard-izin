@@ -59215,7 +59215,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
     }
 
     function loadCsEvalViewState() {
-        const allowed = csEvalAllowedSubtabs();
+        const allSubtabs = ['current', 'history', 'appeals', 'manual'];
         const defaults = { current: 0, history: 0, appeals: 0, manual: 0 };
         try {
             const keys = [
@@ -59223,21 +59223,34 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
                 getCsEvalViewFallbackStorageKey(),
                 ...getCsEvalLegacyViewStorageKeys()
             ];
-            let parsed = {};
+            const candidates = [];
             for (const key of [...new Set(keys)]) {
                 const raw = localStorage.getItem(key);
                 if (!raw) continue;
                 try {
                     const candidate = JSON.parse(raw) || {};
-                    if (candidate && typeof candidate === 'object' && candidate.subtab) {
-                        parsed = candidate;
-                        break;
-                    }
+                    if (!candidate || typeof candidate !== 'object' || !candidate.subtab) continue;
+                    candidates.push({
+                        ...candidate,
+                        __storageKey: key,
+                        __savedAt: Number(candidate.savedAt || 0)
+                    });
                 } catch (_) {}
             }
+
+            // Ambil state yang benar-benar paling baru. Pada reload awal, key anonim
+            // dapat masih menyimpan tab lama dan sebelumnya selalu menang hanya karena
+            // dibaca lebih dulu daripada key fallback/user yang lebih baru.
+            candidates.sort((a, b) => Number(b.__savedAt || 0) - Number(a.__savedAt || 0));
+            const parsed = candidates[0] || {};
+
             csEvalState.pagesBySubtab = { ...defaults, ...(parsed.pagesBySubtab || {}) };
             csEvalState.scrollLeftBySubtab = { ...defaults, ...(parsed.scrollLeftBySubtab || {}) };
-            csEvalState.subtab = allowed.includes(parsed.subtab) ? parsed.subtab : 'current';
+
+            const requestedSubtab = allSubtabs.includes(parsed.subtab) ? parsed.subtab : 'current';
+            const identityReady = Boolean(currentUserEmailLower()) && Boolean(String(currentUserRole || '').trim());
+            const allowed = identityReady ? csEvalAllowedSubtabs() : allSubtabs;
+            csEvalState.subtab = allowed.includes(requestedSubtab) ? requestedSubtab : 'current';
             csEvalState.page = Math.max(0, Number(csEvalState.pagesBySubtab[csEvalState.subtab] || 0));
         } catch (_) {
             csEvalState.subtab = 'current';
@@ -70485,9 +70498,9 @@ document.documentElement.dataset.dashboardBuild = 'v64.59';
 </script>
 
 <!-- ================================================================
-     V64.60 — Evaluasi CS unresolved missing-source filter & F5 state
+     V64.61 — Evaluasi CS deterministic F5 state restore
      ================================================================ -->
-<script id="v64-60-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.60';
+<script id="v64-61-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.61';
 </script>
 
