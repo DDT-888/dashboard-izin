@@ -59172,7 +59172,19 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
 
 
     function getCsEvalViewStorageKey() {
-        return `cs_eval_view_state_v6458:${currentUserEmailLower() || 'anonymous'}`;
+        return `cs_eval_view_state_v6460:${currentUserEmailLower() || 'anonymous'}`;
+    }
+
+    function getCsEvalViewFallbackStorageKey() {
+        return 'cs_eval_view_state_v6460:last';
+    }
+
+    function getCsEvalLegacyViewStorageKeys() {
+        const email = currentUserEmailLower() || 'anonymous';
+        return [
+            `cs_eval_view_state_v6458:${email}`,
+            'cs_eval_view_state_v6458:anonymous'
+        ];
     }
 
     function csEvalAllowedSubtabs() {
@@ -59189,20 +59201,42 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
             const tableScroll = document.getElementById('csEvalTableScroll');
             if (tableScroll) csEvalState.scrollLeftBySubtab[csEvalState.subtab] = Number(tableScroll.scrollLeft || 0);
             csEvalState.pagesBySubtab[csEvalState.subtab] = Number(csEvalState.page || 0);
-            localStorage.setItem(getCsEvalViewStorageKey(), JSON.stringify({
+            const payload = JSON.stringify({
                 subtab: csEvalState.subtab,
                 pagesBySubtab: csEvalState.pagesBySubtab,
-                scrollLeftBySubtab: csEvalState.scrollLeftBySubtab
-            }));
+                scrollLeftBySubtab: csEvalState.scrollLeftBySubtab,
+                savedAt: Date.now()
+            });
+            // Simpan pada key user dan key cadangan browser. Key cadangan diperlukan
+            // karena pada fase awal reload identitas user kadang belum selesai dipulihkan.
+            localStorage.setItem(getCsEvalViewStorageKey(), payload);
+            localStorage.setItem(getCsEvalViewFallbackStorageKey(), payload);
         } catch (_) {}
     }
 
     function loadCsEvalViewState() {
         const allowed = csEvalAllowedSubtabs();
+        const defaults = { current: 0, history: 0, appeals: 0, manual: 0 };
         try {
-            const parsed = JSON.parse(localStorage.getItem(getCsEvalViewStorageKey()) || '{}') || {};
-            csEvalState.pagesBySubtab = { current: 0, history: 0, appeals: 0, manual: 0, ...(parsed.pagesBySubtab || {}) };
-            csEvalState.scrollLeftBySubtab = { current: 0, history: 0, appeals: 0, manual: 0, ...(parsed.scrollLeftBySubtab || {}) };
+            const keys = [
+                getCsEvalViewStorageKey(),
+                getCsEvalViewFallbackStorageKey(),
+                ...getCsEvalLegacyViewStorageKeys()
+            ];
+            let parsed = {};
+            for (const key of [...new Set(keys)]) {
+                const raw = localStorage.getItem(key);
+                if (!raw) continue;
+                try {
+                    const candidate = JSON.parse(raw) || {};
+                    if (candidate && typeof candidate === 'object' && candidate.subtab) {
+                        parsed = candidate;
+                        break;
+                    }
+                } catch (_) {}
+            }
+            csEvalState.pagesBySubtab = { ...defaults, ...(parsed.pagesBySubtab || {}) };
+            csEvalState.scrollLeftBySubtab = { ...defaults, ...(parsed.scrollLeftBySubtab || {}) };
             csEvalState.subtab = allowed.includes(parsed.subtab) ? parsed.subtab : 'current';
             csEvalState.page = Math.max(0, Number(csEvalState.pagesBySubtab[csEvalState.subtab] || 0));
         } catch (_) {
@@ -59226,6 +59260,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
             csEvalState.scrollLeftBySubtab[csEvalState.subtab] = Number(tableScroll.scrollLeft || 0);
         }, { passive: true });
         window.addEventListener('beforeunload', saveCsEvalViewState);
+        window.addEventListener('pagehide', saveCsEvalViewState);
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) saveCsEvalViewState();
         });
@@ -59993,6 +60028,9 @@ function latestCsAppeal(row) {
         saveCsEvalViewState();
         csEvalState.subtab = subtab;
         csEvalState.page = Math.max(0, Number(csEvalState.pagesBySubtab[subtab] || 0));
+        // Simpan segera sebelum proses async dimulai agar F5 cepat sekalipun tetap
+        // kembali ke tab yang baru dipilih.
+        saveCsEvalViewState();
         loadCsEvalFilters();
         document.querySelectorAll('[data-cs-eval-tab]').forEach(button => {
             button.classList.toggle('active', button.dataset.csEvalTab === subtab);
@@ -60980,7 +61018,13 @@ function canSubmitCsAppealForRow(row) {
         if (csEvalState.filters.staff) query = query.eq('staff_email', csEvalState.filters.staff);
         if (csEvalState.filters.type) query = query.eq('error_type', csEvalState.filters.type);
         if (csEvalState.filters.status === 'source_missing') {
-            query = query.eq('source_present', false);
+            // Antrean Hilang dari Sumber hanya berisi record yang belum memiliki
+            // penanganan khusus. Banding aktif/selesai dan Koreksi Auditor memiliki
+            // status masing-masing sehingga tidak ikut bercampur di filter ini.
+            query = query
+                .eq('source_present', false)
+                .eq('audit_correction_active', false)
+                .in('status', ['active', 'source_missing']);
         } else if (csEvalState.filters.status) {
             query = query.eq('status', csEvalState.filters.status);
         }
@@ -61043,9 +61087,11 @@ function csEvalErrorStatusCellV6453(row) {
 
 function csEvalErrorStatusCellV6458(row) {
     const status = lower(row?.status || 'active');
-    if (row?.source_present === false && ['active', 'source_missing'].includes(status)) return statusBadge('source_missing');
-    if (row?.source_present === false && status === 'audit_correction') return statusBadge('audit_correction');
-    if (row?.source_present === false) return `<div class="cs-eval-status-stack">${statusBadge(status)}<span class="cs-eval-source-state is-missing">Hilang dari sumber</span></div>`;
+    // Tampilkan satu status utama saja. Kondisi sumber tetap tersimpan di database
+    // dan digunakan oleh filter, tetapi tidak ditumpuk pada status banding/koreksi.
+    if (row?.source_present === false && ['active', 'source_missing'].includes(status)) {
+        return statusBadge('source_missing');
+    }
     return statusBadge(status);
 }
 
@@ -70437,3 +70483,11 @@ document.documentElement.dataset.dashboardBuild = 'v64.55';
 <script id="v64-59-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.59';
 </script>
+
+<!-- ================================================================
+     V64.60 — Evaluasi CS unresolved missing-source filter & F5 state
+     ================================================================ -->
+<script id="v64-60-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.60';
+</script>
+
