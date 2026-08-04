@@ -61428,6 +61428,11 @@ async function processCsEvaluationAppeal(id, status) {
 
     async function deleteCsEvaluationAppeal(id) {
         if (!csEvalCan('cs_appeal_delete')) return;
+        const appealId = String(id || '').trim();
+        if (!appealId) {
+            showShiftToast('ID laporan banding tidak valid.', 'error', 3600);
+            return;
+        }
         const confirmed = await requestDeleteConfirmation({
             title: 'Hapus Laporan Banding',
             message: 'Laporan banding akan dihapus dan status kesalahan dikembalikan ke kondisi aktif/sumber.',
@@ -61436,17 +61441,30 @@ async function processCsEvaluationAppeal(id, status) {
         });
         if (!confirmed) return;
         try {
-            const { error } = await supabaseDashboard.rpc('delete_cs_error_appeal_v6421', {
-                p_appeal_id: id,
-                p_reason: 'Dihapus melalui konfirmasi dashboard',
-                p_confirmation: 'HAPUS'
+            const { data, error } = await supabaseDashboard.rpc('delete_cs_error_appeal_v6455', {
+                p_appeal_id: appealId
             });
             if (error) throw error;
+            if (!data || data.success !== true) {
+                throw new Error(data?.message || 'Database tidak memberikan konfirmasi penghapusan.');
+            }
+
+            // Remove stale client copies immediately, then reload the active view.
+            csEvalState.appeals = (csEvalState.appeals || []).filter(item => String(item.id || '') !== appealId);
+            csEvalState.rows = (csEvalState.rows || []).map(row => {
+                if (!Array.isArray(row.cs_error_appeals)) return row;
+                return {
+                    ...row,
+                    cs_error_appeals: row.cs_error_appeals.filter(item => String(item.id || '') !== appealId)
+                };
+            });
+            markCsEvaluationDirty();
             closeCsEvalModal('csEvalDetailOverlay');
             showShiftToast('Laporan banding berhasil dihapus.', 'success');
             await refreshCsEvaluation(false);
         } catch (error) {
-            showShiftToast(`Laporan banding gagal dihapus: ${error.message}`, 'error', 4200);
+            console.error('Delete CS appeal V64.55:', error);
+            showShiftToast(`Laporan banding gagal dihapus: ${error?.message || error}`, 'error', 5200);
         }
     }
 
@@ -70189,3 +70207,11 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-sou
 <script id="v64-53-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.53';
 </script>
+
+<!-- ================================================================
+     V64.55 — Reliable direct deletion for submitted CS appeals
+     ================================================================ -->
+<script id="v64-55-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.55';
+</script>
+
