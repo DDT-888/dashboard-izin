@@ -61017,7 +61017,7 @@ function renderCsEvalAppeals() {
             <td>${processedCell}</td>
             <td><div class="cs-eval-row-actions">
                 <button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationAppeal('${row.id}')" aria-label="Lihat laporan" data-tooltip="Lihat laporan" data-tooltip-icon="preview">${iconSvg('eye')}</button>
-                ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsEvaluationAppeal('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
+                ${canDelete && lower(row.status || '') === 'submitted' ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsEvaluationAppeal('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
             </div></td>
         </tr>`;
     }).join('') : `<tr><td colspan="10"><div class="cs-eval-empty">${iconSvg('message')}<strong>Belum ada laporan banding</strong></div></td></tr>`;
@@ -61274,7 +61274,7 @@ async function viewCsEvaluationAppeal(id) {
             actions.push(`<button class="cs-eval-button" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','rejected')">Tolak</button>`);
             actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsEvaluationAppeal('${appeal.id}','approved')">Setujui</button>`);
         }
-        if (csEvalCan('cs_appeal_delete')) actions.push(`<button class="cs-eval-button danger" type="button" onclick="deleteCsEvaluationAppeal('${appeal.id}')">Hapus</button>`);
+        if (csEvalCan('cs_appeal_delete') && lower(appeal.status || '') === 'submitted') actions.push(`<button class="cs-eval-button danger" type="button" onclick="deleteCsEvaluationAppeal('${appeal.id}')">Hapus</button>`);
         if (footer) footer.innerHTML = `${actions.join('')}`;
         openCsEvalModal('csEvalDetailOverlay');
     } catch (error) {
@@ -61431,6 +61431,12 @@ async function processCsEvaluationAppeal(id, status) {
         const appealId = String(id || '').trim();
         if (!appealId) {
             showShiftToast('ID laporan banding tidak valid.', 'error', 3600);
+            return;
+        }
+        const knownAppeal = (csEvalState.rows || []).find(item => String(item?.id || '') === appealId)
+            || (csEvalState.appeals || []).find(item => String(item?.id || '') === appealId);
+        if (knownAppeal && lower(knownAppeal.status || '') !== 'submitted') {
+            showShiftToast('Riwayat banding yang sudah diproses tidak dapat dihapus.', 'error', 4200);
             return;
         }
         const confirmed = await requestDeleteConfirmation({
@@ -68871,6 +68877,13 @@ document.documentElement.dataset.dashboardBuild = 'v64.51';
 document.documentElement.dataset.dashboardBuild = 'v64.54';
 </script>
 
+
+<!-- ================================================================
+     V64.56 — Immutable processed appeal history + attempt continuity
+     ================================================================ -->
+<script id="v64-56-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.56';
+</script>
 </body>
 </html>
 
