@@ -61234,9 +61234,10 @@ async function viewCsEvaluationAppeal(id) {
                 <div class="cs-eval-appeal-current-status"><span>Status</span><strong class="cs-eval-appeal-status-text is-${esc(currentStatusMeta.className || 'correction')}">${esc(currentStatusMeta.label || appeal.status || '—')}</strong></div>
                 <div><span>Diajukan oleh</span><strong>${esc(appeal.submitted_by_name || '—')}</strong><small>${esc(formatCsEvalDate(appeal.created_at, true))}</small></div>
             </div>`;
+        const currentAppealHeading = attemptNo === 1 ? 'Pengajuan' : 'Pengajuan terbaru';
         const currentLabel = isProcessedAppeal
-            ? `<div class="cs-eval-appeal-current-label is-processed"><span>Pengajuan terbaru <strong>#${attemptNo}</strong></span><span class="cs-eval-appeal-status-text is-${esc(currentStatusMeta.className || 'correction')}">${esc(currentStatusMeta.label || appeal.status || '—')}</span></div>`
-            : `<div class="cs-eval-appeal-current-label">Pengajuan terbaru <strong>#${attemptNo}</strong></div>`;
+            ? `<div class="cs-eval-appeal-current-label is-processed"><span>${currentAppealHeading} <strong>#${attemptNo}</strong></span><span class="cs-eval-appeal-status-text is-${esc(currentStatusMeta.className || 'correction')}">${esc(currentStatusMeta.label || appeal.status || '—')}</span></div>`
+            : `<div class="cs-eval-appeal-current-label">${currentAppealHeading} <strong>#${attemptNo}</strong></div>`;
 
         const historyRows = (appealHistory || []).filter(item => String(item.id) !== String(appeal.id));
         const historyHtml = historyRows.length ? `<section class="cs-eval-appeal-history">
@@ -68879,10 +68880,10 @@ document.documentElement.dataset.dashboardBuild = 'v64.54';
 
 
 <!-- ================================================================
-     V64.56 — Immutable processed appeal history + attempt continuity
+     V64.57 — Popup wording for first and subsequent appeals
      ================================================================ -->
 <script id="v64-56-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.56';
+document.documentElement.dataset.dashboardBuild = 'v64.57';
 </script>
 </body>
 </html>
