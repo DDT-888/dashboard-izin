@@ -60938,6 +60938,8 @@ function errorRowActions(row) {
     function renderCsEvalErrors() {
         const head = document.getElementById('csEvalTableHead');
         const body = document.getElementById('csEvalTableBody');
+        const table = document.querySelector('#tab-evaluation .cs-eval-table');
+        if (table) table.dataset.csEvalView = csEvalState.activeTab === 'history' ? 'history' : 'current';
         if (!head || !body) return;
         head.innerHTML = `<tr>
             <th class="cs-eval-number-header" style="width:46px">#</th>
@@ -60968,26 +60970,31 @@ function errorRowActions(row) {
 function renderCsEvalAppeals() {
     const head = document.getElementById('csEvalTableHead');
     const body = document.getElementById('csEvalTableBody');
+    const table = document.querySelector('#tab-evaluation .cs-eval-table');
+    if (table) table.dataset.csEvalView = 'appeals';
     if (!head || !body) return;
     head.innerHTML = `<tr>
+        <th class="cs-eval-number-header" style="width:44px">#</th>
         <th style="width:100px">Diajukan</th>
         <th style="width:165px">Nama CS</th>
         <th style="width:198px">Kesalahan</th>
         <th style="width:112px">ID Chat</th>
         <th style="width:106px">Bukti</th>
-        <th class="cs-eval-appeal-attempt-heading" style="width:78px">Pengajuan</th>
+        <th class="cs-eval-appeal-attempt-heading" style="width:72px">Pengajuan</th>
         <th style="width:126px">Status</th>
         <th style="width:142px">Diproses</th>
         <th style="width:104px">Aksi</th>
     </tr>`;
     const canDelete = csEvalCan('cs_appeal_delete');
-    body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map(row => {
+    const offset = csEvalState.page * csEvalState.pageSize;
+    body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map((row, index) => {
         const error = Array.isArray(row.cs_errors) ? row.cs_errors[0] : row.cs_errors || {};
         const processedBy = cleanText(row.processed_by || '');
         const processedCell = processedBy
             ? `<div class="cs-eval-user"><strong>${esc(processedBy)}</strong><span>${esc(formatCsEvalDate(row.processed_at, true))}</span></div>`
             : '<span class="cs-eval-muted">Belum diproses</span>';
         return `<tr>
+            <td class="cs-eval-row-number">${offset + index + 1}</td>
             <td>${esc(formatCsEvalDate(row.created_at, true))}</td>
             <td><div class="cs-eval-user"><strong>${esc(error.staff_name || row.submitted_by_name)}</strong><span>${esc(error.passport_text || row.submitted_by_passport || '')}</span></div></td>
             <td><span class="cs-eval-error-type">${esc(error.error_type || '')}</span></td>
@@ -61001,15 +61008,19 @@ function renderCsEvalAppeals() {
                 ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsEvaluationAppeal('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
             </div></td>
         </tr>`;
-    }).join('') : `<tr><td colspan="9"><div class="cs-eval-empty">${iconSvg('message')}<strong>Belum ada laporan banding</strong></div></td></tr>`;
+    }).join('') : `<tr><td colspan="10"><div class="cs-eval-empty">${iconSvg('message')}<strong>Belum ada laporan banding</strong></div></td></tr>`;
     renderCsEvalPagination();
 }
 
     function renderCsEvalManualReports() {
         const head = document.getElementById('csEvalTableHead');
         const body = document.getElementById('csEvalTableBody');
+        const table = document.querySelector('#tab-evaluation .cs-eval-table');
+        if (table) table.dataset.csEvalView = 'manual';
         if (!head || !body) return;
         head.innerHTML = `<tr>
+            <th class="cs-eval-number-header" style="width:44px">#</th>
+            <th style="width:104px">Diajukan</th>
             <th style="width:112px">ID Laporan</th>
             <th style="width:190px">Perihal</th>
             <th style="width:180px">Staff</th>
@@ -61020,12 +61031,15 @@ function renderCsEvalAppeals() {
             <th style="width:104px">Aksi</th>
         </tr>`;
         const canDelete = csEvalCan('cs_manual_report_delete');
-        body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map(row => {
+        const offset = csEvalState.page * csEvalState.pageSize;
+        body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map((row, index) => {
             const staff = Array.isArray(row.cs_manual_report_staff) ? row.cs_manual_report_staff : [];
             const names = staff.map(item => item.staff_name).join(', ');
             const reportLabel = row.report_code || 'DRAFT';
             const approver = cleanText(row.approved_by || '');
             return `<tr>
+                <td class="cs-eval-row-number">${offset + index + 1}</td>
+                <td>${esc(formatCsEvalDate(row.created_at, true))}</td>
                 <td><span class="cs-eval-report-code${row.report_code ? '' : ' draft'}">${esc(reportLabel)}</span></td>
                 <td><span class="cs-eval-error-type">${esc(row.subject)}</span></td>
                 <td><div class="cs-eval-user"><strong>${esc(names || 'Belum ada staff')}</strong><span>${staff.length} peserta</span></div></td>
@@ -61038,7 +61052,7 @@ function renderCsEvalAppeals() {
                     ${canDelete ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsManualReport('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
                 </div></td>
             </tr>`;
-        }).join('') : `<tr><td colspan="8"><div class="cs-eval-empty">${iconSvg('file')}<strong>Belum ada laporan potongan manual</strong></div></td></tr>`;
+        }).join('') : `<tr><td colspan="10"><div class="cs-eval-empty">${iconSvg('file')}<strong>Belum ada laporan potongan manual</strong></div></td></tr>`;
         renderCsEvalPagination();
     }
 
@@ -61182,12 +61196,20 @@ async function viewCsEvaluationAppeal(id) {
         const preview = buildAppealText(appeal);
         const currentDecisionLabel = appeal.status === 'rejected' ? 'Alasan penolakan' : 'Catatan keputusan';
         const currentStatusMeta = statusMeta[appeal.status] || { label: appeal.status || '—', className: 'correction' };
-        const currentMeta = `<div class="cs-eval-report-meta cs-eval-appeal-current-meta">
-            <div class="cs-eval-appeal-current-status"><span>Status</span><strong class="cs-eval-appeal-status-text is-${esc(currentStatusMeta.className || 'correction')}">${esc(currentStatusMeta.label || appeal.status || '—')}</strong></div>
-            <div><span>Diajukan oleh</span><strong>${esc(appeal.submitted_by_name || '—')}</strong><small>${esc(formatCsEvalDate(appeal.created_at, true))}</small></div>
-            ${appeal.processed_by ? `<div class="is-full cs-eval-appeal-processed"><span>Diproses oleh</span><strong>${esc(appeal.processed_by)}</strong><small>${esc(formatCsEvalDate(appeal.processed_at, true))}</small></div>` : ''}
-            ${appeal.processed_note ? `<div class="is-full"><span>${currentDecisionLabel}</span><p>${esc(appeal.processed_note)}</p></div>` : ''}
-        </div>`;
+        const isProcessedAppeal = Boolean(appeal.processed_by || ['approved', 'rejected'].includes(lower(appeal.status || '')));
+        const currentMeta = isProcessedAppeal
+            ? `<div class="cs-eval-report-meta cs-eval-appeal-current-meta is-processed">
+                <div><span>Diajukan oleh</span><strong>${esc(appeal.submitted_by_name || '—')}</strong><small>${esc(formatCsEvalDate(appeal.created_at, true))}</small></div>
+                <div><span>Diproses oleh</span><strong>${esc(appeal.processed_by || '—')}</strong><small>${esc(formatCsEvalDate(appeal.processed_at, true))}</small></div>
+                ${appeal.processed_note ? `<div class="is-full"><span>${currentDecisionLabel}</span><p>${esc(appeal.processed_note)}</p></div>` : ''}
+            </div>`
+            : `<div class="cs-eval-report-meta cs-eval-appeal-current-meta">
+                <div class="cs-eval-appeal-current-status"><span>Status</span><strong class="cs-eval-appeal-status-text is-${esc(currentStatusMeta.className || 'correction')}">${esc(currentStatusMeta.label || appeal.status || '—')}</strong></div>
+                <div><span>Diajukan oleh</span><strong>${esc(appeal.submitted_by_name || '—')}</strong><small>${esc(formatCsEvalDate(appeal.created_at, true))}</small></div>
+            </div>`;
+        const currentLabel = isProcessedAppeal
+            ? `<div class="cs-eval-appeal-current-label is-processed"><span>Pengajuan terbaru <strong>#${attemptNo}</strong></span><span class="cs-eval-appeal-status-text is-${esc(currentStatusMeta.className || 'correction')}">${esc(currentStatusMeta.label || appeal.status || '—')}</span></div>`
+            : `<div class="cs-eval-appeal-current-label">Pengajuan terbaru <strong>#${attemptNo}</strong></div>`;
 
         const historyRows = (appealHistory || []).filter(item => String(item.id) !== String(appeal.id));
         const historyHtml = historyRows.length ? `<section class="cs-eval-appeal-history">
@@ -61213,7 +61235,7 @@ async function viewCsEvaluationAppeal(id) {
         </section>` : '';
 
         if (body) body.innerHTML = `<section class="cs-eval-appeal-current">
-            <div class="cs-eval-appeal-current-label">Pengajuan terbaru <strong>#${attemptNo}</strong></div>
+            ${currentLabel}
             <div class="cs-eval-report-preview is-structured-preview">${formatCsEvalStructuredPreview(preview, 'Perihal banding kesalahan :')}</div>
             ${currentMeta}
         </section>${historyHtml}`;
@@ -68686,6 +68708,97 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-tab
 </script>
 <script id="v64-49-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.49';
+</script>
+
+
+
+<!-- ================================================================
+     V64.50 — Processed appeal summary + table numbering/responsive overflow
+     ================================================================ -->
+<style id="v64-50-evaluation-table-and-appeal-summary">
+/* Processed appeals: status moves to the top line, while the lower summary
+   becomes the same balanced submitted/processed two-column format used by
+   the history detail. Unprocessed appeals keep the previously approved layout. */
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-label.is-processed {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-label.is-processed > span:first-child {
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 650;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-label.is-processed > span:first-child strong {
+    margin-left: 3px;
+    color: var(--text-primary);
+    font-size: 12px;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-label.is-processed > .cs-eval-appeal-status-text {
+    flex: 0 0 auto;
+    text-align: right;
+}
+#csEvalDetailOverlay.appeal-report-detail .cs-eval-appeal-current-meta.is-processed {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* The attempt number stays quiet and compact. */
+#tab-evaluation .cs-eval-table td.cs-eval-appeal-attempt {
+    font-size: 8.2px !important;
+    font-weight: 560 !important;
+    color: var(--text-secondary) !important;
+    letter-spacing: 0 !important;
+}
+
+/* All Evaluasi CS tables can scroll horizontally only when their real column
+   width exceeds the available panel. This also covers browser zoom such as
+   110%, without reserving an empty scrollbar when the table fits. */
+#tab-evaluation .cs-eval-table-scroll {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-gutter: auto !important;
+    overscroll-behavior-x: contain;
+}
+#tab-evaluation .cs-eval-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+}
+#tab-evaluation .cs-eval-table[data-cs-eval-view="current"],
+#tab-evaluation .cs-eval-table[data-cs-eval-view="history"] {
+    min-width: 1080px !important;
+}
+#tab-evaluation .cs-eval-table[data-cs-eval-view="appeals"] {
+    min-width: 1180px !important;
+}
+#tab-evaluation .cs-eval-table[data-cs-eval-view="manual"] {
+    min-width: 1240px !important;
+}
+#tab-evaluation .cs-eval-table-scroll::-webkit-scrollbar {
+    height: 7px;
+}
+#tab-evaluation .cs-eval-table-scroll::-webkit-scrollbar-track {
+    background: color-mix(in srgb, var(--bg-secondary) 88%, transparent);
+    border-radius: 999px;
+}
+#tab-evaluation .cs-eval-table-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-secondary) 34%, transparent);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+}
+#tab-evaluation .cs-eval-table-scroll::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--accent) 56%, var(--text-secondary) 44%);
+    background-clip: padding-box;
+}
+</style>
+<script id="v64-50-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.50';
 </script>
 
 </body>
