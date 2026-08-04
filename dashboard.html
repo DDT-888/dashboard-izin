@@ -61401,25 +61401,19 @@ async function processCsEvaluationAppeal(id, status) {
 
     async function deleteCsEvaluationAppeal(id) {
         if (!csEvalCan('cs_appeal_delete')) return;
-        const reason = await requestCsEvalInput({
-            title: 'Hapus Laporan Banding',
-            message: 'Berikan alasan penghapusan laporan banding.',
-            label: 'Alasan wajib',
-            required: true,
-            minLength: 5,
-            confirmText: 'Lanjutkan',
-            variant: 'danger'
-        });
-        if (reason === null) return;
         const confirmed = await requestDeleteConfirmation({
             title: 'Hapus Laporan Banding',
             message: 'Laporan banding akan dihapus dan status kesalahan dikembalikan ke kondisi aktif/sumber.',
-            note: 'Nomor serta detail penghapusan tetap dicatat pada audit log.',
+            note: 'Tindakan penghapusan tetap tercatat pada audit log.',
             confirmText: 'Hapus Banding'
         });
         if (!confirmed) return;
         try {
-            const { error } = await supabaseDashboard.rpc('delete_cs_error_appeal_v6421', { p_appeal_id: id, p_reason: reason, p_confirmation: 'HAPUS' });
+            const { error } = await supabaseDashboard.rpc('delete_cs_error_appeal_v6421', {
+                p_appeal_id: id,
+                p_reason: 'Dihapus melalui konfirmasi dashboard',
+                p_confirmation: 'HAPUS'
+            });
             if (error) throw error;
             closeCsEvalModal('csEvalDetailOverlay');
             showShiftToast('Laporan banding berhasil dihapus.', 'success');
@@ -61743,25 +61737,19 @@ async function processCsEvaluationAppeal(id, status) {
     async function deleteCsManualReport(id) {
         if (!csEvalCan('cs_manual_report_delete')) return;
         const row = csEvalState.rows.find(item => item.id === id);
-        const reason = await requestCsEvalInput({
+        const confirmed = await requestDeleteConfirmation({
             title: 'Hapus Laporan Potongan Manual',
             message: row?.report_code ? `${row.report_code} · ${row.subject}` : (row?.subject || 'Draft laporan'),
-            label: 'Alasan wajib',
-            required: true,
-            minLength: 5,
-            confirmText: 'Lanjutkan',
-            variant: 'danger'
-        });
-        if (reason === null) return;
-        const confirmed = await requestDeleteConfirmation({
-            title: 'Hapus Potongan Manual',
-            message: row?.subject || 'Laporan potongan manual',
             note: 'Nomor ID yang kosong dapat digunakan kembali oleh laporan berikutnya.',
             confirmText: 'Hapus Laporan'
         });
         if (!confirmed) return;
         try {
-            const { error } = await supabaseDashboard.rpc('delete_cs_manual_report_v6421', { p_report_id: id, p_reason: reason, p_confirmation: 'HAPUS' });
+            const { error } = await supabaseDashboard.rpc('delete_cs_manual_report_v6421', {
+                p_report_id: id,
+                p_reason: 'Dihapus melalui konfirmasi dashboard',
+                p_confirmation: 'HAPUS'
+            });
             if (error) throw error;
             closeCsEvalModal('csEvalDetailOverlay');
             showShiftToast('Laporan potongan manual berhasil dihapus.', 'success');
@@ -68799,6 +68787,23 @@ document.documentElement.dataset.dashboardBuild = 'v64.49';
 </style>
 <script id="v64-50-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.50';
+</script>
+
+
+
+<!-- ================================================================
+     V64.51 — Appeal attempt readability + direct delete confirmations
+     ================================================================ -->
+<style id="v64-51-evaluation-delete-flow-and-attempt-size">
+/* Keep Pengajuan compact, but restore enough size for comfortable reading. */
+#tab-evaluation .cs-eval-appeal-attempt {
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+}
+</style>
+<script id="v64-51-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.51';
 </script>
 
 </body>
