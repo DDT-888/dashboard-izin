@@ -59035,7 +59035,8 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         loadedViewKey: '',
         dirty: true,
         realtimeRefreshTimer: null,
-        detailCopyText: ''
+        detailCopyText: '',
+        pendingActions: new Set()
     };
 
     const statusMeta = {
@@ -61577,22 +61578,28 @@ async function processCsEvaluationAppeal(id, status) {
     async function cancelCsEvaluationAppealDecision(id, previousStatus = '') {
         if (!csEvalCan('cs_appeal_delete') && !csEvalCan('cs_appeal_process')) return;
         const appealId = String(id || '').trim();
+        if (!appealId) { showShiftToast('ID laporan banding tidak valid.', 'error', 3600); return; }
+        const actionKey = `cancel-appeal:${appealId}`;
+        if (csEvalState.pendingActions.has(actionKey)) return;
+        csEvalState.pendingActions.add(actionKey);
         const status = lower(previousStatus || '');
-        const reason = await requestCsEvalInput({
-            title: status === 'approved' ? 'Batalkan Banding Disetujui' : 'Batalkan Banding Ditolak',
-            message: status === 'approved' ? 'Kesalahan akan kembali dihitung dan status banding menjadi Diajukan.' : 'Status banding akan kembali menjadi Diajukan.',
-            label: 'Alasan pembatalan', required: true, minLength: 5, confirmText: 'Lanjutkan',
-            variant: status === 'approved' ? 'danger' : 'default'
-        });
-        if (reason === null) return;
-        const confirmed = await requestDeleteConfirmation({
-            title: 'Konfirmasi Pembatalan Keputusan',
-            message: status === 'approved' ? 'Banding Disetujui akan kembali menjadi Diajukan dan kesalahan kembali dihitung.' : 'Banding Ditolak akan kembali menjadi Diajukan.',
-            note: 'Riwayat keputusan lama tetap tersimpan pada audit internal.', confirmText: 'Batalkan Keputusan'
-        });
-        if (!confirmed) return;
         try {
-            const { data, error } = await supabaseDashboard.rpc('cancel_cs_error_appeal_decision_v6458', { p_appeal_id: appealId, p_reason: reason });
+            const reason = await requestCsEvalInput({
+                title: status === 'approved' ? 'Batalkan Banding Disetujui' : 'Batalkan Banding Ditolak',
+                message: status === 'approved'
+                    ? 'Kesalahan akan kembali dihitung dan status banding menjadi Diajukan. Riwayat keputusan tetap tersimpan.'
+                    : 'Status banding akan kembali menjadi Diajukan. Riwayat keputusan tetap tersimpan.',
+                label: 'Alasan pembatalan',
+                required: true,
+                minLength: 5,
+                confirmText: 'Batalkan Keputusan',
+                variant: status === 'approved' ? 'danger' : 'default'
+            });
+            if (reason === null) return;
+            const { data, error } = await supabaseDashboard.rpc('cancel_cs_error_appeal_decision_v6459', {
+                p_appeal_id: appealId,
+                p_reason: reason
+            });
             if (error) throw error;
             if (!data || data.success !== true) throw new Error(data?.message || 'Pembatalan tidak dikonfirmasi database.');
             closeCsEvalModal('csEvalDetailOverlay');
@@ -61601,6 +61608,8 @@ async function processCsEvaluationAppeal(id, status) {
             await refreshCsEvaluation(false);
         } catch (error) {
             showShiftToast(`Keputusan gagal dibatalkan: ${error?.message || error}`, 'error', 5200);
+        } finally {
+            csEvalState.pendingActions.delete(actionKey);
         }
     }
 
@@ -61608,18 +61617,24 @@ async function processCsEvaluationAppeal(id, status) {
         if (!csEvalCan('cs_appeal_delete')) return;
         const appealId = String(id || '').trim();
         if (!appealId) { showShiftToast('ID laporan banding tidak valid.', 'error', 3600); return; }
-        const knownAppeal = (csEvalState.rows || []).find(item => String(item?.id || '') === appealId)
-            || (csEvalState.appeals || []).find(item => String(item?.id || '') === appealId);
-        if (knownAppeal && lower(knownAppeal.status || '') !== 'submitted') {
-            showShiftToast('Batalkan keputusan terlebih dahulu hingga status kembali Diajukan.', 'warning', 4400); return;
-        }
-        const confirmed = await requestDeleteConfirmation({
-            title: 'Hapus Laporan Banding', message: 'Hanya pengajuan terbaru yang akan dihapus dari daftar aktif.',
-            note: 'Data Kesalahan Periode Berjalan dan arsip audit tidak ikut dihapus.', confirmText: 'Hapus Banding'
-        });
-        if (!confirmed) return;
+        const actionKey = `archive-appeal:${appealId}`;
+        if (csEvalState.pendingActions.has(actionKey)) return;
+        csEvalState.pendingActions.add(actionKey);
         try {
-            const { data, error } = await supabaseDashboard.rpc('archive_cs_error_appeal_v6458', { p_appeal_id: appealId });
+            const knownAppeal = (csEvalState.rows || []).find(item => String(item?.id || '') === appealId)
+                || (csEvalState.appeals || []).find(item => String(item?.id || '') === appealId);
+            if (knownAppeal && lower(knownAppeal.status || '') !== 'submitted') {
+                showShiftToast('Batalkan keputusan terlebih dahulu hingga status kembali Diajukan.', 'warning', 4400);
+                return;
+            }
+            const confirmed = await requestDeleteConfirmation({
+                title: 'Hapus Laporan Banding',
+                message: 'Hanya pengajuan terbaru yang akan dihapus dari daftar aktif.',
+                note: 'Data Kesalahan Periode Berjalan dan arsip audit tidak ikut dihapus.',
+                confirmText: 'Hapus Banding'
+            });
+            if (!confirmed) return;
+            const { data, error } = await supabaseDashboard.rpc('archive_cs_error_appeal_v6459', { p_appeal_id: appealId });
             if (error) throw error;
             if (!data || data.success !== true) throw new Error(data?.message || 'Database tidak memberikan konfirmasi penghapusan.');
             csEvalState.appeals = (csEvalState.appeals || []).filter(item => String(item.id || '') !== appealId);
@@ -61629,6 +61644,8 @@ async function processCsEvaluationAppeal(id, status) {
             await refreshCsEvaluation(false);
         } catch (error) {
             showShiftToast(`Laporan banding gagal dihapus: ${error?.message || error}`, 'error', 5200);
+        } finally {
+            csEvalState.pendingActions.delete(actionKey);
         }
     }
 
@@ -69043,6 +69060,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.54';
 <script id="v64-56-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.57';
 </script>
+
 </body>
 </html>
 
@@ -70412,3 +70430,10 @@ document.documentElement.dataset.dashboardBuild = 'v64.55';
 @media (max-width:720px) { #csEvalDetailOverlay .cs-eval-correction-change { grid-template-columns:1fr; } #csEvalDetailOverlay .cs-eval-correction-match { flex-direction:column; } #csEvalDetailOverlay .cs-eval-correction-match strong { text-align:left; } }
 </style>
 <script id="v64-58-build-marker">document.documentElement.dataset.dashboardBuild='v64.58';</script>
+
+<!-- ================================================================
+     V64.59 — Sequential appeal archive fix and single-step cancellation
+     ================================================================ -->
+<script id="v64-59-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.59';
+</script>
