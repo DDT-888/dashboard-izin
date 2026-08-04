@@ -59466,7 +59466,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
     function buildCsErrorsQuery() {
         let query = supabaseDashboard
             .from('cs_errors')
-            .select('id,sync_id,period_id,error_date,staff_user_id,staff_email,staff_name,passport_text,error_type,chat_id,evidence_links,source_present,status,is_counted,created_at,updated_at,cs_error_appeals(id,status,created_at,attempt_no,processed_at)', { count: 'exact' })
+            .select('id,sync_id,record_no,source_row_number,period_id,error_date,staff_user_id,staff_email,staff_name,passport_text,error_type,chat_id,evidence_links,source_present,status,is_counted,created_at,updated_at,cs_error_appeals(id,status,created_at,attempt_no,processed_at)', { count: 'exact' })
             .eq('period_id', csEvalState.selectedPeriodId)
             .neq('status', 'deleted');
 
@@ -59482,7 +59482,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
 
         const from = csEvalState.page * csEvalState.pageSize;
         const to = from + csEvalState.pageSize - 1;
-        return query.order('error_date', { ascending: false }).order('created_at', { ascending: false }).range(from, to);
+        return query.order('error_date', { ascending: false }).order('source_present', { ascending: false }).order('source_row_number', { ascending: true, nullsFirst: false }).order('record_no', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }).range(from, to);
     }
 
     async function loadCsEvalErrors() {
@@ -59523,7 +59523,7 @@ async function loadCsEvalAppeals() {
         return;
     }
 
-    const { data, error } = await supabaseDashboard.rpc('get_cs_error_appeals_latest_v6440', {
+    const { data, error } = await supabaseDashboard.rpc('get_cs_error_appeals_latest_v6453', {
         p_period_id: periodId,
         p_search: cleanText(csEvalState.filters.search || '') || null,
         p_status: cleanText(csEvalState.filters.status || '') || null,
@@ -59646,7 +59646,7 @@ function latestCsAppeal(row) {
                 <td>${esc(row.chat_id || '')}</td>
                 <td>${evidenceButtons(row.evidence_links)}</td>
                 <td>${errorAppealCell(row)}</td>
-                <td>${statusBadge(row.status)}</td>
+                <td>${csEvalErrorStatusCellV6453(row)}</td>
                 <td>${errorRowActions(row)}</td>
             </tr>`).join('') : `<tr><td colspan="8"><div class="cs-eval-empty">${iconSvg('file')}<strong>Tidak ada data</strong><span>Tidak ditemukan kesalahan untuk filter dan periode ini.</span></div></td></tr>`;
         renderCsEvalPagination();
@@ -60866,13 +60866,17 @@ function canSubmitCsAppealForRow(row) {
     function buildCsErrorsQuery() {
         let query = supabaseDashboard
             .from('cs_errors')
-            .select('id,sync_id,period_id,error_date,staff_user_id,staff_email,staff_name,passport_text,error_type,chat_id,evidence_links,source_present,status,is_counted,created_at,updated_at,cs_error_appeals(id,status,created_at,attempt_no,processed_at)', { count: 'exact' })
+            .select('id,sync_id,record_no,source_row_number,period_id,error_date,staff_user_id,staff_email,staff_name,passport_text,error_type,chat_id,evidence_links,source_present,status,is_counted,created_at,updated_at,cs_error_appeals(id,status,created_at,attempt_no,processed_at)', { count: 'exact' })
             .eq('period_id', csEvalState.selectedPeriodId)
             .neq('status', 'deleted');
 
         if (csEvalState.filters.staff) query = query.eq('staff_email', csEvalState.filters.staff);
         if (csEvalState.filters.type) query = query.eq('error_type', csEvalState.filters.type);
-        if (csEvalState.filters.status) query = query.eq('status', csEvalState.filters.status);
+        if (csEvalState.filters.status === 'source_missing') {
+            query = query.eq('source_present', false);
+        } else if (csEvalState.filters.status) {
+            query = query.eq('status', csEvalState.filters.status);
+        }
 
         const rawSearch = cleanText(csEvalState.filters.search || '');
         const search = sanitizePostgrestSearch(rawSearch);
@@ -60891,7 +60895,7 @@ function canSubmitCsAppealForRow(row) {
 
         const from = csEvalState.page * csEvalState.pageSize;
         const to = from + csEvalState.pageSize - 1;
-        return query.order('error_date', { ascending: false }).order('created_at', { ascending: false }).range(from, to);
+        return query.order('error_date', { ascending: false }).order('source_present', { ascending: false }).order('source_row_number', { ascending: true, nullsFirst: false }).order('record_no', { ascending: true, nullsFirst: false }).order('created_at', { ascending: true }).range(from, to);
     }
 
     function updateCsEvalFilterOptions() {
@@ -60921,6 +60925,14 @@ function canSubmitCsAppealForRow(row) {
         if (!appeal) return '<span class="cs-eval-muted">—</span>';
         return `<div class="cs-eval-row-actions">${statusBadge(appeal.status)}<button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsEvaluationAppeal('${appeal.id}')" aria-label="Lihat banding" data-tooltip="Lihat banding" data-tooltip-icon="preview">${iconSvg('eye')}</button></div>`;
     }
+function csEvalErrorStatusCellV6453(row) {
+    const mainStatus = statusBadge(row.status);
+    const sourceState = row.source_present === false
+        ? '<span class="cs-eval-source-state is-missing">Hilang dari sumber</span>'
+        : '';
+    return `<div class="cs-eval-status-stack">${mainStatus}${sourceState}</div>`;
+}
+
 function errorRowActions(row) {
     const latest = latestCsAppeal(row);
     const canAppeal = canSubmitCsAppealForRow(row);
@@ -61176,15 +61188,30 @@ async function viewCsEvaluationAppeal(id) {
         const body = document.getElementById('csEvalDetailBody');
         const footer = document.getElementById('csEvalDetailFooter');
         const attemptNo = Number(appeal.attempt_no || 1);
+        const resolveAppealErrorSnapshotV6453 = item => {
+            const snapshot = item?.error_snapshot;
+            if (snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot)) {
+                return {
+                    ...errorRow,
+                    ...snapshot,
+                    evidence_links: Array.isArray(snapshot.evidence_links)
+                        ? snapshot.evidence_links
+                        : errorRow.evidence_links
+                };
+            }
+            return errorRow;
+        };
+        const currentErrorSnapshot = resolveAppealErrorSnapshotV6453(appeal);
         if (title) title.textContent = 'Laporan Banding';
-        if (subtitle) subtitle.textContent = `${errorRow.staff_name || appeal.submitted_by_name} · Pengajuan #${attemptNo} · ${statusMeta[appeal.status]?.label || appeal.status}`;
+        if (subtitle) subtitle.textContent = `${currentErrorSnapshot.staff_name || appeal.submitted_by_name} · Pengajuan #${attemptNo} · ${statusMeta[appeal.status]?.label || appeal.status}`;
 
         const buildAppealText = item => {
-            const sourceLinks = uniqueCsEvalLinks(errorRow.evidence_links);
+            const itemError = resolveAppealErrorSnapshotV6453(item);
+            const sourceLinks = uniqueCsEvalLinks(itemError.evidence_links);
             const extraLinks = uniqueCsEvalLinks(item.evidence_links).filter(link => !sourceLinks.includes(link));
             const header = [
-                `TANGGAL ${formatCsEvalLongDate(errorRow.error_date)} DINGDONGTOGEL`,
-                `${errorRow.staff_name || item.submitted_by_name}${(errorRow.passport_text || item.submitted_by_passport) ? ` ${errorRow.passport_text || item.submitted_by_passport}` : ''}`,
+                `TANGGAL ${formatCsEvalLongDate(itemError.error_date)} DINGDONGTOGEL`,
+                `${itemError.staff_name || item.submitted_by_name}${(itemError.passport_text || item.submitted_by_passport) ? ` ${itemError.passport_text || item.submitted_by_passport}` : ''}`,
                 ...sourceLinks
             ].join('\n');
             const sections = [header, `Perihal banding kesalahan :\n${item.reason || ''}`];
@@ -68584,7 +68611,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-tab
             }
 
             const [appealResult, manualResult] = await Promise.allSettled([
-                supabaseDashboard.rpc('get_cs_error_appeals_latest_v6440', {
+                supabaseDashboard.rpc('get_cs_error_appeals_latest_v6453', {
                     p_period_id: periodId,
                     p_search: null,
                     p_status: 'submitted',
@@ -68804,6 +68831,26 @@ document.documentElement.dataset.dashboardBuild = 'v64.50';
 </style>
 <script id="v64-51-build-marker">
 document.documentElement.dataset.dashboardBuild = 'v64.51';
+</script>
+
+
+
+
+
+
+
+<!-- ================================================================
+     V64.54 — Spreadsheet-order presentation for CS Evaluation errors
+     ================================================================ -->
+<style id="v64-54-cs-evaluation-source-order">
+/* record_no remains an internal immutable identity. The visible # column is
+   deliberately a display sequence that follows the current Spreadsheet order. */
+#tab-evaluation .cs-eval-table td.cs-eval-row-number {
+    font-variant-numeric: tabular-nums;
+}
+</style>
+<script id="v64-54-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.54';
 </script>
 
 </body>
@@ -70090,3 +70137,55 @@ document.documentElement.dataset.dashboardBuild = 'v64.45';
 document.documentElement.dataset.dashboardBuild = 'v64.52';
 </script>
 
+<!-- ================================================================
+     V64.53 — Evaluasi CS data-integrity presentation hotfix
+     ================================================================ -->
+<style id="v64-53-cs-evaluation-data-integrity-ui">
+/* Pengajuan: balanced between V64.50 (too small) and V64.52 (too large). */
+#tab-evaluation .cs-eval-table td.cs-eval-appeal-attempt,
+#tab-evaluation #csEvalTableBody td.cs-eval-appeal-attempt {
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+}
+
+/* Main business result and source presence are intentionally separate. */
+#tab-evaluation .cs-eval-status-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+}
+#tab-evaluation .cs-eval-source-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-secondary);
+    font-size: 9px;
+    font-weight: 550;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+#tab-evaluation .cs-eval-source-state::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    flex: 0 0 5px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: .72;
+}
+#tab-evaluation .cs-eval-source-state.is-missing {
+    color: color-mix(in srgb, #b56c32 76%, var(--text-secondary) 24%);
+}
+html[data-theme="dark"] #tab-evaluation .cs-eval-source-state.is-missing {
+    color: #dca66d;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-source-state.is-missing {
+    color: #b7c889;
+}
+</style>
+<script id="v64-53-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.53';
+</script>
