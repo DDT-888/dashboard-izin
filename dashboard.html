@@ -72003,6 +72003,10 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
             setImportant(target, 'background-color', '#090909');
             setImportant(target, 'background-image', 'none');
             setImportant(target, 'box-shadow', 'none');
+            setImportant(target, 'border-top-width', '0');
+            setImportant(target, 'border-top-style', 'none');
+            setImportant(target, 'border-top-color', 'transparent');
+            setImportant(target, 'outline', 'none');
         });
 
         const underlay = liveCard.querySelector('.livechat-appeal-header-underlay');
@@ -72014,6 +72018,19 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
 
         const settings = document.getElementById('tab-settings');
         if (!settings) return;
+
+        const systemAccessPanel = settings.querySelector('#settingsPrimaryColumn > .settings-access-table');
+        if (systemAccessPanel) {
+            setImportant(systemAccessPanel, 'padding', '0');
+            setImportant(systemAccessPanel, 'border', '0');
+            setImportant(systemAccessPanel, 'background', 'transparent');
+            setImportant(systemAccessPanel, 'box-shadow', 'none');
+        }
+        const systemAccessContent = systemAccessPanel?.querySelector('.settings-access-content');
+        if (systemAccessContent) {
+            setImportant(systemAccessContent, 'background', 'transparent');
+            setImportant(systemAccessContent, 'box-shadow', 'none');
+        }
 
         const monitoringPanel = document.getElementById('employeeMonitoringSettingsPanel');
         monitoringPanel?.querySelectorAll('.number-unit').forEach(unit => {
@@ -72054,6 +72071,12 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
             setImportant(evaluationPanel, 'background-image', 'none');
             setImportant(evaluationPanel, 'border-color', 'rgba(68,214,44,.22)');
             setImportant(evaluationPanel, 'box-shadow', 'none');
+
+            const evaluationHeading = evaluationPanel.querySelector('.cs-eval-settings-heading');
+            if (evaluationHeading) {
+                setImportant(evaluationHeading, 'border-bottom-color', 'rgba(68,214,44,.20)');
+                setImportant(evaluationHeading, 'box-shadow', 'none');
+            }
 
             evaluationPanel.querySelectorAll('.cs-eval-settings-content').forEach(content => {
                 setImportant(content, 'background', 'transparent');
@@ -72106,8 +72129,122 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
 
 </script>
 
+
+
+<!-- ================================================================
+     V64.69 — Final theme consistency cleanup
+     ================================================================ -->
+<style id="v64-69-final-theme-consistency">
+/* ============================ CYBER DARK ============================ */
+/* Remove the pale inset line above all four monitoring count badges. */
+html[data-theme="dark"]:not([data-theme-variant="venom"])
+#tab-dashboard .employee-priority-card :is(.employee-priority-count,.employee-priority-heading-icon) {
+    box-shadow: none !important;
+    outline: none !important;
+}
+html[data-theme="dark"]:not([data-theme-variant="venom"])
+#tab-dashboard .employee-priority-card .employee-priority-count::before,
+html[data-theme="dark"]:not([data-theme-variant="venom"])
+#tab-dashboard .employee-priority-card .employee-priority-count::after {
+    content: none !important;
+    display: none !important;
+}
+
+/* ======================= VENOM GREEN / GAMING ====================== */
+/* Livechat header: remove the last green top accent while preserving the same
+   neutral header surface used by Passport, Visa and Training. */
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr > th {
+    border-top: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr > th::before,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr > th::after {
+    content: none !important;
+    display: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Akses Cepat: icon, eyebrow badge and shortcut buttons use Venom accents. */
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-dashboard .home-feature-card:not(.primary) .home-feature-icon.subtle {
+    color: #8fee80 !important;
+    background: #131b13 !important;
+    border-color: rgba(68,214,44,.30) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-dashboard .home-feature-card:not(.primary) .home-feature-copy .eyebrow {
+    color: #73e861 !important;
+    text-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-dashboard .home-feature-card:not(.primary) .home-shortcuts button {
+    color: #cfe3ca !important;
+    background: #111611 !important;
+    border-color: rgba(68,214,44,.20) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-dashboard .home-feature-card:not(.primary) .home-shortcuts button:hover {
+    color: #f0f8ed !important;
+    background: #151c15 !important;
+    border-color: rgba(68,214,44,.38) !important;
+}
+
+/* Evaluation settings heading separator: no Cyber cyan line. */
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsEvaluationColumn > #csEvaluationSettingsPanel > .cs-eval-settings-heading,
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsEvaluationColumn > #csEvaluationSettingsPanel > .settings-table-heading {
+    border-bottom-color: rgba(68,214,44,.20) !important;
+    box-shadow: none !important;
+}
+
+/* Pengaturan Sistem: remove the outer padded card. Inner sections remain as the
+   actual visual cards, so the gaps between IP Whitelist and Durasi Izin are clean. */
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsPrimaryColumn > .settings-access-table {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsPrimaryColumn > .settings-access-table > .settings-table-heading {
+    padding: 0 0 10px !important;
+    margin: 0 0 10px !important;
+    background: transparent !important;
+    border-bottom-color: rgba(68,214,44,.16) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsPrimaryColumn > .settings-access-table > .settings-access-content {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsPrimaryColumn > .settings-access-table > .settings-access-content::before,
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsPrimaryColumn > .settings-access-table > .settings-access-content::after {
+    content: none !important;
+    display: none !important;
+}
+</style>
+
 <script id="v64-65-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.68';
+document.documentElement.dataset.dashboardBuild = 'v64.69';
 </script>
 
 </body>
