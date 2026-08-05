@@ -41168,6 +41168,51 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                                 <div class="saved-notice" id="limitSavedNotice">Batas izin berhasil disimpan.</div>
                             </section>
                         </div>
+
+                        <section class="settings-access-section settings-session-security-section" id="sessionSecuritySettingsPanel">
+                            <div class="settings-section-heading settings-session-heading">
+                                <div>
+                                    <div class="section-title">Keamanan Sesi</div>
+                                    <div class="section-desc">Logout otomatis untuk seluruh role ketika dashboard tidak digunakan.</div>
+                                </div>
+                                <span class="settings-session-scope">SEMUA ROLE &amp; TAB</span>
+                            </div>
+
+                            <div class="settings-session-grid">
+                                <label class="settings-session-toggle" for="sessionAutoLogoutEnabled">
+                                    <span>
+                                        <strong>Auto Logout</strong>
+                                        <small>Aktivitas otomatis dan realtime tidak memperpanjang sesi.</small>
+                                    </span>
+                                    <input id="sessionAutoLogoutEnabled" type="checkbox" checked />
+                                </label>
+
+                                <div class="settings-session-field">
+                                    <label for="sessionIdleMinutes">Durasi Tidak Aktif</label>
+                                    <div class="settings-number-with-unit">
+                                        <input id="sessionIdleMinutes" type="number" min="30" max="1440" value="180" />
+                                        <span>menit</span>
+                                    </div>
+                                </div>
+
+                                <div class="settings-session-field">
+                                    <label for="sessionWarningMinutes">Peringatan Sebelum Logout</label>
+                                    <div class="settings-number-with-unit">
+                                        <input id="sessionWarningMinutes" type="number" min="1" max="30" value="5" />
+                                        <span>menit</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-session-actions">
+                                <span class="settings-session-note">Klik, keyboard, scroll, sentuhan, dan perpindahan menu dihitung sebagai aktivitas.</span>
+                                <button class="btn-settings settings-primary-action" id="btnSaveSessionSecurity" type="button" onclick="saveSessionSecuritySettings()">
+                                    <span class="button-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h14l2 2v14H4Z"></path><path d="M8 4v6h8V4"></path><path d="M8 20v-6h8v6"></path></svg></span>
+                                    <span>Simpan Keamanan</span>
+                                </button>
+                            </div>
+                            <div class="saved-notice" id="sessionSecuritySavedNotice">Keamanan sesi berhasil disimpan.</div>
+                        </section>
                     </div>
                 </section>
 
@@ -41257,6 +41302,69 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                     </div>
 
                     <div class="saved-notice" id="tickerSavedNotice">Ticker berhasil disimpan.</div>
+                </section>
+
+                <section class="settings-system-table settings-index-appearance-table" id="indexAppearanceSettingsPanel">
+                    <div class="settings-table-heading">
+                        <div>
+                            <span class="settings-table-kicker">TAMPILAN HALAMAN INDEX</span>
+                            <h3>Wallpaper Halaman Login</h3>
+                            <p>Gunakan URL gambar dari folder assets atau alamat HTTPS. Tidak ada upload file.</p>
+                        </div>
+                        <span class="view-only-indicator" id="indexAppearanceViewOnly" style="display:none;">View Only</span>
+                    </div>
+
+                    <div class="settings-index-appearance-content">
+                        <div class="form-group settings-index-url-field">
+                            <label for="indexWallpaperUrlInput">URL Wallpaper</label>
+                            <input id="indexWallpaperUrlInput" type="text" placeholder="/assets/index-wallpaper.webp" oninput="renderIndexWallpaperPreview()" />
+                            <div class="hint">Contoh: /assets/index-wallpaper.webp atau https://raw.githubusercontent.com/...</div>
+                        </div>
+
+                        <div class="settings-index-options">
+                            <div class="form-group">
+                                <label for="indexWallpaperPosition">Posisi Gambar</label>
+                                <select id="indexWallpaperPosition" onchange="renderIndexWallpaperPreview()">
+                                    <option value="center center">Tengah</option>
+                                    <option value="center top">Atas</option>
+                                    <option value="center bottom">Bawah</option>
+                                    <option value="left center">Kiri</option>
+                                    <option value="right center">Kanan</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="indexWallpaperSize">Ukuran Gambar</label>
+                                <select id="indexWallpaperSize" onchange="renderIndexWallpaperPreview()">
+                                    <option value="cover">Cover</option>
+                                    <option value="contain">Contain</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="indexWallpaperOverlay">Overlay Gelap</label>
+                                <div class="settings-number-with-unit">
+                                    <input id="indexWallpaperOverlay" type="number" min="0" max="80" value="40" oninput="renderIndexWallpaperPreview()" />
+                                    <span>%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-index-preview" id="indexWallpaperPreview" aria-label="Preview wallpaper halaman index">
+                            <div class="settings-index-preview-card">
+                                <span>PREVIEW INDEX</span>
+                                <strong>DASHBOARD DDT</strong>
+                                <small>Our Site • Our Pride</small>
+                            </div>
+                        </div>
+
+                        <div class="settings-index-actions">
+                            <button class="btn-settings settings-secondary-action" id="btnResetIndexAppearance" type="button" onclick="resetIndexAppearanceSettings()">Gunakan Default</button>
+                            <button class="btn-settings settings-primary-action" id="btnSaveIndexAppearance" type="button" onclick="saveIndexAppearanceSettings()">
+                                <span class="button-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h14l2 2v14H4Z"></path><path d="M8 4v6h8V4"></path><path d="M8 20v-6h8v6"></path></svg></span>
+                                <span>Simpan Tampilan Index</span>
+                            </button>
+                        </div>
+                        <div class="saved-notice" id="indexAppearanceSavedNotice">Tampilan halaman index berhasil disimpan.</div>
+                    </div>
                 </section>
 
                 </div>
@@ -72922,8 +73030,774 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
 }
 </style>
 
+
+
+<!-- ================================================================
+     V64.76 — Index Appearance URL Settings + Global Idle Logout
+     ================================================================ -->
+<style id="v64-76-index-appearance-session-security">
+/* ---------- Settings: session security ---------- */
+#tab-settings .settings-session-security-section {
+    display: grid;
+    gap: 10px;
+}
+#tab-settings .settings-session-heading {
+    margin-bottom: 0 !important;
+}
+#tab-settings .settings-session-scope {
+    flex: 0 0 auto;
+    min-height: 22px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-light));
+    border-radius: 999px;
+    color: var(--accent-dark);
+    background: color-mix(in srgb, var(--accent-soft) 30%, var(--bg-primary));
+    font-size: 6.8px;
+    font-weight: 800;
+    letter-spacing: .06em;
+}
+#tab-settings .settings-session-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(118px, .75fr) minmax(118px, .75fr);
+    gap: 8px;
+    align-items: stretch;
+}
+#tab-settings .settings-session-toggle,
+#tab-settings .settings-session-field {
+    min-width: 0;
+    min-height: 58px;
+    padding: 9px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--bg-secondary) 52%, var(--bg-primary));
+}
+#tab-settings .settings-session-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+}
+#tab-settings .settings-session-toggle span {
+    min-width: 0;
+}
+#tab-settings .settings-session-toggle strong,
+#tab-settings .settings-session-field > label {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 8px;
+    font-weight: 730;
+}
+#tab-settings .settings-session-toggle small {
+    display: block;
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 7px;
+    line-height: 1.35;
+}
+#tab-settings .settings-session-toggle input {
+    width: 30px !important;
+    height: 17px !important;
+    min-height: 17px !important;
+    flex: 0 0 30px;
+    accent-color: var(--accent);
+}
+#tab-settings .settings-session-field {
+    display: grid;
+    align-content: center;
+    gap: 6px;
+}
+#tab-settings .settings-session-field .settings-number-with-unit {
+    width: 100%;
+}
+#tab-settings .settings-session-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+#tab-settings .settings-session-note {
+    color: var(--text-muted);
+    font-size: 7px;
+    line-height: 1.4;
+}
+
+/* ---------- Settings: index appearance ---------- */
+#tab-settings .settings-index-appearance-table {
+    margin-top: 10px;
+}
+#tab-settings .settings-index-appearance-content {
+    padding: 11px;
+    display: grid;
+    gap: 10px;
+}
+#tab-settings .settings-index-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+#tab-settings .settings-index-options .form-group {
+    min-width: 0;
+}
+#tab-settings .settings-index-options select,
+#tab-settings .settings-index-url-field input {
+    width: 100%;
+}
+#tab-settings .settings-index-preview {
+    position: relative;
+    min-height: 135px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 11px;
+    background-color: #0a0e1a;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+}
+#tab-settings .settings-index-preview::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(10,14,26,var(--index-preview-overlay,.40));
+}
+#tab-settings .settings-index-preview-card {
+    position: relative;
+    z-index: 1;
+    width: min(210px, 72%);
+    padding: 13px 14px;
+    display: grid;
+    gap: 3px;
+    text-align: center;
+    border: 1px solid rgba(0,229,255,.12);
+    border-radius: 12px;
+    color: rgba(255,255,255,.82);
+    background: rgba(13,18,48,.72);
+    backdrop-filter: blur(7px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.26);
+}
+#tab-settings .settings-index-preview-card span {
+    color: rgba(0,229,255,.58);
+    font-size: 6.5px;
+    font-weight: 800;
+    letter-spacing: .1em;
+}
+#tab-settings .settings-index-preview-card strong {
+    font-size: 12px;
+    letter-spacing: .08em;
+}
+#tab-settings .settings-index-preview-card small {
+    color: rgba(255,255,255,.45);
+    font-size: 6.5px;
+}
+#tab-settings .settings-index-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 7px;
+}
+#tab-settings .settings-secondary-action {
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    border-color: var(--border-color);
+}
+
+/* ---------- Idle warning modal ---------- */
+.ddt-idle-warning-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 25000;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    background: rgba(2,7,10,.72);
+    backdrop-filter: blur(8px);
+}
+.ddt-idle-warning-overlay[hidden] { display: none !important; }
+.ddt-idle-warning-card {
+    width: min(410px, calc(100vw - 34px));
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-color));
+    border-radius: 15px;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    box-shadow: 0 28px 80px rgba(0,0,0,.38);
+}
+.ddt-idle-warning-head {
+    padding: 13px 14px 11px;
+    border-bottom: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--accent-soft) 17%, var(--bg-primary));
+}
+.ddt-idle-warning-head span {
+    color: var(--accent-dark);
+    font-size: 7px;
+    font-weight: 850;
+    letter-spacing: .08em;
+}
+.ddt-idle-warning-head h3 {
+    margin: 4px 0 0;
+    font-size: 13px;
+}
+.ddt-idle-warning-body {
+    padding: 16px 14px;
+    text-align: center;
+}
+.ddt-idle-warning-body p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 9px;
+    line-height: 1.55;
+}
+.ddt-idle-countdown {
+    margin: 13px auto 5px;
+    color: var(--accent-dark);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: .05em;
+}
+.ddt-idle-warning-actions {
+    padding: 10px 12px 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 7px;
+    border-top: 1px solid var(--border-color);
+}
+.ddt-idle-warning-actions button {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    font: inherit;
+    font-size: 8.5px;
+    font-weight: 730;
+    cursor: pointer;
+}
+.ddt-idle-warning-actions button.primary {
+    color: var(--button-text,#fff);
+    border-color: transparent;
+    background: var(--accent);
+}
+
+/* Venom isolation for the new panels. */
+html[data-theme="dark"][data-theme-variant="venom"] #tab-settings :is(
+    .settings-session-toggle,.settings-session-field,.settings-index-preview
+) {
+    border-color: rgba(68,214,44,.18) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-settings .settings-session-scope {
+    color: #9cec8f !important;
+    background: rgba(68,214,44,.08) !important;
+    border-color: rgba(68,214,44,.22) !important;
+}
+
+@media (max-width: 860px) {
+    #tab-settings .settings-session-grid,
+    #tab-settings .settings-index-options {
+        grid-template-columns: 1fr;
+    }
+    #tab-settings .settings-session-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+</style>
+
+<script id="v64-76-index-appearance-session-security-script">
+(() => {
+    'use strict';
+
+    const DEFAULT_INDEX_WALLPAPER_URL = 'https://cdn.areabermain.club/assets/cdn/az1/2026/06/06/20260606/ae8c3495e13e910c466ef3e8c26d2b42/bg-piala-dunia-final.png';
+    const DEFAULT_INDEX_APPEARANCE = Object.freeze({
+        wallpaper_url: DEFAULT_INDEX_WALLPAPER_URL,
+        position: 'center center',
+        size: 'cover',
+        overlay: 40
+    });
+    const DEFAULT_SESSION_SECURITY = Object.freeze({
+        enabled: true,
+        idle_minutes: 180,
+        warning_minutes: 5,
+        logout_all_tabs: true
+    });
+
+    const IDLE_LAST_ACTIVITY_KEY = 'ddt_idle_last_activity_v1';
+    const IDLE_LOGOUT_SIGNAL_KEY = 'ddt_idle_logout_signal_v1';
+    const IDLE_FRESH_LOGIN_KEY = 'ddt_dashboard_fresh_login_v1';
+    const IDLE_CHANNEL_NAME = 'ddt_idle_session_v1';
+
+    let indexAppearanceSettings = { ...DEFAULT_INDEX_APPEARANCE };
+    let sessionSecuritySettings = { ...DEFAULT_SESSION_SECURITY };
+    let idleLastActivityAt = Date.now();
+    let idleLastWriteAt = 0;
+    let idleCheckTimer = null;
+    let idleLogoutInProgress = false;
+    let idleListenersBound = false;
+    let idleChannel = null;
+
+    function clampNumber(value, min, max, fallback) {
+        const number = Number(value);
+        return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
+    }
+
+    function parseJsonSetting(value, fallback) {
+        if (value && typeof value === 'object') return value;
+        try {
+            return JSON.parse(String(value || ''));
+        } catch (_) {
+            return fallback;
+        }
+    }
+
+    function normalizeGithubImageUrl(value) {
+        const raw = String(value || '').trim();
+        const match = raw.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/i);
+        if (!match) return raw;
+        return `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${match[3]}/${match[4]}`;
+    }
+
+    function normalizeWallpaperUrl(value, { allowDefault = true } = {}) {
+        let url = normalizeGithubImageUrl(value);
+        if (!url && allowDefault) return DEFAULT_INDEX_WALLPAPER_URL;
+        if (/^assets\//i.test(url)) url = `/${url}`;
+        if (/^(https:\/\/|\/|\.\/|\.\.\/)/i.test(url)) return url;
+        throw new Error('URL wallpaper harus berupa /assets/..., URL relatif, atau alamat HTTPS.');
+    }
+
+    function sanitizeIndexAppearance(raw) {
+        const source = raw && typeof raw === 'object' ? raw : {};
+        let wallpaperUrl = DEFAULT_INDEX_WALLPAPER_URL;
+        try {
+            wallpaperUrl = normalizeWallpaperUrl(source.wallpaper_url || source.wallpaperUrl || DEFAULT_INDEX_WALLPAPER_URL);
+        } catch (_) {}
+        const positions = ['center center', 'center top', 'center bottom', 'left center', 'right center'];
+        const sizes = ['cover', 'contain'];
+        return {
+            wallpaper_url: wallpaperUrl,
+            position: positions.includes(source.position) ? source.position : 'center center',
+            size: sizes.includes(source.size) ? source.size : 'cover',
+            overlay: clampNumber(source.overlay, 0, 80, 40)
+        };
+    }
+
+    function sanitizeSessionSecurity(raw) {
+        const source = raw && typeof raw === 'object' ? raw : {};
+        const idle = clampNumber(source.idle_minutes ?? source.idleMinutes, 30, 1440, 180);
+        const warningMax = Math.max(1, Math.min(30, idle - 1));
+        return {
+            enabled: source.enabled !== false,
+            idle_minutes: idle,
+            warning_minutes: clampNumber(source.warning_minutes ?? source.warningMinutes, 1, warningMax, Math.min(5, warningMax)),
+            logout_all_tabs: true
+        };
+    }
+
+    function resolvePreviewUrl(url) {
+        try {
+            return new URL(url, window.location.href).href;
+        } catch (_) {
+            return DEFAULT_INDEX_WALLPAPER_URL;
+        }
+    }
+
+    function updateIndexAppearanceUI() {
+        const url = document.getElementById('indexWallpaperUrlInput');
+        const position = document.getElementById('indexWallpaperPosition');
+        const size = document.getElementById('indexWallpaperSize');
+        const overlay = document.getElementById('indexWallpaperOverlay');
+        if (url) url.value = indexAppearanceSettings.wallpaper_url || '';
+        if (position) position.value = indexAppearanceSettings.position;
+        if (size) size.value = indexAppearanceSettings.size;
+        if (overlay) overlay.value = String(indexAppearanceSettings.overlay);
+        renderIndexWallpaperPreview();
+        applyV6476SettingsPermissions();
+    }
+
+    function updateSessionSecurityUI() {
+        const enabled = document.getElementById('sessionAutoLogoutEnabled');
+        const idle = document.getElementById('sessionIdleMinutes');
+        const warning = document.getElementById('sessionWarningMinutes');
+        if (enabled) enabled.checked = sessionSecuritySettings.enabled;
+        if (idle) idle.value = String(sessionSecuritySettings.idle_minutes);
+        if (warning) warning.value = String(sessionSecuritySettings.warning_minutes);
+        applyV6476SettingsPermissions();
+    }
+
+    window.renderIndexWallpaperPreview = function() {
+        const preview = document.getElementById('indexWallpaperPreview');
+        if (!preview) return;
+        const urlInput = document.getElementById('indexWallpaperUrlInput');
+        const position = document.getElementById('indexWallpaperPosition')?.value || 'center center';
+        const size = document.getElementById('indexWallpaperSize')?.value || 'cover';
+        const overlay = clampNumber(document.getElementById('indexWallpaperOverlay')?.value, 0, 80, 40);
+        let normalized = DEFAULT_INDEX_WALLPAPER_URL;
+        try {
+            normalized = normalizeWallpaperUrl(urlInput?.value || DEFAULT_INDEX_WALLPAPER_URL);
+        } catch (_) {
+            normalized = DEFAULT_INDEX_WALLPAPER_URL;
+        }
+        preview.style.backgroundImage = `url("${resolvePreviewUrl(normalized).replaceAll('"', '%22')}")`;
+        preview.style.backgroundPosition = position;
+        preview.style.backgroundSize = size;
+        preview.style.setProperty('--index-preview-overlay', String(overlay / 100));
+    };
+
+    function showSavedNotice(id) {
+        const notice = document.getElementById(id);
+        if (!notice) return;
+        notice.style.display = 'block';
+        window.setTimeout(() => { notice.style.display = 'none'; }, 2800);
+    }
+
+    async function upsertSetting(key, value) {
+        if (typeof TEST_MODE !== 'undefined' && TEST_MODE) {
+            localStorage.setItem(`ddt_test_setting_${key}`, JSON.stringify(value));
+            return;
+        }
+        const { error } = await supabaseDashboard
+            .from('settings')
+            .upsert({
+                key,
+                value: JSON.stringify(value),
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'key' });
+        if (error) throw error;
+    }
+
+    window.saveIndexAppearanceSettings = async function() {
+        if (!userPermissions?.canEditSettings) {
+            showToast('Akun Anda belum memiliki permission Edit Settings.', 'error');
+            return;
+        }
+        const button = document.getElementById('btnSaveIndexAppearance');
+        try {
+            if (button) button.disabled = true;
+            const next = sanitizeIndexAppearance({
+                wallpaper_url: normalizeWallpaperUrl(document.getElementById('indexWallpaperUrlInput')?.value || ''),
+                position: document.getElementById('indexWallpaperPosition')?.value,
+                size: document.getElementById('indexWallpaperSize')?.value,
+                overlay: document.getElementById('indexWallpaperOverlay')?.value
+            });
+            await upsertSetting('index_appearance', next);
+            indexAppearanceSettings = next;
+            updateIndexAppearanceUI();
+            showSavedNotice('indexAppearanceSavedNotice');
+            showToast('Tampilan halaman index berhasil disimpan.', 'success');
+        } catch (error) {
+            showToast(`Tampilan index gagal disimpan: ${error.message}`, 'error', 4200);
+        } finally {
+            if (button) button.disabled = false;
+        }
+    };
+
+    window.resetIndexAppearanceSettings = async function() {
+        if (!userPermissions?.canEditSettings) {
+            showToast('Akun Anda belum memiliki permission Edit Settings.', 'error');
+            return;
+        }
+        indexAppearanceSettings = { ...DEFAULT_INDEX_APPEARANCE };
+        updateIndexAppearanceUI();
+        await window.saveIndexAppearanceSettings();
+    };
+
+    window.saveSessionSecuritySettings = async function() {
+        if (!userPermissions?.canEditSettings) {
+            showToast('Akun Anda belum memiliki permission Edit Settings.', 'error');
+            return;
+        }
+        const button = document.getElementById('btnSaveSessionSecurity');
+        try {
+            if (button) button.disabled = true;
+            const idleMinutes = clampNumber(document.getElementById('sessionIdleMinutes')?.value, 30, 1440, 180);
+            const warningMinutes = clampNumber(document.getElementById('sessionWarningMinutes')?.value, 1, 30, 5);
+            if (warningMinutes >= idleMinutes) {
+                throw new Error('Peringatan harus lebih pendek daripada durasi tidak aktif.');
+            }
+            const next = sanitizeSessionSecurity({
+                enabled: Boolean(document.getElementById('sessionAutoLogoutEnabled')?.checked),
+                idle_minutes: idleMinutes,
+                warning_minutes: warningMinutes,
+                logout_all_tabs: true
+            });
+            await upsertSetting('session_security', next);
+            sessionSecuritySettings = next;
+            updateSessionSecurityUI();
+            restartIdleSessionMonitor({ touch: true });
+            showSavedNotice('sessionSecuritySavedNotice');
+            showToast('Keamanan sesi berhasil disimpan.', 'success');
+        } catch (error) {
+            showToast(`Keamanan sesi gagal disimpan: ${error.message}`, 'error', 4200);
+        } finally {
+            if (button) button.disabled = false;
+        }
+    };
+
+    function applyAdditionalSettings(records = []) {
+        let sessionChanged = false;
+        const wasSessionEnabled = sessionSecuritySettings.enabled;
+        records.forEach(record => {
+            if (record?.key === 'index_appearance') {
+                indexAppearanceSettings = sanitizeIndexAppearance(parseJsonSetting(record.value, DEFAULT_INDEX_APPEARANCE));
+            }
+            if (record?.key === 'session_security') {
+                sessionSecuritySettings = sanitizeSessionSecurity(parseJsonSetting(record.value, DEFAULT_SESSION_SECURITY));
+                sessionChanged = true;
+            }
+        });
+        updateIndexAppearanceUI();
+        updateSessionSecurityUI();
+        if (sessionChanged) {
+            restartIdleSessionMonitor({ touch: !wasSessionEnabled && sessionSecuritySettings.enabled });
+        }
+    }
+
+    if (typeof SETTINGS_REALTIME_KEYS !== 'undefined' && Array.isArray(SETTINGS_REALTIME_KEYS)) {
+        ['index_appearance', 'session_security'].forEach(key => {
+            if (!SETTINGS_REALTIME_KEYS.includes(key)) SETTINGS_REALTIME_KEYS.push(key);
+        });
+    }
+
+    if (typeof applySettingsRecords === 'function') {
+        const originalApplySettingsRecords = applySettingsRecords;
+        applySettingsRecords = async function(records = [], options = {}) {
+            const result = await originalApplySettingsRecords(records, options);
+            applyAdditionalSettings(records);
+            return result;
+        };
+    }
+
+    function applyV6476SettingsPermissions() {
+        const canView = Boolean(userPermissions?.canViewSettings);
+        const canEdit = Boolean(userPermissions?.canEditSettings);
+        document.querySelectorAll('#sessionSecuritySettingsPanel input, #sessionSecuritySettingsPanel button, #indexAppearanceSettingsPanel input, #indexAppearanceSettingsPanel select, #indexAppearanceSettingsPanel button')
+            .forEach(element => { element.disabled = !canEdit; });
+        const viewOnly = document.getElementById('indexAppearanceViewOnly');
+        if (viewOnly) viewOnly.style.display = canView && !canEdit ? '' : 'none';
+    }
+
+    // --------------------- Idle logout ---------------------
+    function readSharedLastActivity() {
+        const stored = Number(localStorage.getItem(IDLE_LAST_ACTIVITY_KEY));
+        return Number.isFinite(stored) && stored > 0 ? stored : Date.now();
+    }
+
+    function formatCountdown(milliseconds) {
+        const total = Math.max(0, Math.ceil(milliseconds / 1000));
+        const minutes = String(Math.floor(total / 60)).padStart(2, '0');
+        const seconds = String(total % 60).padStart(2, '0');
+        return `${minutes}:${seconds}`;
+    }
+
+    function getIdleWarningOverlay() {
+        let overlay = document.getElementById('ddtIdleWarningOverlay');
+        if (overlay) return overlay;
+        overlay = document.createElement('div');
+        overlay.className = 'ddt-idle-warning-overlay';
+        overlay.id = 'ddtIdleWarningOverlay';
+        overlay.hidden = true;
+        overlay.innerHTML = `
+            <div class="ddt-idle-warning-card" role="dialog" aria-modal="true" aria-labelledby="ddtIdleWarningTitle">
+                <div class="ddt-idle-warning-head"><span>KEAMANAN SESI</span><h3 id="ddtIdleWarningTitle">Sesi akan segera berakhir</h3></div>
+                <div class="ddt-idle-warning-body"><p>Tidak ada aktivitas pengguna. Klik Tetap Masuk untuk melanjutkan sesi.</p><div class="ddt-idle-countdown" id="ddtIdleCountdown">05:00</div></div>
+                <div class="ddt-idle-warning-actions"><button type="button" onclick="window.ddtIdleLogoutNow()">Logout Sekarang</button><button class="primary" type="button" onclick="window.ddtIdleKeepAlive()">Tetap Masuk</button></div>
+            </div>`;
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    function hideIdleWarning() {
+        const overlay = document.getElementById('ddtIdleWarningOverlay');
+        if (overlay) overlay.hidden = true;
+    }
+
+    function showIdleWarning(remaining) {
+        const overlay = getIdleWarningOverlay();
+        overlay.hidden = false;
+        const countdown = document.getElementById('ddtIdleCountdown');
+        if (countdown) countdown.textContent = formatCountdown(remaining);
+    }
+
+    function publishIdleMessage(message) {
+        try { idleChannel?.postMessage(message); } catch (_) {}
+    }
+
+    function touchIdleActivity(force = false, broadcast = true) {
+        if (!sessionSecuritySettings.enabled || idleLogoutInProgress) return;
+        const now = Date.now();
+        if (!force && now - idleLastWriteAt < 10000) return;
+        idleLastWriteAt = now;
+        idleLastActivityAt = now;
+        try { localStorage.setItem(IDLE_LAST_ACTIVITY_KEY, String(now)); } catch (_) {}
+        if (broadcast) publishIdleMessage({ type: 'activity', at: now });
+        hideIdleWarning();
+    }
+
+    function receiveIdleActivity(at) {
+        const timestamp = Number(at);
+        if (!Number.isFinite(timestamp)) return;
+        idleLastActivityAt = Math.max(idleLastActivityAt, timestamp);
+        hideIdleWarning();
+    }
+
+    function redirectToIdleLogin() {
+        const target = new URL('./', window.location.href);
+        target.searchParams.set('reason', 'idle');
+        target.searchParams.set('minutes', String(sessionSecuritySettings.idle_minutes));
+        window.location.replace(target.href);
+    }
+
+    async function performIdleLogout({ broadcast = true } = {}) {
+        if (idleLogoutInProgress) return;
+        idleLogoutInProgress = true;
+        hideIdleWarning();
+        const signal = Date.now();
+        if (broadcast) {
+            try { localStorage.setItem(IDLE_LOGOUT_SIGNAL_KEY, String(signal)); } catch (_) {}
+            publishIdleMessage({ type: 'logout', at: signal });
+        }
+        try {
+            if (typeof stopPeriodicRefresh === 'function') stopPeriodicRefresh();
+            if (typeof stopCsEvaluationRealtime === 'function') stopCsEvaluationRealtime();
+            if (typeof stopShiftRealtime === 'function') stopShiftRealtime();
+            if (typeof stopShiftLogsRealtime === 'function') stopShiftLogsRealtime();
+            if (typeof flushShiftLogs === 'function') {
+                await Promise.race([Promise.resolve(flushShiftLogs()), new Promise(resolve => setTimeout(resolve, 1200))]);
+            }
+            await supabaseDashboard.auth.signOut();
+        } catch (error) {
+            console.warn('Auto logout selesai dengan peringatan:', error);
+        } finally {
+            try { sessionStorage.removeItem(IDLE_FRESH_LOGIN_KEY); } catch (_) {}
+            redirectToIdleLogin();
+        }
+    }
+
+    function checkIdleSession() {
+        if (!sessionSecuritySettings.enabled || idleLogoutInProgress) {
+            hideIdleWarning();
+            return;
+        }
+        const shared = readSharedLastActivity();
+        idleLastActivityAt = Math.max(idleLastActivityAt, shared);
+        const now = Date.now();
+        const idleMs = sessionSecuritySettings.idle_minutes * 60 * 1000;
+        const warningMs = sessionSecuritySettings.warning_minutes * 60 * 1000;
+        const elapsed = now - idleLastActivityAt;
+        if (elapsed >= idleMs) {
+            performIdleLogout({ broadcast: true });
+            return;
+        }
+        if (elapsed >= idleMs - warningMs) {
+            showIdleWarning(idleMs - elapsed);
+        } else {
+            hideIdleWarning();
+        }
+    }
+
+    function bindIdleListeners() {
+        if (idleListenersBound) return;
+        idleListenersBound = true;
+        const activityEvents = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+        activityEvents.forEach(eventName => {
+            window.addEventListener(eventName, event => {
+                if (event.target?.closest?.('#ddtIdleWarningOverlay')) return;
+                touchIdleActivity(false, true);
+            }, { passive: true, capture: true });
+        });
+        window.addEventListener('scroll', () => touchIdleActivity(false, true), { passive: true, capture: true });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) checkIdleSession();
+        });
+        window.addEventListener('focus', checkIdleSession);
+        window.addEventListener('storage', event => {
+            if (event.key === IDLE_LAST_ACTIVITY_KEY && event.newValue) receiveIdleActivity(event.newValue);
+            if (event.key === IDLE_LOGOUT_SIGNAL_KEY && event.newValue) performIdleLogout({ broadcast: false });
+        });
+        if ('BroadcastChannel' in window) {
+            idleChannel = new BroadcastChannel(IDLE_CHANNEL_NAME);
+            idleChannel.addEventListener('message', event => {
+                if (event.data?.type === 'activity') receiveIdleActivity(event.data.at);
+                if (event.data?.type === 'logout') performIdleLogout({ broadcast: false });
+            });
+        }
+    }
+
+    function restartIdleSessionMonitor({ touch = false } = {}) {
+        bindIdleListeners();
+        if (idleCheckTimer) clearInterval(idleCheckTimer);
+        if (!sessionSecuritySettings.enabled) {
+            hideIdleWarning();
+            return;
+        }
+        if (touch) touchIdleActivity(true, true);
+        idleCheckTimer = window.setInterval(checkIdleSession, 1000);
+        checkIdleSession();
+    }
+
+    window.ddtIdleKeepAlive = function() {
+        touchIdleActivity(true, true);
+        checkIdleSession();
+    };
+    window.ddtIdleLogoutNow = function() {
+        performIdleLogout({ broadcast: true });
+    };
+
+    // Manual logout must clean the shared idle state, but keeps normal redirect behavior.
+    if (typeof window.logout === 'function') {
+        const originalLogout = window.logout;
+        window.logout = async function(...args) {
+            try { localStorage.removeItem(IDLE_LAST_ACTIVITY_KEY); } catch (_) {}
+            return originalLogout.apply(this, args);
+        };
+    }
+
+    function initializeV6476() {
+        const freshLogin = sessionStorage.getItem(IDLE_FRESH_LOGIN_KEY);
+        if (freshLogin) {
+            sessionStorage.removeItem(IDLE_FRESH_LOGIN_KEY);
+            idleLastActivityAt = Date.now();
+            try { localStorage.setItem(IDLE_LAST_ACTIVITY_KEY, String(idleLastActivityAt)); } catch (_) {}
+        } else {
+            idleLastActivityAt = readSharedLastActivity();
+        }
+        updateIndexAppearanceUI();
+        updateSessionSecurityUI();
+        restartIdleSessionMonitor({ touch: false });
+        window.setTimeout(() => {
+            applyV6476SettingsPermissions();
+            if (typeof syncSettingsSnapshot === 'function') {
+                syncSettingsSnapshot({ keys: ['index_appearance', 'session_security'], reason: 'v6476-init', checkAccess: false });
+            }
+        }, 900);
+    }
+
+    if (typeof switchTab === 'function') {
+        const originalSwitchTab = switchTab;
+        switchTab = function(tab) {
+            const result = originalSwitchTab.apply(this, arguments);
+            if (tab === 'settings') window.setTimeout(() => {
+                updateIndexAppearanceUI();
+                updateSessionSecurityUI();
+            }, 0);
+            return result;
+        };
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeV6476, { once: true });
+    } else {
+        initializeV6476();
+    }
+})();
+</script>
+
 <script id="v64-75-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.75';
+document.documentElement.dataset.dashboardBuild = 'v64.76';
 </script>
 
 </body>
