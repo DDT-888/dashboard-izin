@@ -73036,10 +73036,11 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
      V64.76 — Index Appearance URL Settings + Global Idle Logout
      ================================================================ -->
 <style id="v64-76-index-appearance-session-security">
+/* V64.76.1 — Index preview viewport parity & session action spacing */
 /* ---------- Settings: session security ---------- */
 #tab-settings .settings-session-security-section {
     display: grid;
-    gap: 10px;
+    gap: 12px;
 }
 #tab-settings .settings-session-heading {
     margin-bottom: 0 !important;
@@ -73117,6 +73118,8 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    margin-top: 2px;
+    padding-top: 3px;
 }
 #tab-settings .settings-session-note {
     color: var(--text-muted);
@@ -73147,7 +73150,10 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
 }
 #tab-settings .settings-index-preview {
     position: relative;
-    min-height: 135px;
+    isolation: isolate;
+    width: 100%;
+    min-height: 0;
+    aspect-ratio: var(--index-preview-aspect-ratio, 16 / 9);
     overflow: hidden;
     display: grid;
     place-items: center;
@@ -73158,15 +73164,29 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
     background-position: center center;
     background-size: cover;
 }
+#tab-settings .settings-index-preview::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: rgba(0,0,0,var(--index-preview-overlay,.40));
+    pointer-events: none;
+}
 #tab-settings .settings-index-preview::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(10,14,26,var(--index-preview-overlay,.40));
+    z-index: 1;
+    background:
+        radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.15) 100%),
+        rgba(10,14,26,.35);
+    backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(1px);
+    pointer-events: none;
 }
 #tab-settings .settings-index-preview-card {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     width: min(210px, 72%);
     padding: 13px 14px;
     display: grid;
@@ -73441,10 +73461,13 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-settings .settings-sess
         } catch (_) {
             normalized = DEFAULT_INDEX_WALLPAPER_URL;
         }
+        const viewportWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 16);
+        const viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 9);
         preview.style.backgroundImage = `url("${resolvePreviewUrl(normalized).replaceAll('"', '%22')}")`;
         preview.style.backgroundPosition = position;
         preview.style.backgroundSize = size;
         preview.style.setProperty('--index-preview-overlay', String(overlay / 100));
+        preview.style.setProperty('--index-preview-aspect-ratio', `${viewportWidth} / ${viewportHeight}`);
     };
 
     function showSavedNotice(id) {
