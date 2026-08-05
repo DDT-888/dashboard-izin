@@ -71894,12 +71894,12 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
     display: none !important;
 }
 </style>
-<script id="v64-68-runtime-theme-lock-script">
+<script id="v64-70-reversible-runtime-theme-lock-script">
 (() => {
     'use strict';
 
-    if (window.__v6468ThemeRuntimeLockInstalled) return;
-    window.__v6468ThemeRuntimeLockInstalled = true;
+    if (window.__v6470ThemeRuntimeLockInstalled) return;
+    window.__v6470ThemeRuntimeLockInstalled = true;
 
     const IMPORTANT = 'important';
     let scheduled = false;
@@ -71909,26 +71909,30 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
         element.style.setProperty(property, value, IMPORTANT);
     }
 
-    function isVenomTheme() {
-        const root = document.documentElement;
-        const body = document.body;
-        return root?.getAttribute('data-theme-variant') === 'venom'
-            || body?.getAttribute('data-theme-variant') === 'venom'
-            || root?.getAttribute('data-selected-theme') === 'venom'
-            || body?.getAttribute('data-selected-theme') === 'venom';
+    function clearProperties(element, properties) {
+        if (!element) return;
+        properties.forEach(property => element.style.removeProperty(property));
+        if (!element.getAttribute('style')?.trim()) element.removeAttribute('style');
     }
 
-    function isCyberDarkTheme() {
+    function themeState() {
         const root = document.documentElement;
         const body = document.body;
-        const renderedDark = root?.getAttribute('data-theme') === 'dark'
-            || body?.getAttribute('data-theme') === 'dark';
-        return renderedDark && !isVenomTheme();
+        const variant = root?.getAttribute('data-theme-variant')
+            || body?.getAttribute('data-theme-variant')
+            || '';
+        const selected = root?.getAttribute('data-selected-theme')
+            || body?.getAttribute('data-selected-theme')
+            || '';
+        const renderedTheme = root?.getAttribute('data-theme')
+            || body?.getAttribute('data-theme')
+            || '';
+        const venom = variant === 'venom' || selected === 'venom';
+        const cyber = renderedTheme === 'dark' && !venom;
+        return { venom, cyber };
     }
 
-    function lockCyberRoleSelect() {
-        if (!isCyberDarkTheme()) return;
-
+    function roleElements() {
         const nativeSelect = document.getElementById('inputUserRole');
         const wrapper = document.querySelector(
             '[data-select-id="inputUserRole"], #inputUserRole + .premium-select, #inputUserRole + .unified-custom-filter'
@@ -71936,8 +71940,19 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
         const trigger = wrapper?.querySelector(
             '.premium-select-trigger, .unified-custom-filter-trigger'
         );
+        return [nativeSelect, trigger].filter(Boolean);
+    }
 
-        [nativeSelect, trigger].filter(Boolean).forEach(element => {
+    function resetCyberRoleSelect() {
+        roleElements().forEach(element => clearProperties(element, [
+            'color','background','background-color','background-image',
+            'border','border-color','border-width','border-style',
+            'box-shadow','outline'
+        ]));
+    }
+
+    function lockCyberRoleSelect() {
+        roleElements().forEach(element => {
             setImportant(element, 'color', '#d9e6ef');
             setImportant(element, 'background-color', '#0f1720');
             setImportant(element, 'background-image', 'none');
@@ -71945,11 +71960,36 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
             setImportant(element, 'box-shadow', 'none');
             setImportant(element, 'outline', 'none');
         });
-
+        const trigger = roleElements().find(element => element.matches?.('.premium-select-trigger,.unified-custom-filter-trigger'));
         if (trigger) {
             setImportant(trigger, 'border-width', '1px');
             setImportant(trigger, 'border-style', 'solid');
         }
+    }
+
+    function livechatElements() {
+        const liveCard = document.querySelector('#tab-dashboard .employee-priority-card.livechat-appeal');
+        if (!liveCard) return { liveCard: null, targets: [], underlay: null };
+        return {
+            liveCard,
+            targets: Array.from(liveCard.querySelectorAll(
+                '.employee-priority-table thead, '
+                + '.employee-priority-table thead tr, '
+                + '.employee-priority-table thead th'
+            )),
+            underlay: liveCard.querySelector('.livechat-appeal-header-underlay')
+        };
+    }
+
+    function resetVenomLivechatHeader() {
+        const { targets, underlay } = livechatElements();
+        targets.forEach(target => clearProperties(target, [
+            'color','background','background-color','background-image',
+            'background-repeat','background-position','background-size',
+            'border-top-color','border-bottom-color','border-left-color','border-right-color',
+            'border-top-width','border-top-style','box-shadow','opacity','outline'
+        ]));
+        clearProperties(underlay, ['display']);
     }
 
     function copyComputedProperties(source, targets, properties) {
@@ -71964,41 +72004,21 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
     }
 
     function lockVenomLivechatHeader() {
-        if (!isVenomTheme()) return;
-
         const dashboard = document.getElementById('tab-dashboard');
-        if (!dashboard) return;
+        const { liveCard, targets, underlay } = livechatElements();
+        if (!dashboard || !liveCard || !targets.length) return;
 
         const referenceTh = dashboard.querySelector(
             '.employee-priority-card.passport .employee-priority-table thead th, '
             + '.employee-priority-card.visa .employee-priority-table thead th, '
             + '.employee-priority-card.training .employee-priority-table thead th'
         );
-        const liveCard = dashboard.querySelector('.employee-priority-card.livechat-appeal');
-        if (!referenceTh || !liveCard) return;
-
-        const targets = Array.from(liveCard.querySelectorAll(
-            '.employee-priority-table thead, '
-            + '.employee-priority-table thead tr, '
-            + '.employee-priority-table thead th'
-        ));
-
         copyComputedProperties(referenceTh, targets, [
-            'color',
-            'background',
-            'background-color',
-            'background-image',
-            'background-repeat',
-            'background-position',
-            'background-size',
-            'border-top-color',
-            'border-bottom-color',
-            'border-left-color',
-            'border-right-color',
-            'box-shadow',
-            'opacity'
+            'color','background','background-color','background-image',
+            'background-repeat','background-position','background-size',
+            'border-top-color','border-bottom-color','border-left-color','border-right-color',
+            'box-shadow','opacity'
         ]);
-
         targets.forEach(target => {
             setImportant(target, 'background-color', '#090909');
             setImportant(target, 'background-image', 'none');
@@ -72008,31 +72028,79 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
             setImportant(target, 'border-top-color', 'transparent');
             setImportant(target, 'outline', 'none');
         });
-
-        const underlay = liveCard.querySelector('.livechat-appeal-header-underlay');
         if (underlay) setImportant(underlay, 'display', 'none');
     }
 
-    function lockVenomSettings() {
-        if (!isVenomTheme()) return;
-
+    function settingsElements() {
         const settings = document.getElementById('tab-settings');
-        if (!settings) return;
+        return {
+            settings,
+            systemPanel: settings?.querySelector('#settingsPrimaryColumn > .settings-access-table') || null,
+            systemHeading: settings?.querySelector('#settingsPrimaryColumn > .settings-access-table > .settings-table-heading') || null,
+            systemContent: settings?.querySelector('#settingsPrimaryColumn > .settings-access-table > .settings-access-content') || null,
+            monitoringPanel: document.getElementById('employeeMonitoringSettingsPanel'),
+            evaluationPanel: document.getElementById('csEvaluationSettingsPanel')
+        };
+    }
 
-        const systemAccessPanel = settings.querySelector('#settingsPrimaryColumn > .settings-access-table');
-        if (systemAccessPanel) {
-            setImportant(systemAccessPanel, 'padding', '0');
-            setImportant(systemAccessPanel, 'border', '0');
-            setImportant(systemAccessPanel, 'background', 'transparent');
-            setImportant(systemAccessPanel, 'box-shadow', 'none');
+    function resetVenomSettings() {
+        const { systemPanel, systemHeading, systemContent, monitoringPanel, evaluationPanel } = settingsElements();
+        clearProperties(systemPanel, [
+            'padding','border','border-color','border-radius','background','background-color',
+            'background-image','box-shadow','overflow'
+        ]);
+        clearProperties(systemHeading, [
+            'padding','margin','background','background-color','background-image',
+            'border-bottom-color','box-shadow'
+        ]);
+        clearProperties(systemContent, [
+            'padding','background','background-color','background-image','box-shadow'
+        ]);
+        monitoringPanel?.querySelectorAll('.number-unit').forEach(unit => clearProperties(unit, [
+            'background','background-color','background-image','border','border-color','box-shadow','outline'
+        ]));
+        monitoringPanel?.querySelectorAll('.number-unit input').forEach(input => clearProperties(input, [
+            'background','background-color','border','box-shadow','outline'
+        ]));
+        monitoringPanel?.querySelectorAll('.number-unit span').forEach(label => clearProperties(label, [
+            'background','background-color','border-left-color','box-shadow'
+        ]));
+        clearProperties(evaluationPanel, [
+            'background','background-color','background-image','border-color','box-shadow'
+        ]);
+        clearProperties(evaluationPanel?.querySelector('.cs-eval-settings-heading'), [
+            'border-bottom-color','box-shadow'
+        ]);
+        evaluationPanel?.querySelectorAll('.cs-eval-settings-content').forEach(content => clearProperties(content, [
+            'background','background-color','background-image','box-shadow'
+        ]));
+    }
+
+    function lockVenomSettings() {
+        const { systemPanel, systemHeading, systemContent, monitoringPanel, evaluationPanel } = settingsElements();
+
+        if (systemPanel) {
+            setImportant(systemPanel, 'padding', '14px');
+            setImportant(systemPanel, 'border', '1px solid rgba(68,214,44,.18)');
+            setImportant(systemPanel, 'border-radius', '14px');
+            setImportant(systemPanel, 'background-color', '#101010');
+            setImportant(systemPanel, 'background-image', 'none');
+            setImportant(systemPanel, 'box-shadow', 'none');
+            setImportant(systemPanel, 'overflow', 'visible');
         }
-        const systemAccessContent = systemAccessPanel?.querySelector('.settings-access-content');
-        if (systemAccessContent) {
-            setImportant(systemAccessContent, 'background', 'transparent');
-            setImportant(systemAccessContent, 'box-shadow', 'none');
+        if (systemHeading) {
+            setImportant(systemHeading, 'padding', '0 0 10px');
+            setImportant(systemHeading, 'margin', '0 0 10px');
+            setImportant(systemHeading, 'background', 'transparent');
+            setImportant(systemHeading, 'border-bottom-color', 'rgba(68,214,44,.16)');
+            setImportant(systemHeading, 'box-shadow', 'none');
+        }
+        if (systemContent) {
+            setImportant(systemContent, 'padding', '0');
+            setImportant(systemContent, 'background', 'transparent');
+            setImportant(systemContent, 'box-shadow', 'none');
         }
 
-        const monitoringPanel = document.getElementById('employeeMonitoringSettingsPanel');
         monitoringPanel?.querySelectorAll('.number-unit').forEach(unit => {
             setImportant(unit, 'background-color', '#0b0f0b');
             setImportant(unit, 'background-image', 'none');
@@ -72046,38 +72114,22 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
             setImportant(input, 'box-shadow', 'none');
             setImportant(input, 'outline', 'none');
         });
-        monitoringPanel?.querySelectorAll('.number-unit span').forEach(unitLabel => {
-            setImportant(unitLabel, 'background-color', '#101510');
-            setImportant(unitLabel, 'border-left-color', 'rgba(68,214,44,.16)');
-            setImportant(unitLabel, 'box-shadow', 'none');
+        monitoringPanel?.querySelectorAll('.number-unit span').forEach(label => {
+            setImportant(label, 'background-color', '#101510');
+            setImportant(label, 'border-left-color', 'rgba(68,214,44,.16)');
+            setImportant(label, 'box-shadow', 'none');
         });
 
-        const evaluationPanel = document.getElementById('csEvaluationSettingsPanel');
         if (evaluationPanel) {
-            const referencePanel = Array.from(settings.querySelectorAll('.settings-system-table'))
-                .find(panel => panel !== evaluationPanel);
-
-            if (referencePanel) {
-                copyComputedProperties(referencePanel, [evaluationPanel], [
-                    'background',
-                    'background-color',
-                    'background-image',
-                    'border-color',
-                    'box-shadow'
-                ]);
-            }
-
             setImportant(evaluationPanel, 'background-color', '#101010');
             setImportant(evaluationPanel, 'background-image', 'none');
             setImportant(evaluationPanel, 'border-color', 'rgba(68,214,44,.22)');
             setImportant(evaluationPanel, 'box-shadow', 'none');
-
-            const evaluationHeading = evaluationPanel.querySelector('.cs-eval-settings-heading');
-            if (evaluationHeading) {
-                setImportant(evaluationHeading, 'border-bottom-color', 'rgba(68,214,44,.20)');
-                setImportant(evaluationHeading, 'box-shadow', 'none');
+            const heading = evaluationPanel.querySelector('.cs-eval-settings-heading');
+            if (heading) {
+                setImportant(heading, 'border-bottom-color', 'rgba(68,214,44,.20)');
+                setImportant(heading, 'box-shadow', 'none');
             }
-
             evaluationPanel.querySelectorAll('.cs-eval-settings-content').forEach(content => {
                 setImportant(content, 'background', 'transparent');
                 setImportant(content, 'box-shadow', 'none');
@@ -72087,9 +72139,18 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
 
     function applyLocks() {
         scheduled = false;
-        lockCyberRoleSelect();
-        lockVenomLivechatHeader();
-        lockVenomSettings();
+        const state = themeState();
+
+        if (state.cyber) lockCyberRoleSelect();
+        else resetCyberRoleSelect();
+
+        if (state.venom) {
+            lockVenomLivechatHeader();
+            lockVenomSettings();
+        } else {
+            resetVenomLivechatHeader();
+            resetVenomSettings();
+        }
     }
 
     function scheduleLocks() {
@@ -72107,17 +72168,14 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
             childList: true,
             attributes: true,
             attributeFilter: [
-                'class',
-                'style',
-                'data-theme',
-                'data-theme-variant',
-                'data-selected-theme',
-                'data-theme-family'
+                'class','style','data-theme','data-theme-variant',
+                'data-selected-theme','data-theme-family'
             ]
         });
         window.addEventListener('resize', scheduleLocks, { passive: true });
         document.addEventListener('visibilitychange', scheduleLocks);
-        window.setInterval(scheduleLocks, 1500);
+        window.addEventListener('pageshow', scheduleLocks);
+        window.setInterval(scheduleLocks, 1200);
     }
 
     if (document.readyState === 'loading') {
@@ -72126,7 +72184,6 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
         install();
     }
 })();
-
 </script>
 
 
@@ -72243,8 +72300,42 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
 }
 </style>
 
+
+
+<!-- ================================================================
+     V64.70 — Reversible theme transition + Venom system wrapper restore
+     ================================================================ -->
+<style id="v64-70-theme-transition-fix">
+/* Venom Green: restore the same outer wrapper/padding structure used by the
+   other themes. Inner cards remain unchanged. */
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsPrimaryColumn > .settings-access-table {
+    padding: 14px !important;
+    border: 1px solid rgba(68,214,44,.18) !important;
+    border-radius: 14px !important;
+    background: #101010 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsPrimaryColumn > .settings-access-table > .settings-table-heading {
+    padding: 0 0 10px !important;
+    margin: 0 0 10px !important;
+    background: transparent !important;
+    border-bottom-color: rgba(68,214,44,.16) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsPrimaryColumn > .settings-access-table > .settings-access-content {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+</style>
+
 <script id="v64-65-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.69';
+document.documentElement.dataset.dashboardBuild = 'v64.70';
 </script>
 
 </body>
