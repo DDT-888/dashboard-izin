@@ -71831,8 +71831,283 @@ html[data-theme-family="gaming"] #tab-dashboard .employee-priority-card.livechat
 }
 </style>
 
+
+<!-- ================================================================
+     V64.68 — Runtime Theme Lock for dynamically rendered components
+     ================================================================ -->
+<style id="v64-68-runtime-theme-lock-css">
+/* Custom Role trigger, not only the hidden native select. */
+html[data-theme="dark"]:not([data-theme-variant="venom"])
+[data-select-id="inputUserRole"] :is(.premium-select-trigger,.unified-custom-filter-trigger) {
+    color: #d9e6ef !important;
+    background: #0f1720 !important;
+    background-image: none !important;
+    border: 1px solid rgba(64,143,181,.34) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Exact livechat paint elements, including old runtime underlay. */
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .livechat-appeal-header-underlay {
+    display: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr > th,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr > th::before,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr > th::after {
+    background: #090909 !important;
+    background-color: #090909 !important;
+    background-image: none !important;
+    color: #dcdcdc !important;
+    border-color: #252525 !important;
+    box-shadow: none !important;
+}
+
+/* Exact Settings dynamic panels. */
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #employeeMonitoringSettingsPanel .number-unit {
+    background: #0b0f0b !important;
+    background-image: none !important;
+    border: 1px solid rgba(68,214,44,.22) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsEvaluationColumn > #csEvaluationSettingsPanel {
+    background: #101010 !important;
+    background-image: none !important;
+    border-color: rgba(68,214,44,.22) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsEvaluationColumn > #csEvaluationSettingsPanel::before,
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #settingsEvaluationColumn > #csEvaluationSettingsPanel::after {
+    content: none !important;
+    display: none !important;
+}
+</style>
+<script id="v64-68-runtime-theme-lock-script">
+(() => {
+    'use strict';
+
+    if (window.__v6468ThemeRuntimeLockInstalled) return;
+    window.__v6468ThemeRuntimeLockInstalled = true;
+
+    const IMPORTANT = 'important';
+    let scheduled = false;
+
+    function setImportant(element, property, value) {
+        if (!element || value == null || value === '') return;
+        element.style.setProperty(property, value, IMPORTANT);
+    }
+
+    function isVenomTheme() {
+        const root = document.documentElement;
+        const body = document.body;
+        return root?.getAttribute('data-theme-variant') === 'venom'
+            || body?.getAttribute('data-theme-variant') === 'venom'
+            || root?.getAttribute('data-selected-theme') === 'venom'
+            || body?.getAttribute('data-selected-theme') === 'venom';
+    }
+
+    function isCyberDarkTheme() {
+        const root = document.documentElement;
+        const body = document.body;
+        const renderedDark = root?.getAttribute('data-theme') === 'dark'
+            || body?.getAttribute('data-theme') === 'dark';
+        return renderedDark && !isVenomTheme();
+    }
+
+    function lockCyberRoleSelect() {
+        if (!isCyberDarkTheme()) return;
+
+        const nativeSelect = document.getElementById('inputUserRole');
+        const wrapper = document.querySelector(
+            '[data-select-id="inputUserRole"], #inputUserRole + .premium-select, #inputUserRole + .unified-custom-filter'
+        );
+        const trigger = wrapper?.querySelector(
+            '.premium-select-trigger, .unified-custom-filter-trigger'
+        );
+
+        [nativeSelect, trigger].filter(Boolean).forEach(element => {
+            setImportant(element, 'color', '#d9e6ef');
+            setImportant(element, 'background-color', '#0f1720');
+            setImportant(element, 'background-image', 'none');
+            setImportant(element, 'border-color', 'rgba(64,143,181,.34)');
+            setImportant(element, 'box-shadow', 'none');
+            setImportant(element, 'outline', 'none');
+        });
+
+        if (trigger) {
+            setImportant(trigger, 'border-width', '1px');
+            setImportant(trigger, 'border-style', 'solid');
+        }
+    }
+
+    function copyComputedProperties(source, targets, properties) {
+        if (!source || !targets?.length) return;
+        const computed = getComputedStyle(source);
+        targets.forEach(target => {
+            properties.forEach(property => {
+                const value = computed.getPropertyValue(property);
+                if (value) setImportant(target, property, value);
+            });
+        });
+    }
+
+    function lockVenomLivechatHeader() {
+        if (!isVenomTheme()) return;
+
+        const dashboard = document.getElementById('tab-dashboard');
+        if (!dashboard) return;
+
+        const referenceTh = dashboard.querySelector(
+            '.employee-priority-card.passport .employee-priority-table thead th, '
+            + '.employee-priority-card.visa .employee-priority-table thead th, '
+            + '.employee-priority-card.training .employee-priority-table thead th'
+        );
+        const liveCard = dashboard.querySelector('.employee-priority-card.livechat-appeal');
+        if (!referenceTh || !liveCard) return;
+
+        const targets = Array.from(liveCard.querySelectorAll(
+            '.employee-priority-table thead, '
+            + '.employee-priority-table thead tr, '
+            + '.employee-priority-table thead th'
+        ));
+
+        copyComputedProperties(referenceTh, targets, [
+            'color',
+            'background',
+            'background-color',
+            'background-image',
+            'background-repeat',
+            'background-position',
+            'background-size',
+            'border-top-color',
+            'border-bottom-color',
+            'border-left-color',
+            'border-right-color',
+            'box-shadow',
+            'opacity'
+        ]);
+
+        targets.forEach(target => {
+            setImportant(target, 'background-color', '#090909');
+            setImportant(target, 'background-image', 'none');
+            setImportant(target, 'box-shadow', 'none');
+        });
+
+        const underlay = liveCard.querySelector('.livechat-appeal-header-underlay');
+        if (underlay) setImportant(underlay, 'display', 'none');
+    }
+
+    function lockVenomSettings() {
+        if (!isVenomTheme()) return;
+
+        const settings = document.getElementById('tab-settings');
+        if (!settings) return;
+
+        const monitoringPanel = document.getElementById('employeeMonitoringSettingsPanel');
+        monitoringPanel?.querySelectorAll('.number-unit').forEach(unit => {
+            setImportant(unit, 'background-color', '#0b0f0b');
+            setImportant(unit, 'background-image', 'none');
+            setImportant(unit, 'border-color', 'rgba(68,214,44,.22)');
+            setImportant(unit, 'box-shadow', 'none');
+            setImportant(unit, 'outline', 'none');
+        });
+        monitoringPanel?.querySelectorAll('.number-unit input').forEach(input => {
+            setImportant(input, 'background', 'transparent');
+            setImportant(input, 'border', '0');
+            setImportant(input, 'box-shadow', 'none');
+            setImportant(input, 'outline', 'none');
+        });
+        monitoringPanel?.querySelectorAll('.number-unit span').forEach(unitLabel => {
+            setImportant(unitLabel, 'background-color', '#101510');
+            setImportant(unitLabel, 'border-left-color', 'rgba(68,214,44,.16)');
+            setImportant(unitLabel, 'box-shadow', 'none');
+        });
+
+        const evaluationPanel = document.getElementById('csEvaluationSettingsPanel');
+        if (evaluationPanel) {
+            const referencePanel = Array.from(settings.querySelectorAll('.settings-system-table'))
+                .find(panel => panel !== evaluationPanel);
+
+            if (referencePanel) {
+                copyComputedProperties(referencePanel, [evaluationPanel], [
+                    'background',
+                    'background-color',
+                    'background-image',
+                    'border-color',
+                    'box-shadow'
+                ]);
+            }
+
+            setImportant(evaluationPanel, 'background-color', '#101010');
+            setImportant(evaluationPanel, 'background-image', 'none');
+            setImportant(evaluationPanel, 'border-color', 'rgba(68,214,44,.22)');
+            setImportant(evaluationPanel, 'box-shadow', 'none');
+
+            evaluationPanel.querySelectorAll('.cs-eval-settings-content').forEach(content => {
+                setImportant(content, 'background', 'transparent');
+                setImportant(content, 'box-shadow', 'none');
+            });
+        }
+    }
+
+    function applyLocks() {
+        scheduled = false;
+        lockCyberRoleSelect();
+        lockVenomLivechatHeader();
+        lockVenomSettings();
+    }
+
+    function scheduleLocks() {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => requestAnimationFrame(applyLocks));
+    }
+
+    const observer = new MutationObserver(scheduleLocks);
+
+    function install() {
+        scheduleLocks();
+        observer.observe(document.documentElement, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter: [
+                'class',
+                'style',
+                'data-theme',
+                'data-theme-variant',
+                'data-selected-theme',
+                'data-theme-family'
+            ]
+        });
+        window.addEventListener('resize', scheduleLocks, { passive: true });
+        document.addEventListener('visibilitychange', scheduleLocks);
+        window.setInterval(scheduleLocks, 1500);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', install, { once: true });
+    } else {
+        install();
+    }
+})();
+
+</script>
+
 <script id="v64-65-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.67';
+document.documentElement.dataset.dashboardBuild = 'v64.68';
 </script>
 
 </body>
