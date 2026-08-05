@@ -12,6 +12,13 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        :root {
+            --index-wallpaper-url: url('https://cdn.areabermain.club/assets/cdn/az1/2026/06/06/20260606/ae8c3495e13e910c466ef3e8c26d2b42/bg-piala-dunia-final.png');
+            --index-wallpaper-position: center center;
+            --index-wallpaper-size: cover;
+            --index-wallpaper-overlay: 0.40;
+        }
+
         body {
             min-height: 100vh;
             display: flex;
@@ -31,10 +38,10 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: 
-                linear-gradient(rgba(0, 0, 0, 0.40), rgba(0, 0, 0, 0.40)),
-                url('https://cdn.areabermain.club/assets/cdn/az1/2026/06/06/20260606/ae8c3495e13e910c466ef3e8c26d2b42/bg-piala-dunia-final.png') no-repeat center center;
-            background-size: cover;
+            background:
+                linear-gradient(rgba(0, 0, 0, var(--index-wallpaper-overlay)), rgba(0, 0, 0, var(--index-wallpaper-overlay))),
+                var(--index-wallpaper-url) no-repeat var(--index-wallpaper-position);
+            background-size: var(--index-wallpaper-size);
             z-index: 0;
             animation: bgFadeIn 1.2s ease-out;
         }
@@ -934,7 +941,7 @@
         </div>
 
         <!-- ===== FOOTER ===== -->
-        <div class="login-footer">v1.2.1 • DDT Secure Access</div>
+        <div class="login-footer">v1.3.0 • DDT Secure Access</div>
     </div>
 
     <!-- ============================================================ -->
@@ -980,6 +987,48 @@
 
         let currentPublicIP = null;
         let authProcessing = false;
+
+        const DEFAULT_INDEX_APPEARANCE = Object.freeze({
+            wallpaper_url: 'https://cdn.areabermain.club/assets/cdn/az1/2026/06/06/20260606/ae8c3495e13e910c466ef3e8c26d2b42/bg-piala-dunia-final.png',
+            position: 'center center',
+            size: 'cover',
+            overlay: 40
+        });
+
+        function normalizePublicAppearance(raw) {
+            const source = raw && typeof raw === 'object' ? raw : {};
+            const positions = ['center center', 'center top', 'center bottom', 'left center', 'right center'];
+            const sizes = ['cover', 'contain'];
+            let wallpaperUrl = String(source.wallpaper_url || DEFAULT_INDEX_APPEARANCE.wallpaper_url).trim();
+            if (!/^(https:\/\/|\/|\.\/|\.\.\/)/i.test(wallpaperUrl)) wallpaperUrl = DEFAULT_INDEX_APPEARANCE.wallpaper_url;
+            const overlayNumber = Number(source.overlay);
+            return {
+                wallpaper_url: wallpaperUrl,
+                position: positions.includes(source.position) ? source.position : 'center center',
+                size: sizes.includes(source.size) ? source.size : 'cover',
+                overlay: Number.isFinite(overlayNumber) ? Math.min(80, Math.max(0, overlayNumber)) : 40
+            };
+        }
+
+        function applyPublicIndexAppearance(raw) {
+            const appearance = normalizePublicAppearance(raw);
+            const resolvedUrl = new URL(appearance.wallpaper_url, window.location.href).href.replaceAll('"', '%22');
+            document.documentElement.style.setProperty('--index-wallpaper-url', `url("${resolvedUrl}")`);
+            document.documentElement.style.setProperty('--index-wallpaper-position', appearance.position);
+            document.documentElement.style.setProperty('--index-wallpaper-size', appearance.size);
+            document.documentElement.style.setProperty('--index-wallpaper-overlay', String(appearance.overlay / 100));
+        }
+
+        async function loadPublicIndexAppearance() {
+            try {
+                const { data, error } = await supabaseClient.rpc('get_public_index_appearance_v6476');
+                if (error) throw error;
+                applyPublicIndexAppearance(data || DEFAULT_INDEX_APPEARANCE);
+            } catch (error) {
+                console.warn('Tampilan index menggunakan wallpaper default:', error);
+                applyPublicIndexAppearance(DEFAULT_INDEX_APPEARANCE);
+            }
+        }
 
         // ============================================================
         // HELPER UI
@@ -1390,6 +1439,7 @@
 
                 statusMsg.textContent = 'Login berhasil. Mengalihkan ke dashboard...';
                 statusMsg.classList.add('show');
+                sessionStorage.setItem('ddt_dashboard_fresh_login_v1', String(Date.now()));
                 window.location.replace(DASHBOARD_URL);
                 return true;
             } catch (error) {
@@ -1466,10 +1516,21 @@
             console.log('Callback URL:', LOGIN_CALLBACK_URL);
             console.log('Dashboard URL:', DASHBOARD_URL);
 
+            loadPublicIndexAppearance();
             createParticles();
             updateClock();
             setInterval(updateClock, 1000);
             displayPublicIP();
+
+            const entryParams = new URLSearchParams(window.location.search);
+            if (entryParams.get('reason') === 'idle') {
+                const idleMinutes = Math.max(1, Number(entryParams.get('minutes')) || 180);
+                const durationLabel = idleMinutes % 60 === 0
+                    ? `${idleMinutes / 60} jam`
+                    : `${idleMinutes} menit`;
+                showError(`Sesi berakhir karena tidak ada aktivitas selama ${durationLabel}. Silakan login kembali.`);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
 
             try {
                 const callbackSession = await processOAuthCallback();
