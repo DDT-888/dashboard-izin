@@ -59694,7 +59694,7 @@ async function loadCsEvalAppeals() {
         return;
     }
 
-    const { data, error } = await supabaseDashboard.rpc('get_cs_error_appeals_latest_v6458', {
+    const { data, error } = await supabaseDashboard.rpc('get_cs_error_appeals_latest_v6464', {
         p_period_id: periodId,
         p_search: cleanText(csEvalState.filters.search || '') || null,
         p_status: cleanText(csEvalState.filters.status || '') || null,
@@ -60764,7 +60764,7 @@ ${appeal.reason}`.trim();
         const note = await requestCsEvalInput({ title: status === 'approved' ? 'Setujui Potongan Manual' : 'Tolak Potongan Manual', message: 'Tambahkan catatan apabila diperlukan.', label: 'Catatan (Opsional)', confirmText: status === 'approved' ? 'Setujui Laporan' : 'Tolak Laporan', variant: status === 'approved' ? 'default' : 'danger' });
         if (note === null) return;
         try {
-            const { error } = await supabaseDashboard.rpc('process_cs_manual_report', {
+            const { error } = await supabaseDashboard.rpc('process_cs_manual_report_v6464', {
                 p_report_id: id,
                 p_status: status,
                 p_note: note
@@ -62161,7 +62161,7 @@ async function processCsEvaluationAppeal(id, status) {
                 variant: approved ? 'default' : 'danger'
             });
             if (note === null) return;
-            const { error } = await supabaseDashboard.rpc('process_cs_manual_report', { p_report_id: id, p_status: status, p_note: note });
+            const { error } = await supabaseDashboard.rpc('process_cs_manual_report_v6464', { p_report_id: id, p_status: status, p_note: note });
             if (error) throw error;
             closeCsEvalModal('csEvalDetailOverlay');
             showShiftToast(approved ? 'Laporan disetujui dan masuk perhitungan bonus.' : 'Laporan ditolak.', 'success');
@@ -62188,7 +62188,7 @@ async function processCsEvaluationAppeal(id, status) {
                 confirmText: 'Hapus Laporan'
             });
             if (!confirmed) return;
-            const { error } = await supabaseDashboard.rpc('delete_cs_manual_report_v6421', {
+            const { error } = await supabaseDashboard.rpc('legacy_disabled_delete_cs_manual_report_v6421', {
                 p_report_id: id,
                 p_reason: 'Dihapus melalui konfirmasi dashboard',
                 p_confirmation: 'HAPUS'
@@ -62276,6 +62276,387 @@ async function processCsEvaluationAppeal(id, status) {
     });
 
 
+
+    // ======================================================================
+    // V64.64 — Evaluasi CS integrated stabilization lock
+    // ======================================================================
+    csEvalState.loadRequestedSeq = Number(csEvalState.loadRequestedSeq || 0);
+
+    applyCsEvalFiltersToUI = function applyCsEvalFiltersToUIV6464() {
+        const search = document.getElementById('csEvalSearch');
+        if (search) search.value = csEvalState.filters.search || '';
+        ['period', 'staff', 'type', 'status'].forEach(key => {
+            const id = `csEval${key[0].toUpperCase()}${key.slice(1)}Filter`;
+            const select = document.getElementById(id);
+            if (select) select.value = csEvalState.filters[key] || '';
+        });
+    };
+
+    const updateCsEvalViewMetaBeforeV6464 = updateCsEvalViewMeta;
+    updateCsEvalViewMeta = function updateCsEvalViewMetaV6464() {
+        updateCsEvalViewMetaBeforeV6464();
+        const search = document.getElementById('csEvalSearch');
+        if (!search) return;
+        const placeholders = {
+            current: 'Cari nama, passport, tanggal, jenis kesalahan, atau ID Chat',
+            history: 'Cari nama, passport, tanggal, jenis kesalahan, atau ID Chat',
+            appeals: 'Cari nama, passport, tanggal, kesalahan, ID Chat, atau nomor pengajuan',
+            manual: 'Cari ID laporan, perihal, staff, passport, pembuat, atau tanggal'
+        };
+        search.placeholder = placeholders[csEvalState.subtab] || placeholders.current;
+    };
+
+    loadCsEvalAppeals = async function loadCsEvalAppealsV6464() {
+        const periodId = resolveCsEvaluationPeriodId();
+        if (!periodId) {
+            csEvalState.rows = [];
+            csEvalState.total = 0;
+            renderCsEvalAppeals();
+            return;
+        }
+        const { data, error } = await supabaseDashboard.rpc('get_cs_error_appeals_latest_v6464', {
+            p_period_id: periodId,
+            p_search: cleanText(csEvalState.filters.search || '') || null,
+            p_status: cleanText(csEvalState.filters.status || '') || null,
+            p_limit: csEvalState.pageSize,
+            p_offset: csEvalState.page * csEvalState.pageSize
+        });
+        if (error) throw error;
+        const rows = Array.isArray(data) ? data : [];
+        csEvalState.rows = rows.map(row => ({
+            id: row.id,
+            error_id: row.error_id,
+            period_id: row.period_id,
+            submitted_by_email: row.submitted_by_email,
+            submitted_by_name: row.submitted_by_name,
+            submitted_by_passport: row.submitted_by_passport,
+            status: row.status,
+            processed_by: row.processed_by,
+            processed_at: row.processed_at,
+            processed_note: row.processed_note,
+            created_at: row.created_at,
+            attempt_no: row.attempt_no,
+            display_attempt_no: row.attempt_no,
+            internal_attempt_no: row.internal_attempt_no,
+            previous_appeal_id: row.previous_appeal_id,
+            cs_errors: {
+                id: row.error_id,
+                staff_name: row.error_staff_name,
+                passport_text: row.error_passport_text,
+                error_date: row.error_date,
+                error_type: row.error_type,
+                chat_id: row.chat_id,
+                status: row.error_status,
+                source_present: row.source_present,
+                evidence_links: row.error_evidence_links
+            }
+        }));
+        csEvalState.total = Number(rows[0]?.total_count || 0);
+        if (!rows.length && csEvalState.page > 0) {
+            csEvalState.page = Math.max(0, csEvalState.page - 1);
+            csEvalState.pagesBySubtab[csEvalState.subtab] = csEvalState.page;
+            saveCsEvalViewState();
+            return loadCsEvalAppeals();
+        }
+        renderCsEvalAppeals();
+    };
+
+    loadCsEvalManualReports = async function loadCsEvalManualReportsV6464() {
+        if (!csEvalState.selectedPeriodId) {
+            csEvalState.rows = [];
+            csEvalState.total = 0;
+            renderCsEvalManualReports();
+            return;
+        }
+        const { data, error } = await supabaseDashboard.rpc('get_cs_manual_reports_v6464', {
+            p_period_id: csEvalState.selectedPeriodId,
+            p_search: cleanText(csEvalState.filters.search || '') || null,
+            p_status: cleanText(csEvalState.filters.status || '') || null,
+            p_limit: csEvalState.pageSize,
+            p_offset: csEvalState.page * csEvalState.pageSize
+        });
+        if (error) throw error;
+        const rows = Array.isArray(data) ? data : [];
+        csEvalState.rows = rows.map(row => ({
+            ...row,
+            cs_manual_report_staff: Array.isArray(row.staff_data) ? row.staff_data : []
+        }));
+        csEvalState.total = Number(rows[0]?.total_count || 0);
+        if (!rows.length && csEvalState.page > 0) {
+            csEvalState.page = Math.max(0, csEvalState.page - 1);
+            csEvalState.pagesBySubtab[csEvalState.subtab] = csEvalState.page;
+            saveCsEvalViewState();
+            return loadCsEvalManualReports();
+        }
+        renderCsEvalManualReports();
+    };
+
+    renderCsEvalManualReports = function renderCsEvalManualReportsV6464() {
+        const head = document.getElementById('csEvalTableHead');
+        const body = document.getElementById('csEvalTableBody');
+        const table = document.querySelector('#tab-evaluation .cs-eval-table');
+        if (table) table.dataset.csEvalView = 'manual';
+        if (!head || !body) return;
+        head.innerHTML = `<tr>
+            <th class="cs-eval-number-header" style="width:44px">#</th>
+            <th style="width:104px">Diajukan</th>
+            <th style="width:112px">ID Laporan</th>
+            <th style="width:190px">Perihal</th>
+            <th style="width:180px">Staff</th>
+            <th style="width:78px">Potongan</th>
+            <th style="width:108px">Status</th>
+            <th style="width:118px">Dibuat Oleh</th>
+            <th style="width:118px">Disetujui Oleh</th>
+            <th style="width:112px">Aksi</th>
+        </tr>`;
+        const canDelete = csEvalCan('cs_manual_report_delete');
+        const canApprove = csEvalCan('cs_manual_report_approve');
+        const offset = csEvalState.page * csEvalState.pageSize;
+        body.innerHTML = csEvalState.rows.length ? csEvalState.rows.map((row, index) => {
+            const staff = Array.isArray(row.cs_manual_report_staff) ? row.cs_manual_report_staff : [];
+            const names = staff.map(item => item.staff_name).filter(Boolean).join(', ');
+            const reportLabel = row.report_code || 'DRAFT';
+            const approver = cleanText(row.approved_by || '');
+            const reportStatus = lower(row.status || '');
+            return `<tr>
+                <td class="cs-eval-row-number">${offset + index + 1}</td>
+                <td>${esc(formatCsEvalDate(row.created_at, true))}</td>
+                <td><span class="cs-eval-report-code${row.report_code ? '' : ' draft'}">${esc(reportLabel)}</span></td>
+                <td><span class="cs-eval-error-type">${esc(row.subject)}</span></td>
+                <td><div class="cs-eval-user"><strong>${esc(names || 'Belum ada staff')}</strong><span>${staff.length} peserta</span></div></td>
+                <td><strong>${Number(row.deduction_percent || 0)}%</strong></td>
+                <td>${statusBadge(row.status)}</td>
+                <td><div class="cs-eval-user"><strong>${esc(row.created_by_name || '')}</strong><span>${esc(formatCsEvalDate(row.created_at, true))}</span></div></td>
+                <td>${approver ? `<div class="cs-eval-user"><strong>${esc(approver)}</strong><span>${esc(formatCsEvalDate(row.approved_at, true))}</span></div>` : '<span class="cs-eval-muted">—</span>'}</td>
+                <td><div class="cs-eval-row-actions">
+                    <button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="viewCsManualReport('${row.id}')" aria-label="Lihat laporan" data-tooltip="Lihat laporan" data-tooltip-icon="preview">${iconSvg('eye')}</button>
+                    ${canApprove && ['approved', 'rejected'].includes(reportStatus) ? `<button class="cs-eval-icon-button history-tooltip-target" type="button" onclick="cancelCsManualReportDecision('${row.id}','${reportStatus}')" aria-label="Batalkan keputusan" data-tooltip="Batalkan keputusan" data-tooltip-icon="edit">${iconSvg('edit')}</button>` : ''}
+                    ${canDelete && reportStatus === 'submitted' ? `<button class="cs-eval-icon-button danger history-tooltip-target" type="button" onclick="deleteCsManualReport('${row.id}')" aria-label="Hapus laporan" data-tooltip="Hapus laporan" data-tooltip-icon="delete">${iconSvg('trash')}</button>` : ''}
+                </div></td>
+            </tr>`;
+        }).join('') : `<tr><td colspan="10"><div class="cs-eval-empty">${iconSvg('file')}<strong>Belum ada laporan potongan manual</strong></div></td></tr>`;
+        renderCsEvalPagination();
+    };
+
+    function formatCsCorrectionValueV6464(field, value) {
+        if (field === 'error_date') return value ? formatCsEvalDate(value) : '—';
+        if (field === 'evidence_links') {
+            const links = normalizeLinks(value);
+            return links.length ? links.join('\n') : '—';
+        }
+        if (Array.isArray(value)) return value.join('\n') || '—';
+        if (value && typeof value === 'object') {
+            try { return JSON.stringify(value); } catch (_) { return String(value); }
+        }
+        return cleanText(value) || '—';
+    }
+
+    renderCsEvalCorrectionHistoryV6458 = function renderCsEvalCorrectionHistoryV6464(corrections) {
+        const rows = Array.isArray(corrections) ? corrections : [];
+        if (!rows.length) return '';
+        const fieldLabels = {
+            staff_name: 'Nama Staff',
+            passport_text: 'Passport',
+            error_date: 'Tanggal',
+            error_type: 'Jenis Kesalahan',
+            chat_id: 'ID Chat',
+            evidence_links: 'Link Bukti'
+        };
+        return `<section class="cs-eval-correction-history">
+            <div class="cs-eval-correction-heading"><strong>Riwayat Koreksi Auditor</strong><span>${rows.length} perubahan</span></div>
+            ${rows.map(item => {
+                const before = item.before_data || {};
+                const after = item.after_data || {};
+                const fields = Array.isArray(item.changed_fields) ? item.changed_fields : [];
+                const changes = fields.map(field => `<div class="cs-eval-correction-change"><span>${esc(fieldLabels[field] || field)}</span><div><small>Sebelum</small><p>${esc(formatCsCorrectionValueV6464(field, before[field]))}</p></div><div><small>Sesudah</small><p>${esc(formatCsCorrectionValueV6464(field, after[field]))}</p></div></div>`).join('');
+                const basis = item.match_basis || {};
+                return `<details class="cs-eval-correction-item" ${rows.length === 1 ? 'open' : ''}><summary><span>${esc(formatCsEvalDate(item.created_at, true))}</span><small>${esc(item.source_name || 'Spreadsheet')}</small></summary><div class="cs-eval-correction-body">${changes}<div class="cs-eval-correction-match"><span>Dicocokkan berdasarkan</span><strong>Chat ID ${esc(basis.chat_id || '—')} + link bukti yang sama</strong></div></div></details>`;
+            }).join('')}
+        </section>`;
+    };
+
+    viewCsManualReport = async function viewCsManualReportV6464(id) {
+        try {
+            const { data: report, error } = await supabaseDashboard
+                .from('cs_manual_reports')
+                .select('*,cs_manual_report_staff(*)')
+                .eq('id', id)
+                .eq('is_archived', false)
+                .single();
+            if (error) throw error;
+            setCsEvalDetailCompact(false);
+            document.getElementById('csEvalDetailOverlay')?.classList.add('manual-report-detail');
+            const staff = Array.isArray(report.cs_manual_report_staff) ? report.cs_manual_report_staff : [];
+            const preview = buildManualReportPreviewFromData(report, staff);
+            const title = document.getElementById('csEvalDetailTitle');
+            const subtitle = document.getElementById('csEvalDetailSubtitle');
+            const body = document.getElementById('csEvalDetailBody');
+            const footer = document.getElementById('csEvalDetailFooter');
+            if (title) title.textContent = report.report_code || 'Draft Laporan';
+            if (subtitle) subtitle.textContent = `${statusMeta[report.status]?.label || report.status} · ${report.deduction_percent}%`;
+            if (body) body.innerHTML = `<div class="cs-eval-report-preview">${esc(preview)}</div><div class="cs-eval-report-meta">Dibuat oleh: ${esc(report.created_by_name)} · ${esc(formatCsEvalDate(report.created_at, true))}<br>Periode: ${esc(selectedPeriod()?.label || '')}<br>Potongan sistem: ${Number(report.deduction_percent)}% per staff<br>Status: ${esc(statusMeta[report.status]?.label || report.status)}${report.approved_by ? `<br>Diproses oleh: ${esc(report.approved_by)}` : ''}</div>`;
+            csEvalState.detailCopyText = preview;
+            const actions = [`<button class="cs-eval-button" type="button" onclick="copyCsEvalDetailText()">Salin Laporan</button>`];
+            if (csEvalCan('cs_manual_report_edit') && ['submitted', 'draft'].includes(report.status)) actions.push(`<button class="cs-eval-button" type="button" onclick="openCsManualReportModal('${report.id}')">Edit</button>`);
+            if (csEvalCan('cs_manual_report_approve') && report.status === 'submitted') {
+                actions.push(`<button class="cs-eval-button" type="button" onclick="processCsManualReport('${report.id}','rejected')">Tolak</button>`);
+                actions.push(`<button class="cs-eval-button primary" type="button" onclick="processCsManualReport('${report.id}','approved')">Setujui</button>`);
+            }
+            if (csEvalCan('cs_manual_report_delete') && report.status === 'submitted') actions.push(`<button class="cs-eval-button danger" type="button" onclick="deleteCsManualReport('${report.id}')">Hapus</button>`);
+            if (footer) footer.innerHTML = actions.join('');
+            openCsEvalModal('csEvalDetailOverlay');
+        } catch (error) {
+            showShiftToast(`Laporan gagal dibuka: ${error?.message || error}`, 'error');
+        }
+    };
+
+    processCsManualReport = async function processCsManualReportV6464(id, status) {
+        const actionKey = `process-manual:${id}`;
+        if (csEvalState.pendingActions.has(actionKey)) return;
+        csEvalState.pendingActions.add(actionKey);
+        const approved = status === 'approved';
+        try {
+            const note = await requestCsEvalInput({
+                title: approved ? 'Setujui Potongan Manual' : 'Tolak Potongan Manual',
+                message: approved ? 'Catatan persetujuan bersifat opsional.' : 'Tambahkan catatan penolakan apabila diperlukan.',
+                label: 'Catatan (Opsional)',
+                confirmText: approved ? 'Setujui Laporan' : 'Tolak Laporan',
+                variant: approved ? 'default' : 'danger'
+            });
+            if (note === null) return;
+            const { error } = await supabaseDashboard.rpc('process_cs_manual_report_v6464', {
+                p_report_id: id,
+                p_status: status,
+                p_note: note
+            });
+            if (error) throw error;
+            closeCsEvalModal('csEvalDetailOverlay');
+            csEvalState.dashboardStatCache.loadedAt = 0;
+            showShiftToast(approved ? 'Laporan disetujui dan masuk perhitungan bonus.' : 'Laporan ditolak.', 'success');
+            markCsEvaluationDirty();
+            await refreshCsEvaluation(false);
+        } catch (error) {
+            showShiftToast(`Laporan gagal diproses: ${error?.message || error}`, 'error', 4600);
+        } finally {
+            csEvalState.pendingActions.delete(actionKey);
+        }
+    };
+
+    async function cancelCsManualReportDecision(id, previousStatus = '') {
+        if (!csEvalCan('cs_manual_report_approve')) return;
+        const actionKey = `cancel-manual-decision:${id}`;
+        if (csEvalState.pendingActions.has(actionKey)) return;
+        csEvalState.pendingActions.add(actionKey);
+        try {
+            const reason = await requestCsEvalInput({
+                title: 'Batalkan Keputusan Potongan Manual',
+                message: `Keputusan ${statusMeta[previousStatus]?.label || previousStatus || ''} akan dikembalikan menjadi Diajukan. Dampak potongan pada staff langsung dinonaktifkan.`,
+                label: 'Alasan Pembatalan',
+                placeholder: 'Tuliskan alasan pembatalan keputusan',
+                confirmText: 'Batalkan Keputusan',
+                variant: 'danger',
+                maxLength: 500
+            });
+            if (reason === null) return;
+            if (cleanText(reason).length < 5) {
+                showShiftToast('Alasan pembatalan minimal 5 karakter.', 'warning');
+                return;
+            }
+            const { error } = await supabaseDashboard.rpc('cancel_cs_manual_report_decision_v6464', {
+                p_report_id: id,
+                p_reason: reason
+            });
+            if (error) throw error;
+            closeCsEvalModal('csEvalDetailOverlay');
+            csEvalState.dashboardStatCache.loadedAt = 0;
+            showShiftToast('Keputusan dibatalkan. Laporan kembali menjadi Diajukan dan potongan dinonaktifkan.', 'success', 4800);
+            markCsEvaluationDirty();
+            await refreshCsEvaluation(false);
+        } catch (error) {
+            showShiftToast(`Keputusan gagal dibatalkan: ${error?.message || error}`, 'error', 5200);
+        } finally {
+            csEvalState.pendingActions.delete(actionKey);
+        }
+    }
+
+    deleteCsManualReport = async function deleteCsManualReportV6464(id) {
+        if (!csEvalCan('cs_manual_report_delete')) return;
+        const actionKey = `archive-manual:${id}`;
+        if (csEvalState.pendingActions.has(actionKey)) return;
+        csEvalState.pendingActions.add(actionKey);
+        try {
+            const row = csEvalState.rows.find(item => String(item.id) === String(id));
+            const confirmed = await requestDeleteConfirmation({
+                title: 'Hapus Laporan Potongan Manual',
+                message: row?.report_code ? `${row.report_code} · ${row.subject}` : (row?.subject || 'Laporan potongan manual'),
+                note: 'Laporan Diajukan akan diarsipkan. Data staff dan riwayat tetap tersimpan; nomor ID dapat digunakan kembali.',
+                confirmText: 'Hapus Laporan'
+            });
+            if (!confirmed) return;
+            const { error } = await supabaseDashboard.rpc('archive_cs_manual_report_v6464', { p_report_id: id });
+            if (error) throw error;
+            closeCsEvalModal('csEvalDetailOverlay');
+            showShiftToast('Laporan potongan manual berhasil dihapus dari daftar aktif.', 'success');
+            markCsEvaluationDirty();
+            await refreshCsEvaluation(false);
+        } catch (error) {
+            showShiftToast(`Laporan gagal dihapus: ${error?.message || error}`, 'error', 4600);
+        } finally {
+            csEvalState.pendingActions.delete(actionKey);
+        }
+    };
+
+    loadCsEvaluationCurrentView = async function loadCsEvaluationCurrentViewV6464(options = {}) {
+        const force = options === true || Boolean(options?.force);
+        const silent = Boolean(options?.silent);
+        const requestedSeq = ++csEvalState.loadRequestedSeq;
+        if (!csEvalState.moduleAvailable) return;
+        if (!force && isCsEvaluationViewFresh()) return;
+        if (csEvalState.loading) return;
+
+        while (true) {
+            const runSeq = csEvalState.loadRequestedSeq;
+            const viewKeyBeforeLoad = csEvalViewKey();
+            csEvalState.loading = true;
+            const shouldShowBlockingLoader = !silent
+                && (!csEvalState.loadedViewKey || csEvalState.loadedViewKey !== viewKeyBeforeLoad);
+            if (shouldShowBlockingLoader) showCsEvalLoading();
+            try {
+                await loadCsEvalSummary();
+                if (csEvalState.subtab === 'current' || csEvalState.subtab === 'history') await loadCsEvalErrors();
+                if (csEvalState.subtab === 'appeals') await loadCsEvalAppeals();
+                if (csEvalState.subtab === 'manual') await loadCsEvalManualReports();
+                const stillCurrent = runSeq === csEvalState.loadRequestedSeq && viewKeyBeforeLoad === csEvalViewKey();
+                if (stillCurrent) {
+                    updateCsEvaluationSidebarBadge();
+                    csEvalState.loadedViewKey = csEvalViewKey();
+                    csEvalState.lastLoadedAt = Date.now();
+                    csEvalState.dirty = false;
+                    csEvalState.pagesBySubtab[csEvalState.subtab] = Number(csEvalState.page || 0);
+                    restoreCsEvalTablePosition();
+                    saveCsEvalViewState();
+                } else {
+                    csEvalState.dirty = true;
+                }
+            } catch (error) {
+                console.error('Evaluasi CS load error:', error);
+                if (['42P01', 'PGRST205', 'PGRST202'].includes(String(error?.code || '')) || /does not exist|not found|schema cache/i.test(String(error?.message || ''))) {
+                    showCsEvalModuleWarning(error);
+                } else {
+                    const body = document.getElementById('csEvalTableBody');
+                    if (body) body.innerHTML = `<tr><td><div class="cs-eval-module-warning">${iconSvg('warning')}<strong>Data gagal dimuat</strong><span>${esc(error.message || error)}</span></div></td></tr>`;
+                    if (typeof showShiftToast === 'function') showShiftToast(`Evaluasi CS gagal dimuat: ${error.message}`, 'error', 3800);
+                }
+            } finally {
+                csEvalState.loading = false;
+            }
+            if (runSeq === csEvalState.loadRequestedSeq) break;
+        }
+        return requestedSeq;
+    };
+
+    window.cancelCsManualReportDecision = cancelCsManualReportDecision;
+
     // Export public functions used by inline actions.
     Object.assign(window, {
         initializeCsEvaluation,
@@ -62309,6 +62690,7 @@ async function processCsEvaluationAppeal(id, status) {
         saveCsManualReport,
         viewCsManualReport,
         processCsManualReport,
+        cancelCsManualReportDecision,
         deleteCsManualReport,
         exportCsEvaluationCsv,
         renderCsEvaluationSettingsPanel,
@@ -65539,7 +65921,7 @@ html body.historyshift-mode #tab-historyshift .history-table-wrap::after {
 }
 
 </style>
-<script id="v64-17-build-marker">document.documentElement.dataset.dashboardBuild='v64.19';</script>
+<script id="v64-17-build-marker">void 0;</script>
 <!-- Dashboard Izin V64.19 — Balanced Three-column Settings Workspace -->
 
 
@@ -66078,7 +66460,7 @@ html body .sidebar.collapsed .sidebar-menu .sidebar-chevron-slot {
 })();
 </script>
 
-<script id="v64-20-build-marker">document.documentElement.dataset.dashboardBuild='v64.23';</script>
+<script id="v64-20-build-marker">void 0;</script>
 
 
 <style id="v64-21-evaluasi-cs-final">
@@ -66474,7 +66856,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .cs-eval-selected-staff-chip
 }
 </style>
 
-<script id="v64-21-build-marker">document.documentElement.dataset.dashboardBuild='v64.23';</script>
+<script id="v64-21-build-marker">void 0;</script>
 
 <style id="v64-22-evaluasi-cs-visual-live-preview">
 /* ================================================================
@@ -67227,7 +67609,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation {
 /* V64.25: previous external overrides disabled. Their stable logic is now integrated directly into the private Evaluasi CS module. */
 </script>
 
-<script id="v64-22-build-marker">document.documentElement.dataset.dashboardBuild='v64.23';</script>
+<script id="v64-22-build-marker">void 0;</script>
 
 
 <!-- ================================================================
@@ -67320,7 +67702,7 @@ html:not([data-theme="dark"]) #tab-evaluation .cs-eval-evidence-button {
 }
 </style>
 <script id="v64-24-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.24';
+void 0;
 </script>
 
 
@@ -67481,7 +67863,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-evi
 }
 </style>
 <script id="v64-25-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.26';
+void 0;
 </script>
 
 
@@ -67842,7 +68224,7 @@ html body #tab-settings :is(.settings-table-heading,.permission-matrix-heading,.
     else start();
 })();
 </script>
-<script id="v64-26-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.26';</script>
+<script id="v64-26-build-marker">void 0;</script>
 
 
 
@@ -68496,7 +68878,7 @@ html[data-selected-theme="dark"] #tab-dashboard .employee-priority-card.livechat
 })();
 </script>
 
-<script id="v64-28-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.28';</script>
+<script id="v64-28-build-marker">void 0;</script>
 
 
 <!-- ================================================================
@@ -68581,7 +68963,7 @@ html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .
         0 3px 8px rgba(0,0,0,.15) !important;
 }
 </style>
-<script id="v64-29-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.29';</script>
+<script id="v64-29-build-marker">void 0;</script>
 
 
 
@@ -68732,7 +69114,7 @@ html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .
     window.setTimeout(install, 400);
 })();
 </script>
-<script id="v64-30-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.30';</script>
+<script id="v64-30-build-marker">void 0;</script>
 
 
 
@@ -68803,13 +69185,13 @@ html[data-theme="dark"][data-theme-variant="venom"] body #tab-dashboard .employe
 }
 </style>
 <script id="v64-36-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.36';
+void 0;
 </script>
 
 
 <!-- V64.38 — contextual Evaluasi CS action buttons -->
 <script id="v64-38-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.38';
+void 0;
 </script>
 
 
@@ -68855,7 +69237,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.38';
 }
 </style>
 <script id="v64-43-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.43';
+void 0;
 </script>
 
 
@@ -68889,7 +69271,7 @@ html[data-theme="light"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appe
 }
 </style>
 <script id="v64-46-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.46';
+void 0;
 </script>
 
 
@@ -68908,7 +69290,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.46';
 }
 </style>
 <script id="v64-47-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.47';
+void 0;
 </script>
 
 
@@ -68930,7 +69312,7 @@ html[data-theme="light"] #csEvalDetailOverlay.appeal-report-detail .cs-eval-appe
 }
 </style>
 <script id="v64-48-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.48';
+void 0;
 </script>
 
 
@@ -69043,7 +69425,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-tab
             }
 
             const [appealResult, manualResult, summaryResult] = await Promise.allSettled([
-                supabaseDashboard.rpc('get_cs_error_appeals_latest_v6458', {
+                supabaseDashboard.rpc('get_cs_error_appeals_latest_v6464', {
                     p_period_id: periodId,
                     p_search: null,
                     p_status: 'submitted',
@@ -69164,7 +69546,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-tab
 })();
 </script>
 <script id="v64-49-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.49';
+void 0;
 </script>
 
 
@@ -69255,7 +69637,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.49';
 }
 </style>
 <script id="v64-50-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.50';
+void 0;
 </script>
 
 
@@ -69272,7 +69654,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.50';
 }
 </style>
 <script id="v64-51-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.51';
+void 0;
 </script>
 
 
@@ -69292,7 +69674,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.51';
 }
 </style>
 <script id="v64-54-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.54';
+void 0;
 </script>
 
 
@@ -69300,7 +69682,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.54';
      V64.57 — Popup wording for first and subsequent appeals
      ================================================================ -->
 <script id="v64-56-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.57';
+void 0;
 </script>
 
 
@@ -69325,10 +69707,8 @@ document.documentElement.dataset.dashboardBuild = 'v64.57';
 }
 </style>
 <script id="v64-63-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.63';
+void 0;
 </script>
-</body>
-</html>
 
 <!-- ================================================================
      V64.31 — Appeal report structured rendering + manager approval action
@@ -69356,7 +69736,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.63';
     min-width: 64px !important;
 }
 </style>
-<script id="v64-31-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.31';</script>
+<script id="v64-31-build-marker">void 0;</script>
 
 
 <!-- ================================================================
@@ -69446,14 +69826,14 @@ html[data-theme="dark"] #tab-dashboard .employee-priority-card.livechat-appeal .
         0 3px 8px rgba(0,0,0,.15) !important;
 }
 </style>
-<script id="v64-32-build-marker">document.documentElement.dataset.dashboardBuild = 'v64.32';</script>
+<script id="v64-32-build-marker">void 0;</script>
 
 
 <!-- ================================================================
      V64.33 — Manual report edit keeps staff dropdown closed
      ================================================================ -->
 <script id="v64-33-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.33';
+void 0;
 </script>
 
 <!-- ================================================================
@@ -69547,7 +69927,7 @@ html body #tab-dashboard .employee-priority-card .employee-priority-table tbody 
 }
 </style>
 <script id="v64-34-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.34';
+void 0;
 </script>
 
 <!-- ================================================================
@@ -69675,7 +70055,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body #tab-dashboard .employe
 }
 </style>
 <script id="v64-35-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.35';
+void 0;
 </script>
 
 
@@ -70023,7 +70403,7 @@ html[data-theme="dark"] :is(
 })();
 </script>
 <script id="v64-37-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.37';
+void 0;
 </script>
 
 
@@ -70048,7 +70428,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.37';
 }
 </style>
 <script id="v64-39-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.39';
+void 0;
 </script>
 
 
@@ -70222,7 +70602,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-
 }
 </style>
 <script id="v64-40-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.40';
+void 0;
 </script>
 
 <!-- ================================================================
@@ -70338,7 +70718,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-
 }
 </style>
 <script id="v64-41-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.41';
+void 0;
 </script>
 
 
@@ -70431,7 +70811,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-
 }
 </style>
 <script id="v64-42-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.42';
+void 0;
 </script>
 
 <!-- ================================================================
@@ -70484,7 +70864,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.42';
 }
 </style>
 <script id="v64-44-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.44';
+void 0;
 </script>
 
 <!-- ================================================================
@@ -70588,7 +70968,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #csEvalDetailOverlay.appeal-
 }
 </style>
 <script id="v64-45-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.45';
+void 0;
 </script>
 
 <!-- ================================================================
@@ -70608,7 +70988,7 @@ document.documentElement.dataset.dashboardBuild = 'v64.45';
 }
 </style>
 <script id="v64-52-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.52';
+void 0;
 </script>
 
 <!-- ================================================================
@@ -70661,14 +71041,14 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-sou
 }
 </style>
 <script id="v64-53-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.53';
+void 0;
 </script>
 
 <!-- ================================================================
      V64.55 — Reliable direct deletion for submitted CS appeals
      ================================================================ -->
 <script id="v64-55-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.55';
+void 0;
 </script>
 
 
@@ -70695,20 +71075,20 @@ document.documentElement.dataset.dashboardBuild = 'v64.55';
 #csEvalDetailOverlay .cs-eval-correction-match strong { text-align:right; font-weight:600; }
 @media (max-width:720px) { #csEvalDetailOverlay .cs-eval-correction-change { grid-template-columns:1fr; } #csEvalDetailOverlay .cs-eval-correction-match { flex-direction:column; } #csEvalDetailOverlay .cs-eval-correction-match strong { text-align:left; } }
 </style>
-<script id="v64-58-build-marker">document.documentElement.dataset.dashboardBuild='v64.58';</script>
+<script id="v64-58-build-marker">void 0;</script>
 
 <!-- ================================================================
      V64.59 — Sequential appeal archive fix and single-step cancellation
      ================================================================ -->
 <script id="v64-59-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.59';
+void 0;
 </script>
 
 <!-- ================================================================
      V64.61 — Evaluasi CS deterministic F5 state restore
      ================================================================ -->
 <script id="v64-61-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.61';
+void 0;
 </script>
 
 <!-- ================================================================
@@ -70740,6 +71120,27 @@ document.documentElement.dataset.dashboardBuild = 'v64.61';
 }
 </style>
 <script id="v64-62-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.62';
+void 0;
 </script>
 
+<!-- ================================================================
+     V64.64 — Evaluasi CS integrated stabilization final lock
+     ================================================================ -->
+<style id="v64-64-evaluation-stabilization-final-lock">
+#tab-evaluation .cs-eval-table-footer {
+    flex: 0 0 auto !important;
+    margin-top: auto !important;
+}
+#tab-evaluation .cs-eval-row-actions .cs-eval-icon-button[disabled] {
+    pointer-events: none !important;
+    opacity: .52 !important;
+}
+#tab-evaluation .cs-eval-table[data-cs-eval-view="manual"] {
+    min-width: 1240px !important;
+}
+</style>
+<script id="v64-64-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.64';
+</script>
+</body>
+</html>
