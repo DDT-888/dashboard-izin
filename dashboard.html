@@ -72679,8 +72679,211 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
 }
 </style>
 
+
+
+<!-- ================================================================
+     V64.74 — Custom Ticker Grip + Native Permission Row Lines
+     ================================================================ -->
+<style id="v64-74-venom-ticker-grip-permission-native-lines">
+/* Custom resize grip. Native browser grip remains disabled only in Venom. */
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active .settings-ticker-text {
+    position: relative !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #tickerTextInput {
+    height: var(--ticker-venom-user-height, auto) !important;
+    min-height: 150px !important;
+    max-height: 420px !important;
+    resize: none !important;
+    padding-right: 22px !important;
+    padding-bottom: 18px !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active .ticker-theme-resize-grip {
+    position: absolute !important;
+    right: 8px !important;
+    bottom: 7px !important;
+    z-index: 8 !important;
+    width: 15px !important;
+    height: 15px !important;
+    display: block !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 3px !important;
+    color: rgba(109,225,91,.78) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    cursor: ns-resize !important;
+    touch-action: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active .ticker-theme-resize-grip::before {
+    content: '' !important;
+    position: absolute !important;
+    inset: 1px !important;
+    background:
+        linear-gradient(135deg,transparent 0 48%,currentColor 49% 55%,transparent 56%) right bottom/7px 7px no-repeat,
+        linear-gradient(135deg,transparent 0 48%,currentColor 49% 55%,transparent 56%) right 3px bottom 3px/11px 11px no-repeat !important;
+    opacity: .86 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active .ticker-theme-resize-grip:hover,
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active .ticker-theme-resize-grip.is-dragging {
+    color: #70eb5e !important;
+    background: rgba(68,214,44,.07) !important;
+}
+/* Hide the custom grip outside Venom; other themes retain their own native UI. */
+html:not([data-theme-variant="venom"]) .ticker-theme-resize-grip {
+    display: none !important;
+}
+
+/* Permission Matrix: use the same cell-border model as the stable themes.
+   No row gradients, no inset shadows, no pseudo-line overlays. */
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table,
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table :is(thead,tbody,tr) {
+    background-image: none !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > thead > tr,
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > tbody > tr:not(.permission-group-row) {
+    column-gap: 0 !important;
+    row-gap: 0 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table thead th {
+    color: #dce8d8 !important;
+    background: #090c09 !important;
+    background-image: none !important;
+    border-top: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(68,214,44,.16) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table tbody tr:not(.permission-group-row) > td {
+    background: #0d100d !important;
+    background-image: none !important;
+    border-top: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(68,214,44,.09) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table tbody tr:not(.permission-group-row):hover > td {
+    background: #111611 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table tbody tr.permission-group-row > td {
+    background: #111611 !important;
+    background-image: none !important;
+    border: 0 !important;
+    border-bottom: 1px solid rgba(68,214,44,.12) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table tbody tr:last-child > td {
+    border-bottom: 0 !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel :is(
+    .permission-feature-content,.permission-feature-cell,.permission-role-cell,
+    .permission-role-header,.permission-cell-tooltip,.permission-status-cell,
+    .permission-group-label
+) {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background-image: none !important;
+}
+</style>
+
+<script id="v64-74-custom-ticker-resize-grip">
+(() => {
+    const STORAGE_KEY = 'ddtTickerVenomHeightV6474';
+    const MIN_HEIGHT = 150;
+    const MAX_HEIGHT = 420;
+
+    function clamp(value) {
+        return Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, Math.round(value)));
+    }
+
+    function applyHeight(textarea, value) {
+        const height = clamp(value);
+        textarea.style.setProperty('--ticker-venom-user-height', `${height}px`);
+        try { localStorage.setItem(STORAGE_KEY, String(height)); } catch (_) {}
+    }
+
+    function ensureGrip() {
+        const textarea = document.getElementById('tickerTextInput');
+        if (!textarea || !textarea.parentElement) return;
+        const host = textarea.parentElement;
+        if (!host.classList.contains('settings-ticker-text')) return;
+
+        let grip = host.querySelector('.ticker-theme-resize-grip');
+        if (!grip) {
+            grip = document.createElement('button');
+            grip.type = 'button';
+            grip.className = 'ticker-theme-resize-grip';
+            grip.setAttribute('aria-label', 'Ubah tinggi kotak Teks Ticker');
+            grip.title = 'Tarik untuk mengubah tinggi';
+            host.appendChild(grip);
+
+            grip.addEventListener('pointerdown', event => {
+                if (event.button !== 0 && event.pointerType !== 'touch') return;
+                event.preventDefault();
+                const startY = event.clientY;
+                const startHeight = textarea.getBoundingClientRect().height;
+                grip.classList.add('is-dragging');
+                try { grip.setPointerCapture(event.pointerId); } catch (_) {}
+
+                const move = moveEvent => {
+                    moveEvent.preventDefault();
+                    applyHeight(textarea, startHeight + (moveEvent.clientY - startY));
+                };
+                const stop = () => {
+                    grip.classList.remove('is-dragging');
+                    grip.removeEventListener('pointermove', move);
+                    grip.removeEventListener('pointerup', stop);
+                    grip.removeEventListener('pointercancel', stop);
+                };
+                grip.addEventListener('pointermove', move);
+                grip.addEventListener('pointerup', stop);
+                grip.addEventListener('pointercancel', stop);
+            });
+
+            grip.addEventListener('dblclick', event => {
+                event.preventDefault();
+                applyHeight(textarea, 155);
+            });
+        }
+
+        try {
+            const stored = Number(localStorage.getItem(STORAGE_KEY));
+            if (Number.isFinite(stored) && stored >= MIN_HEIGHT) applyHeight(textarea, stored);
+        } catch (_) {}
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureGrip, { once: true });
+    } else {
+        ensureGrip();
+    }
+
+    const observer = new MutationObserver(() => ensureGrip());
+    observer.observe(document.documentElement, { subtree: true, childList: true });
+})();
+</script>
+
 <script id="v64-65-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.73';
+document.documentElement.dataset.dashboardBuild = 'v64.74';
 </script>
 
 </body>
