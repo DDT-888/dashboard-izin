@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.27-evaluasi-dashboard-polish">
+    <meta name="dashboard-build" content="v64.65-theme-isolation">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -60,7 +60,7 @@
                 venom: {
                     rendered: 'dark', bg: '#070707', card: '#101010',
                     accent: '#44d62c', title: '#67e853', subtitle: '#91aa8d',
-                    scheme: 'dark', meta: '#070707', variant: 'venom'
+                    scheme: 'dark', meta: '#070707', variant: 'venom', family: 'gaming'
                 }
             };
 
@@ -73,6 +73,11 @@
                 root.setAttribute('data-theme-variant', config.variant);
             } else {
                 root.removeAttribute('data-theme-variant');
+            }
+            if (config.family) {
+                root.setAttribute('data-theme-family', config.family);
+            } else {
+                root.removeAttribute('data-theme-family');
             }
 
             root.style.colorScheme = config.scheme;
@@ -42651,6 +42656,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
             const root = document.documentElement;
             const isVenomTheme = selectedTheme === 'venom';
             const renderedTheme = isVenomTheme ? 'dark' : selectedTheme;
+            const themeFamily = isVenomTheme ? 'gaming' : '';
 
             root.setAttribute('data-theme', renderedTheme);
             root.dataset.selectedTheme = selectedTheme;
@@ -42659,6 +42665,11 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 root.setAttribute('data-theme-variant', 'venom');
             } else {
                 root.removeAttribute('data-theme-variant');
+            }
+            if (themeFamily) {
+                root.setAttribute('data-theme-family', themeFamily);
+            } else {
+                root.removeAttribute('data-theme-family');
             }
 
             if (document.body) {
@@ -42669,6 +42680,11 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                     document.body.setAttribute('data-theme-variant', 'venom');
                 } else {
                     document.body.removeAttribute('data-theme-variant');
+                }
+                if (themeFamily) {
+                    document.body.setAttribute('data-theme-family', themeFamily);
+                } else {
+                    document.body.removeAttribute('data-theme-family');
                 }
             }
 
@@ -71124,23 +71140,405 @@ void 0;
 </script>
 
 <!-- ================================================================
-     V64.64 — Evaluasi CS integrated stabilization final lock
+     V64.65 — Cyber Dark / Gaming Theme Isolation and Venom Coverage
      ================================================================ -->
-<style id="v64-64-evaluation-stabilization-final-lock">
+<style id="v64-65-theme-isolation-final-lock">
+/* ------------------------------------------------------------------
+   Theme family foundation
+   - Cyber Dark: selectedTheme="dark", no gaming family.
+   - Venom and future gaming themes: data-theme-family="gaming".
+   This prevents generic Dark/Cyber rules from becoming the visual source
+   of truth for gaming themes.
+   ------------------------------------------------------------------ */
+html[data-theme-family="gaming"] {
+    --gaming-accent: #44d62c;
+    --gaming-accent-hover: #59e345;
+    --gaming-accent-soft: rgba(68,214,44,.10);
+    --gaming-surface-0: #080a08;
+    --gaming-surface-1: #0c0f0c;
+    --gaming-surface-2: #111511;
+    --gaming-surface-3: #151a15;
+    --gaming-line: rgba(112,145,108,.25);
+    --gaming-line-strong: rgba(68,214,44,.31);
+    --gaming-text: #edf4ea;
+    --gaming-text-secondary: #b8c5b5;
+    --gaming-text-muted: #778474;
+}
+
+/* ============================ CYBER DARK ============================ */
+/* Register User: remove the remaining white upper rim from Role. */
+html[data-selected-theme="dark"]:not([data-theme-family="gaming"])
+#tab-users .user-register-form #inputUserRole {
+    color: #d9e6ef !important;
+    background: linear-gradient(180deg,#121b24,#0f1720) !important;
+    background-image: none !important;
+    border-color: rgba(64,143,181,.34) !important;
+    box-shadow: inset 0 1px 0 rgba(39,217,239,.055) !important;
+    outline: 0 !important;
+}
+html[data-selected-theme="dark"]:not([data-theme-family="gaming"])
+#tab-users .user-register-form #inputUserRole:focus {
+    border-color: rgba(39,217,239,.58) !important;
+    box-shadow: 0 0 0 3px rgba(39,217,239,.10) !important;
+}
+
+/* Evaluasi CS controls: Cyber-specific cyan line, never a white top rim. */
+html[data-selected-theme="dark"]:not([data-theme-family="gaming"])
+#tab-evaluation .cs-eval-search input,
+html[data-selected-theme="dark"]:not([data-theme-family="gaming"])
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-trigger,.unified-custom-filter-trigger) {
+    color: #d9e6ef !important;
+    background: linear-gradient(180deg,#121c26,#0f1821) !important;
+    border-color: rgba(65,145,183,.34) !important;
+    box-shadow: inset 0 1px 0 rgba(39,217,239,.05) !important;
+}
+html[data-selected-theme="dark"]:not([data-theme-family="gaming"])
+#tab-evaluation .cs-eval-search:focus-within,
+html[data-selected-theme="dark"]:not([data-theme-family="gaming"])
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-trigger,.unified-custom-filter-trigger):focus-visible {
+    border-color: rgba(39,217,239,.60) !important;
+    box-shadow: 0 0 0 3px rgba(39,217,239,.10) !important;
+}
+
+/* Evidence tile: replace white inner highlight with a controlled cyan tint. */
+html[data-selected-theme="dark"]:not([data-theme-family="gaming"])
+#tab-evaluation .cs-eval-evidence-surface,
+html[data-selected-theme="dark"]:not([data-theme-family="gaming"])
+#csEvalDetailOverlay .cs-eval-evidence-surface {
+    color: #68b9c8 !important;
+    background: #142833 !important;
+    background-image: none !important;
+    border-color: rgba(104,185,200,.38) !important;
+    box-shadow: inset 0 1px 0 rgba(104,185,200,.07),0 2px 5px rgba(0,0,0,.16) !important;
+}
+
+/* ======================= GAMING / VENOM GREEN ====================== */
+/* Dashboard — all four priority tables use one gaming header system. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card .employee-priority-table > thead,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card .employee-priority-table > thead > tr,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-table > thead > tr > th {
+    color: #c7d2c4 !important;
+    background: #090c09 !important;
+    background-image: none !important;
+    border-top-color: transparent !important;
+    border-bottom-color: rgba(68,214,44,.22) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th::before,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card .employee-priority-table > thead > tr > th::after {
+    background: #090c09 !important;
+    background-image: none !important;
+    border-color: rgba(68,214,44,.18) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card.livechat-appeal .employee-priority-heading {
+    background: #0b0e0b !important;
+    border-bottom-color: rgba(68,214,44,.20) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-dashboard .employee-priority-card.livechat-appeal :is(.employee-priority-count.appeal,.employee-priority-status.submitted) {
+    color: #9cf18e !important;
+    background: #111a11 !important;
+    background-image: none !important;
+    border-color: rgba(68,214,44,.31) !important;
+    box-shadow: none !important;
+}
+
+/* Sidebar Evaluasi CS indicator. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#menuEvaluation > #sidebarBadgeEvaluation {
+    color: #a0f291 !important;
+    background: rgba(68,214,44,.10) !important;
+    border-color: rgba(68,214,44,.24) !important;
+    box-shadow: none !important;
+}
+
+/* Evaluasi CS: controls, filters, inactive tabs and all accent carriers. */
+html[data-theme="dark"][data-theme-family="gaming"] #tab-evaluation {
+    --cs-eval-panel: var(--gaming-surface-1) !important;
+    --cs-eval-panel-soft: var(--gaming-surface-2) !important;
+    --cs-eval-border: var(--gaming-line) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation :is(.cs-eval-subnav,.cs-eval-main-panel,.cs-eval-summary-panel,.cs-eval-table-footer) {
+    color: var(--gaming-text-secondary) !important;
+    background-color: var(--gaming-surface-1) !important;
+    background-image: none !important;
+    border-color: var(--gaming-line) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-tab-button:not(.active) {
+    color: #9cad99 !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    text-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-tab-button:not(.active):hover {
+    color: #d9ead5 !important;
+    background: rgba(68,214,44,.065) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-tab-button.active {
+    color: #9df28d !important;
+    background: rgba(68,214,44,.10) !important;
+    border-color: rgba(68,214,44,.25) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-search input,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-trigger,.unified-custom-filter-trigger) {
+    color: var(--gaming-text) !important;
+    background: linear-gradient(180deg,var(--gaming-surface-2),var(--gaming-surface-1)) !important;
+    border-color: var(--gaming-line) !important;
+    box-shadow: inset 0 1px 0 rgba(68,214,44,.035) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-search:focus-within,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-trigger,.unified-custom-filter-trigger):focus-visible {
+    border-color: var(--gaming-line-strong) !important;
+    box-shadow: 0 0 0 3px var(--gaming-accent-soft) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation :is(.cs-eval-filter-leading,.cs-eval-v6423-filter-leading) {
+    color: #91e982 !important;
+    background: #121b12 !important;
+    border-color: rgba(68,214,44,.26) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-search > svg {
+    color: #7fdc70 !important;
+    stroke: currentColor !important;
+}
+
+/* Count, active-period and footer. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation :is(.cs-eval-count-chip,.cs-eval-period-indicator) {
+    color: #b9d9b3 !important;
+    background: #111811 !important;
+    border-color: rgba(68,214,44,.22) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-period-indicator .dot {
+    background: var(--gaming-accent) !important;
+    box-shadow: 0 0 0 3px rgba(68,214,44,.10) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
 #tab-evaluation .cs-eval-table-footer {
-    flex: 0 0 auto !important;
-    margin-top: auto !important;
+    color: var(--gaming-text-muted) !important;
+    background: #0a0d0a !important;
+    border-top: 1px solid rgba(68,214,44,.18) !important;
 }
-#tab-evaluation .cs-eval-row-actions .cs-eval-icon-button[disabled] {
-    pointer-events: none !important;
-    opacity: .52 !important;
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-table-footer :is(#csEvalPageInfo,#csEvalPageNumber) {
+    color: #a9bba6 !important;
 }
-#tab-evaluation .cs-eval-table[data-cs-eval-view="manual"] {
-    min-width: 1240px !important;
+
+/* Summary labels, numbers and ranking badges. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-summary-heading strong,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-summary-section-title > span:first-child {
+    color: #dce9d8 !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-summary-heading span,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-stat-card span,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-rank-user span,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-rank-score span {
+    color: #869683 !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-stat-card strong,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-rank-user strong,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-rank-score strong {
+    color: #dce9d8 !important;
+    text-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-rank-number {
+    color: #99ef8a !important;
+    background: #121a12 !important;
+    border-color: rgba(68,214,44,.28) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-rank-row {
+    background: #101410 !important;
+    border-color: rgba(68,214,44,.13) !important;
+}
+
+/* Evidence tile: no white highlight in gaming themes. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-evidence-surface,
+html[data-theme="dark"][data-theme-family="gaming"]
+#csEvalDetailOverlay .cs-eval-evidence-surface {
+    color: #86dc79 !important;
+    background: #142117 !important;
+    background-image: none !important;
+    border-color: rgba(121,201,110,.38) !important;
+    box-shadow: inset 0 1px 0 rgba(68,214,44,.045),0 2px 5px rgba(0,0,0,.20) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-evidence-number,
+html[data-theme="dark"][data-theme-family="gaming"]
+#csEvalDetailOverlay .cs-eval-evidence-number {
+    color: #071007 !important;
+    background: #58de43 !important;
+    border-color: #0b0e0b !important;
+    box-shadow: none !important;
+}
+
+/* Loading state. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-loading {
+    color: #92a68f !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-evaluation .cs-eval-loading-spinner {
+    border-color: rgba(68,214,44,.18) !important;
+    border-top-color: #58de43 !important;
+    box-shadow: none !important;
+}
+
+/* ============================= SETTINGS ============================ */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings :is(
+    .form-group > label,
+    .settings-color-guide-title,
+    .settings-section-heading .section-title,
+    .settings-section-heading .section-desc,
+    .settings-duration-copy .section-title,
+    .settings-duration-copy .section-desc,
+    .employee-settings-field > label,
+    .cs-eval-settings-field > label,
+    .cs-eval-settings-field > small,
+    .cs-eval-range-row,
+    .settings-role-grid > label > span,
+    .hint
+) {
+    color: var(--gaming-text-secondary) !important;
+    text-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings :is(
+    .settings-system-table,
+    .employee-settings-panel,
+    .cs-eval-settings-panel,
+    .settings-access-section,
+    .cs-eval-settings-group,
+    .cs-eval-range-table
+) {
+    background-color: var(--gaming-surface-1) !important;
+    background-image: none !important;
+    border-color: var(--gaming-line) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings :is(
+    input,select,textarea,
+    .settings-number-with-unit,
+    .number-unit,
+    .cs-eval-percent-field
+) {
+    color: var(--gaming-text) !important;
+    background-color: #0b0e0b !important;
+    background-image: none !important;
+    border-color: rgba(112,145,108,.30) !important;
+    box-shadow: inset 0 1px 0 rgba(68,214,44,.028) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings :is(input,select,textarea):focus {
+    border-color: var(--gaming-line-strong) !important;
+    box-shadow: 0 0 0 3px var(--gaming-accent-soft) !important;
+}
+/* Passport / Visa / Training monitoring boxes. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #employeeMonitoringSettingsPanel .employee-settings-field,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #employeeMonitoringSettingsPanel .number-unit {
+    background: #0d110d !important;
+    border-color: rgba(68,214,44,.22) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #employeeMonitoringSettingsPanel .number-unit > span {
+    color: #879684 !important;
+    background: #111611 !important;
+    border-color: rgba(68,214,44,.16) !important;
+}
+/* Evaluasi CS & Bonus complete isolation. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #csEvaluationSettingsPanel :is(
+    .settings-table-heading,
+    .cs-eval-settings-content,
+    .cs-eval-settings-group,
+    .cs-eval-range-row,
+    .cs-eval-range-head,
+    .cs-eval-settings-actions
+) {
+    color: var(--gaming-text-secondary) !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: var(--gaming-line) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #csEvaluationSettingsPanel :is(h3,.section-title,.cs-eval-range-row strong) {
+    color: var(--gaming-text) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #csEvaluationSettingsPanel :is(p,.section-desc,small,label,.cs-eval-range-head span) {
+    color: var(--gaming-text-muted) !important;
+}
+/* Match the standard Settings save button exactly. */
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #csEvalSaveSettingsButton,
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #csEvalSaveSettingsButton.cs-eval-button.primary {
+    min-height: 34px !important;
+    color: #050705 !important;
+    background: var(--gaming-accent) !important;
+    background-image: none !important;
+    border-color: var(--gaming-accent) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #csEvalSaveSettingsButton:hover:not(:disabled) {
+    color: #030503 !important;
+    background: var(--gaming-accent-hover) !important;
+    border-color: var(--gaming-accent-hover) !important;
+}
+html[data-theme="dark"][data-theme-family="gaming"]
+#tab-settings #csEvalSaveSettingsButton :is(span,svg,path) {
+    color: inherit !important;
+    stroke: currentColor !important;
 }
 </style>
-<script id="v64-64-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.64';
+<script id="v64-65-build-marker">
+document.documentElement.dataset.dashboardBuild = 'v64.65';
 </script>
+
 </body>
 </html>
