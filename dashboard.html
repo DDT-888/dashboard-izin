@@ -75128,8 +75128,94 @@ html body .sidebar.collapsed
     transform: translateZ(0) scale(1.02) !important;
 }
 </style>
+
+<style id="v64-77-4-collapsed-badge-readability">
+/* V64.77.4 — readable at browser zoom 100% while remaining compact. */
+html body .sidebar.collapsed
+.sidebar-menu-categorized .sidebar-category > .menu-item.sidebar-standard-row > .badge {
+    inset: 1px 1px auto auto !important;
+    min-width: 14px !important;
+    max-width: 28px !important;
+    height: 14px !important;
+    min-height: 14px !important;
+    padding: 0 2.5px !important;
+
+    border-width: 1.5px !important;
+    border-color: color-mix(in srgb, var(--sidebar-bg) 90%, var(--sidebar-border)) !important;
+
+    font-size: 8px !important;
+    font-weight: 650 !important;
+    line-height: 1 !important;
+    letter-spacing: -.04px !important;
+    font-variant-numeric: tabular-nums lining-nums !important;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    text-shadow: 0 1px 1px rgba(0,0,0,.18) !important;
+
+    box-shadow:
+        0 1px 5px rgba(0,0,0,.24),
+        0 0 0 1px color-mix(in srgb, currentColor 7%, transparent) inset !important;
+}
+
+html body .sidebar.collapsed
+.sidebar-menu-categorized .sidebar-category > .menu-item.sidebar-standard-row:hover > .badge,
+html body .sidebar.collapsed
+.sidebar-menu-categorized .sidebar-category > .menu-item.sidebar-standard-row.active > .badge {
+    transform: translateZ(0) scale(1.02) !important;
+    box-shadow:
+        0 2px 6px rgba(0,0,0,.27),
+        0 0 0 1px color-mix(in srgb, currentColor 10%, transparent) inset !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+.sidebar.collapsed .sidebar-menu-categorized
+.sidebar-category > .menu-item.sidebar-standard-row > .badge {
+    border-color: #070a07 !important;
+    text-shadow: 0 1px 1px rgba(0,0,0,.30) !important;
+    box-shadow:
+        0 1px 6px rgba(0,0,0,.34),
+        0 0 0 1px rgba(68,214,44,.10) inset !important;
+}
+</style>
+
+<script id="v64-77-4-sidebar-badge-value-format">
+(() => {
+    'use strict';
+    const BADGE_IDS = ['sidebarBadgeIzin', 'sidebarBadgeVoucher', 'sidebarBadgeTotal'];
+
+    function formatBadgeValue(badge) {
+        if (!badge) return;
+        const raw = String(badge.textContent || '').trim();
+        if (raw === '99+') return;
+        const numeric = Number(raw.replace(/[^0-9.-]/g, ''));
+        if (!Number.isFinite(numeric)) return;
+        const normalized = Math.max(0, Math.floor(numeric));
+        const nextText = normalized > 99 ? '99+' : String(normalized);
+        if (badge.textContent !== nextText) badge.textContent = nextText;
+        badge.setAttribute('aria-label', normalized > 99 ? `${normalized} notifikasi` : `${nextText} notifikasi`);
+    }
+
+    function installBadgeFormatter() {
+        BADGE_IDS.forEach(id => {
+            const badge = document.getElementById(id);
+            if (!badge || badge.dataset.compactValueObserver === '1') return;
+            badge.dataset.compactValueObserver = '1';
+            formatBadgeValue(badge);
+            const observer = new MutationObserver(() => formatBadgeValue(badge));
+            observer.observe(badge, { childList: true, characterData: true, subtree: true });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', installBadgeFormatter, { once: true });
+    } else {
+        installBadgeFormatter();
+    }
+    window.addEventListener('load', installBadgeFormatter, { once: true });
+})();
+</script>
 <script id="v64-75-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.77.3';
+document.documentElement.dataset.dashboardBuild = 'v64.77.4';
 </script>
 
 </body>
