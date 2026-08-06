@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.81.0-mecha-ivory">
+    <meta name="dashboard-build" content="v64.81.1-mecha-ivory-indicator-fix">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -63229,6 +63229,13 @@ async function processCsEvaluationAppeal(id, status) {
                     csEvalState.pagesBySubtab[csEvalState.subtab] = Number(csEvalState.page || 0);
                     restoreCsEvalTablePosition();
                     saveCsEvalViewState();
+                    window.dispatchEvent(new CustomEvent('cs-evaluation-view-ready', {
+                        detail: {
+                            subtab: csEvalState.subtab,
+                            viewKey: csEvalState.loadedViewKey,
+                            loadedAt: csEvalState.lastLoadedAt
+                        }
+                    }));
                 } else {
                     csEvalState.dirty = true;
                 }
@@ -75732,12 +75739,13 @@ html[data-theme="dark"][data-theme-variant="venom"] body #tab-monitoring .monito
 </style>
 
 
-<style id="v64-80-evaluation-new-audit-indicator-style">
+<style id="v64-81-1-evaluation-new-audit-indicator-style">
 /* =====================================================================
-   Dashboard V64.80.0 — Evaluasi CS: new audit result indicator.
-   A short three-pulse introduction is followed by a static dot.
+   Dashboard V64.81.1 — Evaluasi CS audit indicator stability fix.
+   The dot stays static; a separate halo pulses three times, then stops.
    ===================================================================== */
 #menuEvaluation > .sidebar-evaluation-new-dot {
+    position: relative !important;
     grid-column: 3 !important;
     justify-self: end !important;
     align-self: center !important;
@@ -75763,32 +75771,42 @@ html[data-theme="dark"][data-theme-variant="venom"] body #tab-monitoring .monito
         transform .20s cubic-bezier(.22,.61,.36,1) !important;
 }
 
+#menuEvaluation > .sidebar-evaluation-new-dot::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: -2px !important;
+    border: 1px solid color-mix(in srgb, var(--accent) 54%, transparent) !important;
+    border-radius: 50% !important;
+    opacity: 0;
+    transform: scale(.9) translateZ(0);
+    pointer-events: none !important;
+}
+
 #menuEvaluation > .sidebar-evaluation-new-dot.is-visible {
     opacity: 1 !important;
     visibility: visible !important;
     transform: scale(1) translateZ(0) !important;
 }
 
-#menuEvaluation > .sidebar-evaluation-new-dot.is-visible.is-pulsing {
-    animation: v64800EvaluationNewDotPulse .62s cubic-bezier(.22,.61,.36,1) 3 !important;
+#menuEvaluation > .sidebar-evaluation-new-dot.is-visible.is-pulsing::after {
+    animation: v64811EvaluationNewDotHalo .62s cubic-bezier(.22,.61,.36,1) 3 !important;
 }
 
-@keyframes v64800EvaluationNewDotPulse {
-    0%, 100% {
-        transform: scale(1) translateZ(0);
-        box-shadow:
-            0 0 0 2px color-mix(in srgb, var(--accent) 9%, transparent),
-            0 0 7px color-mix(in srgb, var(--accent) 28%, transparent);
+@keyframes v64811EvaluationNewDotHalo {
+    0% {
+        opacity: 0;
+        transform: scale(.9) translateZ(0);
     }
-    50% {
-        transform: scale(1.22) translateZ(0);
-        box-shadow:
-            0 0 0 5px color-mix(in srgb, var(--accent) 4%, transparent),
-            0 0 10px color-mix(in srgb, var(--accent) 38%, transparent);
+    28% {
+        opacity: .62;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(2.35) translateZ(0);
     }
 }
 
-/* Collapsed sidebar: a compact corner dot that never shifts the icon. */
+/* Collapsed sidebar: compact corner dot without shifting its icon. */
 html body .sidebar.collapsed #menuEvaluation > .sidebar-evaluation-new-dot {
     position: absolute !important;
     inset: 7px 8px auto auto !important;
@@ -75804,10 +75822,8 @@ html body .sidebar.collapsed #menuEvaluation > .sidebar-evaluation-new-dot {
         0 0 6px color-mix(in srgb, var(--accent) 32%, transparent) !important;
 }
 
-/* Venom Green uses its own gaming green instead of inherited Cyber Dark cyan. */
+/* Venom Green keeps its dedicated gaming green. */
 html[data-theme="dark"][data-theme-variant="venom"] body
-#menuEvaluation > .sidebar-evaluation-new-dot,
-html[data-theme="dark"][data-theme-family="gaming"] body
 #menuEvaluation > .sidebar-evaluation-new-dot {
     background: #44d62c !important;
     border-color: #080b08 !important;
@@ -75817,33 +75833,33 @@ html[data-theme="dark"][data-theme-family="gaming"] body
 }
 
 html[data-theme="dark"][data-theme-variant="venom"] body
-#menuEvaluation > .sidebar-evaluation-new-dot.is-visible.is-pulsing,
-html[data-theme="dark"][data-theme-family="gaming"] body
-#menuEvaluation > .sidebar-evaluation-new-dot.is-visible.is-pulsing {
-    animation-name: v64800EvaluationNewDotPulseVenom !important;
+#menuEvaluation > .sidebar-evaluation-new-dot::after {
+    border-color: rgba(68,214,44,.58) !important;
 }
 
-@keyframes v64800EvaluationNewDotPulseVenom {
-    0%, 100% {
-        transform: scale(1) translateZ(0);
-        box-shadow: 0 0 0 2px rgba(68,214,44,.09), 0 0 7px rgba(68,214,44,.30);
-    }
-    50% {
-        transform: scale(1.22) translateZ(0);
-        box-shadow: 0 0 0 5px rgba(68,214,44,.045), 0 0 10px rgba(68,214,44,.42);
-    }
+/* Mecha Ivory uses a restrained ice-blue titanium signal. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] body
+#menuEvaluation > .sidebar-evaluation-new-dot {
+    background: #58758a !important;
+    border-color: #e8e7e2 !important;
+    box-shadow: 0 0 0 2px rgba(88,117,138,.10), 0 0 6px rgba(88,117,138,.24) !important;
+}
+
+html[data-theme="light"][data-theme-variant="mecha-ivory"] body
+#menuEvaluation > .sidebar-evaluation-new-dot::after {
+    border-color: rgba(88,117,138,.52) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
     #menuEvaluation > .sidebar-evaluation-new-dot,
-    #menuEvaluation > .sidebar-evaluation-new-dot.is-visible.is-pulsing {
+    #menuEvaluation > .sidebar-evaluation-new-dot.is-visible.is-pulsing::after {
         animation: none !important;
         transition: none !important;
     }
 }
 </style>
 
-<script id="v64-80-evaluation-new-audit-indicator-script">
+<script id="v64-81-1-evaluation-new-audit-indicator-script">
 (() => {
     'use strict';
 
@@ -75855,7 +75871,11 @@ html[data-theme="dark"][data-theme-family="gaming"] body
         pendingSyncId: '',
         latestActivityAt: '',
         pulseSyncId: '',
+        pulseTimer: 0,
+        pulseWaitTimer: 0,
         markInProgress: false,
+        markCheckTimer: 0,
+        markCheckToken: 0,
         retryTimer: 0,
         retryCount: 0
     };
@@ -75866,13 +75886,12 @@ html[data-theme="dark"][data-theme-family="gaming"] body
 
     function evaluationNoticeAllowed() {
         try {
-            return Boolean(
-                window.currentUser || currentUser
-            ) && Boolean(
-                typeof window.getPermission === 'function'
-                    ? window.getPermission(window.currentUserRole || currentUserRole, 'cs_evaluation_view')
-                    : getPermission(currentUserRole, 'cs_evaluation_view')
-            );
+            const user = window.currentUser || (typeof currentUser !== 'undefined' ? currentUser : null);
+            const role = window.currentUserRole || (typeof currentUserRole !== 'undefined' ? currentUserRole : '');
+            const permissionReader = typeof window.getPermission === 'function'
+                ? window.getPermission
+                : (typeof getPermission === 'function' ? getPermission : null);
+            return Boolean(user && permissionReader && permissionReader(role, 'cs_evaluation_view'));
         } catch (_) {
             return false;
         }
@@ -75882,30 +75901,82 @@ html[data-theme="dark"][data-theme-family="gaming"] body
         return document.getElementById(DOT_ID);
     }
 
+    function evaluationIsActive() {
+        const tab = document.getElementById('tab-evaluation');
+        const selected = typeof currentTab !== 'undefined' ? String(currentTab || '') : '';
+        return selected === 'evaluation' && Boolean(tab?.classList.contains('active'));
+    }
+
+    function evaluationViewReady() {
+        if (!evaluationIsActive()) return false;
+        const body = document.getElementById('csEvalTableBody');
+        if (!body || !body.children.length) return false;
+        if (body.querySelector('.cs-eval-loading, .cs-eval-module-warning')) return false;
+        return true;
+    }
+
+    function loaderIsBlocking() {
+        const loader = document.getElementById('pageLoader');
+        if (!loader) return false;
+        if (loader.classList.contains('is-hidden')) return false;
+        try {
+            const style = window.getComputedStyle(loader);
+            return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > .05;
+        } catch (_) {
+            return true;
+        }
+    }
+
     function hideNoticeDot() {
+        window.clearTimeout(noticeState.pulseTimer);
+        window.clearTimeout(noticeState.pulseWaitTimer);
         const dot = noticeDot();
         if (!dot) return;
         dot.classList.remove('is-pulsing', 'is-visible');
         dot.setAttribute('aria-hidden', 'true');
     }
 
+    function runPulseWhenVisible(syncId) {
+        const targetSyncId = String(syncId || 'latest');
+        const startedAt = Date.now();
+        window.clearTimeout(noticeState.pulseWaitTimer);
+
+        const attempt = () => {
+            const dot = noticeDot();
+            const menu = document.getElementById('menuEvaluation');
+            if (!dot || !dot.classList.contains('is-visible') || noticeState.pendingSyncId !== targetSyncId) return;
+            if (noticeState.pulseSyncId === targetSyncId) return;
+
+            const menuVisible = Boolean(menu && menu.getClientRects().length);
+            if (document.hidden || loaderIsBlocking() || !menuVisible) {
+                if (Date.now() - startedAt < 12000) {
+                    noticeState.pulseWaitTimer = window.setTimeout(attempt, 160);
+                }
+                return;
+            }
+
+            noticeState.pulseSyncId = targetSyncId;
+            dot.classList.remove('is-pulsing');
+            void dot.offsetWidth;
+            window.requestAnimationFrame(() => {
+                if (!dot.classList.contains('is-visible')) return;
+                dot.classList.add('is-pulsing');
+                noticeState.pulseTimer = window.setTimeout(() => {
+                    dot.classList.remove('is-pulsing');
+                }, 2050);
+            });
+        };
+
+        attempt();
+    }
+
     function showNoticeDot(syncId, { pulse = true } = {}) {
         const dot = noticeDot();
         if (!dot || !evaluationNoticeAllowed()) return;
-
         const normalizedSyncId = String(syncId || 'latest');
-        const wasVisible = dot.classList.contains('is-visible');
         dot.classList.add('is-visible');
         dot.setAttribute('aria-hidden', 'false');
-
-        const shouldPulse = pulse && (!wasVisible || noticeState.pulseSyncId !== normalizedSyncId);
-        if (!shouldPulse) return;
-
-        noticeState.pulseSyncId = normalizedSyncId;
-        dot.classList.remove('is-pulsing');
-        void dot.offsetWidth;
-        dot.classList.add('is-pulsing');
-        window.setTimeout(() => dot.classList.remove('is-pulsing'), 2050);
+        if (pulse) runPulseWhenVisible(normalizedSyncId);
     }
 
     async function readNoticeStatus({ pulse = true } = {}) {
@@ -75925,7 +75996,7 @@ html[data-theme="dark"][data-theme-family="gaming"] body
             noticeState.latestActivityAt = String(row?.latest_activity_at || '');
 
             if (hasNewData && latestSyncId) {
-                if (String(currentTab || '') === 'evaluation') {
+                if (evaluationIsActive()) {
                     scheduleMarkSeenAfterEvaluationReady(latestSyncId);
                 } else {
                     showNoticeDot(latestSyncId, { pulse });
@@ -75965,34 +76036,25 @@ html[data-theme="dark"][data-theme-family="gaming"] body
         }
     }
 
-    function evaluationViewReady() {
-        try {
-            return String(currentTab || '') === 'evaluation'
-                && Boolean(csEvalState?.initialized)
-                && !Boolean(csEvalState?.loading)
-                && !Boolean(csEvalState?.dirty)
-                && Boolean(csEvalState?.loadedViewKey);
-        } catch (_) {
-            return false;
-        }
-    }
-
     function scheduleMarkSeenAfterEvaluationReady(syncId) {
         const targetSyncId = String(syncId || noticeState.pendingSyncId || '');
         if (!targetSyncId) return;
+        const token = ++noticeState.markCheckToken;
         const startedAt = Date.now();
+        window.clearTimeout(noticeState.markCheckTimer);
 
         const checkReady = () => {
-            if (String(currentTab || '') !== 'evaluation') return;
+            if (token !== noticeState.markCheckToken || noticeState.pendingSyncId !== targetSyncId) return;
             if (evaluationViewReady()) {
                 markNoticeSeen(targetSyncId);
                 return;
             }
-            if (Date.now() - startedAt < 15000) {
-                window.setTimeout(checkReady, 180);
+            if (Date.now() - startedAt < 20000) {
+                noticeState.markCheckTimer = window.setTimeout(checkReady, 160);
             }
         };
-        checkReady();
+
+        noticeState.markCheckTimer = window.setTimeout(checkReady, 0);
     }
 
     function queueNoticeRefresh({ pulse = true, delay = 850 } = {}) {
@@ -76013,7 +76075,8 @@ html[data-theme="dark"][data-theme-family="gaming"] body
         if (!evaluationNoticeAllowed() || typeof supabaseDashboard === 'undefined' || !supabaseDashboard) return;
 
         try {
-            const email = String(currentUser?.email || 'user').toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+            const email = String((typeof currentUser !== 'undefined' ? currentUser?.email : '') || 'user')
+                .toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
             noticeState.channel = supabaseDashboard
                 .channel(`cs-evaluation-audit-notice-${email}`)
                 .on('postgres_changes', {
@@ -76022,8 +76085,6 @@ html[data-theme="dark"][data-theme-family="gaming"] body
                     table: 'cs_evaluation_realtime_state',
                     filter: 'id=eq.1'
                 }, () => {
-                    /* Multiple row changes from one spreadsheet sync are collapsed
-                       into a single status check. The RPC compares the latest sync_id. */
                     queueNoticeRefresh({ pulse: true, delay: 1050 });
                 })
                 .subscribe();
@@ -76057,9 +76118,8 @@ html[data-theme="dark"][data-theme-family="gaming"] body
                 initializeNotice();
             } else {
                 hideNoticeDot();
-                /* Authentication and permission setup may still be running.
-                   Retries are capped so signed-out/access-denied pages never loop. */
-                if (!currentUser && noticeState.retryCount < 20) {
+                const userExists = Boolean(window.currentUser || (typeof currentUser !== 'undefined' && currentUser));
+                if (!userExists && noticeState.retryCount < 20) {
                     noticeState.retryCount += 1;
                     scheduleInitializeNotice(450);
                 }
@@ -76070,10 +76130,12 @@ html[data-theme="dark"][data-theme-family="gaming"] body
     const menu = document.getElementById('menuEvaluation');
     if (menu) {
         menu.addEventListener('click', () => {
-            if (noticeState.pendingSyncId) {
-                scheduleMarkSeenAfterEvaluationReady(noticeState.pendingSyncId);
-            }
-        }, true);
+            window.setTimeout(() => {
+                if (noticeState.pendingSyncId) {
+                    scheduleMarkSeenAfterEvaluationReady(noticeState.pendingSyncId);
+                }
+            }, 0);
+        });
     }
 
     const evaluationTab = document.getElementById('tab-evaluation');
@@ -76084,6 +76146,12 @@ html[data-theme="dark"][data-theme-family="gaming"] body
             }
         }).observe(evaluationTab, { attributes: true, attributeFilter: ['class'] });
     }
+
+    window.addEventListener('cs-evaluation-view-ready', () => {
+        if (noticeState.pendingSyncId) {
+            scheduleMarkSeenAfterEvaluationReady(noticeState.pendingSyncId);
+        }
+    });
 
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
@@ -76113,8 +76181,6 @@ html[data-theme="dark"][data-theme-family="gaming"] body
         });
     } catch (_) {}
 
-    /* Permission Matrix may finish after DOMContentLoaded. Retry without polling
-       after the normal startup sequence and once more after the loader closes. */
     document.addEventListener('DOMContentLoaded', () => {
         scheduleInitializeNotice(650);
         window.setTimeout(() => scheduleInitializeNotice(0), 1900);
@@ -76123,14 +76189,15 @@ html[data-theme="dark"][data-theme-family="gaming"] body
     window.csEvaluationNewAuditNotice = {
         refresh: () => readNoticeStatus({ pulse: false }),
         initialize: initializeNotice,
-        stop: stopNoticeRealtime
+        stop: stopNoticeRealtime,
+        markCurrentSeen: () => scheduleMarkSeenAfterEvaluationReady(noticeState.pendingSyncId)
     };
 })();
 </script>
 
 
 <script id="v64-75-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.81.0';
+document.documentElement.dataset.dashboardBuild = 'v64.81.1';
 </script>
 </body>
 </html>
