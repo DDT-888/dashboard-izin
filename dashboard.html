@@ -41307,9 +41307,9 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 <section class="settings-system-table settings-index-appearance-table" id="indexAppearanceSettingsPanel">
                     <div class="settings-table-heading">
                         <div>
-                            <span class="settings-table-kicker">TAMPILAN HALAMAN INDEX</span>
+                            <span class="settings-table-kicker">TAMPILAN HALAMAN</span>
                             <h3>Wallpaper Halaman Login</h3>
-                            <p>Gunakan URL gambar dari folder assets atau alamat HTTPS. Tidak ada upload file.</p>
+                            <p>Atur wallpaper, posisi gambar, ukuran tampilan, dan tingkat kegelapan yang digunakan pada halaman login.</p>
                         </div>
                         <span class="view-only-indicator" id="indexAppearanceViewOnly" style="display:none;">View Only</span>
                     </div>
@@ -73036,7 +73036,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
      V64.76 — Index Appearance URL Settings + Global Idle Logout
      ================================================================ -->
 <style id="v64-76-index-appearance-session-security">
-/* V64.76.1 — Index preview viewport parity & session action spacing */
+/* V64.76.2 — Index preview overlay parity, Venom Settings, and input visibility */
 /* ---------- Settings: session security ---------- */
 #tab-settings .settings-session-security-section {
     display: grid;
@@ -73461,13 +73461,22 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-settings .settings-sess
         } catch (_) {
             normalized = DEFAULT_INDEX_WALLPAPER_URL;
         }
+
         const viewportWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 16);
         const viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 9);
-        preview.style.backgroundImage = `url("${resolvePreviewUrl(normalized).replaceAll('"', '%22')}")`;
-        preview.style.backgroundPosition = position;
-        preview.style.backgroundSize = size;
-        preview.style.setProperty('--index-preview-overlay', String(overlay / 100));
+        const overlayAlpha = overlay / 100;
+        const resolvedWallpaper = resolvePreviewUrl(normalized).replaceAll('"', '%22');
+
+        /* Sama seperti body::before pada index: overlay hitam menjadi layer
+           pertama dan wallpaper menjadi layer kedua. Pengubahan nilai langsung
+           terlihat tanpa bergantung pada pewarisan variabel pseudo-element. */
+        preview.style.backgroundImage = `linear-gradient(rgba(0,0,0,${overlayAlpha}), rgba(0,0,0,${overlayAlpha})), url("${resolvedWallpaper}")`;
+        preview.style.backgroundPosition = `center center, ${position}`;
+        preview.style.backgroundSize = `100% 100%, ${size}`;
+        preview.style.backgroundRepeat = 'no-repeat, no-repeat';
+        preview.style.setProperty('--index-preview-overlay', '0');
         preview.style.setProperty('--index-preview-aspect-ratio', `${viewportWidth} / ${viewportHeight}`);
+        preview.dataset.overlay = String(overlay);
     };
 
     function showSavedNotice(id) {
@@ -73819,8 +73828,120 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-settings .settings-sess
 })();
 </script>
 
+
+<!-- ================================================================
+     V64.76.2 — Settings Wallpaper, Venom, and Auto Logout UI Fixes
+     ================================================================ -->
+<style id="v64-76-2-settings-wallpaper-venom-autologout-fixes">
+/* Preview memakai gradient inline yang sama seperti halaman index. */
+#tab-settings .settings-index-preview::before {
+    background: transparent !important;
+}
+
+/* Pastikan tiga digit Durasi Tidak Aktif tetap terlihat penuh. */
+#tab-settings .settings-session-grid {
+    grid-template-columns:
+        minmax(0, 1.35fr)
+        minmax(150px, .78fr)
+        minmax(150px, .78fr) !important;
+}
+#tab-settings .settings-session-field .settings-number-with-unit {
+    grid-template-columns: minmax(78px, 1fr) auto !important;
+}
+#tab-settings .settings-session-field .settings-number-with-unit input {
+    width: 100% !important;
+    min-width: 78px !important;
+    padding-left: 10px !important;
+    padding-right: 5px !important;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Venom Green: keamanan sesi sepenuhnya terisolasi dari warna Cyber Dark. */
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel {
+    background: #101010 !important;
+    border-color: rgba(68,214,44,.20) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel :is(.settings-session-toggle,.settings-session-field) {
+    color: #e5eee2 !important;
+    background: #0d110d !important;
+    background-image: none !important;
+    border-color: rgba(68,214,44,.22) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel .settings-session-toggle strong,
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel .settings-session-field > label {
+    color: #dfeadc !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel .settings-session-toggle small,
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel .settings-session-note {
+    color: #92a38f !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel .settings-number-with-unit {
+    background: #090d09 !important;
+    border-color: rgba(68,214,44,.22) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel .settings-number-with-unit input {
+    color: #edf5ea !important;
+    background: transparent !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel .settings-number-with-unit span {
+    color: #98a895 !important;
+    background: #111711 !important;
+    border-left-color: rgba(68,214,44,.18) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #sessionSecuritySettingsPanel .settings-session-toggle input {
+    accent-color: var(--rz-green, #44d62c) !important;
+}
+
+/* Tombol simpan baru mengikuti tombol simpan Venom lainnya. */
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings :is(#btnSaveIndexAppearance,#btnSaveSessionSecurity) {
+    color: #050505 !important;
+    background: var(--rz-green, #44d62c) !important;
+    border-color: var(--rz-green, #44d62c) !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings :is(#btnSaveIndexAppearance,#btnSaveSessionSecurity):hover {
+    color: #050505 !important;
+    background: var(--rz-green-hover, #64e44f) !important;
+    border-color: var(--rz-green-hover, #64e44f) !important;
+}
+
+/* Gunakan Default dibuat sama dengan Reset Default Permission Matrix. */
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #btnResetIndexAppearance {
+    color: #cfcfcf !important;
+    background: #151515 !important;
+    border-color: #303030 !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]
+#tab-settings #btnResetIndexAppearance:hover {
+    color: #e8e8e8 !important;
+    background: #1a1a1a !important;
+    border-color: #3a3a3a !important;
+}
+
+@media (max-width: 860px) {
+    #tab-settings .settings-session-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
 <script id="v64-75-build-marker">
-document.documentElement.dataset.dashboardBuild = 'v64.76';
+document.documentElement.dataset.dashboardBuild = 'v64.76.2';
 </script>
 
 </body>
