@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.84.39-mecha-ivory-armor-layout-anchor-fix">
+    <meta name="dashboard-build" content="v64.84.40-mecha-ivory-native-gradient-full-cap-joint-integration">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -81380,18 +81380,18 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-historyshift .hi
             profile?.classList.remove('mecha425-profile-dock');
             footerGuard(footer,false);
         }
-        root.dataset.dashboardBuild='v64.84.39';
+        root.dataset.dashboardBuild='v64.84.40';
         const meta=document.querySelector('meta[name="dashboard-build"]');
-        if(meta) meta.content='v64.84.39-mecha-ivory-armor-layout-anchor-fix';
+        if(meta) meta.content='v64.84.40-mecha-ivory-native-gradient-full-cap-joint-integration';
         window.dashboardEgressOptimization=Object.freeze({
-            build:'v64.84.39',egressOptimizationBase:'v64.84.15',mode:'realtime-primary',
+            build:'v64.84.40',egressOptimizationBase:'v64.84.15',mode:'realtime-primary',
             automaticFullReload:false,maintenanceMinutes:20,settingsRevisionThrottleMinutes:5,
             evaluationBackgroundPolling:false,ipWhitelistCache:true,shiftLazyLoad:true,employeeDirectoryReuse:true
         });
     };
     new MutationObserver(sync).observe(root,{attributes:true,attributeFilter:['data-theme','data-theme-variant']});
     sync();
-    console.info('🛡️ V64.84.39 Mecha Ivory Armor Layout Anchor Fix aktif');
+    console.info('🛡️ V64.84.40 Mecha Ivory Native Gradient Full Cap / Joint Integration aktif');
 })();
 </script>
 
@@ -81400,9 +81400,9 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-historyshift .hi
 
 
 
-<style id="v648439-mecha-ivory-armor-layout-anchor-fix">
+<style id="v648440-mecha-ivory-native-gradient-full-cap-joint-integration">
 /* ========================================================================
-   V64.84.39 — MECHA IVORY ARMOR LAYOUT ANCHOR FIX
+   V64.84.40 — MECHA IVORY NATIVE GRADIENT FULL CAP / JOINT INTEGRATION
    Layout-anchor correction: preserve V64.84.38 armor visuals while restoring the sidebar to its fixed-position chassis so main content no longer receives a doubled horizontal offset.
    STRICT SCOPE: light + mecha-ivory only. Other themes are untouched.
    ======================================================================== */
@@ -82266,7 +82266,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar.collapsed .s
 }
 
 
-/* 10 — V64.84.39 layout anchor correction.
+/* 10 — inherited layout anchor correction.
    V64.84.38 accidentally changed the fixed sidebar into a relative element,
    causing the sidebar width to occupy normal document flow while main-content
    still kept its own sidebar offset. Restore fixed positioning only; armor stays. */
@@ -82276,6 +82276,261 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar {
     top:0!important;
     height:100vh!important;
     overflow-x:hidden!important;
+}
+
+
+/* 11 — V64.84.40 native-gradient perimeter integration.
+   Screenshot review showed two remaining issues: upper/lower armor only read as
+   small fins, and the fixed-color armor did not follow the sidebar's own
+   light-to-darker vertical matte gradient. This pass keeps layout geometry
+   frozen and only rebuilds the shell surfaces/joints. */
+
+/* Keep the fixed layout anchor authoritative. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar {
+    position:fixed!important;
+    left:0!important;
+    top:0!important;
+    height:100vh!important;
+    overflow-x:hidden!important;
+}
+
+/* Right armor shell follows the sidebar's own vertical tone instead of using
+   one flat ivory color. Horizontal shading only supplies bevel/recess depth. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .mecha425-vertical-rail {
+    top:71px!important;
+    right:0!important;
+    bottom:66px!important;
+    width:10px!important;
+    border-radius:7px 0 0 15px!important;
+    background:
+      linear-gradient(90deg,
+        rgba(255,255,255,.08) 0 16%,
+        rgba(255,255,255,.02) 16% 62%,
+        rgba(112,126,132,.08) 62% 78%,
+        rgba(66,79,85,.07) 78% 92%,
+        rgba(40,50,55,.035) 92% 100%),
+      linear-gradient(180deg,
+        rgb(240,239,235) 0%,
+        rgb(235,233,228) 28%,
+        rgb(230,228,222) 56%,
+        rgb(226,224,219) 82%,
+        rgb(224,222,217) 100%)!important;
+    box-shadow:inset 1px 0 rgba(255,255,255,.22),inset -1px 0 rgba(52,65,71,.025)!important;
+}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .mecha425-vertical-rail::before {
+    left:1px!important;
+    top:3px!important;
+    bottom:14px!important;
+    width:5px!important;
+    border-radius:6px 0 0 12px!important;
+    background:linear-gradient(90deg,rgba(255,255,255,.16),rgba(255,255,255,.035) 64%,transparent)!important;
+    opacity:.72!important;
+}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .mecha425-vertical-rail::after {
+    right:0!important;
+    top:5px!important;
+    bottom:15px!important;
+    width:1px!important;
+    background:rgba(52,65,71,.055)!important;
+    opacity:.72!important;
+}
+
+/* UPPER ARMOR CAP — now spans most of the brand bay. It is not a floating
+   tab; it is the horizontal face of the same shell that turns downward. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar::before {
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    z-index:2!important;
+    left:16px!important;
+    right:0!important;
+    top:65px!important;
+    width:auto!important;
+    height:10px!important;
+    pointer-events:none!important;
+    border:0!important;
+    border-radius:16px 0 0 0 / 10px 0 0 0!important;
+    background:
+      linear-gradient(180deg,
+        rgb(241,240,236) 0%,
+        rgb(239,238,234) 46%,
+        rgb(235,233,228) 76%,
+        rgb(231,229,224) 100%)!important;
+    box-shadow:
+      inset 0 1px rgba(255,255,255,.30),
+      inset 0 -1px rgba(52,65,71,.075),
+      0 1px rgba(255,255,255,.10)!important;
+    opacity:.98!important;
+}
+/* Curve/joint at upper-right: cap turns into vertical shell. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar-brand::after {
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    z-index:4!important;
+    right:-1px!important;
+    bottom:-5px!important;
+    width:18px!important;
+    height:18px!important;
+    pointer-events:none!important;
+    border:0!important;
+    background:radial-gradient(circle at 0 100%,
+        transparent 0 7.5px,
+        rgb(239,238,234) 7.7px 11.3px,
+        rgb(234,232,227) 11.5px 13.0px,
+        rgba(143,154,158,.16) 13.2px 14.0px,
+        rgba(52,65,71,.05) 14.1px 14.5px,
+        transparent 14.7px)!important;
+    opacity:.98!important;
+}
+
+/* LOWER ARMOR CAP — spans the footer/profile bay and uses the exact darker
+   sidebar tone present near the bottom of the viewport. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar::after {
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    z-index:2!important;
+    left:14px!important;
+    right:0!important;
+    bottom:61px!important;
+    width:auto!important;
+    height:10px!important;
+    pointer-events:none!important;
+    border:0!important;
+    border-radius:15px 0 0 0 / 9px 0 0 0!important;
+    background:linear-gradient(180deg,
+        rgb(229,227,222) 0%,
+        rgb(226,224,219) 50%,
+        rgb(223,221,216) 78%,
+        rgb(220,218,213) 100%)!important;
+    box-shadow:
+      inset 0 1px rgba(255,255,255,.19),
+      inset 0 -1px rgba(52,65,71,.065)!important;
+    opacity:.99!important;
+}
+/* Use footer pseudo elements as the mechanical seam/turn, not a second long
+   horizontal strip. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar-footer::before {
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    z-index:3!important;
+    left:12px!important;
+    right:11px!important;
+    top:1px!important;
+    height:1px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:linear-gradient(90deg,
+        rgba(52,65,71,.00),
+        rgba(52,65,71,.07) 18%,
+        rgba(113,131,138,.08) 72%,
+        rgba(52,65,71,.10) 100%)!important;
+    box-shadow:none!important;
+    opacity:.82!important;
+}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar-footer::after {
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    z-index:4!important;
+    right:-1px!important;
+    top:-10px!important;
+    width:18px!important;
+    height:18px!important;
+    pointer-events:none!important;
+    border:0!important;
+    background:radial-gradient(circle at 0 100%,
+        transparent 0 7.5px,
+        rgb(226,224,219) 7.7px 11.2px,
+        rgb(222,220,215) 11.4px 12.9px,
+        rgba(143,154,158,.14) 13.0px 13.8px,
+        rgba(52,65,71,.045) 13.9px 14.3px,
+        transparent 14.5px)!important;
+    opacity:.98!important;
+}
+
+/* Profile Dock remains embedded; no extra card frame. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar-footer .user-info.mecha425-profile-dock {
+    background:linear-gradient(90deg,rgba(52,65,71,.010),rgba(226,224,219,.045) 28%,rgba(223,221,216,.010) 100%)!important;
+    box-shadow:inset 1px 0 rgba(52,65,71,.040),inset 0 1px rgba(255,255,255,.07)!important;
+}
+
+/* COLLAPSED — same full-cap language compressed to the 70px chassis. */
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar.collapsed::before {
+    left:7px!important;
+    right:0!important;
+    top:58px!important;
+    width:auto!important;
+    height:8px!important;
+    border-radius:11px 0 0 0 / 8px 0 0 0!important;
+    background:linear-gradient(180deg,
+        rgb(241,240,236) 0%,
+        rgb(239,238,234) 48%,
+        rgb(234,232,227) 100%)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.26),inset 0 -1px rgba(52,65,71,.07)!important;
+    opacity:.98!important;
+}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar.collapsed::after {
+    left:7px!important;
+    right:0!important;
+    bottom:55px!important;
+    width:auto!important;
+    height:8px!important;
+    border-radius:11px 0 0 0 / 8px 0 0 0!important;
+    background:linear-gradient(180deg,
+        rgb(229,227,222) 0%,
+        rgb(226,224,219) 52%,
+        rgb(221,219,214) 100%)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.17),inset 0 -1px rgba(52,65,71,.06)!important;
+    opacity:.99!important;
+}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar.collapsed .mecha425-vertical-rail {
+    top:65px!important;
+    bottom:57px!important;
+    width:8px!important;
+    background:
+      linear-gradient(90deg,rgba(255,255,255,.06),rgba(52,65,71,.035)),
+      linear-gradient(180deg,
+        rgb(239,238,234) 0%,
+        rgb(234,232,227) 32%,
+        rgb(229,227,222) 64%,
+        rgb(224,222,217) 100%)!important;
+    border-radius:6px 0 0 12px!important;
+}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar.collapsed .sidebar-brand::after {
+    right:-1px!important;
+    bottom:-4px!important;
+    width:14px!important;
+    height:14px!important;
+    background:radial-gradient(circle at 0 100%,
+        transparent 0 5.7px,
+        rgb(239,238,234) 5.9px 8.6px,
+        rgb(234,232,227) 8.8px 9.8px,
+        rgba(52,65,71,.04) 9.9px 10.2px,
+        transparent 10.4px)!important;
+}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar.collapsed .sidebar-footer::before {
+    left:7px!important;
+    right:7px!important;
+    top:1px!important;
+    height:1px!important;
+    background:rgba(52,65,71,.065)!important;
+    border:0!important;
+    box-shadow:none!important;
+}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .sidebar.collapsed .sidebar-footer::after {
+    right:-1px!important;
+    top:-7px!important;
+    width:14px!important;
+    height:14px!important;
+    background:radial-gradient(circle at 0 100%,
+        transparent 0 5.7px,
+        rgb(226,224,219) 5.9px 8.6px,
+        rgb(221,219,214) 8.8px 9.8px,
+        rgba(52,65,71,.04) 9.9px 10.2px,
+        transparent 10.4px)!important;
 }
 </style>
 
