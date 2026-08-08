@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.84.14-mecha-ivory-loader-charcoal-unified">
+    <meta name="dashboard-build" content="v64.84.15-egress-optimization-realtime-efficiency">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -40110,6 +40110,7 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
 <style id="v648414-mecha-loader-authoritative">
 /* ========================================================================
    V64.84.14 — MECHA IVORY LOADER CHARCOAL UNIFIED PASS
+   V64.84.15 — EGRESS OPTIMIZATION & REALTIME EFFICIENCY (DATA LAYER ONLY)
    Authoritative first-paint loader for Mecha Ivory.
    Fixes: duplicate-looking refresh loader, excessive noise, top-left box/lines,
    and double bottom-rule appearance.
@@ -42105,14 +42106,17 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
         // ============================================================
         // EGRESS-SAFE PERFORMANCE SETTINGS
         // ============================================================
-        const DATA_REFRESH_INTERVAL_MS = 15 * 60 * 1000;      // full sync data umum setiap 15 menit
-        const VISIBILITY_REFRESH_COOLDOWN_MS = 5 * 60 * 1000; // kompatibilitas pemeriksaan data umum
-        const MIN_MANUAL_RELOAD_GAP_MS = 30 * 1000;           // cegah full query ganda berdekatan
-        const IZIN_RECONCILE_MIN_GAP_MS = 8 * 1000;           // query izin ringan maksimal 1x/8 detik
-        const RESUME_RECONCILE_AFTER_MS = 2 * 1000;           // kembali setelah hidden >=2 detik
-        const HISTORY_REFRESH_MIN_GAP_MS = 30 * 1000;         // History dimuat saat dibutuhkan
-        const VOUCHER_REFRESH_MIN_GAP_MS = 30 * 1000;         // Voucher snapshot ringan saat diperlukan
-        const ARTIFACT_RESUME_AFTER_MS = 8 * 1000;            // fallback setelah hidden cukup lama
+        const DATA_REFRESH_INTERVAL_MS = 60 * 60 * 1000;      // safety window; full snapshot otomatis dinonaktifkan
+        const VISIBILITY_REFRESH_COOLDOWN_MS = 15 * 60 * 1000; // resume tidak memicu query besar berulang
+        const MIN_MANUAL_RELOAD_GAP_MS = 60 * 1000;            // cegah full query manual ganda berdekatan
+        const IZIN_RECONCILE_MIN_GAP_MS = 15 * 1000;           // snapshot izin hanya sebagai fallback realtime
+        const RESUME_RECONCILE_AFTER_MS = 30 * 1000;           // tab singkat tidak langsung query ulang
+        const HISTORY_REFRESH_MIN_GAP_MS = 2 * 60 * 1000;      // History tetap on-demand
+        const VOUCHER_REFRESH_MIN_GAP_MS = 2 * 60 * 1000;      // Voucher tetap on-demand
+        const ARTIFACT_RESUME_AFTER_MS = 5 * 60 * 1000;        // History/Voucher reconcile hanya setelah hidden lama
+        const EGRESS_MAINTENANCE_INTERVAL_MS = 20 * 60 * 1000; // health reconcile ringan, bukan full reload
+        const SETTINGS_STATE_MIN_GAP_MS = 5 * 60 * 1000;       // throttle revision-state PostgREST
+        const DASHBOARD_CS_STAT_CACHE_MS = 15 * 60 * 1000;     // realtime akan menginvalidasi lebih cepat saat berubah
         const HISTORY_INITIAL_LIMIT = 1000;                   // riwayat izin terbaru di memori
         const SHIFT_HISTORY_LIMIT = 100;                      // riwayat shift terbaru
         const SHIFT_LOG_LIMIT = 30;                           // log shift terbaru
@@ -44916,19 +44920,40 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
         // ============================================================
         // CHECK USER REGISTERED
         // ============================================================
+        const registeredUserCheckCache = {
+            email: '',
+            checkedAt: 0,
+            record: null
+        };
+
         async function checkUserRegistered(email) {
             try {
                 const normalizedEmail = formatEmail(email);
+                if (
+                    registeredUserCheckCache.record &&
+                    registeredUserCheckCache.email === normalizedEmail &&
+                    (Date.now() - registeredUserCheckCache.checkedAt) < 2 * 60 * 1000
+                ) {
+                    return String(registeredUserCheckCache.record.status || 'active').toLowerCase() === 'active';
+                }
+
                 const { data, error } = await supabaseDashboard
                     .from('users')
-                    .select('email, status')
+                    .select('id, name, email, role, status, created_at')
                     .eq('email', normalizedEmail)
                     .maybeSingle();
 
                 if (error || !data) {
+                    registeredUserCheckCache.email = normalizedEmail;
+                    registeredUserCheckCache.checkedAt = Date.now();
+                    registeredUserCheckCache.record = null;
                     showNotRegisteredPopup(normalizedEmail);
                     return false;
                 }
+
+                registeredUserCheckCache.email = normalizedEmail;
+                registeredUserCheckCache.checkedAt = Date.now();
+                registeredUserCheckCache.record = data;
 
                 if (String(data.status || 'active').toLowerCase() !== 'active') {
                     currentUserAccessRevoked = true;
@@ -45127,9 +45152,11 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 }
 
                 if (setting.key === 'whitelist_ip') {
+                    cachedWhitelistIPValue = String(setting.value || '0.0.0.0');
+                    cachedWhitelistLoadedAt = Date.now();
                     const input = document.getElementById('ipWhitelistInput');
                     if (input) {
-                        input.value = String(setting.value || '0.0.0.0');
+                        input.value = cachedWhitelistIPValue;
                     }
                 }
             });
@@ -45266,11 +45293,26 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
             );
         }
 
+        let lastSettingsRealtimeStateCheckAt = 0;
+
         async function syncSettingsRealtimeState({
             baseline = false,
             reason = 'state'
         } = {}) {
             try {
+                const now = Date.now();
+                const realtimeHealthy = settingsRealtimeStatus === 'SUBSCRIBED';
+                if (
+                    !baseline &&
+                    realtimeHealthy &&
+                    !settingsRealtimeNeedsSync &&
+                    lastSettingsRealtimeStateCheckAt > 0 &&
+                    (now - lastSettingsRealtimeStateCheckAt) < SETTINGS_STATE_MIN_GAP_MS
+                ) {
+                    return true;
+                }
+
+                lastSettingsRealtimeStateCheckAt = now;
                 const previousRevision = settingsRealtimeRevision;
 
                 const { data, error } = await supabaseDashboard
@@ -46426,18 +46468,56 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 refreshInterval = null;
             }
 
-            console.log('🔄 Periodic refresh started (15 menit, egress-safe)');
+            console.log('♻️ Egress-safe maintenance aktif (20 menit, targeted reconcile)');
 
-            refreshInterval = setInterval(() => {
-                if (!isLoading && document.visibilityState === 'visible' && isDataReady) {
-                    console.log('🔄 Periodic refresh: syncing data...');
-                    loadDataFromDatabase();
-                } else if (document.visibilityState === 'hidden') {
-                    console.log('⏸️ Skip periodic refresh: tab inactive');
-                } else if (isLoading) {
-                    console.log('⏸️ Skip periodic refresh: already loading');
+            refreshInterval = setInterval(async () => {
+                if (
+                    isLoading ||
+                    document.visibilityState !== 'visible' ||
+                    !isDataReady ||
+                    document.body.classList.contains('dashboard-access-blocked')
+                ) {
+                    return;
                 }
-            }, DATA_REFRESH_INTERVAL_MS);
+
+                ensureIzinRealtimeSubscription();
+                ensureSettingsRealtimeSubscription();
+
+                const jobs = [];
+
+                // Reconcile hanya bila realtime memang tidak sehat / sempat terputus.
+                if (realtimeNeedsReconcile || realtimeSubscriptionStatus !== 'SUBSCRIBED') {
+                    jobs.push(syncIzinState({ force: true, reason: 'maintenance-realtime-health' }));
+                }
+
+                if (artifactRealtimeNeedsReconcile || realtimeSubscriptionStatus !== 'SUBSCRIBED') {
+                    jobs.push(syncRealtimeArtifacts({
+                        forceVoucherSnapshot: currentTab === 'voucher',
+                        reason: 'maintenance-artifact-health'
+                    }));
+                }
+
+                if (usersRealtimeNeedsReconcile) {
+                    jobs.push(syncUsersSnapshot({ reason: 'maintenance-users-health' }));
+                }
+
+                // Halaman aktif mendapat safety reconcile ringan. Halaman lain tidak ditarik.
+                if (currentTab === 'history' && (Date.now() - lastHistoryLoad) >= HISTORY_REFRESH_MIN_GAP_MS) {
+                    jobs.push(syncHistoryDelta({ reason: 'maintenance-history-active' }));
+                }
+
+                if (currentTab === 'voucher' && (Date.now() - lastVoucherSyncAt) >= VOUCHER_REFRESH_MIN_GAP_MS) {
+                    jobs.push(loadVoucherData(false));
+                }
+
+                if (currentTab === 'evaluation' && typeof reconcileCsEvaluationRevision === 'function') {
+                    jobs.push(reconcileCsEvaluationRevision({ refreshWhenChanged: true }));
+                }
+
+                if (jobs.length) {
+                    await Promise.allSettled(jobs);
+                }
+            }, EGRESS_MAINTENANCE_INTERVAL_MS);
         }
 
         function stopPeriodicRefresh() {
@@ -46758,11 +46838,13 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 ensureIzinRealtimeSubscription();
                 ensureSettingsRealtimeSubscription();
 
-                if (!isShiftInitialized) {
+                if (!isShiftInitialized && currentTab === 'shifts') {
                     await loadShiftActiveData();
                     isShiftInitialized = true;
-                } else {
+                } else if (isShiftInitialized) {
                     console.log('⏩ Shift already initialized, skipping...');
+                } else {
+                    console.log('⏩ Shift lazy-load: dilewati sampai menu Shift Kerja dibuka');
                 }
 
                 lastDataLoad = Date.now();
@@ -47929,6 +48011,8 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
         // ============================================================
         let ipAccessMonitorTimer = null;
         let lastIPAccessCheckAt = 0;
+        let cachedWhitelistIPValue = null;
+        let cachedWhitelistLoadedAt = 0;
         const IP_ACCESS_RECHECK_MS = 120000;
 
         function normalizeAccessRole(role) {
@@ -48037,29 +48121,40 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                     throw new Error('IP publik kosong');
                 }
 
-                const { data: settings, error } = await supabaseDashboard
-                    .from('settings')
-                    .select('value')
-                    .eq('key', 'whitelist_ip')
-                    .maybeSingle();
+                let whitelistValue = cachedWhitelistIPValue;
 
-                if (error) {
-                    console.error('Gagal membaca whitelist IP:', error);
-                    isDataReady = false;
-                    stopIPAccessMonitor();
-                    showAccessDeniedPopup({
-                        title: 'Akses Ditolak',
-                        message: 'IP perangkat saat ini tidak dapat diverifikasi.',
-                        info: 'Dashboard tidak dapat diakses sampai pemeriksaan IP berhasil. Silakan hubungi <strong>CS LINE</strong>.',
-                        overlayId: 'ipAccessDeniedOverlay'
-                    });
-                    return false;
+                // Query Settings hanya pada pemeriksaan pertama / cache belum tersedia.
+                // Pemeriksaan periodik berikutnya memakai snapshot Settings yang sudah
+                // dijaga akurat oleh settings_realtime_state.
+                if (whitelistValue === null || whitelistValue === undefined) {
+                    const { data: settings, error } = await supabaseDashboard
+                        .from('settings')
+                        .select('value')
+                        .eq('key', 'whitelist_ip')
+                        .maybeSingle();
+
+                    if (error) {
+                        console.error('Gagal membaca whitelist IP:', error);
+                        isDataReady = false;
+                        stopIPAccessMonitor();
+                        showAccessDeniedPopup({
+                            title: 'Akses Ditolak',
+                            message: 'IP perangkat saat ini tidak dapat diverifikasi.',
+                            info: 'Dashboard tidak dapat diakses sampai pemeriksaan IP berhasil. Silakan hubungi <strong>CS LINE</strong>.',
+                            overlayId: 'ipAccessDeniedOverlay'
+                        });
+                        return false;
+                    }
+
+                    whitelistValue = String(settings?.value || '0.0.0.0');
+                    cachedWhitelistIPValue = whitelistValue;
+                    cachedWhitelistLoadedAt = Date.now();
                 }
 
                 const evaluation = evaluateIPAccess(
                     normalizedRole,
                     userIP,
-                    settings?.value || '0.0.0.0'
+                    whitelistValue || '0.0.0.0'
                 );
 
                 lastIPAccessCheckAt = Date.now();
@@ -48327,7 +48422,11 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 const formattedEmail = formatEmail(currentUser.email);
                 console.log(`🔍 Mencari role untuk email: ${formattedEmail}`);
 
-                const userFromDB = listUsers.find(u => u.email === formattedEmail);
+                const cachedRegisteredUser =
+                    registeredUserCheckCache.email === formattedEmail
+                        ? registeredUserCheckCache.record
+                        : null;
+                const userFromDB = listUsers.find(u => u.email === formattedEmail) || cachedRegisteredUser;
 
                 if (userFromDB && userFromDB.role) {
                     currentUserRole = normalizeAccessRole(userFromDB.role);
@@ -54990,15 +55089,9 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 });
             }
 
-            // Data umum tetap disegarkan secara terpisah bila sudah melewati interval.
-            // History 1000 baris otomatis dilewati kecuali halaman History sedang dibuka.
-            if (
-                !isLoading &&
-                isDataReady &&
-                (now - lastDataLoad) >= DATA_REFRESH_INTERVAL_MS
-            ) {
-                loadDataFromDatabase(false);
-            }
+            // V64.84.15: tidak ada full reload otomatis saat kembali ke tab.
+            // Realtime + reconcile targeted di atas menjaga data tetap akurat tanpa
+            // menarik Users/History/Voucher/Settings sekaligus.
 
             if (currentTab === 'shifts') {
                 startShiftRealtime();
@@ -55993,6 +56086,19 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 employeeDirectoryDirty = false;
                 return employeeUserDirectory;
             }
+
+            // listUsers sudah berasal dari snapshot Users utama. Gunakan snapshot itu
+            // untuk menghindari query Users kedua pada startup / Evaluasi CS.
+            if (!force && Array.isArray(listUsers) && listUsers.length) {
+                employeeUserDirectory = listUsers.map(user => ({
+                    ...user,
+                    role: normalizeAccessRole(user.role),
+                    status: user.status || 'active'
+                }));
+                employeeDirectoryDirty = false;
+                return employeeUserDirectory;
+            }
+
             try {
                 const { data, error } = await supabaseDashboard
                     .from('users')
@@ -56015,6 +56121,15 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
                 employeeProfilesDirty = false;
                 return true;
             }
+
+            if (
+                (!Array.isArray(userIds) || userIds.length === 0) &&
+                !employeeProfilesDirty &&
+                employeeProfilesByUserId.size > 0
+            ) {
+                return true;
+            }
+
             try {
                 const args = { p_user_ids: Array.isArray(userIds) && userIds.length ? userIds.map(Number) : null };
                 const { data, error } = await supabaseDashboard.rpc('get_employee_profiles', args);
@@ -56140,7 +56255,9 @@ html[data-theme="dark"][data-theme-variant="venom"] body .main-content > .topbar
         const employeeBaseLoadData = loadDataFromDatabase;
         loadDataFromDatabase = async function(forceReload = false) {
             const result = await employeeBaseLoadData(forceReload);
-            await loadEmployeeModuleData(forceReload);
+            // Users utama sudah dimuat oleh base loader; modul employee cukup memakai
+            // snapshot tersebut. Profile hanya ditarik bila cache belum tersedia/dirty.
+            await loadEmployeeModuleData(false);
             startEmployeeRealtime();
             return result;
         };
@@ -59193,6 +59310,7 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
         selectedManualReport: null,
         userDirectoryReady: false,
         lastRealtimeRevision: 0,
+        dashboardStatPromise: null,
         lastLoadedAt: 0,
         loadedViewKey: '',
         dirty: true,
@@ -60319,7 +60437,11 @@ function latestCsAppeal(row) {
         const badge = document.getElementById('sidebarBadgeEvaluation');
         if (!badge) return;
         let total = csEvalState.summary.reduce((sum, row) => sum + Number(row.lc_points || 0), 0);
-        if (!csEvalState.summary.length && csEvalCan('cs_evaluation_view')) {
+        if (
+            !csEvalState.summary.length &&
+            csEvalCan('cs_evaluation_view') &&
+            currentTab === 'evaluation'
+        ) {
             try {
                 await window.refreshCsEvalSubmittedIndicatorsV6449?.();
                 total = Number(badge.textContent || 0);
@@ -62361,49 +62483,61 @@ async function processCsEvaluationAppeal(id, status) {
     }
 
     async function refreshDashboardCsEvaluationStat(force = false) {
-        const pointsNode = document.getElementById('quickCsPoints');
-        const bonusNode = document.getElementById('quickCsBonus');
-        if (!pointsNode || !bonusNode || !supabaseDashboard || !currentUser?.email) return;
-        const role = lower(currentUserRole);
-        if (!['cs', 'csline'].includes(role)) {
-            pointsNode.textContent = '—';
-            bonusNode.textContent = '—%';
-            return;
+        if (csEvalState.dashboardStatPromise) {
+            return csEvalState.dashboardStatPromise;
         }
-        const email = currentUserEmailLower();
-        const now = Date.now();
-        const cache = csEvalState.dashboardStatCache;
-        if (!force && cache.email === email && now - cache.loadedAt < 120000 && cache.row) {
-            const baseBonus = Number(csEvalState.settings.base_bonus || CS_EVAL_DEFAULT_SETTINGS.base_bonus || 0);
-            const percent = baseBonus > 0 ? Math.max(0, Math.min(100, Math.round(Number(cache.row.estimated_bonus || 0) / baseBonus * 100))) : 0;
-            pointsNode.textContent = Number(cache.row.lc_points || 0);
-            bonusNode.textContent = `${percent}%`;
-            return;
-        }
+
+        csEvalState.dashboardStatPromise = (async () => {
+            const pointsNode = document.getElementById('quickCsPoints');
+            const bonusNode = document.getElementById('quickCsBonus');
+            if (!pointsNode || !bonusNode || !supabaseDashboard || !currentUser?.email) return;
+            const role = lower(currentUserRole);
+            if (!['cs', 'csline'].includes(role)) {
+                pointsNode.textContent = '—';
+                bonusNode.textContent = '—%';
+                return;
+            }
+            const email = currentUserEmailLower();
+            const now = Date.now();
+            const cache = csEvalState.dashboardStatCache;
+            if (!force && cache.email === email && now - cache.loadedAt < DASHBOARD_CS_STAT_CACHE_MS && cache.row) {
+                const baseBonus = Number(csEvalState.settings.base_bonus || CS_EVAL_DEFAULT_SETTINGS.base_bonus || 0);
+                const percent = baseBonus > 0 ? Math.max(0, Math.min(100, Math.round(Number(cache.row.estimated_bonus || 0) / baseBonus * 100))) : 0;
+                pointsNode.textContent = Number(cache.row.lc_points || 0);
+                bonusNode.textContent = `${percent}%`;
+                return;
+            }
+            try {
+                let periodId = csEvalState.activePeriod?.id || '';
+                if (!periodId) {
+                    const { data: period, error: periodError } = await supabaseDashboard.from('cs_evaluation_periods').select('id').eq('status', 'active').maybeSingle();
+                    if (periodError) throw periodError;
+                    periodId = period?.id || '';
+                }
+                if (!periodId) throw new Error('Periode belum tersedia');
+                let summary = csEvalState.selectedPeriodId === periodId && csEvalState.summary.length ? csEvalState.summary : null;
+                if (!summary) {
+                    const { data, error } = await supabaseDashboard.rpc('get_cs_evaluation_summary', { p_period_id: periodId });
+                    if (error) throw error;
+                    summary = Array.isArray(data) ? data : [];
+                }
+                const row = summary.find(item => lower(item.staff_email) === email) || null;
+                if (!row) throw new Error('Data staff belum terhubung');
+                const baseBonus = Number(csEvalState.settings.base_bonus || CS_EVAL_DEFAULT_SETTINGS.base_bonus || 0);
+                const percent = baseBonus > 0 ? Math.max(0, Math.min(100, Math.round(Number(row.estimated_bonus || 0) / baseBonus * 100))) : 0;
+                pointsNode.textContent = Number(row.lc_points || 0);
+                bonusNode.textContent = `${percent}%`;
+                csEvalState.dashboardStatCache = { periodId, email, loadedAt: now, row };
+            } catch (_) {
+                pointsNode.textContent = '—';
+                bonusNode.textContent = '—%';
+            }
+        })();
+
         try {
-            let periodId = csEvalState.activePeriod?.id || '';
-            if (!periodId) {
-                const { data: period, error: periodError } = await supabaseDashboard.from('cs_evaluation_periods').select('id').eq('status', 'active').maybeSingle();
-                if (periodError) throw periodError;
-                periodId = period?.id || '';
-            }
-            if (!periodId) throw new Error('Periode belum tersedia');
-            let summary = csEvalState.selectedPeriodId === periodId && csEvalState.summary.length ? csEvalState.summary : null;
-            if (!summary) {
-                const { data, error } = await supabaseDashboard.rpc('get_cs_evaluation_summary', { p_period_id: periodId });
-                if (error) throw error;
-                summary = Array.isArray(data) ? data : [];
-            }
-            const row = summary.find(item => lower(item.staff_email) === email) || null;
-            if (!row) throw new Error('Data staff belum terhubung');
-            const baseBonus = Number(csEvalState.settings.base_bonus || CS_EVAL_DEFAULT_SETTINGS.base_bonus || 0);
-            const percent = baseBonus > 0 ? Math.max(0, Math.min(100, Math.round(Number(row.estimated_bonus || 0) / baseBonus * 100))) : 0;
-            pointsNode.textContent = Number(row.lc_points || 0);
-            bonusNode.textContent = `${percent}%`;
-            csEvalState.dashboardStatCache = { periodId, email, loadedAt: now, row };
-        } catch (_) {
-            pointsNode.textContent = '—';
-            bonusNode.textContent = '—%';
+            return await csEvalState.dashboardStatPromise;
+        } finally {
+            csEvalState.dashboardStatPromise = null;
         }
     }
 
@@ -69576,6 +69710,11 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-tab
     }
 
     async function refreshSubmittedIndicatorsV6449() {
+        // V64.84.15: indikator detail hanya dihitung saat Evaluasi CS sedang aktif.
+        // Di halaman lain, cs_evaluation_realtime_state menjadi sinyal invalidasi
+        // tanpa 3 request PostgREST setiap 45 detik.
+        if (typeof currentTab !== 'undefined' && currentTab !== 'evaluation') return;
+        if (document.hidden) return;
         if (state.refreshPromise) return state.refreshPromise;
         state.refreshPromise = (async () => {
             const periodId = await selectedPeriodId();
@@ -69676,10 +69815,14 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-tab
             if (!document.hidden) queueRefresh(120);
         });
 
-        queueRefresh(650);
+        if (typeof currentTab !== 'undefined' && currentTab === 'evaluation') {
+            queueRefresh(650);
+        }
         window.setInterval(() => {
-            if (!document.hidden && document.getElementById('tab-evaluation')) queueRefresh(0);
-        }, 45000);
+            if (!document.hidden && typeof currentTab !== 'undefined' && currentTab === 'evaluation') {
+                queueRefresh(0);
+            }
+        }, 10 * 60 * 1000);
 
         try {
             if (typeof supabaseDashboard !== 'undefined' && supabaseDashboard) {
@@ -69690,7 +69833,24 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-evaluation .cs-eval-tab
                         schema: 'public',
                         table: 'cs_evaluation_realtime_state',
                         filter: 'id=eq.1'
-                    }, () => queueRefresh(450))
+                    }, () => {
+                        try {
+                            if (typeof csEvalState !== 'undefined' && csEvalState.dashboardStatCache) {
+                                csEvalState.dashboardStatCache.loadedAt = 0;
+                            }
+                        } catch (_) {}
+
+                        if (typeof currentTab !== 'undefined' && currentTab === 'evaluation') {
+                            queueRefresh(450);
+                        } else if (
+                            typeof currentTab !== 'undefined' &&
+                            currentTab === 'dashboard' &&
+                            !document.hidden &&
+                            typeof window.refreshDashboardCsEvaluationStat === 'function'
+                        ) {
+                            window.setTimeout(() => window.refreshDashboardCsEvaluationStat(true), 700);
+                        }
+                    })
                     .subscribe();
             }
         } catch (error) {
@@ -78892,9 +79052,27 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] .page-heading p {
     new MutationObserver(sync).observe(root,{attributes:true,attributeFilter:['data-theme','data-theme-variant']});
     if (sidebar) new MutationObserver(hideTip).observe(sidebar,{attributes:true,attributeFilter:['class']});
     sync();
-    root.dataset.dashboardBuild = 'v64.84.14';
+    root.dataset.dashboardBuild = 'v64.84.15';
 })();
 </script>
 
+
+<script id="v64-84-15-egress-optimization-runtime">
+(() => {
+    const report = {
+        build: 'v64.84.15',
+        mode: 'realtime-primary',
+        automaticFullReload: false,
+        maintenanceMinutes: 20,
+        settingsRevisionThrottleMinutes: 5,
+        evaluationBackgroundPolling: false,
+        ipWhitelistCache: true,
+        shiftLazyLoad: true,
+        employeeDirectoryReuse: true
+    };
+    window.dashboardEgressOptimization = Object.freeze(report);
+    console.info('♻️ V64.84.15 Egress Optimization aktif', report);
+})();
+</script>
 </body>
 </html>
