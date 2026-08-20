@@ -82622,6 +82622,27 @@ body > [${GATE_ATTR}="true"]{display:none!important;visibility:hidden!important;
     a6Status:'HOLD / DEFERRED', activate, deactivate, sync:()=>{syncThemeOwnership();scheduleSync(0)}, getState
   });
 
+  const syncG1StageAfterAuthFinalized = async accessGranted => {
+    if(!isMechaSelected())return;
+    if(!state.active&&state.mounting)await state.mounting;
+    if(!state.active)await activate();
+    const api=state.childWindow&&state.childWindow.MechaIvoryWholeSystem;
+    if(!api||typeof api.setStage!=='function')return;
+    api.setStage(accessGranted===true&&getCurrentUser()?'app':'boot');
+  };
+  const installAuthStageSynchronization = () => {
+    const originalCheckAuth=global.checkAuth;
+    if(typeof originalCheckAuth!=='function'||originalCheckAuth.__miAuthStageSyncWrapped===true)return;
+    const wrappedCheckAuth=async function(...args){
+      const result=await originalCheckAuth.apply(this,args);
+      try{await syncG1StageAfterAuthFinalized(result)}catch(error){state.lastError=error;console.error('[Mecha Ivory Production Assembly] auth→G1 stage sync failed:',error)}
+      return result;
+    };
+    Object.defineProperty(wrappedCheckAuth,'__miAuthStageSyncWrapped',{value:true});
+    global.checkAuth=wrappedCheckAuth;
+  };
+  installAuthStageSynchronization();
+
   const boot = () => {ensureMountRoot();installObservers();syncThemeOwnership()};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })(typeof window!=='undefined'?window:globalThis);
