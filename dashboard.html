@@ -82214,438 +82214,196 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
 
 <script id="mi-production-assembly-reconciled-v1">
 /*
- * Mecha Ivory NEW Production Assembly / Reconciliation v1
- * NEW artifact: not a byte-identical reconstruction of historical Phase JS files.
- * Implementation authority: completed PASS contracts Phase 1-10, Post-Phase-5, Post-A8.
- * Functional Core identity: corrected V3 4eba465047fa22e1c36263dcae121299ed46f0803e5361d2d81677bddd2d722d.
- * Presentation authority: exact external G1-P08 2dc41086d6604205078010b5bfc3fa45a510364a6174f337b2cc1a5132adef18.
- * A6 PCS-G2: deliberately excluded / deferred.
+ * Mecha Ivory Native Presentation Host Correction v1
+ * Supersedes only the former full-screen isolated G1 iframe execution model.
+ *
+ * Functional Core authority (unchanged):
+ *   dashboard_mecha_ivory_runtime_assets_only_v3_appearance_contract_corrected.html
+ *   SHA-256 4eba465047fa22e1c36263dcae121299ed46f0803e5361d2d81677bddd2d722d
+ *
+ * Frozen visual authority retained:
+ *   G1-P08 corrected authority SHA-256
+ *   2dc41086d6604205078010b5bfc3fa45a510364a6174f337b2cc1a5132adef18
+ *
+ * Native visual execution is provided by the already-authoritative
+ * #mi-production-authority-g1p08-pcs rules contained in the corrected V3.
+ * This adapter only classifies the live V3 DOM for A1-A9/Post-A8 presentation
+ * provenance and follows the existing V3 theme state. It creates no iframe,
+ * no business state, no auth/session lifecycle, no Supabase/realtime lifecycle,
+ * no mutation/persistence path, and no navigation router.
+ *
+ * A6 / PCS-G2 / Alpine integration remains HOLD / DEFERRED.
  */
-(function(global){
+(function(){
   'use strict';
 
-  const VERSION = '1.0.0';
+  const MI_THEME = 'mecha-ivory';
   const CORE_SHA256 = '4eba465047fa22e1c36263dcae121299ed46f0803e5361d2d81677bddd2d722d';
-  const G1_SHA256 = '2dc41086d6604205078010b5bfc3fa45a510364a6174f337b2cc1a5132adef18';
-  const G1_FILENAME = 'mecha-ivory-whole-system-application-shell-g1-p08';
-  const MOUNT_ID = 'mi-production-g1-mount-root';
-  const GATE_ATTR = 'data-mi-production-legacy-gated';
-  const CHILD_STYLE_ID = 'mi-production-projection-style';
-  const CHILD_ROOT_ID = 'mi-production-projection';
-  const CHILD_TRANSIENT_ID = 'mi-production-transient-layer';
-  const CHILD_TOAST_ID = 'mi-production-toast-layer';
-  const PARENT_STYLE_ID = 'mi-production-assembly-parent-style';
-  const MAX_PROJECT_DEPTH = 16;
+  const G1_VISUAL_AUTHORITY_SHA256 = '2dc41086d6604205078010b5bfc3fa45a510364a6174f337b2cc1a5132adef18';
+  const AUTHORITY_STYLE_ID = 'mi-production-authority-g1p08-pcs';
+  const ACTIVE_ATTR = 'data-mi-native-presentation';
+  const SURFACE_ATTR = 'data-mi-surface';
+  const CONTRACT_ATTR = 'data-mi-contracts';
 
-  const TAB_META = Object.freeze({
-    dashboard: Object.freeze({title:'Dashboard', subtitle:'Ringkasan operasional dan prioritas kerja.'}),
-    monitoring: Object.freeze({title:'Monitoring Izin', subtitle:'Monitoring izin real-time.'}),
-    voucher: Object.freeze({title:'Voucher', subtitle:'Voucher dan tindakan yang diizinkan.'}),
-    history: Object.freeze({title:'History Izin', subtitle:'Riwayat izin dan ekspor.'}),
-    users: Object.freeze({title:'Users', subtitle:'Direktori user dan data karyawan.'}),
-    shifts: Object.freeze({title:'Shift Kerja', subtitle:'Atur pembagian anggota pada setiap jadwal shift.'}),
-    historyshift: Object.freeze({title:'Riwayat Shift', subtitle:'Riwayat penyimpanan dan aktivitas shift.'}),
-    evaluation: Object.freeze({title:'Evaluasi CS', subtitle:'Evaluasi, banding, dan laporan operasional.'}),
-    settings: Object.freeze({title:'Settings', subtitle:'Pengaturan sistem dan permission matrix.'})
-  });
-  const NAV_LABEL_TO_TAB = Object.freeze({
-    'dashboard':'dashboard','monitoring izin':'monitoring','voucher':'voucher','history izin':'history',
-    'users':'users','shift kerja':'shifts','riwayat shift':'historyshift','evaluasi cs':'evaluation','settings':'settings'
-  });
-  const THEME_CHOICES = Object.freeze([
-    ['light','DDT Original'],['dark','Cyber Dark'],['pink','Pink'],['emerald','Emerald'],
-    ['purple','Purple'],['ocean','Ocean'],['rose-gold','Rose Gold'],['venom','Venom Green'],['mecha-ivory','Mecha Ivory']
+  const CONTRACTS = Object.freeze([
+    Object.freeze({id:'A1', surface:'profile', selectors:Object.freeze([
+      '#headerProfileButton','#profileContainer','#profileDropdown',
+      '.header-profile-button','.profile-container','.profile-dropdown'
+    ])}),
+    Object.freeze({id:'A2', surface:'view-users', selectors:Object.freeze(['#tab-users'])}),
+    Object.freeze({id:'A3', surface:'view-voucher', selectors:Object.freeze(['#tab-voucher'])}),
+    Object.freeze({id:'A4', surface:'view-shift', selectors:Object.freeze(['#tab-shifts'])}),
+    Object.freeze({id:'A5', surface:'transient', selectors:Object.freeze([
+      '#jackpotModal','#claimPopup','#popupLimit','#saveShiftPopup',
+      '#employeeEditorModal','#premiumConfirmModal','#deleteConfirmModal',
+      '#animalEmojiPicker','#shiftPeriodEditOverlay',
+      '#csEvalDetailOverlay','#csEvalAppealOverlay','#csEvalManualOverlay','#csEvalPromptOverlay'
+    ])}),
+    Object.freeze({id:'A7', surface:'view-settings', selectors:Object.freeze(['#tab-settings'])}),
+    Object.freeze({id:'A8', surface:'view-evaluation', selectors:Object.freeze([
+      '#tab-evaluation','#csEvalDetailOverlay','#csEvalAppealOverlay',
+      '#csEvalManualOverlay','#csEvalPromptOverlay'
+    ])}),
+    Object.freeze({id:'A9', surface:'permission', selectors:Object.freeze([
+      '#tab-settings .permission-matrix-table',
+      '#tab-settings .permission-matrix-panel',
+      '#tab-settings .permission-feature-content',
+      '#tab-settings .permission-role-cell'
+    ])}),
+    Object.freeze({id:'Post-A8', surface:'generic-view', selectors:Object.freeze([
+      '#tab-dashboard','#tab-monitoring','#tab-history','#tab-historyshift',
+      '#tab-shifts .shift-log-container'
+    ])})
+  ]);
+
+  const GENERIC_SURFACES = Object.freeze([
+    Object.freeze({surface:'sidebar', selectors:Object.freeze(['.sidebar'])}),
+    Object.freeze({surface:'header', selectors:Object.freeze(['.topbar'])}),
+    Object.freeze({surface:'workspace', selectors:Object.freeze(['.tab-content'])}),
+    Object.freeze({surface:'module', selectors:Object.freeze([
+      '.home-feature-card','.employee-priority-card','.employee-users-card',
+      '.live-izin-container','.monitoring-members-panel','.table-wrap',
+      '.history-shift-container','.shift-log-container','.settings-card .section',
+      '.permission-matrix-panel','.settings-existing-panel','.card',
+      '.voucher-card','.history-container','.shift-column-wrapper','.shift-available'
+    ])}),
+    Object.freeze({surface:'table', selectors:Object.freeze([
+      '.table-wrap','table','.permission-matrix-table'
+    ])}),
+    Object.freeze({surface:'form', selectors:Object.freeze([
+      '.settings-card','form','.modal-content','.cs-eval-modal-content'
+    ])}),
+    Object.freeze({surface:'signal', selectors:Object.freeze([
+      '#toastNotification','.toast','.badge','.status-badge'
+    ])})
   ]);
 
   const state = {
-    mountRoot:null, iframe:null, childWindow:null, childDocument:null, authority:null,
-    mounted:false, active:false, mounting:null, sourceMap:new Map(), keySeq:0,
-    legacySnapshot:new Map(), pageObserver:null, bodyObserver:null, rootObserver:null,
-    syncTimer:null, transientTimer:null, headerBound:false, lastTab:null, lastToastText:'',
-    lastError:null
+    active:false,
+    scheduled:false,
+    bodyObserver:null,
+    rootObserver:null
   };
 
-  const normalizeSha = value => String(value || '').trim().toLowerCase();
-  const bytesToHex = bytes => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2,'0')).join('');
-  const digestSha256 = async buffer => bytesToHex(await global.crypto.subtle.digest('SHA-256', buffer));
   const isMechaSelected = () => {
     const root = document.documentElement;
-    return root.dataset.selectedTheme === 'mecha-ivory' || root.getAttribute('data-theme-variant') === 'mecha-ivory';
-  };
-  const safeText = value => String(value == null ? '' : value).replace(/\s+/g,' ').trim();
-  const currentTabValue = () => {
-    try { if (typeof currentTab === 'string' && TAB_META[currentTab]) return currentTab; } catch(_) {}
-    const active = document.querySelector('.tab-content.active[id^="tab-"]');
-    const fromDom = active ? active.id.slice(4) : 'dashboard';
-    return TAB_META[fromDom] ? fromDom : 'dashboard';
-  };
-  const getCurrentUser = () => { try { return currentUser || null; } catch(_) { return null; } };
-  const getCurrentRole = () => { try { return currentUserRole || ''; } catch(_) { return ''; } };
-  const getVoucherCountFor = name => {
-    try {
-      if (!name || !voucherData || typeof voucherData !== 'object') return 0;
-      const raw = voucherData[name];
-      if (typeof raw === 'number') return raw;
-      if (raw && typeof raw === 'object') return Number(raw.count ?? raw.jumlah ?? raw.voucher ?? 0) || 0;
-    } catch(_) {}
-    return 0;
+    return root.dataset.selectedTheme === MI_THEME ||
+      root.getAttribute('data-theme-variant') === MI_THEME;
   };
 
-  const ensureParentStyle = () => {
-    if (document.getElementById(PARENT_STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = PARENT_STYLE_ID;
-    style.textContent = `
-body > [${GATE_ATTR}="true"]{display:none!important;visibility:hidden!important;pointer-events:none!important}
-#${MOUNT_ID}{position:fixed;inset:0;z-index:9800;display:none;background:#dedbd4;overflow:hidden}
-#${MOUNT_ID}[data-active="true"]{display:block}
-#${MOUNT_ID}>iframe{display:block;width:100%;height:100%;border:0;background:#dedbd4}`;
-    (document.head || document.documentElement).appendChild(style);
+  const mergeToken = (element, attribute, token) => {
+    if (!element || !token) return;
+    const tokens = new Set(String(element.getAttribute(attribute) || '').split(/\s+/).filter(Boolean));
+    tokens.add(token);
+    element.setAttribute(attribute, Array.from(tokens).join(' '));
   };
 
-  const ensureMountRoot = () => {
-    ensureParentStyle();
-    let root = document.getElementById(MOUNT_ID);
-    if (!root) {
-      root = document.createElement('div');
-      root.id = MOUNT_ID;
-      root.setAttribute('data-mi-integration-role','g1-isolated-presentation-mount');
-      root.setAttribute('data-active','false');
-      root.inert = true;
-      document.body.appendChild(root);
+  const classifySelector = (selector, surface, contract) => {
+    let nodes;
+    try { nodes = document.querySelectorAll(selector); }
+    catch (_) { return; }
+    nodes.forEach(element => {
+      if (surface) mergeToken(element, SURFACE_ATTR, surface);
+      if (contract) mergeToken(element, CONTRACT_ATTR, contract);
+    });
+  };
+
+  const classifyLiveV3Dom = () => {
+    GENERIC_SURFACES.forEach(group => {
+      group.selectors.forEach(selector => classifySelector(selector, group.surface, ''));
+    });
+    CONTRACTS.forEach(contract => {
+      contract.selectors.forEach(selector => classifySelector(selector, contract.surface, contract.id));
+    });
+  };
+
+  const clearNativeAnnotations = () => {
+    document.querySelectorAll('['+SURFACE_ATTR+'],['+CONTRACT_ATTR+']').forEach(element => {
+      element.removeAttribute(SURFACE_ATTR);
+      element.removeAttribute(CONTRACT_ATTR);
+    });
+  };
+
+  const deactivate = () => {
+    state.active = false;
+    document.documentElement.removeAttribute(ACTIVE_ATTR);
+    clearNativeAnnotations();
+  };
+
+  const refresh = () => {
+    state.scheduled = false;
+    if (!isMechaSelected()) {
+      if (state.active) deactivate();
+      return;
     }
-    state.mountRoot = root;
-    return root;
-  };
 
-  const authorityUrl = () => new URL(G1_FILENAME, global.location.href);
-  const fetchAuthority = async url => {
-    if (!global.crypto || !global.crypto.subtle) throw new Error('WebCrypto SHA-256 unavailable');
-    const response = await fetch(url.href,{method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error'});
-    if (!response.ok) throw new Error('G1 authority fetch failed: HTTP '+response.status);
-    const finalUrl = new URL(response.url || url.href, url.href);
-    if (finalUrl.origin !== url.origin || finalUrl.pathname !== url.pathname) throw new Error('G1 authority redirect/path mismatch');
-    const bytes = await response.arrayBuffer();
-    const sha256 = await digestSha256(bytes);
-    if (sha256 !== G1_SHA256) throw new Error('G1 authority SHA mismatch: '+sha256);
-    return Object.freeze({url:url.href,origin:url.origin,pathname:url.pathname,sha256,byteLength:bytes.byteLength});
-  };
-
-  const waitFrame = (frame, timeout=20000) => new Promise((resolve,reject)=>{
-    let done=false; const finish=(fn,v)=>{if(done)return;done=true;clearTimeout(timer);frame.removeEventListener('load',onload);frame.removeEventListener('error',onerror);fn(v)};
-    const onload=()=>finish(resolve,true); const onerror=()=>finish(reject,new Error('G1 iframe load failed'));
-    frame.addEventListener('load',onload,{once:true});frame.addEventListener('error',onerror,{once:true});
-    const timer=setTimeout(()=>finish(reject,new Error('G1 iframe load timeout')),timeout);
-  });
-
-  const mountExactG1 = async () => {
-    if (state.mounted) return state.authority;
-    if (state.mounting) return state.mounting;
-    state.mounting = (async()=>{
-      const root = ensureMountRoot();
-      const url = authorityUrl();
-      if (url.origin !== global.location.origin || !/^https?:$/.test(url.protocol)) throw new Error('G1 must be served as same-origin HTTP(S) external document');
-      const pre = await fetchAuthority(url);
-      const frame = document.createElement('iframe');
-      frame.title = 'Mecha Ivory presentation context';
-      frame.setAttribute('data-mi-production-context','g1-p08');
-      frame.setAttribute('aria-hidden','true');
-      frame.tabIndex = -1;
-      frame.hidden = true;
-      frame.inert = true;
-      frame.loading = 'eager';
-      frame.src = url.href;
-      root.replaceChildren(frame);
-      await waitFrame(frame);
-      const cw = frame.contentWindow, cd = frame.contentDocument;
-      if (!cw || !cd || cd.nodeType !== 9) throw new Error('G1 same-origin document unavailable');
-      const actualUrl = new URL(cw.location.href);
-      if (actualUrl.origin !== url.origin || actualUrl.pathname !== url.pathname) throw new Error('Mounted G1 URL mismatch');
-      const api = cw.MechaIvoryWholeSystem;
-      ['setStage','setNavOpen','setPopup','setOverlay','getState'].forEach(name=>{if(!api || typeof api[name] !== 'function') throw new Error('G1 runtime missing '+name+'()')});
-      const post = await fetchAuthority(url);
-      if (post.sha256 !== pre.sha256 || post.byteLength !== pre.byteLength) throw new Error('G1 authority drift across mount');
-      state.iframe=frame; state.childWindow=cw; state.childDocument=cd; state.authority=post; state.mounted=true;
-      installChildStyle(); bindChildEvents();
-      return post;
-    })().catch(error=>{ state.lastError=error; state.mounted=false; console.error('[Mecha Ivory Production Assembly]',error); throw error; }).finally(()=>{state.mounting=null});
-    return state.mounting;
-  };
-
-  const directLegacyRoots = () => Array.from(document.body.children).filter(node => {
-    if (node === state.mountRoot) return false;
-    if (!node || node.nodeType !== 1) return false;
-    return !['SCRIPT','STYLE','LINK','META','TEMPLATE'].includes(node.tagName);
-  });
-  const gateLegacy = () => {
-    directLegacyRoots().forEach(node=>{
-      if (!state.legacySnapshot.has(node)) state.legacySnapshot.set(node,{inert:Boolean(node.inert),gated:node.getAttribute(GATE_ATTR)});
-      node.inert=true; node.setAttribute(GATE_ATTR,'true');
-    });
-  };
-  const restoreLegacy = () => {
-    state.legacySnapshot.forEach((snap,node)=>{
-      if (!node || !node.isConnected) return;
-      if (snap.gated == null) node.removeAttribute(GATE_ATTR); else node.setAttribute(GATE_ATTR,snap.gated);
-      try{node.inert=Boolean(snap.inert)}catch(_){}
-    });
-    state.legacySnapshot.clear();
-    directLegacyRoots().forEach(node=>node.removeAttribute(GATE_ATTR));
-  };
-
-  const installChildStyle = () => {
-    const d=state.childDocument; if(!d || d.getElementById(CHILD_STYLE_ID)) return;
-    const style=d.createElement('style'); style.id=CHILD_STYLE_ID; style.setAttribute('data-mi-production-runtime','projection');
-    style.textContent=`
-#${CHILD_ROOT_ID}{width:100%;min-width:0;color:var(--ink,#2d383c);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
-#${CHILD_ROOT_ID},#${CHILD_ROOT_ID} *{box-sizing:border-box}
-.mi-prod-page{display:grid;gap:12px;padding:0 0 12px}.mi-prod-panel{position:relative;padding:14px 15px;background:linear-gradient(118deg,rgba(251,250,246,.88),rgba(241,237,229,.90));border:1px solid rgba(92,104,101,.12);box-shadow:inset 0 1px rgba(255,255,255,.72)}
-.mi-prod-panel:before{content:"";position:absolute;left:0;top:0;width:34px;height:1px;background:linear-gradient(90deg,#6e7a78 0 7px,#b5aa98 7px 27px,transparent);opacity:.5}.mi-prod-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.mi-prod-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 0}.mi-prod-section{display:grid;gap:8px;min-width:0}.mi-prod-section>h1,.mi-prod-section>h2,.mi-prod-section>h3,.mi-prod-section>h4{margin:0;color:#384447;letter-spacing:.02em}.mi-prod-section p{margin:0;color:#6f7976;font-size:11px;line-height:1.45}
-.mi-prod-table-wrap{width:100%;overflow:auto;border:1px solid rgba(92,104,101,.12)}.mi-prod-table{width:100%;border-collapse:collapse;min-width:620px;background:rgba(251,250,246,.5)}.mi-prod-table th{padding:8px 9px;text-align:left;font-size:8px;letter-spacing:.07em;text-transform:uppercase;color:#6c7774;background:rgba(221,219,212,.52);border-bottom:1px solid rgba(92,104,101,.14)}.mi-prod-table td{padding:8px 9px;font-size:9px;color:#435052;border-bottom:1px solid rgba(92,104,101,.08);vertical-align:middle}.mi-prod-table tr:hover td{background:rgba(118,183,198,.055)}
-.mi-prod-control{min-height:32px;max-width:100%;padding:6px 8px;border:0;border-bottom:1px solid rgba(83,96,93,.22);background:rgba(255,255,255,.22);color:#364346;font:600 9px/1.2 inherit;outline:none}.mi-prod-control:focus{border-bottom-color:#4a8997;box-shadow:inset 0 -1px #4a8997}.mi-prod-action{min-height:29px;padding:0 10px;border:0;border-left:2px solid #8b9b98;border-bottom:1px solid rgba(83,96,93,.18);background:rgba(255,255,255,.18);color:#465451;font:750 8px/1 inherit;letter-spacing:.045em;cursor:pointer}.mi-prod-action:hover,.mi-prod-action:focus-visible{border-left-color:#76b7c6;background:rgba(118,183,198,.08);outline:none}.mi-prod-action[disabled]{opacity:.45;cursor:not-allowed}.mi-prod-badge{display:inline-flex;align-items:center;min-height:18px;padding:2px 6px;border-left:2px solid #8b9b98;background:rgba(111,123,120,.07);font-size:7px;font-weight:750;letter-spacing:.04em}
-.mi-prod-shift-grid{display:grid;grid-template-columns:minmax(180px,.7fr) repeat(auto-fit,minmax(210px,1fr));gap:9px;align-items:start}.mi-prod-shift-column{min-width:0;padding:10px;border:1px solid rgba(92,104,101,.14);background:rgba(251,250,246,.58)}.mi-prod-user-card{padding:7px 8px;margin:4px 0;border-left:2px solid #9aa6a3;background:rgba(255,255,255,.25);font-size:9px;cursor:grab}
-.mi-prod-profile-drawer,.mi-prod-theme-drawer{position:absolute;right:10px;top:calc(100% - 3px);z-index:12050;width:min(310px,calc(100vw - 24px));padding:14px;background:linear-gradient(118deg,#fbfaf6,#f1ede5 55%,#e8e2d8);border:1px solid rgba(91,102,99,.18);box-shadow:0 18px 36px rgba(20,25,27,.14)}.mi-prod-profile-drawer{display:grid;gap:10px}.mi-prod-profile-head b{display:block;font-size:11px}.mi-prod-profile-head span{font-size:8px;color:#77817f}.mi-prod-profile-actions,.mi-prod-theme-options{display:grid;gap:5px}.mi-prod-theme-options{grid-template-columns:1fr 1fr}
-#${CHILD_TRANSIENT_ID}{position:fixed;inset:0;z-index:12000;pointer-events:none}.mi-prod-transient-backdrop{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:rgba(31,38,40,.28);pointer-events:auto}.mi-prod-transient{width:min(720px,calc(100% - 30px));max-height:min(82vh,760px);overflow:auto;padding:18px;background:linear-gradient(118deg,#fbfaf6,#f1ede5 55%,#e8e2d8);border:1px solid rgba(91,102,99,.20);box-shadow:0 20px 44px rgba(20,25,27,.18)}
-#${CHILD_TOAST_ID}{position:fixed;right:20px;bottom:18px;z-index:12100;display:grid;gap:7px;pointer-events:none}.mi-prod-toast{max-width:min(360px,calc(100vw - 28px));padding:10px 12px;border-left:2px solid #76b7c6;background:rgba(241,237,229,.97);box-shadow:0 12px 28px rgba(20,25,27,.14);font-size:9px;color:#465350}
-@media(max-width:760px){.mi-prod-page{gap:9px}.mi-prod-panel{padding:11px}.mi-prod-grid{grid-template-columns:1fr}.mi-prod-shift-grid{grid-template-columns:1fr}.mi-prod-table{min-width:560px}.mi-prod-theme-options{grid-template-columns:1fr}}
-`;
-    (d.head||d.documentElement).appendChild(style);
-  };
-
-  const childWorkspace = () => state.childDocument && state.childDocument.querySelector('.sys-workspace');
-  const registerSource = source => { const key='s'+(++state.keySeq); state.sourceMap.set(key,source); return key; };
-  const actionable = el => el && (['BUTTON','A','INPUT','SELECT','TEXTAREA'].includes(el.tagName) || el.hasAttribute('onclick') || el.getAttribute('role')==='button' || el.draggable);
-  const sourceVisibleByState = el => {
-    if (!el || el.nodeType !== 1) return true;
-    if (el.hidden || el.getAttribute('aria-hidden')==='true') return false;
-    const inline=(el.getAttribute('style')||'').toLowerCase();
-    if (/display\s*:\s*none/.test(inline) || /visibility\s*:\s*hidden/.test(inline)) return false;
-    return true;
-  };
-  const mappedClass = el => {
-    const cls=(el.className && typeof el.className==='string'?el.className:'').toLowerCase();
-    const out=['mi-prod-section'];
-    if (/toolbar|filter|search-container|actions|header-right|control/.test(cls)) out.push('mi-prod-toolbar');
-    if (/card|panel|section|container|summary|banner|workspace-final/.test(cls)) out.push('mi-prod-panel');
-    if (/grid|row-cards|stats/.test(cls)) out.push('mi-prod-grid');
-    if (/badge|tag|status/.test(cls)) out.push('mi-prod-badge');
-    if (/shift-main-grid|shift-columns-wrapper/.test(cls)) out.push('mi-prod-shift-grid');
-    if (/shift-column-wrapper|shift-column|shift-available/.test(cls)) out.push('mi-prod-shift-column');
-    if (/user-card-shift|employee-user-row/.test(cls)) out.push('mi-prod-user-card');
-    return Array.from(new Set(out)).join(' ');
-  };
-
-  const projectNode = (node, d, depth=0) => {
-    if (!node || depth>MAX_PROJECT_DEPTH) return null;
-    if (node.nodeType===3) { const t=safeText(node.nodeValue); return t?d.createTextNode(t+' '):null; }
-    if (node.nodeType!==1) return null;
-    const tag=node.tagName;
-    if (['SCRIPT','STYLE','NOSCRIPT','TEMPLATE','SVG','IMG','VIDEO','CANVAS'].includes(tag)) return null;
-    if (!sourceVisibleByState(node)) return null;
-    let out;
-    if (tag==='TABLE') {
-      const wrap=d.createElement('div'); wrap.className='mi-prod-table-wrap';
-      out=d.createElement('table'); out.className='mi-prod-table'; wrap.appendChild(out);
-      Array.from(node.childNodes).forEach(ch=>{const c=projectNode(ch,d,depth+1);if(c)out.appendChild(c)});
-      return wrap;
+    /* Fail closed to the existing V3 presentation if the frozen native
+       visual-authority adapter is not present. No replacement UI is created. */
+    if (!document.getElementById(AUTHORITY_STYLE_ID)) {
+      deactivate();
+      return;
     }
-    if (['THEAD','TBODY','TFOOT','TR','TH','TD'].includes(tag)) out=d.createElement(tag.toLowerCase());
-    else if (['H1','H2','H3','H4','H5','H6','P','SMALL','STRONG','B','EM','SPAN','LABEL'].includes(tag)) out=d.createElement(tag.toLowerCase());
-    else if (tag==='INPUT') { out=d.createElement('input'); out.className='mi-prod-control'; out.type=node.type||'text'; out.value=node.value||''; out.checked=Boolean(node.checked); out.disabled=Boolean(node.disabled); if(node.placeholder)out.placeholder=node.placeholder; }
-    else if (tag==='TEXTAREA') { out=d.createElement('textarea'); out.className='mi-prod-control'; out.value=node.value||''; out.disabled=Boolean(node.disabled); if(node.placeholder)out.placeholder=node.placeholder; }
-    else if (tag==='SELECT') { out=d.createElement('select'); out.className='mi-prod-control'; out.disabled=Boolean(node.disabled); Array.from(node.options||[]).forEach(opt=>{const o=d.createElement('option');o.value=opt.value;o.textContent=opt.textContent;o.selected=opt.selected;out.appendChild(o)}); }
-    else if (tag==='BUTTON' || tag==='A' || node.getAttribute('role')==='button') { out=d.createElement('button'); out.type='button'; out.className='mi-prod-action'; out.disabled=Boolean(node.disabled); const label=safeText(node.textContent)||node.getAttribute('aria-label')||node.getAttribute('title')||node.getAttribute('data-cs-tooltip')||'Action'; out.textContent=label; }
-    else { out=d.createElement(['SECTION','ARTICLE','ASIDE','NAV','FORM'].includes(tag)?tag.toLowerCase():'div'); out.className=mappedClass(node); }
-    if (actionable(node)) { const key=registerSource(node); out.setAttribute('data-mi-source-key',key); if(node.draggable){out.draggable=true;out.setAttribute('data-mi-drag-proxy','true')} }
-    ['title','aria-label','aria-pressed','aria-expanded'].forEach(a=>{const v=node.getAttribute(a);if(v!=null)out.setAttribute(a,v)});
-    if (!['INPUT','TEXTAREA','SELECT','BUTTON','A'].includes(tag)) Array.from(node.childNodes).forEach(ch=>{const c=projectNode(ch,d,depth+1);if(c)out.appendChild(c)});
-    return out;
+
+    state.active = true;
+    document.documentElement.setAttribute(ACTIVE_ATTR, MI_THEME);
+    classifyLiveV3Dom();
   };
 
-  const restoreWorkspaceDefaults = () => {
-    const d=state.childDocument, ws=childWorkspace(); if(!d||!ws)return;
-    d.getElementById(CHILD_ROOT_ID)?.remove();
-    Array.from(ws.children).forEach(node=>{
-      if (node.hasAttribute('data-mi-production-original')) {
-        const hidden=node.getAttribute('data-mi-production-original-hidden')==='true';
-        hidden?node.setAttribute('hidden',''):node.removeAttribute('hidden');
-        node.inert=false; node.removeAttribute('aria-hidden');
-        node.removeAttribute('data-mi-production-original'); node.removeAttribute('data-mi-production-original-hidden');
-      }
-    });
+  const scheduleRefresh = () => {
+    if (state.scheduled) return;
+    state.scheduled = true;
+    requestAnimationFrame(refresh);
   };
-  const prepareWorkspace = () => {
-    const d=state.childDocument, ws=childWorkspace(); if(!d||!ws)throw new Error('G1 workspace host unavailable');
-    d.getElementById(CHILD_ROOT_ID)?.remove();
-    Array.from(ws.children).forEach(node=>{
-      if (!node.hasAttribute('data-mi-production-original')) {
-        node.setAttribute('data-mi-production-original','true');
-        node.setAttribute('data-mi-production-original-hidden',node.hasAttribute('hidden')?'true':'false');
-      }
-      node.setAttribute('hidden',''); node.setAttribute('aria-hidden','true'); node.inert=true;
-    });
-    return ws;
-  };
-  const updateHeader = tab => {
-    const d=state.childDocument; if(!d)return; const meta=TAB_META[tab]||TAB_META.dashboard;
-    const h=d.querySelector('.sys-header .mih-title h1'); const p=d.querySelector('.sys-header .mih-title p');
-    if(h)h.textContent=meta.title;if(p)p.textContent=meta.subtitle;
-    d.querySelectorAll('.miv2-item').forEach(item=>{
-      const label=safeText(item.getAttribute('title')||item.textContent).toLowerCase(); const mapped=NAV_LABEL_TO_TAB[label];
-      item.classList.toggle('miv2-item-active',mapped===tab);
-    });
-  };
-
-  const syncBadges = () => {
-    const d=state.childDocument;if(!d)return;
-    const badgeByTab={monitoring:'#sidebarBadgeIzin',voucher:'#sidebarBadgeVoucher',users:'#sidebarBadgeTotal'};
-    d.querySelectorAll('.miv2-item').forEach(item=>{
-      const label=safeText(item.getAttribute('title')||item.textContent).toLowerCase(); const tab=NAV_LABEL_TO_TAB[label]; const selector=badgeByTab[tab]; if(!selector)return;
-      const src=document.querySelector(selector); if(!src)return; const value=safeText(src.textContent); let badge=item.querySelector('[data-mi-production-badge]');
-      if(!badge){badge=d.createElement('span');badge.setAttribute('data-mi-production-badge','true');badge.className='sbn-source-indicator';item.appendChild(badge)} badge.textContent=value;
-    });
-  };
-
-  const syncPageNow = () => {
-    if(!state.active||!state.childDocument)return;
-    const tab=currentTabValue(); const source=document.getElementById('tab-'+tab); if(!source)return;
-    state.sourceMap.clear();state.keySeq=0;
-    const d=state.childDocument, ws=prepareWorkspace(); const root=d.createElement('section');root.id=CHILD_ROOT_ID;root.className='mi-prod-page';root.setAttribute('data-mi-production-view',tab);
-    const projected=projectNode(source,d,0); if(projected)root.appendChild(projected); else {const empty=d.createElement('section');empty.className='mi-prod-panel';empty.textContent='Tidak ada data presentation untuk '+(TAB_META[tab]?.title||tab)+'.';root.appendChild(empty)}
-    ws.appendChild(root); updateHeader(tab); syncBadges(); state.lastTab=tab; syncTransientsNow();
-  };
-  const scheduleSync = (delay=50) => { if(!state.active)return; clearTimeout(state.syncTimer); state.syncTimer=setTimeout(syncPageNow,delay); };
-
-  const copyControlValue = (clone,source) => {
-    if(!clone||!source)return;
-    if(source.tagName==='INPUT' && ['checkbox','radio'].includes(source.type)) source.checked=Boolean(clone.checked);
-    else if('value' in source && 'value' in clone) source.value=clone.value;
-  };
-  const forwardDrag = (type,event,source) => {
-    try { source.dispatchEvent(new DragEvent(type,{bubbles:true,cancelable:true,dataTransfer:event.dataTransfer})); }
-    catch(_) { source.dispatchEvent(new Event(type,{bubbles:true,cancelable:true})); }
-  };
-  const forwardSourceEvent = event => {
-    const el=event.target?.closest?.('[data-mi-source-key]');if(!el)return false;const source=state.sourceMap.get(el.getAttribute('data-mi-source-key'));if(!source||!source.isConnected)return false;
-    const type=event.type;
-    if(type==='click'){ event.preventDefault(); try{source.click()}catch(_){source.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}))} scheduleSync(80); return true; }
-    if(type==='input'||type==='change'){ copyControlValue(el,source); source.dispatchEvent(new Event(type,{bubbles:true,cancelable:true})); scheduleSync(80); return true; }
-    if(type==='dblclick'){event.preventDefault();source.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true}));scheduleSync(80);return true;}
-    if(['dragstart','dragend','dragover','dragleave','drop'].includes(type)){ if(type==='dragover'||type==='drop')event.preventDefault();forwardDrag(type,event,source);scheduleSync(120);return true; }
-    return false;
-  };
-
-  const toggleProfile = () => {
-    const d=state.childDocument;if(!d)return; const existing=d.querySelector('.mi-prod-profile-drawer'); if(existing){existing.remove();return}
-    d.querySelector('.mi-prod-theme-drawer')?.remove(); const header=d.querySelector('.sys-header'); if(!header)return;
-    const user=getCurrentUser()||{}; const name=safeText(user.nama||user.name||user.full_name||user.email)||'User'; const email=safeText(user.email)||''; const role=safeText(getCurrentRole()||user.role)||'User';
-    const panel=d.createElement('aside');panel.className='mi-prod-profile-drawer';panel.setAttribute('role','region');panel.setAttribute('aria-label','Profile account panel');
-    const head=d.createElement('div');head.className='mi-prod-profile-head';head.innerHTML='<b></b><span></span>';head.querySelector('b').textContent=name;head.querySelector('span').textContent=[email,role].filter(Boolean).join(' · ');panel.appendChild(head);
-    const actions=d.createElement('div');actions.className='mi-prod-profile-actions';
-    const voucher=d.createElement('div');voucher.className='mi-prod-panel';voucher.textContent='Voucher · '+getVoucherCountFor(name);actions.appendChild(voucher);
-    const logout=d.createElement('button');logout.type='button';logout.className='mi-prod-action';logout.textContent='Logout';logout.addEventListener('click',()=>{if(typeof global.logout==='function')global.logout()});actions.appendChild(logout);panel.appendChild(actions);header.appendChild(panel);
-  };
-  const toggleTheme = () => {
-    const d=state.childDocument;if(!d)return;const existing=d.querySelector('.mi-prod-theme-drawer');if(existing){existing.remove();return} d.querySelector('.mi-prod-profile-drawer')?.remove(); const header=d.querySelector('.sys-header');if(!header)return;
-    const panel=d.createElement('aside');panel.className='mi-prod-theme-drawer';panel.setAttribute('role','region');panel.setAttribute('aria-label','Theme selection'); const title=d.createElement('b');title.textContent='Theme';panel.appendChild(title); const opts=d.createElement('div');opts.className='mi-prod-theme-options';
-    THEME_CHOICES.forEach(([id,label])=>{const b=d.createElement('button');b.type='button';b.className='mi-prod-action';b.textContent=label;b.addEventListener('click',()=>{try{if(typeof setTheme==='function')setTheme(id)}catch(error){console.error(error)};panel.remove();setTimeout(syncThemeOwnership,0)});opts.appendChild(b)});panel.appendChild(opts);header.appendChild(panel);
-  };
-
-  const bindChildEvents = () => {
-    if(state.headerBound||!state.childDocument)return;state.headerBound=true;const d=state.childDocument;
-    d.addEventListener('click',event=>{
-      const nav=event.target?.closest?.('.miv2-item');
-      if(nav){const label=safeText(nav.getAttribute('title')||nav.textContent).toLowerCase();const tab=NAV_LABEL_TO_TAB[label];if(tab){event.preventDefault();try{if(typeof global.switchTab==='function')global.switchTab(tab)}catch(error){console.error(error)};scheduleSync(80);return}}
-      if(event.target?.closest?.('.sys-header .mih-profile')){event.preventDefault();toggleProfile();return}
-      if(event.target?.closest?.('.sys-header .mih-theme')){event.preventDefault();toggleTheme();return}
-      forwardSourceEvent(event);
-    },true);
-    ['input','change','dblclick','dragstart','dragend','dragover','dragleave','drop'].forEach(type=>d.addEventListener(type,forwardSourceEvent,true));
-  };
-
-  const likelyTransientRoots = () => {
-    const selectors=['#jackpotModal','#claimPopup','#popupLimit','#csEvalDetailOverlay','#csEvalAppealOverlay','#csEvalManualOverlay','#csEvalPromptOverlay','#saveShiftPopup','#employeeEditorModal','#premiumConfirmModal','#deleteConfirmModal','#animalEmojiPicker','#shiftPeriodEditOverlay'];
-    return selectors.map(s=>document.querySelector(s)).filter(Boolean).filter(el=>{
-      if(el.hidden||el.getAttribute('aria-hidden')==='true')return false;const st=(el.getAttribute('style')||'').toLowerCase();if(/display\s*:\s*none/.test(st))return false;
-      const cls=(' '+(el.className||'')+' ').toLowerCase();return /\b(show|active|open|visible)\b/.test(cls)||/display\s*:\s*(flex|grid|block)/.test(st)||el.matches('.cs-eval-modal-overlay:not([style*="display: none"])');
-    });
-  };
-  const syncTransientsNow = () => {
-    if(!state.active||!state.childDocument)return;const d=state.childDocument;
-    let layer=d.getElementById(CHILD_TRANSIENT_ID);if(!layer){layer=d.createElement('div');layer.id=CHILD_TRANSIENT_ID;d.body.appendChild(layer)}layer.replaceChildren();
-    const roots=likelyTransientRoots();if(roots.length){const source=roots[roots.length-1];const back=d.createElement('div');back.className='mi-prod-transient-backdrop';const box=d.createElement('section');box.className='mi-prod-transient';const projected=projectNode(source,d,0);if(projected)box.appendChild(projected);back.appendChild(box);layer.appendChild(back)}
-    let toastLayer=d.getElementById(CHILD_TOAST_ID);if(!toastLayer){toastLayer=d.createElement('div');toastLayer.id=CHILD_TOAST_ID;d.body.appendChild(toastLayer)}
-    const toast=document.getElementById('toastNotification');const text=toast?safeText(toast.textContent):'';const visible=toast && !toast.hidden && !/display\s*:\s*none/.test((toast.getAttribute('style')||'').toLowerCase()) && toast.classList.contains('show');
-    if(visible&&text&&text!==state.lastToastText){state.lastToastText=text;const node=d.createElement('div');node.className='mi-prod-toast';node.textContent=text;toastLayer.appendChild(node);setTimeout(()=>node.remove(),3400)}
-  };
-  const scheduleTransientSync = () => {clearTimeout(state.transientTimer);state.transientTimer=setTimeout(syncTransientsNow,60)};
 
   const installObservers = () => {
-    if(state.bodyObserver)return;
-    state.bodyObserver=new MutationObserver(records=>{
-      if(!state.active)return;let page=false,transient=false;
-      for(const rec of records){const target=rec.target?.nodeType===1?rec.target:rec.target?.parentElement;if(!target)continue;if(state.mountRoot&&state.mountRoot.contains(target))continue;if(target.closest?.('.tab-content'))page=true;else transient=true;}
-      if(page)scheduleSync(70);if(transient)scheduleTransientSync();
-    });
-    state.bodyObserver.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','style','hidden','aria-hidden','value','disabled']});
-    state.rootObserver=new MutationObserver(()=>syncThemeOwnership());
-    state.rootObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-selected-theme','data-theme','data-theme-variant']});
+    if (!state.rootObserver) {
+      state.rootObserver = new MutationObserver(scheduleRefresh);
+      state.rootObserver.observe(document.documentElement, {
+        attributes:true,
+        attributeFilter:['data-theme','data-theme-variant','data-selected-theme']
+      });
+    }
+    if (!state.bodyObserver && document.body) {
+      state.bodyObserver = new MutationObserver(scheduleRefresh);
+      state.bodyObserver.observe(document.body, {childList:true, subtree:true});
+    }
   };
 
-  const activate = async () => {
-    if(state.active)return;await mountExactG1();gateLegacy();const root=ensureMountRoot();root.setAttribute('data-active','true');root.inert=false;
-    const frame=state.iframe;frame.hidden=false;frame.inert=false;frame.removeAttribute('aria-hidden');frame.tabIndex=0;frame.style.display='block';frame.style.pointerEvents='auto';
-    const api=state.childWindow.MechaIvoryWholeSystem;const user=getCurrentUser();api.setNavOpen(false);api.setPopup('none');api.setOverlay('none');api.setStage(user?'app':'boot');
-    state.active=true;installObservers();syncPageNow();
-  };
-  const deactivate = () => {
-    if(!state.active)return;state.active=false;clearTimeout(state.syncTimer);clearTimeout(state.transientTimer);restoreLegacy();restoreWorkspaceDefaults();
-    if(state.childDocument){state.childDocument.getElementById(CHILD_TRANSIENT_ID)?.replaceChildren();state.childDocument.querySelector('.mi-prod-profile-drawer')?.remove();state.childDocument.querySelector('.mi-prod-theme-drawer')?.remove()}
-    if(state.iframe){state.iframe.hidden=true;state.iframe.inert=true;state.iframe.setAttribute('aria-hidden','true');state.iframe.tabIndex=-1;state.iframe.style.display='none';state.iframe.style.pointerEvents='none'}
-    if(state.mountRoot){state.mountRoot.setAttribute('data-active','false');state.mountRoot.inert=true}
-  };
-  const syncThemeOwnership = () => {
-    if(isMechaSelected()) activate().catch(error=>{deactivate();state.lastError=error;console.error('[Mecha Ivory Production Assembly] fail-closed to Legacy presentation:',error)});
-    else deactivate();
+  const boot = () => {
+    installObservers();
+    refresh();
   };
 
-  const getState = () => Object.freeze({
-    version:VERSION, functionalCoreSha256:CORE_SHA256, expectedG1Sha256:G1_SHA256,
-    historicalPhaseBytesClaimed:false, a6:'HOLD / DEFERRED', mounted:state.mounted, active:state.active,
-    authority:state.authority, currentTab:currentTabValue(), sourceIntentMapSize:state.sourceMap.size,
-    lastError:state.lastError?String(state.lastError.message||state.lastError):null
-  });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, {once:true});
+  } else {
+    boot();
+  }
 
-  global.MechaIvoryProductionAssembly = Object.freeze({
-    version:VERSION, model:'corrected-v3-parent + exact-external-g1-p08 + consolidated-pass-contract-adapter',
-    functionalCoreSha256:CORE_SHA256, expectedG1Sha256:G1_SHA256, historicalPhaseBytesClaimed:false,
-    a6Status:'HOLD / DEFERRED', activate, deactivate, sync:()=>{syncThemeOwnership();scheduleSync(0)}, getState
-  });
-
-  const syncG1StageAfterAuthFinalized = async accessGranted => {
-    if(!isMechaSelected())return;
-    if(!state.active&&state.mounting)await state.mounting;
-    if(!state.active)await activate();
-    const api=state.childWindow&&state.childWindow.MechaIvoryWholeSystem;
-    if(!api||typeof api.setStage!=='function')return;
-    api.setStage(accessGranted===true&&getCurrentUser()?'app':'boot');
-  };
-  const installAuthStageSynchronization = () => {
-    const originalCheckAuth=global.checkAuth;
-    if(typeof originalCheckAuth!=='function'||originalCheckAuth.__miAuthStageSyncWrapped===true)return;
-    const wrappedCheckAuth=async function(...args){
-      const result=await originalCheckAuth.apply(this,args);
-      try{await syncG1StageAfterAuthFinalized(result)}catch(error){state.lastError=error;console.error('[Mecha Ivory Production Assembly] auth→G1 stage sync failed:',error)}
-      return result;
-    };
-    Object.defineProperty(wrappedCheckAuth,'__miAuthStageSyncWrapped',{value:true});
-    global.checkAuth=wrappedCheckAuth;
-  };
-  installAuthStageSynchronization();
-
-  const boot = () => {ensureMountRoot();installObservers();syncThemeOwnership()};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-})(typeof window!=='undefined'?window:globalThis);
+  /* Read-only provenance only; no runtime dependency or business ownership. */
+  void CORE_SHA256;
+  void G1_VISUAL_AUTHORITY_SHA256;
+})();
 </script>
 </body>
 </html>
