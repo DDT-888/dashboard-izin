@@ -315,7 +315,24 @@ html[data-theme="dark"][data-theme-variant="venom"] body .sidebar.collapsed .sid
 }
 </style>
 <style id="mi-m1-loader-first-paint-bridge">
-/* Milestone 1 integration bridge: V3 #pageLoader remains lifecycle owner; only its Mecha first-paint visual is replaced. */
+/* Milestone 1 integration bridge: V3 #pageLoader remains lifecycle owner.
+   The parser-time boot field uses the exact G1-P04 Graphite environment so
+   no Ivory application field can flash before the canonical 360ms reveal. */
+html[data-selected-theme="mecha-ivory"].boot-pending::before{
+  content:"";position:fixed;inset:0;z-index:99998;pointer-events:none;
+  background:
+    radial-gradient(circle at 78% 74%,rgba(118,183,198,.045),transparent 25%),
+    radial-gradient(circle at 13% 8%,rgba(255,255,255,.018),transparent 26%),
+    linear-gradient(180deg,#151a1b 0%,#111617 68%,#0e1314 100%);
+}
+html[data-selected-theme="mecha-ivory"].boot-pending::after{
+  content:"";position:fixed;inset:0;z-index:99998;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,rgba(241,237,229,.018) 0 1px,transparent 1px 46px),
+    repeating-linear-gradient(90deg,rgba(241,237,229,.014) 0 1px,transparent 1px 46px);
+  -webkit-mask-image:linear-gradient(120deg,transparent 0 28%,#000 50%,#000 100%);
+  mask-image:linear-gradient(120deg,transparent 0 28%,#000 50%,#000 100%);
+}
 html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader{
   background:
     radial-gradient(circle at 78% 74%,rgba(118,183,198,.045),transparent 25%),
@@ -87061,14 +87078,22 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pag
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pageLoader > .mil-screen.is-revealed:not(.is-exiting){
   opacity:1!important;visibility:visible!important;pointer-events:none!important;
 }
+/* Keep the exact G1-P04 Graphite boot field underneath the 280ms Frozen exit.
+   The field then fades over the tail of the canonical 360ms app entry, so the
+   handoff never exposes an intermediate Ivory-only frame. V3 still owns is-hidden. */
 html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden{
-  opacity:1!important;visibility:visible!important;pointer-events:none!important;background:transparent!important;transition:none!important;
+  opacity:1!important;visibility:visible!important;pointer-events:none!important;
+  background:
+    radial-gradient(circle at 78% 74%,rgba(118,183,198,.045),transparent 25%),
+    radial-gradient(circle at 13% 8%,rgba(255,255,255,.018),transparent 26%),
+    linear-gradient(180deg,#151a1b 0%,#111617 68%,#0e1314 100%) !important;
+  transition:opacity 120ms cubic-bezier(.2,.72,.2,1)!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden > .mil-screen.is-exiting{
   display:block!important;opacity:0!important;visibility:visible!important;pointer-events:none!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden[data-mi-frozen-visual-done="true"]{
-  opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+  opacity:0!important;visibility:visible!important;pointer-events:none!important;
 }
 </style>
 <script id="mi-production-assembly-reconciled-v1">/*
@@ -87098,7 +87123,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden[data-
   const SURFACE='data-mi-surface';
   const GENERATED='data-mi-frozen-generated';
   const touched=new Set();
-  const originals=new WeakMap();
+  let originals=new WeakMap();
   const anchors=new WeakMap();
   const state={
     active:false,root:null,sidebar:null,full:null,compact:null,header:null,
@@ -87365,7 +87390,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden[data-
     if(!shell.hasAttribute('data-mil-app-shell'))shell.setAttribute('data-mil-app-shell','true');
     if(bootVisible){save(shell);shell.classList.add('mil-app-pending');shell.classList.remove('mil-app-entering');return;}
     if(state.loaderWasVisible&&(exiting||lifecycleComplete)){
-      save(shell);shell.classList.remove('mil-app-pending');shell.classList.add('mil-app-entering');
+      save(shell);shell.classList.remove('mil-app-pending');
+      if(!shell.classList.contains('mil-app-entering')){
+        shell.classList.add('mil-app-entering');
+        const onShellEntryEnd=event=>{if(event.target!==shell||event.animationName!=='milShellEnter')return;shell.removeEventListener('animationend',onShellEntryEnd);shell.classList.remove('mil-app-entering');};shell.addEventListener('animationend',onShellEntryEnd);
+      }
     }
   }
   function syncLoaderStage(){
@@ -87442,7 +87471,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden[data-
     restoreTouched();document.querySelectorAll('['+SURFACE+'],['+CONTRACT+']').forEach(el=>{if(!el.hasAttribute(GENERATED)){el.removeAttribute(SURFACE);el.removeAttribute(CONTRACT);}});document.querySelectorAll('[data-mi-frozen-transient-observed]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-observed'));document.querySelectorAll('[data-mi-frozen-transient-content]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-content'));document.body.removeAttribute('data-nav-open');document.body.removeAttribute('data-sys-stage');document.body.removeAttribute('data-mi-shell-ready');document.querySelector('main.main-content')?.removeAttribute('data-mil-app-shell');state.loaderWasVisible=false;document.body.removeAttribute('data-overlay');document.body.removeAttribute('data-popup');requestAnimationFrame(()=>{if(!state.active)dispatchEvent(new Event('resize'));});
     state.root=state.sidebar=state.full=state.compact=state.header=state.workspace=state.workspacePlane=state.footerVisual=state.loader=null;state.nav=null;state.navItems=[];state.navBindings.clear();state.navSignatures.clear();state.transientVisuals.clear();
   }
-  function activate(){if(state.active){scheduleHeaderSync();scheduleLayout();return;}state.active=true;document.documentElement.setAttribute(ACTIVE,THEME);enableFrozen(true);mountShell();requestAnimationFrame(syncPresentation);}
+  function activate(){if(state.active){scheduleHeaderSync();scheduleLayout();return;}/* Fresh restoration epoch: snapshot the current native V3/Legacy state for this activation only. */originals=new WeakMap();touched.clear();state.active=true;document.documentElement.setAttribute(ACTIVE,THEME);enableFrozen(true);mountShell();requestAnimationFrame(syncPresentation);}
   function refresh(){state.scheduled=false;if(isMecha())activate();else unmount();}
   function schedule(){if(state.active&&!isMecha()){state.scheduled=false;unmount();return;}if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(refresh);}
   function boot(){state.rootObserver=new MutationObserver(schedule);state.rootObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant','data-selected-theme']});state.observer=new MutationObserver(records=>{if(state.active)queueDynamicScopes(records);});state.observer.observe(document.body,{childList:true,subtree:true});state.resize=()=>{if(state.active)scheduleLayout();};addEventListener('resize',state.resize,{passive:true});refresh();}
