@@ -87753,12 +87753,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
 <div class="mif-status"><div class="mif-status-unit"><i class="mif-status-dot"></i><div class="mif-status-copy"><b>System Online</b><span>Service nominal</span></div></div><div class="mif-build">v2.0 · 64794</div></div>
 </div></div></div></template>
 
-<style id="mi-m2-p1-application-chassis-v2">
+<style id="mi-m2-p1-application-chassis-v3">
 /* =====================================================================
-   M2 Phase 1 Refinement — Application Chassis & Spatial Rhythm
+   M2 Phase 1 — Chassis Reassessment v3
+   Direction lock: persistent navigation rails + bounded content scroll bay.
    Translation layer only. M1 functional/integration baseline is untouched.
-   Frozen Authorities remain canonical visual DNA; this layer harmonizes
-   application-level material, datum, spacing, and optical hierarchy.
+   Frozen Authorities remain canonical visual DNA; application composition
+   is intentionally evolvable across later M2 visual phases.
    ===================================================================== */
 html[data-mi-frozen-presentation="mecha-ivory"]{
   --m2p1-field-hi:#dedcd5;
@@ -87775,8 +87776,8 @@ html[data-mi-frozen-presentation="mecha-ivory"]{
   --m2p1-highlight:rgba(255,255,255,.76);
   --m2p1-shadow:rgba(24,31,32,.055);
   --m2p1-ice-soft:rgba(118,183,198,.16);
-  /* Evolvable application registers — translation tokens, not Frozen authority. */
-  --m2p1-shell-top:20px;
+  /* Application translation registers, not Frozen authority tokens. */
+  --m2p1-shell-datum:8px;
   --m2p1-register:24px;
 }
 
@@ -87818,18 +87819,60 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-
   filter:drop-shadow(0 6px 11px rgba(22,27,29,.030))!important;
 }
 
-/* Keep Header and fixed Sidebar on the same viewport datum during document scroll.
-   Existing document scroll ownership remains unchanged; only the sticky stop is aligned. */
-html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header{
-  top:var(--m2p1-shell-top)!important;
-  align-self:start!important;
+/* ---------------------------------------------------------------------
+   Desktop chassis behavior (>=901px)
+   Sidebar is already a fixed M1 host rail. Main becomes the bounded scroll
+   bay; Header remains sticky inside that bay at the exact same 8px datum.
+   This removes document-level drift without changing V3 navigation owners.
+   Footer intentionally remains a content terminal, not a persistent rail.
+   --------------------------------------------------------------------- */
+@media(min-width:901px){
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content{
+    max-height:100dvh!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain!important;
+    scrollbar-gutter:stable!important;
+    scroll-padding-top:104px!important;
+    isolation:isolate!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header{
+    top:var(--m2p1-shell-datum)!important;
+    align-self:start!important;
+    isolation:isolate!important;
+  }
+  /* Quiet chassis gasket: scrolling content cannot visually punch through
+     the clipped Header corners or the top shell datum. */
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header::before{
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    z-index:0!important;
+    pointer-events:none!important;
+    left:-3px!important;right:-3px!important;
+    top:calc(-1 * var(--m2p1-shell-datum))!important;
+    bottom:-7px!important;
+    background:
+      linear-gradient(180deg,var(--m2p1-field) 0%,rgba(211,209,202,.985) 72%,rgba(211,209,202,.92) 88%,rgba(211,209,202,0) 100%)!important;
+    box-shadow:0 1px 0 rgba(255,255,255,.20) inset!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header>.mih-shell{
+    position:relative!important;
+    z-index:2!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content{
+    scrollbar-width:thin;
+    scrollbar-color:rgba(104,115,111,.24) transparent;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::-webkit-scrollbar{width:7px;height:7px}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::-webkit-scrollbar-track{background:transparent}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::-webkit-scrollbar-thumb{
+    border:2px solid transparent;border-radius:999px;background:rgba(104,115,111,.24);background-clip:padding-box;
+  }
 }
 
-/* Workspace becomes the visual datum of the application, not another floating card. */
-html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content{
-  isolation:isolate!important;
-}
-html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::before{
+/* Workspace is the visual datum of the application, not another floating card. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::after{
   content:"";
   position:absolute;z-index:-1;pointer-events:none;
   left:-10px;right:-10px;top:72px;bottom:58px;
@@ -87872,29 +87915,23 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-
   opacity:.48!important;
 }
 
-/* Responsive translation: preserve frozen geometry while keeping the new rhythm. */
-@media(max-width:1179px) and (min-width:761px){
-  html[data-mi-frozen-presentation="mecha-ivory"]{--m2p1-shell-top:18px;--m2p1-register:20px}
+/* Medium desktop retains the same chassis model with a denser optical register. */
+@media(max-width:1179px) and (min-width:901px){
+  html[data-mi-frozen-presentation="mecha-ivory"]{--m2p1-register:20px}
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-plane{padding:22px var(--m2p1-register) 26px!important}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-stage::before{left:var(--m2p1-register);right:var(--m2p1-register)}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-surface::after{left:var(--m2p1-register)!important;right:var(--m2p1-register)!important}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-footer .mif-footer-rail{left:var(--m2p1-register)!important;right:var(--m2p1-register)!important}
 }
-@media(max-width:760px){
-  html[data-mi-frozen-presentation="mecha-ivory"]{--m2p1-shell-top:12px;--m2p1-register:15px}
+
+/* <=900px keeps the existing M1 off-canvas/document-scroll behavior that already
+   passed live usability. Only the material/register language is translated. */
+@media(max-width:900px){
+  html[data-mi-frozen-presentation="mecha-ivory"]{--m2p1-register:15px}
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]::after{display:none}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::before{display:none}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::after{display:none}
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-plane{padding:19px var(--m2p1-register) 23px!important}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-stage::before{left:var(--m2p1-register);right:var(--m2p1-register)}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-surface::after{left:var(--m2p1-register)!important;right:var(--m2p1-register)!important}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-footer .mif-footer-rail{left:var(--m2p1-register)!important;right:var(--m2p1-register)!important}
 }
 @media(max-width:540px){
-  html[data-mi-frozen-presentation="mecha-ivory"]{--m2p1-shell-top:8px;--m2p1-register:12px}
+  html[data-mi-frozen-presentation="mecha-ivory"]{--m2p1-register:12px}
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-plane{padding:17px var(--m2p1-register) 21px!important}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-stage::before{left:var(--m2p1-register);right:var(--m2p1-register)}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-surface::after{left:var(--m2p1-register)!important;right:var(--m2p1-register)!important}
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-footer .mif-footer-rail{left:var(--m2p1-register)!important;right:var(--m2p1-register)!important}
 }
 @media(prefers-reduced-motion:reduce){
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(.miv2-shell,.mih-shell,.mif-footer){filter:none!important}
