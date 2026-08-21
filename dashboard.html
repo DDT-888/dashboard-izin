@@ -87127,7 +87127,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
   function sigilMarkup(){return '<span class="mi-prod-identity" aria-hidden="true"><span class="mii-sigil is-static"><i class="carrier"></i><i class="void"></i><i class="left"></i><i class="right"></i><i class="keel"></i><i class="spine"></i><i class="alive"></i><i class="cut-l"></i><i class="cut-r"></i></span></span>';}
   function mountIdentity(){const host=document.getElementById('themeSwatch');if(!host)return;if(!host.querySelector('.mi-prod-identity'))host.insertAdjacentHTML('beforeend',sigilMarkup());const identity=host.querySelector('.mi-prod-identity');if(identity)identity.hidden=!isMecha();}
   function stageMarkup(){return `<section class="mi-pcs-stage" id="miPcsG2Stage" aria-label="PCS-G2 Mecha Ivory presentation system"><div class="mi-pcs-head"><div class="mi-pcs-head-copy"><b>PCS-G2 · Presentation System</b><span>Canonical character + reusable environment · UI-owned statistics</span></div><div class="mi-pcs-registry hold" id="miPcsRegistry"><i></i><span>Runtime registry pending</span></div></div><div class="mi-pcs-controls"><div class="mi-pcs-control"><label for="miPcsCharacter">Character</label><select id="miPcsCharacter">${CHARACTERS.map(([id,n])=>`<option value="${id}">${n}</option>`).join('')}</select></div><div class="mi-pcs-control"><label for="miPcsEnvironment">Environment · non-exclusive</label><select id="miPcsEnvironment">${ENVIRONMENTS.map(([id,n])=>`<option value="${id}">${n}</option>`).join('')}</select></div><button class="mi-pcs-env-toggle" id="miPcsEnvToggle" type="button" aria-pressed="true">Environment ON</button></div><div class="mi-pcs-grid"><div><div class="mi-pcs-visual" id="miPcsVisual" data-layer-contract="workspace>environment>character>badge>statistics"><img class="mi-pcs-env-layer" id="miPcsEnvLayer" alt="" aria-hidden="true" decoding="async"><img class="mi-pcs-char-layer" id="miPcsCharLayer" alt="" decoding="async"><div class="mi-pcs-badge"><b id="miPcsBadgeName">SHARK</b><small>Canonical Character</small></div><aside class="mi-pcs-stats" aria-label="User Statistics"><div class="mi-pcs-stats-kicker">User Statistics</div><h3 id="miPcsStatsName">Shark</h3><div class="mi-pcs-metrics"><div class="mi-pcs-metric"><b id="miPcsStatPoints">—</b><span>Poin LC</span></div><div class="mi-pcs-metric"><b id="miPcsStatBonus">—%</b><span>Bonus</span></div><div class="mi-pcs-metric"><b id="miPcsStatVoucher">0</b><span>Voucher</span></div><div class="mi-pcs-metric"><b id="miPcsStatUsers">0</b><span>Users</span></div></div></aside><div class="mi-pcs-status hold" id="miPcsPairStatus"><i></i><span>Authority registry not mounted</span></div><div class="mi-pcs-pending" id="miPcsPending">Exact runtime assets remain external to this source. No substitute or reconstructed visual is rendered.</div></div><div class="mi-pcs-note"><strong>Identity stays. Presentation changes.</strong> Environment OFF removes only the environment layer. Character, Badge, Statistics, and application workflow remain present.</div></div><div><div class="mi-pcs-note"><strong>Production contract</strong><br>Primary 9 pairings are exact-host validated. <code>Snake × ruins</code> is also validated. Other environment combinations remain selectable by architecture but require pair-specific calibration before production visual signoff.</div></div></div></section>`;}
-  function mountStage(){if(document.getElementById('miPcsG2Stage'))return;const dashboard=document.getElementById('tab-dashboard');if(!dashboard)return;const welcome=dashboard.querySelector('.welcome-banner');if(welcome)welcome.insertAdjacentHTML('afterend',stageMarkup());else dashboard.insertAdjacentHTML('afterbegin',stageMarkup());bindStage();}
+  function mountStage(){if(document.getElementById('miPcsG2Stage'))return;const dashboard=document.getElementById('tab-dashboard');if(!dashboard)return;const slot=document.createElement('section');slot.className='miw-field miw-field-data mi-pcs-host-slot';slot.setAttribute('data-mi-a6-host','G1-P01');slot.innerHTML=stageMarkup();const welcome=dashboard.querySelector('.welcome-banner');if(welcome)welcome.insertAdjacentElement('afterend',slot);else dashboard.insertAdjacentElement('afterbegin',slot);bindStage();}
   function readSaved(){try{state.charId=localStorage.getItem('mi_pcs_character_id')||'shark';state.envId=localStorage.getItem('mi_pcs_environment_id')||PRIMARY[state.charId]||'ocean_splash';state.envOn=localStorage.getItem('mi_pcs_environment_on')!=='0';}catch(_){}if(!CHARACTERS.some(([id])=>id===state.charId))state.charId='shark';if(!ENVIRONMENTS.some(([id])=>id===state.envId))state.envId=PRIMARY[state.charId];}
   function saveState(){try{localStorage.setItem('mi_pcs_character_id',state.charId);localStorage.setItem('mi_pcs_environment_id',state.envId);localStorage.setItem('mi_pcs_environment_on',state.envOn?'1':'0');}catch(_){} }
   function mirrorStats(){const map=[['quickCsPoints','miPcsStatPoints'],['quickCsBonus','miPcsStatBonus'],['quickVoucher','miPcsStatVoucher'],['quickUsers','miPcsStatUsers']];map.forEach(([from,to])=>{const a=document.getElementById(from),b=document.getElementById(to);if(a&&b)b.textContent=a.textContent;});}
@@ -87138,11 +87138,14 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
   async function loadManifest(){if(state.loading||state.ready||!isMecha())return;state.loading=true;const registry=document.getElementById('miPcsRegistry');try{const r=await fetch(MANIFEST_URL,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const data=await r.json();state.manifest=data;state.ready=true;const partial=String(data.status||'').toUpperCase().includes('HOLD')||String(data.status||'').toUpperCase().includes('PARTIAL');if(registry){registry.className='mi-pcs-registry '+(partial?'hold':'ready');registry.querySelector('span').textContent=partial?'Partial runtime registry mounted':'Runtime registry mounted';}}catch(err){state.ready=false;if(registry){registry.className='mi-pcs-registry hold';registry.querySelector('span').textContent='Repository assets not mounted';}}finally{state.loading=false;}renderPair();}
   function syncShell(){const sidebar=document.getElementById('sidebar'),overlay=document.getElementById('overlay');if(!sidebar)return;if(!isMecha()){if(state.shellSnapshot){sidebar.classList.toggle('collapsed',state.shellSnapshot.collapsed);sidebar.classList.toggle('open',state.shellSnapshot.open);if(overlay)overlay.classList.toggle('show',state.shellSnapshot.overlay);state.shellSnapshot=null;}return;}if(!state.shellSnapshot)state.shellSnapshot={collapsed:sidebar.classList.contains('collapsed'),open:sidebar.classList.contains('open'),overlay:Boolean(overlay&&overlay.classList.contains('show'))};const w=innerWidth;if(w>=1180){sidebar.classList.remove('collapsed','open');if(overlay)overlay.classList.remove('show');}else if(w>=761){sidebar.classList.add('collapsed');sidebar.classList.remove('open');if(overlay)overlay.classList.remove('show');}else{sidebar.classList.remove('collapsed');}mountIdentity();renderPair();}
   function interceptFrozenSidebarState(ev){if(!isMecha()||innerWidth<=760)return;const target=ev.target.closest&&ev.target.closest('#sidebarCollapseBtn,#topbarSidebarControl');if(!target)return;ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();syncShell();}
-  function observeTheme(){const mo=new MutationObserver(()=>{mountIdentity();syncShell();if(isMecha())loadManifest();});mo.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant','data-selected-theme']});}
+  function observeTheme(){const mo=new MutationObserver(()=>{if(isMecha()){mountStage();loadManifest();renderPair();}});mo.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant','data-selected-theme']});}
   function init(){
-    /* A6 / PCS-G2 remains HOLD / DEFERRED. No runtime mount, manifest fetch,
-       sidebar interception, or presentation lifecycle is eligible here. */
-    return;
+    /* M2 Phase 1 production integration: consume the existing A6/PCS-G2 resolver
+       inside the A6 G1-P01 Frozen Workspace host relationship. A6 authority bytes,
+       canonical assets, Badge/Statistics ownership and calibration authority remain external/immutable. */
+    mountStage();
+    if(isMecha())loadManifest();
+    observeTheme();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -87753,91 +87756,116 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
 <div class="mif-status"><div class="mif-status-unit"><i class="mif-status-dot"></i><div class="mif-status-copy"><b>System Online</b><span>Service nominal</span></div></div><div class="mif-build">v2.0 · 64794</div></div>
 </div></div></div></template>
 
-<style id="mi-m2-p1-application-chassis-v5">
+<style id="mi-m2-p1-application-chassis-v6">
 /* =====================================================================
-   M2 Phase 1 — Application Chassis / Material Translation v5
-   Direction: one precision-engineered material hierarchy:
-   Application Field → Frozen Workspace Plane → host-supplied Mecha fields.
-   Frozen source geometry remains immutable. This layer translates native V3
-   structural surfaces into the canonical Mecha field grammar without entering
-   detailed Typography / Controls / Module redesign.
+   M2 Phase 1 — Native Mecha Ivory Application Surface Translation v6
+   Frozen Authority → Design Intent → Application Translation.
+   Scope: chassis/material field + structural surface translation only.
+   No detailed typography redesign, no control redesign, no functional DOM owner changes.
    ===================================================================== */
 html[data-mi-frozen-presentation="mecha-ivory"]{
-  --m2p1-field:#d8d5ce;
-  --m2p1-field-color:#d8d5ce;
-  --m2p1-field-background:
-    radial-gradient(circle at 12% 4%,rgba(255,255,255,.52),transparent 27%),
-    repeating-linear-gradient(0deg,rgba(57,64,64,.010) 0 1px,transparent 1px 34px),
-    repeating-linear-gradient(90deg,rgba(57,64,64,.010) 0 1px,transparent 1px 34px),
-    #d8d5ce;
+  --m2p1-field:#d7d4cd;
+  --m2p1-field-color:#d7d4cd;
+  --m2p1-field-background:linear-gradient(180deg,#dad7d0 0%,#d7d4cd 42%,#d4d1ca 100%);
   --m2p1-ivory-hi:#fbfaf6;
   --m2p1-ivory:#f1ede5;
   --m2p1-ivory-low:#e8e2d8;
+  --m2p1-ink:#2d383c;
+  --m2p1-muted:#788281;
+  --m2p1-ice:#76b7c6;
+  --m2p1-ice-deep:#4a8997;
   --m2p1-rim:rgba(103,113,110,.12);
   --m2p1-seam:rgba(103,113,110,.075);
-  --m2p1-shadow:rgba(24,31,32,.038);
+  --m2p1-hairline:rgba(103,113,110,.058);
+  --m2p1-shadow:rgba(24,31,32,.034);
+  --m2p1-field-surface:linear-gradient(110deg,rgba(255,255,255,.27),rgba(255,255,255,.055) 48%,transparent 100%);
+  --m2p1-field-surface-strong:linear-gradient(110deg,rgba(255,255,255,.34),rgba(255,255,255,.075) 50%,transparent 100%);
 }
 
-/* One application material field. The micro-datum is intentionally faint:
-   it reads as engineering context, not decoration. */
+/* Material hierarchy is carried by structural surfaces, not by repeating page texture.
+   This prevents scroll-time banding while keeping the Frozen Workspace and instrument
+   geometry visibly distinct from the outer chassis field. */
 html[data-mi-frozen-presentation="mecha-ivory"],
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]{
   background:var(--m2p1-field-background)!important;
   background-color:var(--m2p1-field-color)!important;
+  background-attachment:scroll!important;
 }
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]::before,
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]::after,
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::before,
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::after{
   content:none!important;display:none!important;
 }
 
-/* Frozen shell pieces keep their canonical geometry. Depth is restrained so
-   they read as parts of one chassis rather than independent floating cards. */
+/* Frozen shell material keeps the canonical DNA; only depth is normalized so the
+   chassis reads as one precision assembly rather than independently floating plates. */
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-sidebar .miv2-shell{
   filter:drop-shadow(0 5px 10px var(--m2p1-shadow))!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-shell{
-  filter:drop-shadow(0 4px 9px rgba(24,31,32,.030))!important;
+  filter:drop-shadow(0 4px 9px rgba(24,31,32,.028))!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-footer .mif-footer{
-  filter:drop-shadow(0 3px 8px rgba(24,31,32,.022))!important;
+  filter:drop-shadow(0 3px 8px rgba(24,31,32,.020))!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-plane{
   box-shadow:inset 0 1px rgba(255,255,255,.86),inset 0 -1px rgba(73,82,79,.045)!important;
 }
-
-/* Preserve canonical Workspace machining geometry instead of flattening every
-   rectangular cue. The Workspace plane is the material bridge between shell
-   and native V3 content. */
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-stage::before{
   content:none!important;display:none!important;
 }
 
-/* ---------------------------------------------------------------------
-   Structural application translation — canonical miw-field grammar.
-   These are existing V3 containers; handlers/DOM ownership stay untouched.
-   Rounded Legacy cards are translated into host-supplied Mecha fields:
-   translucent ivory material + top machining rail + left datum.
-   --------------------------------------------------------------------- */
+/* =====================================================================
+   APPLICATION SURFACE TRANSLATION
+   Native V3 elements remain the actionable DOM. Existing module decorators attach
+   canonical Frozen classes (.miw-field/.mtf-field/etc); this layer neutralizes the
+   Legacy shell residue and lets that grammar become the visible application language.
+   ===================================================================== */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content{
+  color:var(--m2p1-ink)!important;text-shadow:none!important;
+}
+
+/* Route-level carriers are not visual cards. */
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
-  .welcome-banner,.home-feature-card,.live-izin-container,.monitoring-members-panel,
-  .employee-users-card,.employee-priority-card,.history-container,.history-shift-container,
+  #tab-monitoring .monitoring-page-shell,
+  #tab-evaluation .cs-eval-shell,
+  #tab-settings .settings-workspace,
+  #tab-users #usersContent,
+  #tab-voucher #voucherContent,
+  #tab-historyshift #historyShiftContent,
+  #tab-shifts #shiftsContent
+){
+  background:transparent!important;background-color:transparent!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important;
+}
+
+/* Canonical Workspace field grammar projected onto large application surfaces. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .welcome-banner,.home-feature-card,
+  .live-izin-container,.monitoring-members-panel,
+  .employee-users-card,.employee-priority-card,
+  .history-container,.history-shift-container,
   .shift-column-wrapper,.shift-available,.shift-log-container,
   .settings-system-table,.settings-access-section,.settings-session-security-section,
   .permission-matrix-panel,.settings-existing-panel,
-  .cs-eval-main-panel,.cs-eval-summary-panel,.voucher-card,.card
+  .cs-eval-main-panel,.cs-eval-summary-panel,
+  .voucher-card,.card
 ){
   position:relative!important;
   border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important;
-  background:linear-gradient(110deg,rgba(255,255,255,.27),rgba(255,255,255,.055) 48%,transparent 100%)!important;
-  background-color:transparent!important;color:var(--ink)!important;
+  background:var(--m2p1-field-surface)!important;background-color:transparent!important;
+  color:inherit!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
-  .welcome-banner,.home-feature-card,.live-izin-container,.monitoring-members-panel,
-  .employee-users-card,.employee-priority-card,.history-container,.history-shift-container,
-  .shift-column-wrapper,.shift-available,.shift-log-container,
+  .welcome-banner,.home-feature-card,
+  .live-izin-container,.monitoring-members-panel,
+  .employee-users-card,.employee-priority-card,
+  .history-container,.history-shift-container,
   .settings-system-table,.settings-access-section,.settings-session-security-section,
   .permission-matrix-panel,.settings-existing-panel,
-  .cs-eval-main-panel,.cs-eval-summary-panel,.voucher-card,.card
+  .cs-eval-main-panel,.cs-eval-summary-panel,
+  .voucher-card,.card
 )::before{
   content:""!important;position:absolute!important;left:0!important;top:0!important;
   width:34px!important;height:1px!important;right:auto!important;bottom:auto!important;
@@ -87845,11 +87873,14 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
   opacity:.58!important;pointer-events:none!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
-  .welcome-banner,.home-feature-card,.live-izin-container,.monitoring-members-panel,
-  .employee-users-card,.employee-priority-card,.history-container,.history-shift-container,
+  .welcome-banner,.home-feature-card,
+  .live-izin-container,.monitoring-members-panel,
+  .employee-users-card,.employee-priority-card,
+  .history-container,.history-shift-container,
   .settings-system-table,.settings-access-section,.settings-session-security-section,
   .permission-matrix-panel,.settings-existing-panel,
-  .cs-eval-main-panel,.cs-eval-summary-panel,.voucher-card,.card
+  .cs-eval-main-panel,.cs-eval-summary-panel,
+  .voucher-card,.card
 )::after{
   content:""!important;position:absolute!important;left:0!important;top:0!important;bottom:0!important;
   width:1px!important;height:auto!important;right:auto!important;
@@ -87857,32 +87888,87 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
   opacity:1!important;pointer-events:none!important;
 }
 
-/* Route-level shells are neutral carriers. They should not introduce their own
-   visual language above the Frozen Workspace / Mecha fields. */
+/* A small hierarchy difference is intentional: primary operational fields receive a
+   slightly stronger ivory lift while secondary instruments remain quiet. */
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
-  #tab-users .employee-users-shell,#tab-monitoring .monitoring-page-shell,
-  #tab-evaluation .cs-eval-shell,#tab-settings .settings-workspace,
-  #tab-shifts #shiftsContent,#tab-historyshift #historyShiftContent
+  .welcome-banner,.live-izin-container,.employee-users-card,.cs-eval-main-panel,.settings-access-section
+){background:var(--m2p1-field-surface-strong)!important;}
+
+/* Legacy inner shells yield to the parent instrument field. No typography/control
+   redesign is performed here; only redundant background/border/shadow ownership ends. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .employee-users-table-wrap,.employee-users-summary,.employee-users-toolbar,
+  .monitoring-members-header,.monitoring-members-filters,.monitoring-members-table-wrap,
+  .cs-eval-toolbar,.cs-eval-subnav,.cs-eval-layout,
+  .history-actions,.filter-history,
+  .shift-header,.shift-columns-wrapper,
+  .settings-primary-column,.settings-evaluation-column,
+  .permission-matrix-heading,.permission-matrix-notice,.permission-matrix-footer
+){
+  background:transparent!important;background-color:transparent!important;
+  border-radius:0!important;box-shadow:none!important;filter:none!important;
+}
+
+/* Structural headers become instrument separators rather than independent Legacy bars. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .monitoring-members-header,.employee-priority-heading,.permission-matrix-heading,
+  .shift-header,.cs-eval-toolbar,.cs-eval-subnav
+){
+  border-top:0!important;border-left:0!important;border-right:0!important;
+  border-bottom:1px solid var(--m2p1-seam)!important;
+}
+
+/* Tables remain native V3 renderers but stop presenting a second card shell. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .table-wrap,.table-dashboard-wrap,.employee-users-table-wrap,
+  .monitoring-members-table-wrap,.permission-matrix-scroll,.cs-eval-table-scroll
 ){
   background:transparent!important;background-color:transparent!important;
   border:0!important;border-radius:0!important;box-shadow:none!important;
+  scrollbar-width:thin;scrollbar-color:#aeb3b0 transparent;
 }
 
-/* Foundation-level text cleanup only: remove Legacy glow/effect language while
-   leaving detailed scale/hierarchy for the dedicated Typography phase. */
-html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content{
-  color:var(--ink)!important;text-shadow:none!important;
+/* Route rhythm: consistent structural registers without redesigning controls. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .monitoring-page-shell,.cs-eval-shell,.settings-workspace
+){gap:16px!important;}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .dashboard-home-grid{gap:18px!important;}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .live-izin-grid,.cs-eval-layout,.settings-primary-column,.settings-evaluation-column
+){gap:14px!important;}
+
+/* Foundation-level text cleanup only. Scale/type hierarchy remains Phase 2 scope. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content :is(
+  h1,h2,h3,.section-title,.card-title,.page-title,.panel-title
+){text-shadow:none!important;filter:none!important;}
+
+/* Semantic color remains in compact indicators, not large Legacy-colored surfaces. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .role-column,.status-card,.summary-card,.employee-summary-item
+){box-shadow:none!important;filter:none!important;}
+
+/* =====================================================================
+   A6 / PCS-G2 production host integration presentation.
+   The exact resolver/state/asset/calibration code remains production-owned.
+   This only gives its existing stage the A6-required Frozen Workspace host slot.
+   ===================================================================== */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-host-slot{
+  margin:0 0 18px!important;padding:16px 18px 18px 20px!important;min-height:0!important;
+  background:var(--m2p1-field-surface-strong)!important;
 }
-html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content :is(h1,h2,h3,.section-title,.card-title,.page-title){
-  text-shadow:none!important;filter:none!important;
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-host-slot>.mi-pcs-stage{
+  display:block!important;margin:0!important;padding:0!important;border-left:0!important;background:transparent!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-host-slot>.mi-pcs-stage::before{
+  content:none!important;display:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-visual{
+  width:100%!important;aspect-ratio:16/9!important;min-height:0!important;
 }
 
 /* ---------------------------------------------------------------------
-   Desktop chassis >=901px
-   - persistent Sidebar + Header rails
-   - document-level Workspace scroll
-   - Footer is a flex terminal: viewport-terminal on short routes, naturally
-     after content on long routes (including Users)
+   Desktop chassis — keep the accepted Phase 1 relationship.
+   Full desktop retains the current Sidebar balance. Footer remains a natural terminal.
    --------------------------------------------------------------------- */
 @media(min-width:901px){
   html[data-mi-frozen-presentation="mecha-ivory"]{scroll-padding-top:100px!important;}
@@ -87903,42 +87989,29 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header>.mih-shell{
     position:relative!important;z-index:1!important;
   }
-  /* Full desktop optical balance: retain breathing room, remove the excessive
-     left void. Compact desktop remains on the already-good M1 proportions. */
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar:not(.collapsed)~main.main-content.sys-content>.topbar.sys-header{
     left:372px!important;right:20px!important;
   }
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar.collapsed~main.main-content.sys-content>.topbar.sys-header{
     left:104px!important;right:16px!important;
   }
-
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content.active{
-    flex:0 0 auto!important;
-  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content.active{flex:0 0 auto!important;}
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.footer-premium.sys-footer{
     display:block!important;position:relative!important;inset:auto!important;width:100%!important;
     margin-top:auto!important;padding-top:12px!important;z-index:4!important;
   }
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.footer-premium.sys-footer>.mif-footer{
-    margin-top:0!important;
-  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.footer-premium.sys-footer>.mif-footer{margin-top:0!important;}
 }
-
 @media(max-width:1179px) and (min-width:901px){
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar:not(.collapsed)~main.main-content.sys-content>.topbar.sys-header{
-    left:366px!important;right:16px!important;
-  }
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar.collapsed~main.main-content.sys-content>.topbar.sys-header{
-    left:104px!important;right:16px!important;
-  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar:not(.collapsed)~main.main-content.sys-content>.topbar.sys-header{left:366px!important;right:16px!important;}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar.collapsed~main.main-content.sys-content>.topbar.sys-header{left:104px!important;right:16px!important;}
 }
-
-/* <=900px keeps the M1 off-canvas/mobile composition already live-PASSed. */
 @media(max-width:900px){
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]::after{display:none!important}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]::after{display:none!important;}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-host-slot{padding:14px 14px 16px!important;}
 }
 @media(prefers-reduced-motion:reduce){
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(.miv2-shell,.mih-shell,.mif-footer){filter:none!important}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(.miv2-shell,.mih-shell,.mif-footer){filter:none!important;}
 }
 </style>
 
