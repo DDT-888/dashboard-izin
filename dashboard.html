@@ -87492,9 +87492,23 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
     if(locked){html.style.setProperty('height','100%','important');body.style.setProperty('height','100dvh','important');body.style.setProperty('max-height','100dvh','important');}
     else{html.style.removeProperty('height');body.style.removeProperty('height');body.style.removeProperty('max-height');}
   }
+  function rebaseSettledNativeRootClass(){
+    /* Mecha never owns <html> classes. During the initial V3 loader fade the
+       application-shell snapshot can momentarily capture boot-pending; once
+       the native loader is genuinely settled, refresh only that class baseline.
+       This prevents a later Mecha -> Legacy teardown from resurrecting the
+       Legacy compatibility loader underlay while leaving legitimate V3 loader
+       activity completely untouched. */
+    const root=document.documentElement,host=document.getElementById('pageLoader');
+    const settled=!!host&&host.classList.contains('is-hidden')&&host.getAttribute('aria-hidden')==='true'&&!root.classList.contains('boot-pending');
+    if(!settled)return false;
+    const snapshot=originals.get(root);if(snapshot)snapshot.className=root.getAttribute('class');
+    return true;
+  }
   function syncLoaderStage(){
     const host=document.getElementById('pageLoader');if(!state.active)return;
     const lifecycleComplete=!host||host.getAttribute('aria-hidden')==='true';
+    rebaseSettledNativeRootClass();
     const exiting=!!host&&host.classList.contains('is-hidden');
     const exitRequested=exiting||lifecycleComplete;
     let visualDone=!host||host.getAttribute('data-mi-frozen-visual-done')==='true';
@@ -87599,7 +87613,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   }
   function restoreTouched(){for(const el of Array.from(touched)){const o=originals.get(el);if(!o)continue;if(o.className===null)el.removeAttribute('class');else el.setAttribute('class',o.className);el.hidden=o.hidden;if(o.style===null)el.removeAttribute('style');else el.setAttribute('style',o.style);if(o.ariaHidden===null)el.removeAttribute('aria-hidden');else el.setAttribute('aria-hidden',o.ariaHidden);if(o.tabindex===null)el.removeAttribute('tabindex');else el.setAttribute('tabindex',o.tabindex);if(o.role===null)el.removeAttribute('role');else el.setAttribute('role',o.role);}touched.clear();}
   function unmount(){
-    if(!state.active)return;state.active=false;document.documentElement.removeAttribute(ACTIVE);enableFrozen(false);
+    if(!state.active)return;rebaseSettledNativeRootClass();state.active=false;document.documentElement.removeAttribute(ACTIVE);enableFrozen(false);
     [state.navObserver,state.sidebarStateObserver,state.headerObserver,state.workspaceObserver,state.transientObserver,state.workspaceResizeObserver,state.loaderObserver].forEach(o=>o?.disconnect());state.navObserver=state.sidebarStateObserver=state.headerObserver=state.workspaceObserver=state.transientObserver=state.workspaceResizeObserver=state.loaderObserver=null;stopFrozenLoaderRuntime();state.interactionAbort?.abort();state.interactionAbort=null;['transientFrame','dynamicFrame','layoutFrame','headerFrame','workspaceFrame'].forEach(k=>{if(state[k])cancelAnimationFrame(state[k]);state[k]=0;});state.pendingScopes.clear();state.workspaceActive=null;state.lastViewportKey='';
     document.querySelectorAll('['+GENERATED+'="true"]').forEach(el=>{if(el.tagName!=='TEMPLATE'&&!STYLE_IDS.includes(el.id))el.remove();});
     restoreTouched();/* Native V3 owns actual theme selection. Re-apply only its own selector UI after Mecha presentation snapshots are restored, so displayed state cannot be clobbered by a Mecha-era snapshot. */try{const selected=document.documentElement.dataset.selectedTheme;if(selected&&typeof window.updateThemeUI==='function')window.updateThemeUI(selected);}catch(_){}document.querySelectorAll('['+SURFACE+'],['+CONTRACT+']').forEach(el=>{if(!el.hasAttribute(GENERATED)){el.removeAttribute(SURFACE);el.removeAttribute(CONTRACT);}});document.querySelectorAll('[data-mi-frozen-transient-observed]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-observed'));document.querySelectorAll('[data-mi-frozen-transient-content]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-content'));document.body.removeAttribute('data-nav-open');document.body.removeAttribute('data-sys-stage');document.body.removeAttribute('data-mi-shell-ready');document.querySelector('main.main-content')?.removeAttribute('data-mil-app-shell');state.loaderWasVisible=false;document.body.removeAttribute('data-overlay');document.body.removeAttribute('data-popup');requestAnimationFrame(()=>{if(!state.active)dispatchEvent(new Event('resize'));});
