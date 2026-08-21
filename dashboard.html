@@ -386,8 +386,10 @@ html[data-selected-theme="mecha-ivory"][data-mi-frozen-presentation="mecha-ivory
 /* Legacy compatibility underlay: before #pageLoader exists in BODY, paint the
    exact native loader field instead of the application background. It is tied
    exclusively to V3's existing boot-pending lifecycle and has no timer/state. */
-html.boot-pending:not([data-selected-theme="mecha-ivory"]){overflow:hidden!important}
-html.boot-pending:not([data-selected-theme="mecha-ivory"])::before{
+html.boot-pending:not([data-selected-theme="mecha-ivory"]),
+html:not([data-selected-theme="mecha-ivory"]):has(body #pageLoader:not(.is-hidden)){overflow:hidden!important}
+html.boot-pending:not([data-selected-theme="mecha-ivory"])::before,
+html:not([data-selected-theme="mecha-ivory"]):has(body #pageLoader:not(.is-hidden))::before{
   content:"";position:fixed;inset:0;z-index:99998;pointer-events:none;
   background:
     radial-gradient(38% 48% at 9% 9%,color-mix(in srgb,var(--boot-accent,#00b8d4) 7%,transparent),transparent 76%),
@@ -395,7 +397,8 @@ html.boot-pending:not([data-selected-theme="mecha-ivory"])::before{
     radial-gradient(62% 72% at 50% 43%,rgba(255,255,255,.012),transparent 70%),
     linear-gradient(145deg,color-mix(in srgb,var(--boot-bg,#080b0d) 96%,#020304),color-mix(in srgb,var(--boot-bg,#080b0d) 99%,#000 1%));
 }
-html.boot-pending:not([data-selected-theme="mecha-ivory"])::after{
+html.boot-pending:not([data-selected-theme="mecha-ivory"])::after,
+html:not([data-selected-theme="mecha-ivory"]):has(body #pageLoader:not(.is-hidden))::after{
   content:"";position:fixed;inset:0;z-index:99998;pointer-events:none;opacity:.42;
   background:
     linear-gradient(color-mix(in srgb,var(--boot-accent,#00b8d4) 1.35%,transparent) 1px,transparent 1px),
@@ -87464,6 +87467,17 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
       }
     }
   }
+  function syncBootOverflowLock(){
+    if(!state.active||!isMecha())return;
+    const html=document.documentElement,body=document.body;if(!body)return;
+    const locked=body.dataset.sysStage==='boot';
+    html.style.setProperty('overflow-x','hidden','important');
+    html.style.setProperty('overflow-y',locked?'hidden':'auto','important');
+    body.style.setProperty('overflow-x',locked?'hidden':'visible','important');
+    body.style.setProperty('overflow-y',locked?'hidden':'visible','important');
+    if(locked){html.style.setProperty('height','100%','important');body.style.setProperty('height','100dvh','important');body.style.setProperty('max-height','100dvh','important');}
+    else{html.style.removeProperty('height');body.style.removeProperty('height');body.style.removeProperty('max-height');}
+  }
   function syncLoaderStage(){
     const host=document.getElementById('pageLoader');if(!state.active)return;
     const lifecycleComplete=!host||host.getAttribute('aria-hidden')==='true';
@@ -87480,6 +87494,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
        but keep host stage=boot until the authority's transitionend marks done. */
     syncFrozenAppHandoff(bootVisible,exitRequested,lifecycleComplete);
     document.body.dataset.sysStage=(exitRequested&&visualDone)?'app':'boot';
+    syncBootOverflowLock();
   }
   function mountLoader(){
     const host=document.getElementById('pageLoader');if(!host)return null;
@@ -87515,6 +87530,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
     if(main){main.style.setProperty('display','block','important');main.style.setProperty('min-height','calc(100dvh - 16px)','important');main.style.setProperty('height','auto','important');main.style.setProperty('background','transparent','important');main.style.setProperty('background-color','transparent','important');main.style.setProperty('border','0','important');main.style.setProperty('box-shadow','none','important');main.style.setProperty('color','var(--ink)','important');}
     if(top){top.style.setProperty('display','block','important');top.style.setProperty('height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('min-height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('max-height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('margin','0 0 -15px','important');top.style.setProperty('padding','0','important');top.style.setProperty('background','transparent','important');top.style.setProperty('background-color','transparent','important');top.style.setProperty('border','0','important');top.style.setProperty('box-shadow','none','important');top.style.setProperty('clip-path','none','important');top.style.setProperty('overflow','visible','important');}
     if(footer){footer.style.setProperty('display','block','important');footer.style.setProperty('min-height','70px','important');footer.style.setProperty('height','auto','important');footer.style.setProperty('margin','12px 0 0','important');footer.style.setProperty('padding','0','important');footer.style.setProperty('background','transparent','important');footer.style.setProperty('background-color','transparent','important');footer.style.setProperty('border','0','important');footer.style.setProperty('border-radius','0','important');footer.style.setProperty('box-shadow','none','important');footer.style.setProperty('clip-path','none','important');}
+    syncBootOverflowLock();
   }
   function projectHostLayout(){
     const main=document.querySelector('main.main-content'),sidebar=state.sidebar;if(!main||!sidebar)return;normalizeHostSurfaces();
@@ -87581,8 +87597,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   }
   function activate(){if(state.active){scheduleHeaderSync();scheduleLayout();enforcePostBootAppInvariant();return;}/* Fresh restoration epoch: snapshot the current native V3/Legacy state for this activation only. */const postBoot=preparePostBootActivationEpoch();originals=new WeakMap();touched.clear();state.active=true;document.documentElement.setAttribute(ACTIVE,THEME);enableFrozen(true);mountShell();if(postBoot)enforcePostBootAppInvariant();requestAnimationFrame(()=>{syncPresentation();if(postBoot)enforcePostBootAppInvariant();});}
   function refresh(){state.scheduled=false;if(isMecha())activate();else unmount();}
-  function schedule(){if(state.active&&!isMecha()){state.scheduled=false;unmount();return;}/* Legacy -> Mecha activation must join the native V3 theme mutation before the next paint / ViewTransition snapshot; do not defer the first mount to rAF. */if(!state.active&&isMecha()){state.scheduled=false;activate();return;}if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(refresh);}
-  function boot(){state.rootObserver=new MutationObserver(schedule);state.rootObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant','data-selected-theme']});state.observer=new MutationObserver(records=>{if(state.active)queueDynamicScopes(records);});state.observer.observe(document.body,{childList:true,subtree:true});state.resize=()=>{if(state.active)scheduleLayout();};addEventListener('resize',state.resize,{passive:true});refresh();}
+  function schedule(){if(state.active&&!isMecha()){state.scheduled=false;unmount();return;}/* Post-boot Legacy -> Mecha must not perform the heavy Frozen mount inside V3's existing root ViewTransition snapshot commit. Keep V3 as transition owner, then mount immediately when that native transition class clears. No timer or second lifecycle is introduced. */if(!state.active&&isMecha()){const r=document.documentElement;if(r.classList.contains('theme-view-transition')||r.classList.contains('theme-fallback-transition')){state.scheduled=false;return;}state.scheduled=false;activate();return;}if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(refresh);}
+  function boot(){state.rootObserver=new MutationObserver(schedule);state.rootObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant','data-selected-theme','class']});state.observer=new MutationObserver(records=>{if(state.active)queueDynamicScopes(records);});state.observer.observe(document.body,{childList:true,subtree:true});state.resize=()=>{if(state.active)scheduleLayout();};addEventListener('resize',state.resize,{passive:true});refresh();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
