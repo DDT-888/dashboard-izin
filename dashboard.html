@@ -88833,5 +88833,121 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
   else bind();
 })();
 </script>
+
+<style id="mi-m2-p1-p0-independent-state-stats-v4-style">
+/* M2 Phase 1 / P0 v4 — presentation-only Statistics scope.
+   Underlying quickUsers data remains live; only its PCS Mecha presentation is absent. */
+html[data-selected-theme="mecha-ivory"] #tab-dashboard .mi-pcs-metric:has(#miPcsStatUsers),
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-dashboard .mi-pcs-metric:has(#miPcsStatUsers){
+  display:none!important;
+}
+html[data-selected-theme="mecha-ivory"] #tab-dashboard .mi-pcs-metrics,
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-dashboard .mi-pcs-metrics{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+</style>
+<script id="mi-m2-p1-p0-independent-state-stats-v4">
+/* M2 Phase 1 / P0 v4 — Character/Environment independence + User Statistics identity bridge.
+   Protected production PCS remains sole resolver/validation/calibration/render authority.
+   P0 v3 remains intact and continues to own stale-pair clearing/fail-closed verification. */
+(()=>{
+  'use strict';
+  let desiredEnvironment='';
+  let restoringEnvironment=false;
+  let identityObserver=null;
+
+  function nodes(){
+    return {
+      character:document.getElementById('miPcsCharacter'),
+      environment:document.getElementById('miPcsEnvironment'),
+      toggle:document.getElementById('miPcsEnvToggle'),
+      surface:document.getElementById('miPcsVisual'),
+      charImg:document.getElementById('miPcsCharLayer'),
+      envImg:document.getElementById('miPcsEnvLayer'),
+      statsName:document.getElementById('miPcsStatsName'),
+      userName:document.getElementById('userName'),
+      userRole:document.getElementById('userRole'),
+      welcomeName:document.getElementById('welcomeUsername'),
+      welcomeRole:document.querySelector('.welcome-banner .badge-role')
+    };
+  }
+
+  function clearRenderedPair(n){
+    if(!n.surface||!n.charImg||!n.envImg)return;
+    n.surface.classList.remove('asset-ready','env-ready');
+    n.charImg.removeAttribute('src');
+    n.envImg.removeAttribute('src');
+  }
+
+  function usableText(value){
+    const s=String(value||'').trim();
+    if(!s||/^(loading\.\.\.|loading|user)$/i.test(s))return '';
+    return s;
+  }
+
+  function syncUserStatsIdentity(){
+    const n=nodes();
+    if(!n.statsName)return;
+    const name=usableText(n.userName?.textContent)||usableText(n.welcomeName?.textContent)||'USER';
+    const role=usableText(n.userRole?.textContent)||usableText(n.welcomeRole?.textContent)||'';
+    const next=role?`${name} · ${role}`:name;
+    if(n.statsName.textContent!==next)n.statsName.textContent=next;
+  }
+
+  function rememberEnvironment(){
+    const n=nodes();
+    if(!n.environment)return;
+    desiredEnvironment=n.environment.value;
+    clearRenderedPair(n);
+  }
+
+  function restoreIndependentEnvironment(){
+    const n=nodes();
+    if(restoringEnvironment||!n.environment)return;
+    const desired=desiredEnvironment||n.environment.value;
+    if(desired&&n.environment.value!==desired){
+      restoringEnvironment=true;
+      n.environment.value=desired;
+      clearRenderedPair(n);
+      /* Re-enter the existing protected Environment change path so production
+         state/save/render authority consumes the independent Environment state. */
+      n.environment.dispatchEvent(new Event('change',{bubbles:true}));
+      restoringEnvironment=false;
+    }
+    syncUserStatsIdentity();
+  }
+
+  function bindIdentity(){
+    const n=nodes();
+    const sources=[n.userName,n.userRole,n.welcomeName,n.welcomeRole,n.statsName].filter(Boolean);
+    syncUserStatsIdentity();
+    if(!sources.length||identityObserver)return;
+    identityObserver=new MutationObserver(syncUserStatsIdentity);
+    sources.forEach(el=>identityObserver.observe(el,{childList:true,characterData:true,subtree:true}));
+  }
+
+  function bind(){
+    const n=nodes();
+    if(!n.character||!n.environment)return;
+    desiredEnvironment=n.environment.value;
+
+    /* Capture current Environment before protected production Character handler
+       can apply its historical PRIMARY coupling. Works for native change and the
+       P0 v3 input->change bridge without altering either protected script. */
+    n.character.addEventListener('input',rememberEnvironment,{capture:true});
+    n.character.addEventListener('change',rememberEnvironment,{capture:true});
+    n.character.addEventListener('change',restoreIndependentEnvironment);
+
+    n.environment.addEventListener('input',()=>{desiredEnvironment=n.environment.value;});
+    n.environment.addEventListener('change',()=>{desiredEnvironment=n.environment.value;syncUserStatsIdentity();});
+    n.toggle?.addEventListener('click',syncUserStatsIdentity);
+    bindIdentity();
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});
+  else bind();
+})();
+</script>
+
 </body>
 </html>
