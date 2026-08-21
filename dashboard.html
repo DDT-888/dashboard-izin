@@ -392,6 +392,7 @@ html.boot-pending:not([data-selected-theme="mecha-ivory"])::before,
 html:not([data-selected-theme="mecha-ivory"]):has(body #pageLoader:not(.is-hidden))::before{
   content:"";position:fixed;inset:0;z-index:99998;pointer-events:none;
   background:
+    url("https://dashboard-izin.pages.dev/assets/Logo%20DDT%20-%20Full.png") 30px 25px / 130px auto no-repeat,
     radial-gradient(38% 48% at 9% 9%,color-mix(in srgb,var(--boot-accent,#00b8d4) 7%,transparent),transparent 76%),
     radial-gradient(28% 34% at 91% 84%,color-mix(in srgb,var(--boot-accent,#00b8d4) 5.5%,transparent),transparent 78%),
     radial-gradient(62% 72% at 50% 43%,rgba(255,255,255,.012),transparent 70%),
@@ -399,12 +400,25 @@ html:not([data-selected-theme="mecha-ivory"]):has(body #pageLoader:not(.is-hidde
 }
 html.boot-pending:not([data-selected-theme="mecha-ivory"])::after,
 html:not([data-selected-theme="mecha-ivory"]):has(body #pageLoader:not(.is-hidden))::after{
-  content:"";position:fixed;inset:0;z-index:99998;pointer-events:none;opacity:.42;
+  content:"LOADING";position:fixed;inset:0;z-index:99998;pointer-events:none;opacity:1;
+  display:flex;align-items:flex-end;justify-content:flex-end;box-sizing:border-box;padding:0 40px 34px;
+  color:color-mix(in srgb,var(--boot-accent,#00b8d4) 84%,#fff 16%);font-size:10.25px;font-weight:540;line-height:1;letter-spacing:2.28px;
   background:
     linear-gradient(color-mix(in srgb,var(--boot-accent,#00b8d4) 1.35%,transparent) 1px,transparent 1px),
     linear-gradient(90deg,color-mix(in srgb,var(--boot-accent,#00b8d4) 1.35%,transparent) 1px,transparent 1px);
   background-size:36px 36px;
 }
+/* Even if an inline surface briefly reverts to auto during Mecha boot, never
+   expose a browser scrollbar over the Frozen authority. This is viewport-only
+   integration and does not alter G1-P04 geometry/runtime. */
+html[data-selected-theme="mecha-ivory"].boot-pending,
+html[data-selected-theme="mecha-ivory"].boot-pending body,
+html[data-selected-theme="mecha-ivory"] body[data-sys-stage="boot"],
+html[data-selected-theme="mecha-ivory"][data-mi-frozen-presentation="mecha-ivory"]:has(body[data-sys-stage="boot"]){scrollbar-width:none!important}
+html[data-selected-theme="mecha-ivory"].boot-pending::-webkit-scrollbar,
+html[data-selected-theme="mecha-ivory"].boot-pending body::-webkit-scrollbar,
+html[data-selected-theme="mecha-ivory"] body[data-sys-stage="boot"]::-webkit-scrollbar,
+html[data-selected-theme="mecha-ivory"][data-mi-frozen-presentation="mecha-ivory"]:has(body[data-sys-stage="boot"])::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}
 </style>
 
 
@@ -87197,7 +87211,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   const state={
     active:false,root:null,sidebar:null,full:null,compact:null,header:null,
     workspace:null,workspacePlane:null,footerVisual:null,loader:null,
-    observer:null,rootObserver:null,resize:null,scheduled:false,loaderObserver:null,loaderWasVisible:false,
+    observer:null,rootObserver:null,resize:null,scheduled:false,loaderObserver:null,loaderWasVisible:false,initialShellDeferred:false,
     nav:null,navItems:[],navBindings:new Map(),navObserver:null,
     sidebarStateObserver:null,headerObserver:null,workspaceObserver:null,navSignatures:new Map(),
     transientObserver:null,transientVisuals:new Map(),transientFrame:0,interactionAbort:null,
@@ -87483,9 +87497,27 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
     const lifecycleComplete=!host||host.getAttribute('aria-hidden')==='true';
     const exiting=!!host&&host.classList.contains('is-hidden');
     const exitRequested=exiting||lifecycleComplete;
-    const visualDone=!host||host.getAttribute('data-mi-frozen-visual-done')==='true';
+    let visualDone=!host||host.getAttribute('data-mi-frozen-visual-done')==='true';
     const bootVisible=!!host&&!exitRequested;
     if(bootVisible)state.loaderWasVisible=true;
+
+    /* Initial page-load Mecha activation is Loader-only until V3 requests hide.
+       This keeps the exact Frozen boot visible, but prevents the application
+       adapter from snapshotting native V3 DOM while startup is still mutating it.
+       The first restorable shell baseline is therefore captured post-startup. */
+    if(state.initialShellDeferred&&!exitRequested){
+      document.body.dataset.sysStage='boot';
+      syncBootOverflowLock();
+      return;
+    }
+    if(state.initialShellDeferred&&exitRequested){
+      state.initialShellDeferred=false;
+      originals=new WeakMap();touched.clear();
+      mountShell();
+      visualDone=!host||host.getAttribute('data-mi-frozen-visual-done')==='true';
+      requestAnimationFrame(()=>{if(state.active){syncPresentation();}});
+    }
+
     if(state.loader&&exitRequested&&!visualDone){
       try{window.MechaIvoryBoot?.hostExit?.();}catch(_){}
       if(!window.MechaIvoryBoot?.hostExit)state.loader.classList.add('is-exiting');
@@ -87498,6 +87530,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   }
   function mountLoader(){
     const host=document.getElementById('pageLoader');if(!host)return null;
+    /* If this activation already owns the parser-mounted Frozen visual, keep it
+       connected through V3's hide request so canonical G1-P04 hostExit/280ms
+       transition can finish. Post-boot theme activations have state.loader=null
+       and continue through the completed-lifecycle bypass below. */
+    if(state.loader?.isConnected){syncLoaderStage();return state.loader;}
     const lifecycleComplete=host.getAttribute('aria-hidden')==='true'||host.classList.contains('is-hidden');
     /* Theme activation after V3 boot completion must never reopen the boot
        presentation. V3 remains the lifecycle owner; a completed native loader
@@ -87510,11 +87547,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
       return null;
     }
     host.removeAttribute('data-mi-frozen-visual-done');
-    if(state.loader?.isConnected){syncLoaderStage();return state.loader;}
     let visual=host.querySelector(':scope > .mil-screen');
     if(!visual){visual=generated(template('mi-frozen-template-loader'));if(!visual)return null;visual.setAttribute('aria-hidden','false');host.appendChild(visual);}
     state.loader=visual;
-    const current=host.querySelector('.page-loader-card');if(current){save(current);current.style.setProperty('display','none','important');current.style.setProperty('opacity','0','important');current.style.setProperty('pointer-events','none','important');}
+    const current=host.querySelector('.page-loader-card');if(current&&!state.initialShellDeferred){save(current);current.style.setProperty('display','none','important');current.style.setProperty('opacity','0','important');current.style.setProperty('pointer-events','none','important');}
     const visible=host.getAttribute('aria-hidden')!=='true'&&!host.classList.contains('is-hidden');
     if(visible&&(!window.MechaIvoryBoot||window.MechaIvoryBoot.screen!==visual)){
       try{window.MechaIvoryBoot=window.__MI_M1_FROZEN_BOOT_FACTORY__?.(visual)||window.MechaIvoryBoot;}catch(_){}
@@ -87567,7 +87603,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
     [state.navObserver,state.sidebarStateObserver,state.headerObserver,state.workspaceObserver,state.transientObserver,state.workspaceResizeObserver,state.loaderObserver].forEach(o=>o?.disconnect());state.navObserver=state.sidebarStateObserver=state.headerObserver=state.workspaceObserver=state.transientObserver=state.workspaceResizeObserver=state.loaderObserver=null;stopFrozenLoaderRuntime();state.interactionAbort?.abort();state.interactionAbort=null;['transientFrame','dynamicFrame','layoutFrame','headerFrame','workspaceFrame'].forEach(k=>{if(state[k])cancelAnimationFrame(state[k]);state[k]=0;});state.pendingScopes.clear();state.workspaceActive=null;state.lastViewportKey='';
     document.querySelectorAll('['+GENERATED+'="true"]').forEach(el=>{if(el.tagName!=='TEMPLATE'&&!STYLE_IDS.includes(el.id))el.remove();});
     restoreTouched();/* Native V3 owns actual theme selection. Re-apply only its own selector UI after Mecha presentation snapshots are restored, so displayed state cannot be clobbered by a Mecha-era snapshot. */try{const selected=document.documentElement.dataset.selectedTheme;if(selected&&typeof window.updateThemeUI==='function')window.updateThemeUI(selected);}catch(_){}document.querySelectorAll('['+SURFACE+'],['+CONTRACT+']').forEach(el=>{if(!el.hasAttribute(GENERATED)){el.removeAttribute(SURFACE);el.removeAttribute(CONTRACT);}});document.querySelectorAll('[data-mi-frozen-transient-observed]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-observed'));document.querySelectorAll('[data-mi-frozen-transient-content]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-content'));document.body.removeAttribute('data-nav-open');document.body.removeAttribute('data-sys-stage');document.body.removeAttribute('data-mi-shell-ready');document.querySelector('main.main-content')?.removeAttribute('data-mil-app-shell');state.loaderWasVisible=false;document.body.removeAttribute('data-overlay');document.body.removeAttribute('data-popup');requestAnimationFrame(()=>{if(!state.active)dispatchEvent(new Event('resize'));});
-    state.root=state.sidebar=state.full=state.compact=state.header=state.workspace=state.workspacePlane=state.footerVisual=state.loader=null;state.nav=null;state.navItems=[];state.navBindings.clear();state.navSignatures.clear();state.transientVisuals.clear();
+    state.root=state.sidebar=state.full=state.compact=state.header=state.workspace=state.workspacePlane=state.footerVisual=state.loader=null;state.nav=null;state.navItems=[];state.navBindings.clear();state.navSignatures.clear();state.transientVisuals.clear();state.initialShellDeferred=false;
   }
   function postBootLifecycleComplete(){const host=document.getElementById('pageLoader');return !!host&&(host.getAttribute('aria-hidden')==='true'||host.classList.contains('is-hidden'));}
   function preparePostBootActivationEpoch(){
@@ -87595,10 +87631,43 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
     const shell=document.querySelector('main.main-content');if(shell){shell.setAttribute('data-mil-app-shell','true');shell.classList.remove('mil-app-pending','mil-app-entering');}
     document.body.dataset.sysStage='app';
   }
-  function activate(){if(state.active){scheduleHeaderSync();scheduleLayout();enforcePostBootAppInvariant();return;}/* Fresh restoration epoch: snapshot the current native V3/Legacy state for this activation only. */const postBoot=preparePostBootActivationEpoch();originals=new WeakMap();touched.clear();state.active=true;document.documentElement.setAttribute(ACTIVE,THEME);enableFrozen(true);mountShell();if(postBoot)enforcePostBootAppInvariant();requestAnimationFrame(()=>{syncPresentation();if(postBoot)enforcePostBootAppInvariant();});}
+  function activate(transitionPrep=false){
+    if(state.active){scheduleHeaderSync();scheduleLayout();enforcePostBootAppInvariant();return;}
+    const postBoot=postBootLifecycleComplete();
+    if(postBoot)preparePostBootActivationEpoch();
+    originals=new WeakMap();touched.clear();state.active=true;document.documentElement.setAttribute(ACTIVE,THEME);
+    if(!postBoot){
+      state.initialShellDeferred=true;
+      document.body.dataset.sysStage='boot';
+      enableFrozen(true);
+      mountLoader();
+      syncBootOverflowLock();
+      return;
+    }
+    state.initialShellDeferred=false;enableFrozen(true);mountShell();enforcePostBootAppInvariant();
+    /* For V3 ViewTransition preparation, complete presentation decoration before
+       the NEW snapshot is captured. Normal post-boot activation keeps the existing
+       paint-yield path. */
+    if(transitionPrep)syncPresentation();
+    else requestAnimationFrame(()=>{syncPresentation();enforcePostBootAppInvariant();});
+  }
   function refresh(){state.scheduled=false;if(isMecha())activate();else unmount();}
-  function schedule(){if(state.active&&!isMecha()){state.scheduled=false;unmount();return;}/* Post-boot Legacy -> Mecha must not perform the heavy Frozen mount inside V3's existing root ViewTransition snapshot commit. Keep V3 as transition owner, then mount immediately when that native transition class clears. No timer or second lifecycle is introduced. */if(!state.active&&isMecha()){const r=document.documentElement;if(r.classList.contains('theme-view-transition')||r.classList.contains('theme-fallback-transition')){state.scheduled=false;return;}state.scheduled=false;activate();return;}if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(refresh);}
-  function boot(){state.rootObserver=new MutationObserver(schedule);state.rootObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant','data-selected-theme','class']});state.observer=new MutationObserver(records=>{if(state.active)queueDynamicScopes(records);});state.observer.observe(document.body,{childList:true,subtree:true});state.resize=()=>{if(state.active)scheduleLayout();};addEventListener('resize',state.resize,{passive:true});refresh();}
+  function schedule(){
+    const r=document.documentElement,target=r.getAttribute('data-theme-transition-target'),viewTransition=r.classList.contains('theme-view-transition'),fallbackTransition=r.classList.contains('theme-fallback-transition');
+    /* V3 writes transition-target before invoking startViewTransition(). Mutation
+       observers run after the old snapshot is captured and before V3's update
+       callback, so post-boot Mecha can be prepared for the NEW snapshot without
+       a second transition lifecycle or an artificial delay. */
+    if(!state.active&&!isMecha()&&target===THEME&&viewTransition){state.scheduled=false;activate(true);return;}
+    /* While V3 is preparing a transition away from Mecha, retain the old Mecha
+       snapshot until V3 actually commits the new selected theme. Cleanup then
+       remains immediate and becomes the NEW Legacy snapshot. */
+    if(state.active&&isMecha()&&target&&target!==THEME&&(viewTransition||fallbackTransition)){state.scheduled=false;return;}
+    if(state.active&&!isMecha()){state.scheduled=false;unmount();return;}
+    if(!state.active&&isMecha()){if(fallbackTransition){state.scheduled=false;return;}state.scheduled=false;activate();return;}
+    if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(refresh);
+  }
+  function boot(){state.rootObserver=new MutationObserver(schedule);state.rootObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant','data-selected-theme','data-theme-transition-target','class']});state.observer=new MutationObserver(records=>{if(state.active)queueDynamicScopes(records);});state.observer.observe(document.body,{childList:true,subtree:true});state.resize=()=>{if(state.active)scheduleLayout();};addEventListener('resize',state.resize,{passive:true});refresh();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
