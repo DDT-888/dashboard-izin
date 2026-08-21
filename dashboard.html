@@ -314,6 +314,19 @@ html[data-theme="dark"][data-theme-variant="venom"] body .sidebar.collapsed .sid
     }
 }
 </style>
+<style id="mi-m1-loader-first-paint-bridge">
+/* Milestone 1 integration bridge: V3 #pageLoader remains lifecycle owner; only its Mecha first-paint visual is replaced. */
+html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader{
+  background:
+    radial-gradient(circle at 78% 74%,rgba(118,183,198,.045),transparent 25%),
+    radial-gradient(circle at 13% 8%,rgba(255,255,255,.018),transparent 26%),
+    linear-gradient(180deg,#151a1b 0%,#111617 68%,#0e1314 100%) !important;
+}
+html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader::before,
+html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader::after{content:none!important;display:none!important;}
+html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader > .page-loader-card{display:none!important;opacity:0!important;pointer-events:none!important;}
+</style>
+
 
     <style id="critical-first-paint">
         /*
@@ -86900,6 +86913,21 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
 })();
 </script>
 
+
+<style id="mi-m1-loader-runtime-bridge">
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pageLoader > .mil-screen{
+  display:block!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pageLoader > .mil-screen.is-revealed:not(.is-exiting){
+  opacity:1!important;visibility:visible!important;pointer-events:auto!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pageLoader > .mil-screen.is-exiting{
+  opacity:0!important;visibility:visible!important;pointer-events:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #pageLoader.is-hidden > .mil-screen.is-exiting{
+  display:block!important;opacity:0!important;visibility:visible!important;pointer-events:none!important;
+}
+</style>
 <script id="mi-production-assembly-reconciled-v1">/*
  * Mecha Ivory Direct Frozen Authority Integration v2 — Functional-Preserving Mount
  * PRESENTATION ONLY. V3 remains the sole Functional Core / actionable DOM owner.
@@ -86932,7 +86960,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
   const state={
     active:false,root:null,sidebar:null,full:null,compact:null,header:null,
     workspace:null,workspacePlane:null,footerVisual:null,loader:null,
-    observer:null,rootObserver:null,resize:null,scheduled:false,loaderObserver:null,
+    observer:null,rootObserver:null,resize:null,scheduled:false,loaderObserver:null,loaderFrame:0,loaderRuntimeActive:false,
     nav:null,navItems:[],navBindings:new Map(),navObserver:null,
     sidebarStateObserver:null,headerObserver:null,workspaceObserver:null,navSignatures:new Map(),
     transientObserver:null,transientVisuals:new Map(),transientFrame:0,interactionAbort:null,
@@ -87018,6 +87046,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
     const width=mode==='compact'?74:336,sx=innerWidth<=900?8:(innerWidth<1180?16:28),sy=8;
     sidebar.style.setProperty('position','fixed','important');sidebar.style.setProperty('left',sx+'px','important');sidebar.style.setProperty('top',sy+'px','important');sidebar.style.setProperty('right','auto','important');sidebar.style.setProperty('bottom','auto','important');sidebar.style.setProperty('width',width+'px','important');sidebar.style.setProperty('height','calc(100dvh - 16px)','important');sidebar.style.setProperty('max-height','none','important');if(state.full){state.full.style.setProperty('height','100%','important');state.full.style.setProperty('max-height','none','important');}if(state.compact){state.compact.style.setProperty('height','100%','important');state.compact.style.setProperty('max-height','none','important');}
     projectHostLayout();syncFrozenNavState();
+    save(nav);
     nav.style.setProperty('position','absolute','important');nav.style.setProperty('inset','0','important');nav.style.setProperty('z-index','0','important');nav.style.setProperty('margin','0','important');nav.style.setProperty('padding','0','important');nav.style.setProperty('opacity','0','important');nav.style.setProperty('pointer-events','none','important');nav.style.setProperty('overflow','hidden','important');
     state.navItems.forEach(item=>{save(item);item.style.setProperty('pointer-events','none','important');item.style.setProperty('cursor','pointer','important');});
     const brand=sidebar.querySelector(':scope > .sidebar-brand'),dock=sidebar.querySelector(':scope > .sidebar-footer'),collapse=document.getElementById('sidebarCollapseBtn');
@@ -87108,10 +87137,12 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
   function toastVisualType(toast){if(toast.classList.contains('success'))return 'success';if(toast.classList.contains('error'))return 'error';return 'live';}
   function ensureFrozenToastProjection(toast){
     if(!toast)return;
+    const nativeMessage=toast.querySelector(':scope > .toast-message');
+    if(!nativeMessage||!String(nativeMessage.textContent||'').trim())return null;
     const existing=toast.querySelector(':scope > [data-mi-frozen-toast-carrier="true"]');if(existing)return existing;
     save(toast);
     toast.style.setProperty('position','fixed','important');toast.style.setProperty('top','auto','important');toast.style.setProperty('left','auto','important');toast.style.setProperty('right',(innerWidth<=820?12:22)+'px','important');toast.style.setProperty('bottom',(innerWidth<=820?12:22)+'px','important');toast.style.setProperty('width',innerWidth<=820?'calc(100vw - 24px)':'min(350px,calc(100vw - 44px))','important');toast.style.setProperty('min-width','0','important');toast.style.setProperty('max-width','350px','important');toast.style.setProperty('height','auto','important');toast.style.setProperty('min-height','0','important');toast.style.setProperty('background','transparent','important');toast.style.setProperty('border','0','important');toast.style.setProperty('box-shadow','none','important');toast.style.setProperty('padding','0','important');toast.style.setProperty('overflow','visible','important');toast.style.setProperty('z-index','80','important');toast.style.setProperty('pointer-events','auto','important');toast.style.setProperty('animation','none','important');toast.style.setProperty('transform','none','important');
-    const message=toast.querySelector('.toast-message'),copy=String(message?.textContent||toast.title||'').trim();
+    const message=nativeMessage,copy=String(message.textContent||toast.title||'').trim();
     const carrier=document.createElement('article');carrier.className='sbn-toast '+toastVisualType(toast);carrier.setAttribute('data-mi-frozen-toast-carrier','true');carrier.setAttribute('aria-hidden','true');generated(carrier);
     carrier.innerHTML='<div class="sbn-toast-chassis"></div><div class="sbn-toast-surface"></div><div class="sbn-toast-content"><i class="sbn-toast-mark"></i><div class="sbn-toast-copy"><b></b><p></p></div><span class="sbn-toast-meta"></span></div><div class="sbn-toast-progress"><i style="width:100%"></i></div>';
     carrier.querySelector('.sbn-toast-copy b').textContent=copy;carrier.style.setProperty('pointer-events','none','important');toast.appendChild(carrier);
@@ -87183,15 +87214,48 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
     queueTransientVisualSync();
   }
   function mountFooter(){const footer=document.querySelector('main.main-content > footer.footer-premium');if(!footer)return;save(footer);add(footer,'sys-footer');const tpl=template('mi-frozen-template-footer'),visual=tpl?.querySelector('.mif-footer');if(!visual)return;generated(visual);[...footer.children].forEach(child=>{save(child);child.style.setProperty('opacity','0','important');child.style.setProperty('pointer-events','none','important');});footer.appendChild(visual);state.footerVisual=visual;}
+  function stopFrozenLoaderRuntime(){
+    state.loaderRuntimeActive=false;
+    if(state.loaderFrame)cancelAnimationFrame(state.loaderFrame);
+    state.loaderFrame=0;
+  }
+  function startFrozenLoaderRuntime(screen){
+    if(!screen)return;
+    stopFrozenLoaderRuntime();
+    const carrier=screen.querySelector('.mil-loader-carrier');
+    const bootItems=[...screen.querySelectorAll('.mil-state span')],tagItems=[...screen.querySelectorAll('.mil-taglines span')],tipItems=[...screen.querySelectorAll('.mil-tips span')];
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const T=Object.freeze({reveal:360,minimumVisible:720,standard:1800,extended:5200,long:12000,bootCycle:3000,tagCycle:4000,tipCycle:5500,exit:reduced?0:280});
+    const setCurrent=(items,index)=>{if(!items.length)return;items.forEach((el,i)=>el.classList.toggle('is-current',i===index%items.length));};
+    const tierFor=ms=>ms<T.standard?'brief':ms<T.extended?'standard':ms<T.long?'extended':'long';
+    const render=ms=>{
+      const tier=tierFor(ms);screen.dataset.tier=tier;
+      if(ms>=T.reveal)screen.classList.add('is-revealed');
+      let bootIndex=0;if(!reduced&&ms>=T.standard)bootIndex=Math.floor((ms-T.standard)/T.bootCycle)%Math.max(1,bootItems.length);setCurrent(bootItems,bootIndex);
+      if(tier==='standard'||tier==='extended'||tier==='long'){const tagIndex=reduced?0:Math.floor(Math.max(0,ms-T.standard)/T.tagCycle)%Math.max(1,tagItems.length);setCurrent(tagItems,tagIndex);}else tagItems.forEach(el=>el.classList.remove('is-current'));
+      if(tier==='extended'||tier==='long'){const tipIndex=reduced?0:Math.floor(Math.max(0,ms-T.extended)/T.tipCycle)%Math.max(1,tipItems.length);setCurrent(tipItems,tipIndex);}else tipItems.forEach(el=>el.classList.remove('is-current'));
+    };
+    const anim=carrier?.querySelector('.mil-loader-anim'),still=carrier?.querySelector('.mil-loader-static');
+    if(anim&&!anim.dataset.miFallbackBound){anim.dataset.miFallbackBound='true';anim.addEventListener('error',()=>{carrier?.classList.add('asset-static');carrier?.classList.remove('asset-css');},{once:true});}
+    if(still&&!still.dataset.miFallbackBound){still.dataset.miFallbackBound='true';still.addEventListener('error',()=>{carrier?.classList.add('asset-css');carrier?.classList.remove('asset-static');},{once:true});}
+    state.loaderRuntimeActive=true;
+    const tick=()=>{if(!state.active||!state.loaderRuntimeActive||!screen.isConnected)return;render(performance.now());state.loaderFrame=requestAnimationFrame(tick);};
+    render(performance.now());state.loaderFrame=requestAnimationFrame(tick);
+  }
   function syncLoaderStage(){
-    const host=document.getElementById('pageLoader');if(!state.active){return;}const visible=!!host&&!host.classList.contains('is-hidden')&&host.getAttribute('aria-hidden')!=='true';document.body.dataset.sysStage=visible?'boot':'app';
+    const host=document.getElementById('pageLoader');if(!state.active)return;
+    const lifecycleComplete=!host||host.getAttribute('aria-hidden')==='true';
+    const exiting=!!host&&host.classList.contains('is-hidden');
+    if(state.loader){state.loader.classList.toggle('is-exiting',exiting);if(exiting||lifecycleComplete)stopFrozenLoaderRuntime();}
+    document.body.dataset.sysStage=(exiting||lifecycleComplete)?'app':'boot';
   }
   function mountLoader(){
     const host=document.getElementById('pageLoader');if(!host)return null;if(state.loader?.isConnected){syncLoaderStage();return state.loader;}
-    const existing=host.querySelector(':scope > .mil-screen['+GENERATED+'="true"]');if(existing){state.loader=existing;syncLoaderStage();return existing;}
+    const existing=host.querySelector(':scope > .mil-screen['+GENERATED+'="true"]');if(existing){state.loader=existing;if(host.getAttribute('aria-hidden')!=='true'&&!host.classList.contains('is-hidden'))startFrozenLoaderRuntime(existing);syncLoaderStage();return existing;}
     const visual=generated(template('mi-frozen-template-loader'));if(!visual)return null;visual.setAttribute('aria-hidden','false');
     const current=host.querySelector('.page-loader-card');if(current){save(current);current.style.setProperty('display','none','important');current.style.setProperty('opacity','0','important');current.style.setProperty('pointer-events','none','important');}
     host.appendChild(visual);state.loader=visual;
+    if(host.getAttribute('aria-hidden')!=='true'&&!host.classList.contains('is-hidden'))startFrozenLoaderRuntime(visual);
     state.loaderObserver?.disconnect();state.loaderObserver=new MutationObserver(syncLoaderStage);state.loaderObserver.observe(host,{attributes:true,attributeFilter:['class','aria-hidden']});syncLoaderStage();return visual;
   }
 
@@ -87227,11 +87291,17 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
   function syncPresentation(){normalizeHostSurfaces();classify();decorateModules();decorateTables();decorateSignals();decorateTransients();syncFrozenNavState();syncHeaderVisual();syncLayout();}
   function dynamicScopeFor(node){if(!(node instanceof Element))return null;if(node.hasAttribute(GENERATED)||node.closest('['+GENERATED+'="true"]'))return null;return node.closest('.table-wrap,.table-dashboard-wrap,.permission-matrix-panel,.employee-users-card,.monitoring-members-panel,.cs-eval-table-scroll,.settings-card,.form-group,#profileDropdown,#themeMenu,#toastNotification,.tab-content')||node.parentElement?.closest('.table-wrap,.table-dashboard-wrap,.permission-matrix-panel,.employee-users-card,.monitoring-members-panel,.cs-eval-table-scroll,.settings-card,.form-group,#profileDropdown,#themeMenu,#toastNotification,.tab-content')||node.parentElement||node;}
   function refreshDynamicScopes(){state.dynamicFrame=0;if(!state.active){state.pendingScopes.clear();return;}const scopes=[...state.pendingScopes].filter(x=>x&&x.isConnected);state.pendingScopes.clear();for(const scope of scopes){decorateModules(scope);decorateTables(scope);decorateSignals(scope);}decorateTransients();queueTransientVisualSync();if(!state.workspaceResizeObserver)scheduleWorkspaceVisual();}
-  function queueDynamicScopes(records){for(const r of records){for(const node of r.addedNodes||[]){const scope=dynamicScopeFor(node);if(scope)state.pendingScopes.add(scope);}}if(state.pendingScopes.size&&!state.dynamicFrame)state.dynamicFrame=requestAnimationFrame(refreshDynamicScopes);}
+  function queueDynamicScopes(records){
+    let activeUsersMutation=false;
+    for(const r of records){for(const node of r.addedNodes||[]){const scope=dynamicScopeFor(node);if(scope){state.pendingScopes.add(scope);if(scope.closest?.('#tab-users')&&document.getElementById('tab-users')?.classList.contains('active'))activeUsersMutation=true;}}}
+    if(!state.pendingScopes.size||state.dynamicFrame)return;
+    if(activeUsersMutation){state.dynamicFrame=requestAnimationFrame(()=>{state.dynamicFrame=requestAnimationFrame(refreshDynamicScopes);});return;}
+    state.dynamicFrame=requestAnimationFrame(refreshDynamicScopes);
+  }
   function restoreTouched(){for(const el of Array.from(touched)){const o=originals.get(el);if(!o)continue;if(o.className===null)el.removeAttribute('class');else el.setAttribute('class',o.className);el.hidden=o.hidden;if(o.style===null)el.removeAttribute('style');else el.setAttribute('style',o.style);if(o.ariaHidden===null)el.removeAttribute('aria-hidden');else el.setAttribute('aria-hidden',o.ariaHidden);if(o.tabindex===null)el.removeAttribute('tabindex');else el.setAttribute('tabindex',o.tabindex);if(o.role===null)el.removeAttribute('role');else el.setAttribute('role',o.role);}touched.clear();}
   function unmount(){
     if(!state.active)return;state.active=false;document.documentElement.removeAttribute(ACTIVE);enableFrozen(false);
-    [state.navObserver,state.sidebarStateObserver,state.headerObserver,state.workspaceObserver,state.transientObserver,state.workspaceResizeObserver,state.loaderObserver].forEach(o=>o?.disconnect());state.navObserver=state.sidebarStateObserver=state.headerObserver=state.workspaceObserver=state.transientObserver=state.workspaceResizeObserver=state.loaderObserver=null;state.interactionAbort?.abort();state.interactionAbort=null;['transientFrame','dynamicFrame','layoutFrame','headerFrame','workspaceFrame'].forEach(k=>{if(state[k])cancelAnimationFrame(state[k]);state[k]=0;});state.pendingScopes.clear();state.workspaceActive=null;state.lastViewportKey='';
+    [state.navObserver,state.sidebarStateObserver,state.headerObserver,state.workspaceObserver,state.transientObserver,state.workspaceResizeObserver,state.loaderObserver].forEach(o=>o?.disconnect());state.navObserver=state.sidebarStateObserver=state.headerObserver=state.workspaceObserver=state.transientObserver=state.workspaceResizeObserver=state.loaderObserver=null;stopFrozenLoaderRuntime();state.interactionAbort?.abort();state.interactionAbort=null;['transientFrame','dynamicFrame','layoutFrame','headerFrame','workspaceFrame'].forEach(k=>{if(state[k])cancelAnimationFrame(state[k]);state[k]=0;});state.pendingScopes.clear();state.workspaceActive=null;state.lastViewportKey='';
     document.querySelectorAll('['+GENERATED+'="true"]').forEach(el=>{if(el.tagName!=='TEMPLATE'&&!STYLE_IDS.includes(el.id))el.remove();});
     restoreTouched();document.querySelectorAll('['+SURFACE+'],['+CONTRACT+']').forEach(el=>{if(!el.hasAttribute(GENERATED)){el.removeAttribute(SURFACE);el.removeAttribute(CONTRACT);}});document.querySelectorAll('[data-mi-frozen-transient-observed]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-observed'));document.querySelectorAll('[data-mi-frozen-transient-content]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-content'));document.body.removeAttribute('data-nav-open');document.body.removeAttribute('data-sys-stage');document.body.removeAttribute('data-mi-shell-ready');document.body.removeAttribute('data-overlay');document.body.removeAttribute('data-popup');requestAnimationFrame(()=>{if(!state.active)dispatchEvent(new Event('resize'));});
     state.root=state.sidebar=state.full=state.compact=state.header=state.workspace=state.workspacePlane=state.footerVisual=state.loader=null;state.nav=null;state.navItems=[];state.navBindings.clear();state.navSignatures.clear();state.transientVisuals.clear();
