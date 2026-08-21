@@ -87294,7 +87294,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
     const mode=currentSidebarMode();
     if(state.full)state.full.style.setProperty('display',mode==='full'?'block':'none','important');
     if(state.compact)state.compact.style.setProperty('display',mode==='compact'?'block':'none','important');
-    const width=mode==='compact'?74:336,sx=innerWidth<=900?8:(innerWidth<1180?16:28),sy=8;
+    const width=mode==='compact'?74:336,sx=innerWidth<=900?8:16,sy=8;
     sidebar.style.setProperty('position','fixed','important');sidebar.style.setProperty('left',sx+'px','important');sidebar.style.setProperty('top',sy+'px','important');sidebar.style.setProperty('right','auto','important');sidebar.style.setProperty('bottom','auto','important');sidebar.style.setProperty('width',width+'px','important');sidebar.style.setProperty('height','calc(100dvh - 16px)','important');sidebar.style.setProperty('max-height','none','important');if(state.full){state.full.style.setProperty('height','100%','important');state.full.style.setProperty('max-height','none','important');}if(state.compact){state.compact.style.setProperty('height','100%','important');state.compact.style.setProperty('max-height','none','important');}
     projectHostLayout();syncFrozenNavState();
     save(nav);
@@ -87358,8 +87358,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   function observeActiveWorkspace(active){if(!active||state.workspaceActive===active)return;state.workspaceActive=active;if(state.workspaceResizeObserver){state.workspaceResizeObserver.disconnect();state.workspaceResizeObserver.observe(active);}}
   function positionWorkspaceVisual(){
     state.workspaceFrame=0;const main=document.querySelector('main.main-content'),host=state.workspace,active=main?.querySelector(':scope > .tab-content.active');if(!main||!host||!active)return;
-    const mobile=innerWidth<=760,tablet=innerWidth<=820,medium=innerWidth<1180;active.style.setProperty('min-height',mobile?'620px':'704px','important');active.style.setProperty('padding',mobile?'124px 12px 24px':tablet?'124px 18px 26px':medium?'84px 22px 28px':'88px 28px 30px','important');
-    observeActiveWorkspace(active);const mr=main.getBoundingClientRect(),ar=active.getBoundingClientRect(),h=Math.max(active.scrollHeight,active.offsetHeight,mobile?620:704);
+    const mobile=innerWidth<=760,tablet=innerWidth<=820,medium=innerWidth<1180;const floor=mobile?620:(innerWidth>900?Math.max(704,innerHeight-90):704);active.style.setProperty('min-height',floor+'px','important');active.style.setProperty('padding',mobile?'124px 12px 24px':tablet?'124px 18px 26px':medium?'84px 22px 28px':'88px 28px 30px','important');
+    observeActiveWorkspace(active);const mr=main.getBoundingClientRect(),ar=active.getBoundingClientRect(),h=Math.max(active.scrollHeight,active.offsetHeight,floor);
     host.style.setProperty('position','absolute','important');host.style.setProperty('left',(ar.left-mr.left)+'px','important');host.style.setProperty('top',active.offsetTop+'px','important');host.style.setProperty('width',ar.width+'px','important');host.style.setProperty('height',h+'px','important');host.style.setProperty('min-height',h+'px','important');host.style.setProperty('z-index','0','important');host.style.setProperty('pointer-events','none','important');
     if(state.workspacePlane){state.workspacePlane.style.setProperty('width','100%','important');state.workspacePlane.style.setProperty('min-height','100%','important');state.workspacePlane.style.setProperty('height','100%','important');const lab=host.querySelector('.miw-lab'),st=host.querySelector('.miw-state'),stage=host.querySelector('.miw-stage');[lab,st,stage].filter(Boolean).forEach(x=>{x.style.setProperty('width','100%','important');x.style.setProperty('height','100%','important');x.style.setProperty('min-height','100%','important');});}
     mirrorWorkspaceStatus();
@@ -87574,18 +87574,18 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   function normalizeHostSurfaces(){
     const html=document.documentElement,body=document.body,main=document.querySelector('main.main-content'),sidebar=state.sidebar,top=document.querySelector('main.main-content>.topbar'),footer=document.querySelector('main.main-content>.footer-premium');
     [html,body,main,sidebar,top,footer].filter(Boolean).forEach(save);
-    html.style.setProperty('background','var(--m2p1-field,#d3d0c9)','important');html.style.setProperty('background-color','var(--m2p1-field,#d3d0c9)','important');html.style.setProperty('overflow-x','hidden','important');html.style.setProperty('overflow-y','auto','important');html.style.setProperty('overscroll-behavior-y','contain','important');
-    body.style.setProperty('display','block','important');body.style.setProperty('margin','0px','important');body.style.setProperty('padding','0px','important');body.style.setProperty('min-width','0px','important');body.style.setProperty('overflow-x','visible','important');body.style.setProperty('overflow-y','visible','important');body.style.setProperty('overscroll-behavior-y','contain','important');body.style.setProperty('color','var(--ink)','important');body.style.setProperty('background','var(--m2p1-field,#d3d0c9)','important');body.style.setProperty('background-color','var(--m2p1-field,#d3d0c9)','important');
-    if(sidebar){const mode=currentSidebarMode(),w=mode==='compact'?74:336;const sx=innerWidth<=900?8:(innerWidth<1180?16:28),sy=8;sidebar.style.setProperty('display','block','important');sidebar.style.setProperty('position','fixed','important');sidebar.style.setProperty('left',sx+'px','important');sidebar.style.setProperty('top',sy+'px','important');sidebar.style.setProperty('right','auto','important');sidebar.style.setProperty('bottom','auto','important');sidebar.style.setProperty('z-index','100','important');sidebar.style.setProperty('flex','none','important');sidebar.style.setProperty('width',w+'px','important');sidebar.style.setProperty('min-width',w+'px','important');sidebar.style.setProperty('max-width',w+'px','important');sidebar.style.setProperty('height','calc(100dvh - 16px)','important');sidebar.style.setProperty('max-height','none','important');sidebar.style.setProperty('background','transparent','important');sidebar.style.setProperty('background-color','transparent','important');sidebar.style.setProperty('border','0','important');sidebar.style.setProperty('box-shadow','none','important');sidebar.style.setProperty('padding','0','important');sidebar.style.setProperty('color','var(--ink)','important');if(state.full){state.full.style.setProperty('height','100%','important');state.full.style.setProperty('max-height','none','important');}if(state.compact){state.compact.style.setProperty('height','100%','important');state.compact.style.setProperty('max-height','none','important');}}
-    if(main){main.style.setProperty('display','block','important');main.style.setProperty('min-height','calc(100dvh - 16px)','important');main.style.setProperty('height','auto','important');main.style.setProperty('background','transparent','important');main.style.setProperty('background-color','transparent','important');main.style.setProperty('border','0','important');main.style.setProperty('box-shadow','none','important');main.style.setProperty('color','var(--ink)','important');}
-    if(top){top.style.setProperty('display','block','important');top.style.setProperty('height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('min-height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('max-height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('margin','0 0 -15px','important');top.style.setProperty('padding','0','important');top.style.setProperty('background','var(--m2p1-field,#d3d0c9)','important');top.style.setProperty('background-color','var(--m2p1-field,#d3d0c9)','important');top.style.setProperty('border','0','important');top.style.setProperty('box-shadow','none','important');top.style.setProperty('clip-path','none','important');top.style.setProperty('overflow','visible','important');}
-    if(footer){footer.style.setProperty('display','block','important');footer.style.setProperty('min-height','70px','important');footer.style.setProperty('height','auto','important');footer.style.setProperty('margin','12px 0 0','important');footer.style.setProperty('padding','0','important');footer.style.setProperty('background','transparent','important');footer.style.setProperty('background-color','transparent','important');footer.style.setProperty('border','0','important');footer.style.setProperty('border-radius','0','important');footer.style.setProperty('box-shadow','none','important');footer.style.setProperty('clip-path','none','important');}
+    html.style.setProperty('background','var(--m2p1-field-background,var(--m2p1-field,#d8d5ce))','important');html.style.setProperty('background-color','var(--m2p1-field-color,var(--m2p1-field,#d8d5ce))','important');html.style.setProperty('overflow-x','hidden','important');html.style.setProperty('overflow-y','auto','important');html.style.setProperty('overscroll-behavior-y','contain','important');
+    body.style.setProperty('display','block','important');body.style.setProperty('margin','0px','important');body.style.setProperty('padding','0px','important');body.style.setProperty('min-width','0px','important');body.style.setProperty('overflow-x','visible','important');body.style.setProperty('overflow-y','visible','important');body.style.setProperty('overscroll-behavior-y','contain','important');body.style.setProperty('color','var(--ink)','important');body.style.setProperty('background','var(--m2p1-field-background,var(--m2p1-field,#d8d5ce))','important');body.style.setProperty('background-color','var(--m2p1-field-color,var(--m2p1-field,#d8d5ce))','important');
+    if(sidebar){const mode=currentSidebarMode(),w=mode==='compact'?74:336;const sx=innerWidth<=900?8:16,sy=8;sidebar.style.setProperty('display','block','important');sidebar.style.setProperty('position','fixed','important');sidebar.style.setProperty('left',sx+'px','important');sidebar.style.setProperty('top',sy+'px','important');sidebar.style.setProperty('right','auto','important');sidebar.style.setProperty('bottom','auto','important');sidebar.style.setProperty('z-index','100','important');sidebar.style.setProperty('flex','none','important');sidebar.style.setProperty('width',w+'px','important');sidebar.style.setProperty('min-width',w+'px','important');sidebar.style.setProperty('max-width',w+'px','important');sidebar.style.setProperty('height','calc(100dvh - 16px)','important');sidebar.style.setProperty('max-height','none','important');sidebar.style.setProperty('background','transparent','important');sidebar.style.setProperty('background-color','transparent','important');sidebar.style.setProperty('border','0','important');sidebar.style.setProperty('box-shadow','none','important');sidebar.style.setProperty('padding','0','important');sidebar.style.setProperty('color','var(--ink)','important');if(state.full){state.full.style.setProperty('height','100%','important');state.full.style.setProperty('max-height','none','important');}if(state.compact){state.compact.style.setProperty('height','100%','important');state.compact.style.setProperty('max-height','none','important');}}
+    if(main){main.style.setProperty('display','flex','important');main.style.setProperty('flex-direction','column','important');main.style.setProperty('min-height','calc(100dvh - 16px)','important');main.style.setProperty('height','auto','important');main.style.setProperty('background','transparent','important');main.style.setProperty('background-color','transparent','important');main.style.setProperty('border','0','important');main.style.setProperty('box-shadow','none','important');main.style.setProperty('color','var(--ink)','important');}
+    if(top){top.style.setProperty('display','block','important');top.style.setProperty('height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('min-height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('max-height',innerWidth<=760?'78px':'84px','important');top.style.setProperty('margin','0 0 -15px','important');top.style.setProperty('padding','0','important');top.style.setProperty('background','var(--m2p1-field-color,var(--m2p1-field,#d8d5ce))','important');top.style.setProperty('background-color','var(--m2p1-field-color,var(--m2p1-field,#d8d5ce))','important');top.style.setProperty('border','0','important');top.style.setProperty('box-shadow','none','important');top.style.setProperty('clip-path','none','important');top.style.setProperty('overflow','visible','important');}
+    if(footer){footer.style.setProperty('display','block','important');footer.style.setProperty('min-height','70px','important');footer.style.setProperty('height','auto','important');footer.style.setProperty('margin','auto 0 0','important');footer.style.setProperty('padding','0','important');footer.style.setProperty('background','transparent','important');footer.style.setProperty('background-color','transparent','important');footer.style.setProperty('border','0','important');footer.style.setProperty('border-radius','0','important');footer.style.setProperty('box-shadow','none','important');footer.style.setProperty('clip-path','none','important');}
     syncBootOverflowLock();
   }
   function projectHostLayout(){
     const main=document.querySelector('main.main-content'),sidebar=state.sidebar;if(!main||!sidebar)return;normalizeHostSurfaces();
     const mode=currentSidebarMode();let left=10,right=10,top=8;
-    if(innerWidth>900){const sx=innerWidth<1180?16:28,gap=innerWidth<1180?14:24,w=mode==='compact'?74:336;left=sx+w+gap;right=innerWidth<1180?16:28;}
+    if(innerWidth>900){const sx=16,gap=innerWidth<1180?14:20,w=mode==='compact'?74:336;left=sx+w+gap;right=innerWidth<1180?16:20;}
     main.style.setProperty('margin-left',left+'px','important');main.style.setProperty('margin-right','0px','important');main.style.setProperty('width','calc(100% - '+(left+right)+'px)','important');main.style.setProperty('max-width','none','important');main.style.setProperty('padding-top',top+'px','important');main.style.setProperty('padding-right','0px','important');main.style.setProperty('padding-left','0px','important');main.style.setProperty('padding-bottom','12px','important');
   }
   function mountShell(){
@@ -87753,130 +87753,187 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
 <div class="mif-status"><div class="mif-status-unit"><i class="mif-status-dot"></i><div class="mif-status-copy"><b>System Online</b><span>Service nominal</span></div></div><div class="mif-build">v2.0 · 64794</div></div>
 </div></div></div></template>
 
-<style id="mi-m2-p1-application-chassis-v4">
+<style id="mi-m2-p1-application-chassis-v5">
 /* =====================================================================
-   M2 Phase 1 — Chassis / Material Field Reassessment v4
-   Direction: persistent Sidebar + persistent Header rail over document flow.
-   Workspace scroll ownership returns to the document; Footer remains terminal.
-   One neutral application field; Frozen Ivory/Titanium surfaces remain the
-   shared material DNA. No module/control/typography redesign in this phase.
+   M2 Phase 1 — Application Chassis / Material Translation v5
+   Direction: one precision-engineered material hierarchy:
+   Application Field → Frozen Workspace Plane → host-supplied Mecha fields.
+   Frozen source geometry remains immutable. This layer translates native V3
+   structural surfaces into the canonical Mecha field grammar without entering
+   detailed Typography / Controls / Module redesign.
    ===================================================================== */
 html[data-mi-frozen-presentation="mecha-ivory"]{
-  --m2p1-field:#d3d0c9;
-  --m2p1-edge:rgba(73,82,79,.075);
+  --m2p1-field:#d8d5ce;
+  --m2p1-field-color:#d8d5ce;
+  --m2p1-field-background:
+    radial-gradient(circle at 12% 4%,rgba(255,255,255,.52),transparent 27%),
+    repeating-linear-gradient(0deg,rgba(57,64,64,.010) 0 1px,transparent 1px 34px),
+    repeating-linear-gradient(90deg,rgba(57,64,64,.010) 0 1px,transparent 1px 34px),
+    #d8d5ce;
+  --m2p1-ivory-hi:#fbfaf6;
+  --m2p1-ivory:#f1ede5;
+  --m2p1-ivory-low:#e8e2d8;
+  --m2p1-rim:rgba(103,113,110,.12);
+  --m2p1-seam:rgba(103,113,110,.075);
   --m2p1-shadow:rgba(24,31,32,.038);
 }
 
-/* One application field. Remove Phase-1 ambient overlays/layer boxes. */
+/* One application material field. The micro-datum is intentionally faint:
+   it reads as engineering context, not decoration. */
 html[data-mi-frozen-presentation="mecha-ivory"],
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]{
-  background:var(--m2p1-field)!important;
-  background-color:var(--m2p1-field)!important;
+  background:var(--m2p1-field-background)!important;
+  background-color:var(--m2p1-field-color)!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]::after,
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content::after{
-  content:none!important;
-  display:none!important;
+  content:none!important;display:none!important;
 }
 
-/* Keep the Frozen material family intact; only restrain depth so the four
-   shell pieces read as one engineered chassis rather than floating cards. */
+/* Frozen shell pieces keep their canonical geometry. Depth is restrained so
+   they read as parts of one chassis rather than independent floating cards. */
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-sidebar .miv2-shell{
   filter:drop-shadow(0 5px 10px var(--m2p1-shadow))!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-shell{
-  filter:drop-shadow(0 4px 9px rgba(24,31,32,.032))!important;
+  filter:drop-shadow(0 4px 9px rgba(24,31,32,.030))!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-footer .mif-footer{
-  filter:drop-shadow(0 3px 8px rgba(24,31,32,.024))!important;
+  filter:drop-shadow(0 3px 8px rgba(24,31,32,.022))!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-plane{
   box-shadow:inset 0 1px rgba(255,255,255,.86),inset 0 -1px rgba(73,82,79,.045)!important;
 }
 
-/* Remove the extra Phase-1 register ornament; Frozen geometry already owns
-   the surface seams/signatures. */
+/* Preserve canonical Workspace machining geometry instead of flattening every
+   rectangular cue. The Workspace plane is the material bridge between shell
+   and native V3 content. */
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-workspace .miw-stage::before{
-  content:none!important;
-  display:none!important;
+  content:none!important;display:none!important;
+}
+
+/* ---------------------------------------------------------------------
+   Structural application translation — canonical miw-field grammar.
+   These are existing V3 containers; handlers/DOM ownership stay untouched.
+   Rounded Legacy cards are translated into host-supplied Mecha fields:
+   translucent ivory material + top machining rail + left datum.
+   --------------------------------------------------------------------- */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .welcome-banner,.home-feature-card,.live-izin-container,.monitoring-members-panel,
+  .employee-users-card,.employee-priority-card,.history-container,.history-shift-container,
+  .shift-column-wrapper,.shift-available,.shift-log-container,
+  .settings-system-table,.settings-access-section,.settings-session-security-section,
+  .permission-matrix-panel,.settings-existing-panel,
+  .cs-eval-main-panel,.cs-eval-summary-panel,.voucher-card,.card
+){
+  position:relative!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;filter:none!important;
+  background:linear-gradient(110deg,rgba(255,255,255,.27),rgba(255,255,255,.055) 48%,transparent 100%)!important;
+  background-color:transparent!important;color:var(--ink)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .welcome-banner,.home-feature-card,.live-izin-container,.monitoring-members-panel,
+  .employee-users-card,.employee-priority-card,.history-container,.history-shift-container,
+  .shift-column-wrapper,.shift-available,.shift-log-container,
+  .settings-system-table,.settings-access-section,.settings-session-security-section,
+  .permission-matrix-panel,.settings-existing-panel,
+  .cs-eval-main-panel,.cs-eval-summary-panel,.voucher-card,.card
+)::before{
+  content:""!important;position:absolute!important;left:0!important;top:0!important;
+  width:34px!important;height:1px!important;right:auto!important;bottom:auto!important;
+  background:linear-gradient(90deg,#8f9895 0 6px,#c6c1b8 6px 26px,transparent)!important;
+  opacity:.58!important;pointer-events:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  .welcome-banner,.home-feature-card,.live-izin-container,.monitoring-members-panel,
+  .employee-users-card,.employee-priority-card,.history-container,.history-shift-container,
+  .settings-system-table,.settings-access-section,.settings-session-security-section,
+  .permission-matrix-panel,.settings-existing-panel,
+  .cs-eval-main-panel,.cs-eval-summary-panel,.voucher-card,.card
+)::after{
+  content:""!important;position:absolute!important;left:0!important;top:0!important;bottom:0!important;
+  width:1px!important;height:auto!important;right:auto!important;
+  background:linear-gradient(180deg,rgba(124,132,129,.12),rgba(124,132,129,.025) 68%,transparent)!important;
+  opacity:1!important;pointer-events:none!important;
+}
+
+/* Route-level shells are neutral carriers. They should not introduce their own
+   visual language above the Frozen Workspace / Mecha fields. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  #tab-users .employee-users-shell,#tab-monitoring .monitoring-page-shell,
+  #tab-evaluation .cs-eval-shell,#tab-settings .settings-workspace,
+  #tab-shifts #shiftsContent,#tab-historyshift #historyShiftContent
+){
+  background:transparent!important;background-color:transparent!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+}
+
+/* Foundation-level text cleanup only: remove Legacy glow/effect language while
+   leaving detailed scale/hierarchy for the dedicated Typography phase. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content{
+  color:var(--ink)!important;text-shadow:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content :is(h1,h2,h3,.section-title,.card-title,.page-title){
+  text-shadow:none!important;filter:none!important;
 }
 
 /* ---------------------------------------------------------------------
    Desktop chassis >=901px
-   - Sidebar remains the existing fixed M1 rail.
-   - Header becomes a viewport rail on the same 8px top datum.
-   - Main/document owns scrolling again; no bounded Main scroll container.
-   - Header's transparent host rectangle uses the exact application field so
-     scrolled content cannot show through clipped Frozen corners, without a
-     visible gasket/box of a different material.
-   - Footer stays in normal document flow and therefore remains reachable on
-     Users and every other route.
+   - persistent Sidebar + Header rails
+   - document-level Workspace scroll
+   - Footer is a flex terminal: viewport-terminal on short routes, naturally
+     after content on long routes (including Users)
    --------------------------------------------------------------------- */
 @media(min-width:901px){
-  html[data-mi-frozen-presentation="mecha-ivory"]{
-    scroll-padding-top:100px!important;
-  }
+  html[data-mi-frozen-presentation="mecha-ivory"]{scroll-padding-top:100px!important;}
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content{
-    max-height:none!important;
-    overflow:visible!important;
-    overscroll-behavior-y:auto!important;
-    isolation:isolate!important;
+    display:flex!important;flex-direction:column!important;
+    min-height:calc(100dvh - 16px)!important;max-height:none!important;
+    overflow:visible!important;overscroll-behavior-y:auto!important;isolation:isolate!important;
   }
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header{
-    position:fixed!important;
-    top:8px!important;
-    right:auto!important;
-    width:auto!important;
-    margin:0!important;
-    z-index:90!important;
-    isolation:isolate!important;
-    background:var(--m2p1-field)!important;
-    background-color:var(--m2p1-field)!important;
+    position:fixed!important;top:8px!important;right:20px!important;width:auto!important;
+    margin:0!important;z-index:90!important;isolation:isolate!important;
+    background:var(--m2p1-field-color)!important;background-color:var(--m2p1-field-color)!important;
     box-shadow:none!important;
   }
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header::before{
-    content:none!important;
-    display:none!important;
+    content:none!important;display:none!important;
   }
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header>.mih-shell{
-    position:relative!important;
-    z-index:1!important;
+    position:relative!important;z-index:1!important;
   }
-
-  /* Match projectHostLayout() exactly: sidebar datum + width + native gap. */
+  /* Full desktop optical balance: retain breathing room, remove the excessive
+     left void. Compact desktop remains on the already-good M1 proportions. */
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar:not(.collapsed)~main.main-content.sys-content>.topbar.sys-header{
-    left:388px!important;
-    right:28px!important;
+    left:372px!important;right:20px!important;
   }
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar.collapsed~main.main-content.sys-content>.topbar.sys-header{
-    left:126px!important;
-    right:28px!important;
+    left:104px!important;right:16px!important;
   }
 
-  /* Footer is a true terminal again, not a viewport rail. */
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content.active{
+    flex:0 0 auto!important;
+  }
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.footer-premium.sys-footer{
-    display:block!important;
-    position:relative!important;
-    inset:auto!important;
-    width:100%!important;
-    margin-top:12px!important;
-    z-index:4!important;
+    display:block!important;position:relative!important;inset:auto!important;width:100%!important;
+    margin-top:auto!important;padding-top:12px!important;z-index:4!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.footer-premium.sys-footer>.mif-footer{
+    margin-top:0!important;
   }
 }
 
-/* Medium desktop keeps the same architecture with the exact M1 host offsets. */
 @media(max-width:1179px) and (min-width:901px){
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar:not(.collapsed)~main.main-content.sys-content>.topbar.sys-header{
-    left:366px!important;
-    right:16px!important;
+    left:366px!important;right:16px!important;
   }
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #sidebar.sys-sidebar.collapsed~main.main-content.sys-content>.topbar.sys-header{
-    left:104px!important;
-    right:16px!important;
+    left:104px!important;right:16px!important;
   }
 }
 
-/* <=900px remains on the M1 mobile/off-canvas composition that already live-PASSed. */
+/* <=900px keeps the M1 off-canvas/mobile composition already live-PASSed. */
 @media(max-width:900px){
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]::after{display:none!important}
 }
