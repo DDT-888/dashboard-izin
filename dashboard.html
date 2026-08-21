@@ -63,7 +63,7 @@
                     scheme: 'dark', meta: '#070707', variant: 'venom', family: 'gaming'
                 },
                 'mecha-ivory': {
-                    rendered: 'light', bg: '#dedbd4', card: '#f1ede5',
+                    rendered: 'light', bg: '#101516', card: '#111617',
                     accent: '#4a8997', title: '#2d383c', subtitle: '#788281',
                     scheme: 'light', meta: '#dedbd4', variant: 'mecha-ivory', family: 'gaming'
                 }
@@ -315,9 +315,16 @@ html[data-theme="dark"][data-theme-variant="venom"] body .sidebar.collapsed .sid
 }
 </style>
 <style id="mi-m1-loader-first-paint-bridge">
-/* Milestone 1 integration bridge: V3 #pageLoader remains lifecycle owner.
-   The parser-time boot field uses the exact G1-P04 Graphite environment so
-   no Ivory application field can flash before the canonical 360ms reveal. */
+/* Milestone 1 loader-only integration bridge.
+   V3 #pageLoader remains lifecycle owner; G1-P04 remains visual authority. */
+html[data-selected-theme="mecha-ivory"].boot-pending,
+html[data-selected-theme="mecha-ivory"].boot-pending body{
+  background:
+    radial-gradient(circle at 78% 74%,rgba(118,183,198,.045),transparent 25%),
+    radial-gradient(circle at 13% 8%,rgba(255,255,255,.018),transparent 26%),
+    linear-gradient(180deg,#151a1b 0%,#111617 68%,#0e1314 100%) !important;
+  background-color:#101516!important;
+}
 html[data-selected-theme="mecha-ivory"].boot-pending::before{
   content:"";position:fixed;inset:0;z-index:99998;pointer-events:none;
   background:
@@ -43904,10 +43911,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-copy,.welcome
 html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-copy,.welcome-rank-copy) small{font-size:7.25px!important;line-height:1.18!important;}
 html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcome-rank-chip){min-height:42px!important;}
 </style>
-</head>
-
-<body>
-
 <template id="mi-frozen-template-loader"><main aria-label="Mecha Ivory Loader Boot Sequence" class="mil-screen">
 <div class="mil-company-anchor"><div class="mil-company-mark"><img alt="" aria-hidden="true" src="https://raw.githubusercontent.com/DDT-888/dashboard-izin/97d98a89a51cd1957f93499fbf19ef2acfe2c65b/assets/logo-ddt-mecha-ivory-full.png"/></div><div class="mil-company-copy"><b>DINGDONG</b><b>TOGEL</b><small>Our Site, Our Pride</small></div></div><div class="mil-top-datum">MI // BOOT SEQUENCE 01</div>
 <div class="mil-corner"><b>MECHA IVORY</b>Precision Interface System<br/>Operator Environment</div>
@@ -43936,6 +43939,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
 </section>
 <div class="mil-contract">DURATION-AWARE BOOT · NO FAKE % · CANONICAL IDENTITY</div>
 </main></template>
+</head>
+
+<body>
+
+
     <div class="page-loader" id="pageLoader" role="status" aria-live="polite" aria-label="Loading">
         <div class="page-loader-card">
             <div class="page-loader-logo">
@@ -87073,27 +87081,32 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] :is(.mecha425-vertica
 
 <style id="mi-m1-loader-runtime-bridge">
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pageLoader > .mil-screen{
-  display:block!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+  display:block!important;pointer-events:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pageLoader > .mil-screen:not(.is-revealed){
+  opacity:0!important;visibility:hidden!important;
 }
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pageLoader > .mil-screen.is-revealed:not(.is-exiting){
   opacity:1!important;visibility:visible!important;pointer-events:none!important;
 }
-/* Keep the exact G1-P04 Graphite boot field underneath the 280ms Frozen exit.
-   The field then fades over the tail of the canonical 360ms app entry, so the
-   handoff never exposes an intermediate Ivory-only frame. V3 still owns is-hidden. */
-html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden{
+/* During canonical G1-P04 exit, do not override opacity. The exact authority
+   owns .mil-screen.is-exiting -> opacity:0 over 280ms. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="boot"] #pageLoader > .mil-screen.is-revealed.is-exiting{
+  display:block!important;opacity:0!important;visibility:visible!important;pointer-events:none!important;
+  transition:opacity 280ms cubic-bezier(.2,.72,.2,1)!important;
+}
+/* V3 is-hidden remains the sole completion request. Presentation-only gating
+   prevents the host's legacy 260ms opacity fade from double-fading the Frozen
+   child. The host is released only after G1-P04 transitionend marks visual-done. */
+html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden:not([data-mi-frozen-visual-done="true"]){
   opacity:1!important;visibility:visible!important;pointer-events:none!important;
   background:
     radial-gradient(circle at 78% 74%,rgba(118,183,198,.045),transparent 25%),
     radial-gradient(circle at 13% 8%,rgba(255,255,255,.018),transparent 26%),
     linear-gradient(180deg,#151a1b 0%,#111617 68%,#0e1314 100%) !important;
-  transition:opacity 120ms cubic-bezier(.2,.72,.2,1)!important;
 }
-html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden > .mil-screen.is-exiting{
-  display:block!important;opacity:0!important;visibility:visible!important;pointer-events:none!important;
-}
-html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden[data-mi-frozen-visual-done="true"]{
-  opacity:0!important;visibility:visible!important;pointer-events:none!important;
+html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-visual-done="true"]{
+  opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important;
 }
 </style>
 <script id="mi-production-assembly-reconciled-v1">/*
@@ -87401,14 +87414,18 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden[data-
     const host=document.getElementById('pageLoader');if(!state.active)return;
     const lifecycleComplete=!host||host.getAttribute('aria-hidden')==='true';
     const exiting=!!host&&host.classList.contains('is-hidden');
-    const bootVisible=!!host&&!exiting&&!lifecycleComplete;
+    const exitRequested=exiting||lifecycleComplete;
+    const visualDone=!host||host.getAttribute('data-mi-frozen-visual-done')==='true';
+    const bootVisible=!!host&&!exitRequested;
     if(bootVisible)state.loaderWasVisible=true;
-    if(state.loader&&(exiting||lifecycleComplete)){
+    if(state.loader&&exitRequested&&!visualDone){
       try{window.MechaIvoryBoot?.hostExit?.();}catch(_){}
       if(!window.MechaIvoryBoot?.hostExit)state.loader.classList.add('is-exiting');
     }
-    syncFrozenAppHandoff(bootVisible,exiting,lifecycleComplete);
-    document.body.dataset.sysStage=(exiting||lifecycleComplete)?'app':'boot';
+    /* Start the existing G1-P04 application entry behind the Frozen exit,
+       but keep host stage=boot until the authority's transitionend marks done. */
+    syncFrozenAppHandoff(bootVisible,exitRequested,lifecycleComplete);
+    document.body.dataset.sysStage=(exitRequested&&visualDone)?'app':'boot';
   }
   function mountLoader(){
     const host=document.getElementById('pageLoader');if(!host)return null;
@@ -87422,7 +87439,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden[data-
     if(visible&&(!window.MechaIvoryBoot||window.MechaIvoryBoot.screen!==visual)){
       try{window.MechaIvoryBoot=window.__MI_M1_FROZEN_BOOT_FACTORY__?.(visual)||window.MechaIvoryBoot;}catch(_){}
     }
-    state.loaderObserver?.disconnect();state.loaderObserver=new MutationObserver(syncLoaderStage);state.loaderObserver.observe(host,{attributes:true,attributeFilter:['class','aria-hidden']});syncLoaderStage();return visual;
+    state.loaderObserver?.disconnect();state.loaderObserver=new MutationObserver(syncLoaderStage);state.loaderObserver.observe(host,{attributes:true,attributeFilter:['class','aria-hidden','data-mi-frozen-visual-done']});syncLoaderStage();return visual;
   }
   function normalizeHostSurfaces(){
     const html=document.documentElement,body=document.body,main=document.querySelector('main.main-content'),sidebar=state.sidebar,top=document.querySelector('main.main-content>.topbar'),footer=document.querySelector('main.main-content>.footer-premium');
@@ -87468,12 +87485,12 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader.is-hidden[data-
     if(!state.active)return;state.active=false;document.documentElement.removeAttribute(ACTIVE);enableFrozen(false);
     [state.navObserver,state.sidebarStateObserver,state.headerObserver,state.workspaceObserver,state.transientObserver,state.workspaceResizeObserver,state.loaderObserver].forEach(o=>o?.disconnect());state.navObserver=state.sidebarStateObserver=state.headerObserver=state.workspaceObserver=state.transientObserver=state.workspaceResizeObserver=state.loaderObserver=null;stopFrozenLoaderRuntime();state.interactionAbort?.abort();state.interactionAbort=null;['transientFrame','dynamicFrame','layoutFrame','headerFrame','workspaceFrame'].forEach(k=>{if(state[k])cancelAnimationFrame(state[k]);state[k]=0;});state.pendingScopes.clear();state.workspaceActive=null;state.lastViewportKey='';
     document.querySelectorAll('['+GENERATED+'="true"]').forEach(el=>{if(el.tagName!=='TEMPLATE'&&!STYLE_IDS.includes(el.id))el.remove();});
-    restoreTouched();document.querySelectorAll('['+SURFACE+'],['+CONTRACT+']').forEach(el=>{if(!el.hasAttribute(GENERATED)){el.removeAttribute(SURFACE);el.removeAttribute(CONTRACT);}});document.querySelectorAll('[data-mi-frozen-transient-observed]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-observed'));document.querySelectorAll('[data-mi-frozen-transient-content]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-content'));document.body.removeAttribute('data-nav-open');document.body.removeAttribute('data-sys-stage');document.body.removeAttribute('data-mi-shell-ready');document.querySelector('main.main-content')?.removeAttribute('data-mil-app-shell');state.loaderWasVisible=false;document.body.removeAttribute('data-overlay');document.body.removeAttribute('data-popup');requestAnimationFrame(()=>{if(!state.active)dispatchEvent(new Event('resize'));});
+    restoreTouched();/* Native V3 owns actual theme selection. Re-apply only its own selector UI after Mecha presentation snapshots are restored, so displayed state cannot be clobbered by a Mecha-era snapshot. */try{const selected=document.documentElement.dataset.selectedTheme;if(selected&&typeof window.updateThemeUI==='function')window.updateThemeUI(selected);}catch(_){}document.querySelectorAll('['+SURFACE+'],['+CONTRACT+']').forEach(el=>{if(!el.hasAttribute(GENERATED)){el.removeAttribute(SURFACE);el.removeAttribute(CONTRACT);}});document.querySelectorAll('[data-mi-frozen-transient-observed]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-observed'));document.querySelectorAll('[data-mi-frozen-transient-content]').forEach(el=>el.removeAttribute('data-mi-frozen-transient-content'));document.body.removeAttribute('data-nav-open');document.body.removeAttribute('data-sys-stage');document.body.removeAttribute('data-mi-shell-ready');document.querySelector('main.main-content')?.removeAttribute('data-mil-app-shell');state.loaderWasVisible=false;document.body.removeAttribute('data-overlay');document.body.removeAttribute('data-popup');requestAnimationFrame(()=>{if(!state.active)dispatchEvent(new Event('resize'));});
     state.root=state.sidebar=state.full=state.compact=state.header=state.workspace=state.workspacePlane=state.footerVisual=state.loader=null;state.nav=null;state.navItems=[];state.navBindings.clear();state.navSignatures.clear();state.transientVisuals.clear();
   }
   function activate(){if(state.active){scheduleHeaderSync();scheduleLayout();return;}/* Fresh restoration epoch: snapshot the current native V3/Legacy state for this activation only. */originals=new WeakMap();touched.clear();state.active=true;document.documentElement.setAttribute(ACTIVE,THEME);enableFrozen(true);mountShell();requestAnimationFrame(syncPresentation);}
   function refresh(){state.scheduled=false;if(isMecha())activate();else unmount();}
-  function schedule(){if(state.active&&!isMecha()){state.scheduled=false;unmount();return;}if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(refresh);}
+  function schedule(){if(state.active&&!isMecha()){state.scheduled=false;unmount();return;}/* Legacy -> Mecha activation must join the native V3 theme mutation before the next paint / ViewTransition snapshot; do not defer the first mount to rAF. */if(!state.active&&isMecha()){state.scheduled=false;activate();return;}if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(refresh);}
   function boot(){state.rootObserver=new MutationObserver(schedule);state.rootObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant','data-selected-theme']});state.observer=new MutationObserver(records=>{if(state.active)queueDynamicScopes(records);});state.observer.observe(document.body,{childList:true,subtree:true});state.resize=()=>{if(state.active)scheduleLayout();};addEventListener('resize',state.resize,{passive:true});refresh();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
