@@ -349,6 +349,15 @@ html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader{
 html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader::before,
 html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader::after{content:none!important;display:none!important;}
 html[data-selected-theme="mecha-ivory"] body #pageLoader.page-loader > .page-loader-card{display:none!important;opacity:0!important;pointer-events:none!important;}
+/* Final M1 first-paint correction: the exact G1-P04 .mil-screen is parser-mounted
+   before first paint. Expose that authority surface immediately for Mecha so the
+   first visible frame is Frozen Loader, while its state/tag/tip timing remains
+   owned by the unchanged G1-P04 runtime. Canonical .is-exiting is untouched. */
+html[data-selected-theme="mecha-ivory"].boot-pending body #pageLoader.page-loader > .mil-screen:not(.is-exiting){
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:none!important;
+}
 </style>
 
 
@@ -87397,6 +87406,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   function mountFooter(){const footer=document.querySelector('main.main-content > footer.footer-premium');if(!footer)return;save(footer);add(footer,'sys-footer');const tpl=template('mi-frozen-template-footer'),visual=tpl?.querySelector('.mif-footer');if(!visual)return;generated(visual);[...footer.children].forEach(child=>{save(child);child.style.setProperty('opacity','0','important');child.style.setProperty('pointer-events','none','important');});footer.appendChild(visual);state.footerVisual=visual;}
   function stopFrozenLoaderRuntime(){
     try{window.MechaIvoryBoot?.destroy?.();}catch(_){}
+    window.MechaIvoryBoot=null;
   }
   function syncFrozenAppHandoff(bootVisible,exiting,lifecycleComplete){
     const shell=document.querySelector('main.main-content');if(!shell)return;
@@ -87429,6 +87439,17 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   }
   function mountLoader(){
     const host=document.getElementById('pageLoader');if(!host)return null;
+    const lifecycleComplete=host.getAttribute('aria-hidden')==='true'||host.classList.contains('is-hidden');
+    /* Theme activation after V3 boot completion must never reopen the boot
+       presentation. V3 remains the lifecycle owner; a completed native loader
+       means Mecha mounts directly as application presentation. */
+    if(lifecycleComplete){
+      host.setAttribute('data-mi-frozen-visual-done','true');
+      state.loader=null;
+      state.loaderObserver?.disconnect();state.loaderObserver=null;
+      syncLoaderStage();
+      return null;
+    }
     host.removeAttribute('data-mi-frozen-visual-done');
     if(state.loader?.isConnected){syncLoaderStage();return state.loader;}
     let visual=host.querySelector(':scope > .mil-screen');
