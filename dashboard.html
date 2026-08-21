@@ -88747,5 +88747,91 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 </style>
 
+<script id="mi-m2-p1-p0-pair-sync-v3">
+/* M2 Phase 1 / P0 v3 — selection-to-render synchronization bridge.
+   Production PCS remains the sole resolver/validation/render authority.
+   This bridge only guarantees that the currently rendered pixels cannot lag
+   behind the currently displayed Character / Environment controls. */
+(()=>{
+  'use strict';
+  const ids=Object.freeze({character:'miPcsCharacter',environment:'miPcsEnvironment'});
+
+  function nodes(){
+    return {
+      character:document.getElementById(ids.character),
+      environment:document.getElementById(ids.environment),
+      toggle:document.getElementById('miPcsEnvToggle'),
+      surface:document.getElementById('miPcsVisual'),
+      charImg:document.getElementById('miPcsCharLayer'),
+      envImg:document.getElementById('miPcsEnvLayer'),
+      status:document.getElementById('miPcsPairStatus')
+    };
+  }
+  function clearRenderedPair(n){
+    if(!n.surface||!n.charImg||!n.envImg)return;
+    n.surface.classList.remove('asset-ready','env-ready');
+    n.charImg.removeAttribute('src');
+    n.envImg.removeAttribute('src');
+  }
+  function srcMatches(img,kind,id){
+    if(!img||!id)return false;
+    const src=String(img.getAttribute('src')||'').split(/[?#]/,1)[0].toLowerCase();
+    return src.includes(`/assets/pcs-g2/${kind}/${String(id).toLowerCase()}/`);
+  }
+  function verifyAuthorityResult(){
+    const n=nodes();
+    if(!n.character||!n.environment||!n.surface||!n.charImg||!n.envImg||!n.status)return;
+
+    /* HOLD is already source-defined authority behavior. Make the clear state
+       explicit so late image completion can never resurrect previous pixels. */
+    if(n.status.classList.contains('hold')){
+      clearRenderedPair(n);
+      n.surface.dataset.m2PairSync='hold';
+      return;
+    }
+
+    const envOn=!n.toggle||n.toggle.getAttribute('aria-pressed')!=='false';
+    const charMatches=srcMatches(n.charImg,'characters',n.character.value);
+    const envMatches=!envOn||srcMatches(n.envImg,'environments',n.environment.value);
+    if(charMatches&&envMatches){
+      delete n.surface.dataset.m2PairSync;
+      return;
+    }
+
+    /* A PASS result whose asset paths do not match the displayed controls is
+       never allowed to remain visible. Do not invent a pair; fail closed using
+       the same existing non-validated HOLD copy already owned by PCS. */
+    clearRenderedPair(n);
+    n.status.classList.remove('pass');
+    n.status.classList.add('hold');
+    const copy=n.status.querySelector('span');
+    if(copy)copy.textContent='Selectable · pair calibration required before production visual signoff';
+    n.surface.dataset.m2PairSync='hold';
+  }
+  function consumeInput(ev){
+    const target=ev.currentTarget;
+    const n=nodes();
+    if(!target||!n.surface)return;
+    /* Clear old pixels before asking the existing production change handler to
+       consume the new DOM value. This closes the input->change visibility gap. */
+    clearRenderedPair(n);
+    n.surface.dataset.m2PairSync='pending';
+    target.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+  function bind(){
+    const n=nodes();
+    if(!n.character||!n.environment)return;
+    [n.character,n.environment].forEach(control=>{
+      control.addEventListener('input',consumeInput);
+      /* Production listeners were registered first by bindStage(); this verifier
+         therefore runs after the authority change handler on the same target. */
+      control.addEventListener('change',verifyAuthorityResult);
+    });
+    verifyAuthorityResult();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});
+  else bind();
+})();
+</script>
 </body>
 </html>
