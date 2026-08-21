@@ -87330,7 +87330,15 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
       if(h1.textContent!==srcT)h1.textContent=srcT;if(p.textContent!==srcD)p.textContent=srcD;
     }
     const date=h.querySelector('.mih-date'),time=h.querySelector('.mih-time'),dateText=document.getElementById('dateDisplay')?.textContent?.trim()||'',timeText=document.getElementById('timeDisplay')?.textContent?.trim()||'';
-    if(date&&date.textContent!==dateText)date.textContent=dateText;if(time&&time.textContent!==timeText)time.textContent=timeText;
+    if(date){
+      const parts=dateText.split(','),weekday=(parts.shift()||'').trim(),calendar=parts.join(',').trim();
+      let strong=date.querySelector(':scope > strong'),small=date.querySelector(':scope > small');
+      if(!strong){strong=document.createElement('strong');date.appendChild(strong);}
+      if(!small){small=document.createElement('small');date.appendChild(small);}
+      const strongText=(calendar||dateText).toUpperCase(),smallText=(weekday||'LOCAL DATE').toUpperCase();
+      if(strong.textContent!==strongText)strong.textContent=strongText;if(small.textContent!==smallText)small.textContent=smallText;
+    }
+    if(time&&time.textContent!==timeText)time.textContent=timeText;
     const avatar=h.querySelector('.mih-avatar'),src=document.getElementById('profileAvatar')?.currentSrc||document.getElementById('profileAvatar')?.src;
     if(avatar&&src&&avatar.dataset.miAvatarSrc!==src){avatar.dataset.miAvatarSrc=src;avatar.style.backgroundImage='url("'+src.replace(/"/g,'%22')+'")';avatar.style.backgroundSize='cover';avatar.style.backgroundPosition='center';}
     const themeSlot=h.querySelector('.mih-theme'),profileSlot=h.querySelector('.mih-profile'),themeMenu=document.getElementById('themeMenu'),profileMenu=document.getElementById('profileDropdown');
@@ -88067,6 +88075,195 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 @media(prefers-reduced-motion:reduce){
   html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(.miv2-shell,.mih-shell,.mif-footer){filter:none!important;}
 }
+
+/* =====================================================================
+   M2 Phase 1 — Workspace Native Translation v8
+   Deepens visible application surfaces without changing renderer/control ownership.
+   Exact Frozen module grammar remains the source of material geometry.
+   ===================================================================== */
+html[data-mi-frozen-presentation="mecha-ivory"]{
+  --m2p1-module-surface:linear-gradient(110deg,rgba(255,255,255,.30),rgba(255,255,255,.07) 48%,transparent 100%);
+  --m2p1-module-surface-strong:linear-gradient(110deg,rgba(255,255,255,.39),rgba(255,255,255,.095) 50%,transparent 100%);
+  --m2p1-data-plane:rgba(238,234,225,.34);
+  --m2p1-data-head:rgba(226,222,213,.62);
+  --m2p1-rail:rgba(246,243,235,.18);
+  --m2p1-datum:rgba(118,183,198,.46);
+}
+
+/* Route carriers never become giant cards; actual visible sections own the material. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content{
+  color:var(--m2p1-ink)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] :is(
+  #tab-dashboard .dashboard-home-grid,
+  #tab-monitoring .monitoring-page-shell,
+  #tab-evaluation .cs-eval-shell,
+  #tab-settings .settings-workspace
+){align-content:start!important;}
+
+/* DASHBOARD — hero + command fields read as one instrument family. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard :is(.welcome-banner,.home-feature-card,.employee-priority-card){
+  border-radius:0!important;border:0!important;box-shadow:none!important;filter:none!important;
+  background:var(--m2p1-module-surface)!important;background-color:transparent!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .welcome-banner{
+  padding:18px 20px!important;border-top:1px solid var(--m2p1-seam)!important;border-bottom:1px solid var(--m2p1-seam)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .dashboard-home-grid{
+  border-top:1px solid var(--m2p1-hairline)!important;padding-top:12px!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .home-feature-card{
+  position:relative!important;padding:16px 18px 16px 20px!important;
+  border-left:1px solid rgba(113,121,118,.08)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .home-feature-card::before{
+  content:""!important;position:absolute!important;left:-1px!important;top:0!important;width:34px!important;height:1px!important;
+  background:linear-gradient(90deg,#8f9895 0 6px,#c6c1b8 6px 26px,transparent)!important;opacity:.58!important;
+}
+
+/* MONITORING — ticker is a rail; live/member sections are actual module fields. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-monitoring .ticker-container{
+  border-radius:0!important;box-shadow:none!important;filter:none!important;
+  background:var(--m2p1-rail)!important;border:0!important;border-top:1px solid var(--m2p1-seam)!important;border-bottom:1px solid var(--m2p1-seam)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-monitoring :is(.live-izin-container,.monitoring-members-panel){
+  padding:16px 18px 18px 20px!important;background:var(--m2p1-module-surface)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-monitoring :is(.live-izin-header,.monitoring-members-toolbar){
+  margin-bottom:10px!important;padding-bottom:10px!important;border-bottom:1px solid var(--m2p1-seam)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-monitoring .live-izin-grid{
+  gap:0!important;border-top:1px solid var(--m2p1-hairline)!important;border-bottom:1px solid var(--m2p1-hairline)!important;
+}
+
+/* EVALUATION — navigation/filters are rails; work + summary are paired instrument fields. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-evaluation :is(.cs-eval-subnav,.cs-eval-toolbar){
+  min-height:42px!important;padding:7px 0!important;background:var(--m2p1-rail)!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;border-top:1px solid var(--m2p1-seam)!important;border-bottom:1px solid var(--m2p1-seam)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-evaluation :is(.cs-eval-main-panel,.cs-eval-summary-panel){
+  padding:16px 18px 18px 20px!important;background:var(--m2p1-module-surface)!important;
+  border-radius:0!important;box-shadow:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-evaluation .cs-eval-summary-panel{
+  background:var(--m2p1-module-surface-strong)!important;border-left:1px solid rgba(113,121,118,.09)!important;
+}
+
+/* SHIFT — remove floating Legacy columns; keep each operational zone mechanically bounded. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-shifts :is(.shift-available,.shift-column-wrapper,.shift-log-container){
+  border-radius:0!important;box-shadow:none!important;filter:none!important;
+  background:var(--m2p1-module-surface)!important;border:0!important;border-left:1px solid rgba(113,121,118,.085)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-shifts :is(.shift-available .header,.shift-column .column-header,.shift-note-panel .note-panel-header,.shift-log-container .log-header){
+  background:var(--m2p1-rail)!important;border:0!important;border-bottom:1px solid var(--m2p1-seam)!important;box-shadow:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-shifts :is(.shift-available-dropzone,.shift-column .column-body,.shift-note-panel .note-panel-body,.shift-log-container .log-body){
+  background:transparent!important;background-color:transparent!important;
+}
+
+/* USERS — summary / table / priority areas become one data-instrument system. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-users :is(.employee-users-card,.employee-priority-card){
+  border-radius:0!important;box-shadow:none!important;filter:none!important;background:var(--m2p1-module-surface)!important;
+  padding-left:20px!important;padding-right:18px!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-users :is(.employee-users-summary,.employee-users-toolbar,.employee-priority-heading){
+  background:var(--m2p1-rail)!important;border-radius:0!important;box-shadow:none!important;
+  border-top:1px solid var(--m2p1-hairline)!important;border-bottom:1px solid var(--m2p1-seam)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-users .employee-users-table-wrap{
+  background:var(--m2p1-data-plane)!important;border-top:1px solid var(--m2p1-hairline)!important;
+}
+
+/* HISTORY / SHIFT HISTORY — filter rail + data plane, no floating white card. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-history .filter-history,
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-historyshift :is(.filter-bar,.history-shift-container .filter-bar){
+  padding:9px 0!important;background:var(--m2p1-rail)!important;border-radius:0!important;box-shadow:none!important;
+  border-top:1px solid var(--m2p1-seam)!important;border-bottom:1px solid var(--m2p1-seam)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-history .table-wrap,
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-historyshift :is(.history-shift-container,.history-shift-table-wrap){
+  border-radius:0!important;box-shadow:none!important;background:var(--m2p1-module-surface)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-history .history-count{
+  margin-top:8px!important;padding:7px 0!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;border-top:1px solid var(--m2p1-hairline)!important;
+}
+
+/* VOUCHER — dynamic voucher cards retain function but no longer read as independent Legacy tiles. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-voucher :is(.voucher-card,.card,.voucher-container,.voucher-list){
+  border-radius:0!important;box-shadow:none!important;filter:none!important;background:var(--m2p1-module-surface)!important;
+  border:0!important;border-left:1px solid rgba(113,121,118,.085)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-voucher :is(.voucher-header,.voucher-toolbar,.voucher-actions){
+  background:var(--m2p1-rail)!important;border-radius:0!important;box-shadow:none!important;border-bottom:1px solid var(--m2p1-seam)!important;
+}
+
+/* SETTINGS — system tables + permission matrix form one technical service bay. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-settings :is(.settings-system-table,.settings-access-section,.settings-session-security-section,.settings-existing-panel,.permission-matrix-panel){
+  border-radius:0!important;box-shadow:none!important;filter:none!important;background:var(--m2p1-module-surface)!important;
+  border:0!important;border-left:1px solid rgba(113,121,118,.085)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-settings :is(.settings-section-heading,.permission-matrix-heading,.permission-matrix-notice,.permission-matrix-footer){
+  border-radius:0!important;box-shadow:none!important;background:var(--m2p1-rail)!important;border-bottom:1px solid var(--m2p1-seam)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-settings .permission-matrix-scroll{
+  background:var(--m2p1-data-plane)!important;
+}
+
+/* Data headers now read as titanium instrument headers rather than Legacy table bars. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.tab-content table thead th{
+  background:var(--m2p1-data-head)!important;background-color:var(--m2p1-data-head)!important;
+  border-top:1px solid rgba(113,121,118,.085)!important;border-bottom:1px solid rgba(83,93,90,.12)!important;
+}
+
+/* Frozen Header DNA runtime alignment: structural CSS stays authority-owned. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-date{
+  display:grid!important;gap:4px!important;align-content:center!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-date strong{
+  display:block!important;white-space:nowrap!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-date small{
+  display:block!important;white-space:nowrap!important;
+}
+@media(max-width:1179px) and (min-width:901px){
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-date small{display:none!important;}
+}
+@media(max-width:900px){
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] .sys-header .mih-date{display:none!important;}
+}
+
+/* A6 / PCS application composition: controls are an instrument rail beside the exact stage. */
+@media(min-width:1180px){
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-host-slot{
+    padding:18px 20px 20px!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-host-slot>.mi-pcs-stage{
+    display:grid!important;grid-template-columns:220px minmax(0,1fr)!important;
+    grid-template-areas:"head head" "controls visual"!important;column-gap:18px!important;row-gap:0!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-head{grid-area:head!important;}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-controls{
+    grid-area:controls!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;
+    gap:12px!important;margin:0!important;padding:12px 16px 12px 0!important;
+    border-top:1px solid var(--m2p1-seam)!important;border-bottom:1px solid var(--m2p1-seam)!important;border-right:1px solid var(--m2p1-seam)!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-env-toggle{width:100%!important;}
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-grid{
+    grid-area:visual!important;display:block!important;min-width:0!important;margin:0!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-visual{
+    width:100%!important;min-height:0!important;aspect-ratio:16/9!important;margin:0!important;
+  }
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-grid>div:nth-child(2){
+    margin-top:8px!important;padding-top:8px!important;
+  }
+}
+@media(max-width:1179px){
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-dashboard .mi-pcs-controls{
+    grid-template-columns:minmax(150px,1fr) minmax(180px,1.1fr) auto!important;
+  }
+}
+
 </style>
 
 </body>
