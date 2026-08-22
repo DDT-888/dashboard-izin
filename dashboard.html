@@ -46453,6 +46453,21 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
         let realtimeChannel = null;
 
         let isDataReady = false;
+        const dashboardSummarySourceAuthority = {
+            users: false,
+            izin: false,
+            vouchers: false
+        };
+        const DASHBOARD_ONLINE_PRESENCE_TOPIC = 'dashboard_online_presence_v1';
+        const DASHBOARD_ONLINE_PRESENCE_CLIENT_STORAGE_KEY = 'ddt_dashboard_online_presence_client_v1';
+        let dashboardOnlinePresenceChannel = null;
+        let dashboardOnlinePresenceStatus = 'IDLE';
+        let dashboardOnlinePresenceReady = false;
+        let dashboardOnlinePresenceOperationalUserId = '';
+        let dashboardOnlinePresenceAccessToken = '';
+        let dashboardOnlinePresenceJoinSerial = 0;
+        let dashboardOnlinePresenceTrackedSerial = 0;
+        let dashboardOnlinePresenceClientKey = '';
         let endLock = {};
         let startLock = {};
 
@@ -48561,6 +48576,335 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             updateAllSidebarBadges();
         }
 
+        function getDashboardOnlinePresenceClientKey() {
+            if (dashboardOnlinePresenceClientKey) {
+                return dashboardOnlinePresenceClientKey;
+            }
+
+            try {
+                const storedKey = window.sessionStorage?.getItem(
+                    DASHBOARD_ONLINE_PRESENCE_CLIENT_STORAGE_KEY
+                );
+                if (storedKey) {
+                    dashboardOnlinePresenceClientKey = storedKey;
+                    return dashboardOnlinePresenceClientKey;
+                }
+            } catch (_) {}
+
+            const randomPart =
+                window.crypto?.randomUUID?.() ||
+                `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
+            dashboardOnlinePresenceClientKey = `ddt-presence-${randomPart}`;
+
+            try {
+                window.sessionStorage?.setItem(
+                    DASHBOARD_ONLINE_PRESENCE_CLIENT_STORAGE_KEY,
+                    dashboardOnlinePresenceClientKey
+                );
+            } catch (_) {}
+
+            return dashboardOnlinePresenceClientKey;
+        }
+
+        function getDashboardOnlineOperationalUser() {
+            if (!currentUser?.email) return null;
+
+            const currentEmail = formatEmail(currentUser.email);
+
+            return listUsers.find(user =>
+                String(user?.status || 'active').toLowerCase() === 'active' &&
+                formatEmail(user?.email || '') === currentEmail
+            ) || null;
+        }
+
+        function getDashboardOnlinePresenceCount() {
+            if (
+                !dashboardSummarySourceAuthority.users ||
+                !dashboardOnlinePresenceReady ||
+                !dashboardOnlinePresenceChannel
+            ) {
+                return null;
+            }
+
+            const activeOperationalIds = new Set(
+                listUsers
+                    .filter(user =>
+                        String(user?.status || 'active').toLowerCase() === 'active'
+                    )
+                    .map(user => String(user?.id ?? ''))
+                    .filter(Boolean)
+            );
+
+            const uniqueOnlineOperationalIds = new Set();
+            const presenceState =
+                typeof dashboardOnlinePresenceChannel.presenceState === 'function'
+                    ? dashboardOnlinePresenceChannel.presenceState()
+                    : {};
+
+            Object.values(presenceState || {}).forEach(entries => {
+                (Array.isArray(entries) ? entries : []).forEach(entry => {
+                    const operationalUserId = String(
+                        entry?.operational_user_id ?? ''
+                    );
+
+                    if (
+                        operationalUserId &&
+                        activeOperationalIds.has(operationalUserId)
+                    ) {
+                        uniqueOnlineOperationalIds.add(operationalUserId);
+                    }
+                });
+            });
+
+            return uniqueOnlineOperationalIds.size;
+        }
+
+        function syncDashboardOnlinePresenceSummary() {
+            if (typeof window.syncDashboardOperationalSummary === 'function') {
+                window.syncDashboardOperationalSummary();
+            }
+        }
+
+        async function refreshDashboardOnlinePresenceAuth(session = null) {
+            const accessToken = session?.access_token || '';
+
+            if (accessToken) {
+                dashboardOnlinePresenceAccessToken = accessToken;
+            }
+
+            if (
+                dashboardOnlinePresenceChannel &&
+                dashboardOnlinePresenceAccessToken &&
+                typeof supabaseDashboard.realtime?.setAuth === 'function'
+            ) {
+                try {
+                    await supabaseDashboard.realtime.setAuth(
+                        dashboardOnlinePresenceAccessToken
+                    );
+                } catch (error) {
+                    console.warn(
+                        'Online Presence gagal memperbarui token Realtime:',
+                        error
+                    );
+                }
+            }
+        }
+
+        function stopDashboardOnlinePresence(reason = 'stop') {
+            const channel = dashboardOnlinePresenceChannel;
+
+            dashboardOnlinePresenceChannel = null;
+            dashboardOnlinePresenceStatus = 'IDLE';
+            dashboardOnlinePresenceReady = false;
+            dashboardOnlinePresenceOperationalUserId = '';
+            dashboardOnlinePresenceJoinSerial = 0;
+            dashboardOnlinePresenceTrackedSerial = 0;
+
+            if (channel) {
+                try {
+                    supabaseDashboard.removeChannel(channel);
+                } catch (error) {
+                    console.warn(
+                        `Online Presence gagal cleanup (${reason}):`,
+                        error
+                    );
+                }
+            }
+
+            syncDashboardOnlinePresenceSummary();
+        }
+
+        async function startDashboardOnlinePresence(session = null) {
+            if (
+                TEST_MODE ||
+                currentUserAccessRevoked ||
+                !currentUser ||
+                document.body.classList.contains('dashboard-access-blocked')
+            ) {
+                return false;
+            }
+
+            if (session?.access_token) {
+                dashboardOnlinePresenceAccessToken = session.access_token;
+            }
+
+            const operationalUser = getDashboardOnlineOperationalUser();
+            const operationalUserId = String(operationalUser?.id ?? '');
+
+            if (!operationalUserId) {
+                return false;
+            }
+
+            if (
+                dashboardOnlinePresenceChannel &&
+                dashboardOnlinePresenceOperationalUserId === operationalUserId
+            ) {
+                await refreshDashboardOnlinePresenceAuth(session);
+                return true;
+            }
+
+            if (dashboardOnlinePresenceChannel) {
+                stopDashboardOnlinePresence('identity-change');
+            }
+
+            if (
+                dashboardOnlinePresenceAccessToken &&
+                typeof supabaseDashboard.realtime?.setAuth === 'function'
+            ) {
+                try {
+                    await supabaseDashboard.realtime.setAuth(
+                        dashboardOnlinePresenceAccessToken
+                    );
+                } catch (error) {
+                    console.warn(
+                        'Online Presence gagal menyiapkan token Realtime:',
+                        error
+                    );
+                    return false;
+                }
+            }
+
+            const channel = supabaseDashboard.channel(
+                DASHBOARD_ONLINE_PRESENCE_TOPIC,
+                {
+                    config: {
+                        private: true,
+                        presence: {
+                            key: getDashboardOnlinePresenceClientKey()
+                        }
+                    }
+                }
+            );
+
+            dashboardOnlinePresenceChannel = channel;
+            dashboardOnlinePresenceOperationalUserId = operationalUserId;
+            dashboardOnlinePresenceStatus = 'CONNECTING';
+            dashboardOnlinePresenceReady = false;
+
+            channel
+                .on('presence', { event: 'sync' }, () => {
+                    if (dashboardOnlinePresenceChannel !== channel) return;
+                    dashboardOnlinePresenceReady = true;
+                    syncDashboardOnlinePresenceSummary();
+                })
+                .on('presence', { event: 'join' }, () => {
+                    if (dashboardOnlinePresenceChannel !== channel) return;
+                    syncDashboardOnlinePresenceSummary();
+                })
+                .on('presence', { event: 'leave' }, () => {
+                    if (dashboardOnlinePresenceChannel !== channel) return;
+                    syncDashboardOnlinePresenceSummary();
+                })
+                .subscribe(async (status, error) => {
+                    if (dashboardOnlinePresenceChannel !== channel) return;
+
+                    if (status === 'SUBSCRIBED') {
+                        const isNewSuccessfulSubscription =
+                            dashboardOnlinePresenceStatus !== 'SUBSCRIBED';
+
+                        dashboardOnlinePresenceStatus = 'SUBSCRIBED';
+
+                        if (!isNewSuccessfulSubscription) {
+                            return;
+                        }
+
+                        dashboardOnlinePresenceJoinSerial += 1;
+                        dashboardOnlinePresenceReady = false;
+                        syncDashboardOnlinePresenceSummary();
+
+                        const joinSerial = dashboardOnlinePresenceJoinSerial;
+
+                        if (
+                            dashboardOnlinePresenceTrackedSerial === joinSerial
+                        ) {
+                            return;
+                        }
+
+                        dashboardOnlinePresenceTrackedSerial = joinSerial;
+
+                        try {
+                            const trackStatus = await channel.track({
+                                operational_user_id: operationalUserId
+                            });
+
+                            if (
+                                dashboardOnlinePresenceChannel === channel &&
+                                String(trackStatus || '').toLowerCase() !== 'ok'
+                            ) {
+                                console.warn(
+                                    'Online Presence track tidak mendapat status OK:',
+                                    trackStatus
+                                );
+                            }
+                        } catch (trackError) {
+                            console.warn(
+                                'Online Presence gagal track pada subscription ini:',
+                                trackError
+                            );
+                        }
+
+                        return;
+                    }
+
+                    dashboardOnlinePresenceStatus = status || 'UNKNOWN';
+                    dashboardOnlinePresenceReady = false;
+                    syncDashboardOnlinePresenceSummary();
+
+                    if (error) {
+                        console.warn(
+                            `Online Presence status ${status}:`,
+                            error
+                        );
+                    }
+                });
+
+            return true;
+        }
+
+        function ensureDashboardOnlinePresenceFromRoster() {
+            if (
+                TEST_MODE ||
+                dashboardOnlinePresenceChannel ||
+                !dashboardOnlinePresenceAccessToken
+            ) {
+                return;
+            }
+
+            void startDashboardOnlinePresence({
+                access_token: dashboardOnlinePresenceAccessToken
+            });
+        }
+
+        function getDashboardOperationalSummaryState() {
+            const usersReady = dashboardSummarySourceAuthority.users;
+            const izinReady = usersReady && dashboardSummarySourceAuthority.izin;
+            const vouchersReady = usersReady && dashboardSummarySourceAuthority.vouchers;
+
+            let voucherReady = null;
+            if (vouchersReady) {
+                const activeNames = new Set(
+                    listUsers
+                        .map(user => formatName(user?.name))
+                        .filter(Boolean)
+                );
+
+                voucherReady = [...activeNames].reduce(
+                    (total, nama) => total + Math.max(0, Number(voucherData[nama]) || 0),
+                    0
+                );
+            }
+
+            return {
+                totalStaff: usersReady ? listUsers.length : null,
+                online: getDashboardOnlinePresenceCount(),
+                activePermit: izinReady ? getMonitoringIzinList().length : null,
+                voucherReady
+            };
+        }
+
+        window.getDashboardOperationalSummaryState = getDashboardOperationalSummaryState;
+
         function updateQuickStats() {
             const currentUserName = getCurrentUserName();
             const userVoucher = currentUserName ? getVoucherCount(currentUserName) : 0;
@@ -48569,6 +48913,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             const usersEl = document.getElementById('quickUsers');
             if (voucherEl) voucherEl.textContent = userVoucher;
             if (usersEl) usersEl.textContent = listUsers.length;
+            if (typeof window.syncDashboardOperationalSummary === 'function') {
+                window.syncDashboardOperationalSummary();
+            }
             if (typeof window.refreshDashboardCsEvaluationStat === 'function') {
                 window.refreshDashboardCsEvaluationStat(false);
             }
@@ -49530,6 +49877,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                     }
 
                     applyIzinSnapshot(data || []);
+                    dashboardSummarySourceAuthority.izin = true;
                     renderIzinRealtimeViews();
 
                     realtimeNeedsReconcile = false;
@@ -49620,6 +49968,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 });
 
                 voucherData = nextVoucherData;
+                dashboardSummarySourceAuthority.vouchers = true;
             } else {
                 const returnedNames = new Set();
 
@@ -49692,6 +50041,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
 
 
         function stopRealtimeForRevokedSession() {
+            stopDashboardOnlinePresence('revoked-session');
             stopPeriodicRefresh();
             stopShiftRealtime();
             stopShiftHistoryRealtime();
@@ -49850,6 +50200,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             records = [],
             { reason = 'users-snapshot' } = {}
         ) {
+            dashboardSummarySourceAuthority.users = true;
             const activeUsers = records
                 .filter(user =>
                     String(user?.status || 'active').toLowerCase() === 'active'
@@ -49904,6 +50255,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             updateFilterNama();
             updateRoleCounts();
             updateQuickStats();
+            ensureDashboardOnlinePresenceFromRoster();
             updateAllSidebarBadges();
 
             if (currentTab === 'users') {
@@ -50575,9 +50927,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                         .select('key, value')
                 ]);
 
-                if (!usersResult.error && usersResult.data && usersResult.data.length > 0) {
+                if (!usersResult.error && Array.isArray(usersResult.data)) {
                     listUsers = usersResult.data;
                     daftarAnggota = usersResult.data.map(u => u.name);
+                    dashboardSummarySourceAuthority.users = true;
 
                     usersResult.data.forEach(user => {
                         const nama = user.name;
@@ -50596,7 +50949,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                     });
                     console.log(`✅ ${usersResult.data.length} users loaded`);
                 } else {
-                    console.log('⚠️ No users found in database');
+                    console.log('⚠️ Users table error:', usersResult.error);
                 }
 
                 if (historyResult.skipped) {
@@ -50643,12 +50996,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                             }
                         }
                     });
+                    dashboardSummarySourceAuthority.izin = true;
                     console.log(`✅ ${aktifCount} users sedang izin (aktif)`);
                 } else {
                     console.log('⚠️ Izin table error:', izinResult.error);
                 }
 
-                if (!voucherResult.error && voucherResult.data) {
+                if (!voucherResult.error && Array.isArray(voucherResult.data)) {
                     voucherData = {};
                     voucherResult.data.forEach(v => {
                         voucherData[formatName(v.nama)] = Math.max(
@@ -50656,11 +51010,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                             Number(v.jumlah) || 0
                         );
                     });
+                    dashboardSummarySourceAuthority.vouchers = true;
                     lastVoucherSyncAt = Date.now();
                     console.log(`${voucherResult.data.length} voucher loaded`);
                 } else {
-                    console.log('No vouchers found');
-                    voucherData = {};
+                    console.log('Voucher table error:', voucherResult.error);
                 }
 
                 if (
@@ -52121,6 +52475,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                         }
 
                         await loadDataFromDatabase(true);
+                        await startDashboardOnlinePresence(data.session);
                         updateUserUI();
                         updateProfileDropdown();
                         renderAll();
@@ -52262,6 +52617,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 }
 
                 await loadDataFromDatabase(true);
+                await startDashboardOnlinePresence(session);
                 updateUserUI();
                 updateProfileDropdown();
                 startTimerUpdates();
@@ -52277,6 +52633,24 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 return false;
             }
         }
+
+        try {
+            supabaseDashboard.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_OUT') {
+                    dashboardOnlinePresenceAccessToken = '';
+                    stopDashboardOnlinePresence('signed-out');
+                    return;
+                }
+
+                if (
+                    event === 'SIGNED_IN' ||
+                    event === 'TOKEN_REFRESHED' ||
+                    event === 'INITIAL_SESSION'
+                ) {
+                    void refreshDashboardOnlinePresenceAuth(session);
+                }
+            });
+        } catch (_) {}
 
         // ============================================================
         // SYNC USER ROLE
@@ -87389,7 +87763,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
     if(rail){if(route==='dashboard'){rail.style.removeProperty('display');}else rail.style.setProperty('display','none','important');}
     return {route,number};
   }
-  function mirrorWorkspaceStatus(active){if(!state.workspacePlane)return;const ctx=workspaceRouteContext(active);if(!ctx||ctx.route!=='dashboard')return;const vals=state.workspacePlane.querySelectorAll('.miw-status b'),sources=['quickUsers','onlineCount','liveCount','quickVoucher'];sources.forEach((id,i)=>{const s=document.getElementById(id);if(vals[i])vals[i].textContent=s?.textContent?.trim()||'—';});}
+  function syncDashboardOperationalSummary(active){if(!state.workspacePlane)return;const resolvedActive=active||document.querySelector('main.main-content > .tab-content.active'),ctx=workspaceRouteContext(resolvedActive);if(!ctx||ctx.route!=='dashboard')return;const vals=state.workspacePlane.querySelectorAll('.miw-status b'),snapshot=typeof window.getDashboardOperationalSummaryState==='function'?window.getDashboardOperationalSummaryState():null,metric=value=>Number.isFinite(value)?String(value):'—';if(vals[0])vals[0].textContent=metric(snapshot?.totalStaff);if(vals[1])vals[1].textContent=metric(snapshot?.online);if(vals[2])vals[2].textContent=metric(snapshot?.activePermit);if(vals[3])vals[3].textContent=metric(snapshot?.voucherReady);}
+  window.syncDashboardOperationalSummary=()=>syncDashboardOperationalSummary();
+  function mirrorWorkspaceStatus(active){syncDashboardOperationalSummary(active);}
   function normalizeWorkspaceTabs(){document.querySelectorAll('main.main-content > .tab-content').forEach(tab=>{save(tab);tab.classList.remove('miw-field','miw-field-data');tab.style.setProperty('position','relative','important');tab.style.setProperty('z-index','2','important');tab.style.setProperty('background','transparent','important');tab.style.setProperty('border','0','important');tab.style.setProperty('border-radius','0','important');tab.style.setProperty('box-shadow','none','important');tab.style.setProperty('clip-path','none','important');tab.style.setProperty('overflow','visible','important');});}
   function observeActiveWorkspace(active){if(!active||state.workspaceActive===active)return;state.workspaceActive=active;if(state.workspaceResizeObserver){state.workspaceResizeObserver.disconnect();state.workspaceResizeObserver.observe(active);}}
   function positionWorkspaceVisual(){
