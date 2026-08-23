@@ -89506,9 +89506,9 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #menuShifts .mi-sideb
 </script>
 
 <style id="mi-m2-p5a-route-summary-style">
-/* M2 Phase 5A — Summary Visual Correction Gate.
-   Dashboard .miw-status-rail/.miw-status geometry is the visual authority and is NOT modified here.
-   Route Summary uses the same 86px base metric rhythm + controlled 112/142px expansion only for long labels.
+/* M2 Global Summary Design Rule.
+   Dashboard .miw-status-rail/.miw-status geometry is the immutable visual authority and is NOT modified here.
+   All approved Mecha route summaries share one constrained footprint rule: Dashboard baseline first, minimal intrinsic expansion only when content actually requires it, and a controlled cap/wrap for genuinely-long labels.
    History Global Summary remains deferred. Monitoring / History / Riwayat Shift / Settings remain unchanged. */
 html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-route-summary{
   position:absolute;right:14px;top:21px;z-index:5;min-height:40px;
@@ -89517,19 +89517,9 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-route-summa
 }
 html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-route-summary[hidden]{display:none!important;}
 html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status{
-  box-sizing:border-box;flex:0 0 86px;width:86px;min-width:86px;min-height:30px;padding:3px 12px 2px;
+  box-sizing:border-box;flex:0 0 auto;width:max-content;min-width:86px;max-width:142px;min-height:30px;padding:3px 12px 2px;
   display:grid;align-content:center;gap:3px;border-left:1px solid rgba(113,121,118,.10);background:transparent;
 }
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-long{
-  flex-basis:112px;width:112px;min-width:112px;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-xlong{
-  flex-basis:142px;width:142px;min-width:142px;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-shift-normal{
-  flex:0 0 auto;width:auto;min-width:86px;max-width:104px;padding-left:8px;padding-right:8px;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-shift-normal span{white-space:nowrap;overflow-wrap:normal;}
 html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status:first-child{border-left:0;}
 html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status b{
   display:block;font-size:11px;line-height:1;font-weight:735;letter-spacing:0;color:#3f4c4d;white-space:nowrap;
@@ -89579,17 +89569,8 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     right:8px;top:16px;width:min(334px,calc(100% - 178px));max-width:none;justify-content:flex-end;align-content:flex-start;
   }
   html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status{
-    flex-basis:74px;width:74px;min-width:74px;min-height:20px;padding:1px 6px;gap:1px;
+    flex:0 0 auto;width:max-content;min-width:74px;max-width:148px;min-height:20px;padding:1px 6px;gap:1px;
     border-top:1px solid rgba(113,121,118,.055);
-  }
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-long{
-    flex-basis:108px;width:108px;min-width:108px;
-  }
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-xlong{
-    flex-basis:148px;width:148px;min-width:148px;
-  }
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-shift-normal{
-    flex:0 0 auto;width:auto;min-width:74px;max-width:104px;padding-left:4px;padding-right:4px;
   }
   html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status span{line-height:1.08;letter-spacing:.10em;}
   html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-primary span::before{height:5px;margin-right:4px;}
@@ -89597,7 +89578,8 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
 }
 </style>
 <script id="mi-m2-p5a-route-summary-runtime">
-/* M2 Phase 5A Summary Visual Correction runtime — read-only projection of already-loaded state.
+/* M2 Global Summary Design Rule runtime — read-only projection of already-loaded state.
+   Geometry is governed by the single constrained intrinsic CSS rule shared by Users / Voucher / Shift / Evaluation.
    No fetch / database query / RPC / Realtime / Presence / timer / polling is created here. */
 (()=>{
   'use strict';
@@ -89614,12 +89596,6 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
   }
   function readyFlag(name){try{return Boolean(dashboardSummarySourceAuthority?.[name]);}catch(_){return false;}}
   function activeUsers(){try{return Array.isArray(listUsers)?listUsers:[];}catch(_){return [];}}
-  function widthTier(label,route){
-    const len=String(label||'').trim().length;
-    if(route==='shifts')return len>30?' is-xlong':len>18?' is-long':' is-shift-normal';
-    return len>19?' is-xlong':len>12?' is-long':'';
-  }
-
   function usersMetrics(){
     const labels=['ALL STAFF','LEADER','CS LINE','CS','KAPTEN','KASIR'];
     if(!readyFlag('users'))return labels.map((label,index)=>({label,value:'—',primary:index===0}));
@@ -89700,7 +89676,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     const metrics=metricsFor(route);const fragment=document.createDocumentFragment();
     metrics.forEach(metric=>{
       const item=document.createElement('div');
-      item.className='mi-m2p5a-status'+widthTier(metric.label,route)+(metric.primary?' is-primary':'');
+      item.className='mi-m2p5a-status'+(metric.primary?' is-primary':'');
       item.title=metric.label;
       const value=document.createElement('b');value.textContent=metric.value;
       const label=document.createElement('span');label.textContent=metric.label;
