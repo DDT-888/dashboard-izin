@@ -89509,7 +89509,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #menuShifts .mi-sideb
 /* M2 Global Summary Design Rule.
    Dashboard .miw-status-rail/.miw-status geometry is the immutable visual authority and is NOT modified here.
    All approved Mecha route summaries share one constrained footprint rule: Dashboard baseline first, minimal intrinsic expansion only when content actually requires it, and a controlled cap/wrap for genuinely-long labels.
-   History Global Summary remains deferred. Monitoring / History / Riwayat Shift / Settings remain unchanged. */
+   History Global Summary uses the same locked system. Monitoring / Riwayat Shift / Settings remain unchanged. */
 html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-route-summary{
   position:absolute;right:14px;top:21px;z-index:5;min-height:40px;
   display:flex;flex-wrap:wrap;align-items:center;align-content:flex-start;justify-content:flex-end;gap:0;
@@ -89529,11 +89529,17 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status span
   white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;
 }
 html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-primary b{color:#507c85;}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-alert b{color:#8b504c;}
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-alert span{color:#8d6a66;}
 html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-primary span::before{
   content:"";display:inline-block;width:2px;height:7px;margin-right:6px;background:var(--ice,#76b7c6);vertical-align:-1px;opacity:.70;
 }
+html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m3-history-coverage{
+  box-sizing:border-box;position:absolute;right:0;top:32px;width:344px;max-width:100%;padding:0 12px;text-align:right;
+  font-size:5.6px;line-height:1.2;font-weight:600;letter-spacing:.035em;color:#7e8785;white-space:normal;
+}
 
-/* Mecha owns this presentation only on the four implemented routes.
+/* Mecha owns this presentation only on the approved implemented routes.
    The Legacy source surfaces remain in DOM and automatically return when Mecha is inactive. */
 html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-users .role-summary,
 html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-voucher .voucher-summary,
@@ -89563,6 +89569,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     right:10px;top:19px;max-width:calc(100% - 174px);align-content:center;
   }
   html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status{min-height:25px;padding-top:2px;padding-bottom:2px;}
+  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m3-history-coverage{top:29px;}
 }
 @media(max-width:620px){
   html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-route-summary{
@@ -89574,18 +89581,19 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
   }
   html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status span{line-height:1.08;letter-spacing:.10em;}
   html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m2p5a-status.is-primary span::before{height:5px;margin-right:4px;}
+  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-m3-history-coverage{top:23px;}
   html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a-shift-unsaved{min-height:21px;padding-right:5px;font-size:5.4px;letter-spacing:.07em;}
 }
 </style>
 <script id="mi-m2-p5a-route-summary-runtime">
 /* M2 Global Summary Design Rule runtime — read-only projection of already-loaded state.
-   Geometry is governed by the single constrained intrinsic CSS rule shared by Users / Voucher / Shift / Evaluation.
-   No fetch / database query / RPC / Realtime / Presence / timer / polling is created here. */
+   Geometry is governed by the single constrained intrinsic CSS rule shared by Users / Voucher / Shift / Evaluation / History.
+   History adds one dedicated aggregate RPC call-site on route activation; no full-history download / Realtime / Presence / timer / polling is created here. */
 (()=>{
   'use strict';
   const MECHA_SELECTOR='html[data-theme="light"][data-theme-variant="mecha-ivory"]';
-  const IMPLEMENTED=new Set(['users','voucher','shifts','evaluation']);
-  const state={routeObserver:null,themeObserver:null,contentObservers:[],workspaceDiscovery:null,frame:0};
+  const IMPLEMENTED=new Set(['users','voucher','shifts','evaluation','history']);
+  const state={routeObserver:null,themeObserver:null,contentObservers:[],workspaceDiscovery:null,frame:0,lastRoute:null,historyRequest:0,historyStatus:'idle',historySummary:null};
 
   function isMecha(){return document.documentElement.matches(MECHA_SELECTOR);}
   function activeRoute(){return (document.querySelector('main.main-content > .tab-content.active')?.id||'').replace(/^tab-/,'');}
@@ -89652,11 +89660,56 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     ];
   }
 
+  function historyMetrics(){
+    const labels=['RECORDS','ON TIME','LATE','LATE %'];
+    const snapshot=state.historyStatus==='ready'?state.historySummary:null;
+    if(!snapshot)return labels.map((label,index)=>({label,value:'—',primary:index===0,alert:index>=2}));
+    const records=Number(snapshot.records),onTime=Number(snapshot.on_time),late=Number(snapshot.late),latePercent=Number(snapshot.late_percent);
+    return [
+      {label:'RECORDS',value:counter(records),primary:true},
+      {label:'ON TIME',value:counter(onTime)},
+      {label:'LATE',value:counter(late),alert:true},
+      {label:'LATE %',value:Number.isFinite(latePercent)&&records>0?`${latePercent.toFixed(2)}%`:'—',alert:true}
+    ];
+  }
+  function formatHistoryCoverageDate(value){
+    const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!match)return '';
+    const month=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(match[2])-1];
+    return month?`${Number(match[3])} ${month} ${match[1]}`:'';
+  }
+  function historyCoverageText(){
+    const snapshot=state.historyStatus==='ready'?state.historySummary:null;
+    const start=formatHistoryCoverageDate(snapshot?.coverage_start),end=formatHistoryCoverageDate(snapshot?.coverage_end);
+    return start&&end?`History Coverage · ${start} — ${end}`:'History Coverage · —';
+  }
+  async function loadHistoryGlobalSummary(requestId){
+    try{
+      const {data,error}=await supabaseDashboard.rpc('get_history_global_summary');
+      if(requestId!==state.historyRequest)return;
+      if(error)throw error;
+      const row=Array.isArray(data)?data[0]:data;
+      const valid=row&&Number.isFinite(Number(row.records))&&Number.isFinite(Number(row.on_time))&&Number.isFinite(Number(row.late));
+      state.historySummary=valid?row:null;state.historyStatus=valid?'ready':'error';
+    }catch(error){
+      if(requestId!==state.historyRequest)return;
+      state.historySummary=null;state.historyStatus='error';
+      console.warn('History global summary unavailable:',error);
+    }
+    schedule();
+  }
+  function activateHistorySummary(){
+    state.historyStatus='loading';state.historySummary=null;
+    const requestId=++state.historyRequest;
+    loadHistoryGlobalSummary(requestId);
+  }
+
   function metricsFor(route){
     if(route==='users')return usersMetrics();
     if(route==='voucher')return voucherMetrics();
     if(route==='shifts')return shiftMetrics();
     if(route==='evaluation')return evaluationMetrics();
+    if(route==='history')return historyMetrics();
     return [];
   }
 
@@ -89676,12 +89729,13 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     const metrics=metricsFor(route);const fragment=document.createDocumentFragment();
     metrics.forEach(metric=>{
       const item=document.createElement('div');
-      item.className='mi-m2p5a-status'+(metric.primary?' is-primary':'');
+      item.className='mi-m2p5a-status'+(metric.primary?' is-primary':'')+(metric.alert?' is-alert':'');
       item.title=metric.label;
       const value=document.createElement('b');value.textContent=metric.value;
       const label=document.createElement('span');label.textContent=metric.label;
       item.append(value,label);fragment.appendChild(item);
     });
+    if(route==='history'){const coverage=document.createElement('div');coverage.className='mi-m3-history-coverage';coverage.textContent=historyCoverageText();fragment.appendChild(coverage);}
     rail.replaceChildren(fragment);rail.dataset.route=route;rail.hidden=false;
   }
 
@@ -89703,7 +89757,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     document.querySelectorAll('.mi-m2p5a-route-summary,.mi-m2p5a-shift-unsaved').forEach(node=>node.remove());
     document.querySelectorAll('#menuShifts .mi-sidebar-attention-dot').forEach(node=>node.remove());
   }
-  function syncNow(){state.frame=0;if(!isMecha()){cleanup();return;}const route=activeRoute();renderRail(route);syncShiftUnsaved();}
+  function syncNow(){state.frame=0;if(!isMecha()){cleanup();state.lastRoute=null;return;}const route=activeRoute();if(route!==state.lastRoute){state.lastRoute=route;if(route==='history')activateHistorySummary();}renderRail(route);syncShiftUnsaved();}
   function schedule(){if(state.frame)return;state.frame=requestAnimationFrame(syncNow);}
 
   function observeTarget(node,options){if(!node)return;const observer=new MutationObserver(schedule);observer.observe(node,options);state.contentObservers.push(observer);}
