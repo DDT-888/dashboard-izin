@@ -89607,8 +89607,9 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
   }
   function readyFlag(name){try{return Boolean(dashboardSummarySourceAuthority?.[name]);}catch(_){return false;}}
   function activeUsers(){try{return Array.isArray(listUsers)?listUsers:[];}catch(_){return [];}}
-  function widthTier(label){
+  function widthTier(label,route){
     const len=String(label||'').trim().length;
+    if(route==='shifts')return len>30?' is-xlong':len>18?' is-long':'';
     return len>19?' is-xlong':len>12?' is-long':'';
   }
 
@@ -89692,7 +89693,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     const metrics=metricsFor(route);const fragment=document.createDocumentFragment();
     metrics.forEach(metric=>{
       const item=document.createElement('div');
-      item.className='mi-m2p5a-status'+widthTier(metric.label)+(metric.primary?' is-primary':'');
+      item.className='mi-m2p5a-status'+widthTier(metric.label,route)+(metric.primary?' is-primary':'');
       item.title=metric.label;
       const value=document.createElement('b');value.textContent=metric.value;
       const label=document.createElement('span');label.textContent=metric.label;
