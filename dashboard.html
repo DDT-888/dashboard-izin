@@ -67196,22 +67196,8 @@ async function processCsEvaluationAppeal(id, status) {
 
     window.cancelCsManualReportDecision = cancelCsManualReportDecision;
 
-    // M2 Phase 4 read-only presentation bridge. No fetch/RPC/lifecycle ownership.
-    function getMechaCsEvaluationSummaryState() {
-        const summary = Array.isArray(csEvalState.summary) ? csEvalState.summary : [];
-        return {
-            allowed: csEvalCan('cs_evaluation_view'),
-            ready: Boolean(csEvalState.initialized && Number(csEvalState.lastLoadedAt) > 0),
-            records: summary.reduce((sum, row) => sum + Number(row?.total_records || 0), 0),
-            points: summary.reduce((sum, row) => sum + Number(row?.lc_points || 0), 0),
-            appealsOpen: summary.reduce((sum, row) => sum + Number(row?.appeal_open_count || 0), 0),
-            appealsWon: Number(csEvalState.appealSuccessCount || 0)
-        };
-    }
-
     // Export public functions used by inline actions.
     Object.assign(window, {
-        getMechaCsEvaluationSummaryState,
         initializeCsEvaluation,
         refreshCsEvaluation,
         renderCsEvaluationCurrentView: loadCsEvaluationCurrentView,
@@ -89392,138 +89378,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] #tab-dashboard .mi-pcs-metrics{
 
 
 
-<style id="mi-m2-p4-summary-architecture-style">
-/* M2 Phase 4 — Mecha Ivory Summary Architecture.
-   Presentation-only translation layer. Legacy source/business/data authority remain untouched. */
-.mi-route-summary{display:none;}
-.mi-sidebar-attention-dot,.mi-sidebar-live-badge,.mi-operator-context{display:none;}
+<style id="mi-m2-p4-correction-position-style">
+/* M2 Phase 4 CORRECTION — keep established route positions; translate presentation in place.
+   Legacy source remains intact. No non-Dashboard route Summary rail is created. */
+.mi-sidebar-attention-dot,.mi-operator-context{display:none;}
 
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary{
-  --mi-summary-line:var(--m2p1-frozen-line,rgba(113,121,118,.08));
-  --mi-summary-line-strong:var(--m2p1-frozen-line-strong,rgba(103,113,110,.18));
-  --mi-summary-ink:var(--m2p1-ink,#2d383c);
-  --mi-summary-muted:var(--m2p1-muted,#788281);
-  --mi-summary-ice:var(--m2p1-ice,#76b7c6);
-  display:grid!important;
-  grid-template-columns:minmax(164px,.78fr) minmax(0,3.8fr);
-  align-items:stretch;
-  width:100%;
-  min-width:0;
-  margin:0 0 14px!important;
-  padding:0!important;
-  border:0!important;
-  border-top:1px solid var(--mi-summary-line)!important;
-  border-bottom:1px solid var(--mi-summary-line)!important;
-  border-radius:0!important;
-  background:linear-gradient(110deg,rgba(255,255,255,.18),rgba(255,255,255,.035) 52%,transparent 100%)!important;
-  box-shadow:none!important;
-  filter:none!important;
-  color:var(--mi-summary-ink)!important;
-  overflow:hidden;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-identity{
-  position:relative;
-  min-width:0;
-  padding:11px 16px 10px 14px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  gap:4px;
-  border-right:1px solid var(--mi-summary-line)!important;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-identity::before{
-  content:"";
-  position:absolute;
-  left:0;
-  top:11px;
-  bottom:11px;
-  width:2px;
-  background:var(--mi-summary-ice);
-  opacity:.74;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-kicker{
-  color:#596765!important;
-  font-size:8px!important;
-  line-height:1!important;
-  font-weight:790!important;
-  letter-spacing:.13em!important;
-  text-transform:uppercase!important;
-  white-space:normal;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-context{
-  color:var(--mi-summary-muted)!important;
-  font-size:6.4px!important;
-  line-height:1.25!important;
-  font-weight:650!important;
-  letter-spacing:.105em!important;
-  text-transform:uppercase!important;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-alert{
-  display:inline-flex;
-  align-items:center;
-  align-self:flex-start;
-  gap:5px;
-  margin-top:2px;
-  color:#866c39!important;
-  font-size:6.5px!important;
-  line-height:1!important;
-  font-weight:800!important;
-  letter-spacing:.11em!important;
-  text-transform:uppercase!important;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-alert[hidden]{display:none!important;}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-alert::before{
-  content:"";
-  width:5px;
-  height:5px;
-  background:#c18a2f;
-  box-shadow:0 0 0 1px rgba(193,138,47,.16);
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metrics{
-  min-width:0;
-  display:grid!important;
-  grid-template-columns:repeat(var(--mi-summary-count,4),minmax(82px,1fr));
-  align-items:stretch;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metric{
-  position:relative;
-  min-width:0;
-  min-height:54px;
-  padding:9px 12px 8px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  gap:5px;
-  border-left:1px solid var(--mi-summary-line)!important;
-  background:transparent!important;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metric:first-child{border-left:0!important;}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-value{
-  color:#455659!important;
-  font-size:15px!important;
-  line-height:1!important;
-  font-weight:735!important;
-  letter-spacing:.025em!important;
-  font-variant-numeric:tabular-nums;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-value.is-unknown{
-  color:#929997!important;
-  font-weight:620!important;
-}
-html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metric-label{
-  color:#7b8583!important;
-  font-size:6.45px!important;
-  line-height:1.15!important;
-  font-weight:760!important;
-  letter-spacing:.105em!important;
-  text-transform:uppercase!important;
-  white-space:normal;
-}
-
-/* Dashboard operator context is a distinct personal layer; it replaces Legacy mixed quick-stats in Mecha only. */
+/* Dashboard remains the sole global Summary position. Translate the existing personal quick-stat
+   area in-place into explicit Operator Context, without creating another global rail. */
 html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-dashboard .welcome-banner .quick-stats{
   display:none!important;
 }
@@ -89546,27 +89407,14 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-dashboard .mi-op
 @media(max-width:1179px){html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-dashboard .mi-operator-context{grid-template-columns:minmax(92px,.8fr) repeat(3,minmax(68px,1fr));max-width:none;width:100%;}}
 @media(max-width:620px){html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-dashboard .mi-operator-context{grid-template-columns:1fr 1fr 1fr;}html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-dashboard .mi-operator-context-head{grid-column:1/-1;border-right:0;border-bottom:1px solid rgba(103,113,110,.1);}}
 
-/* Mecha owns these translated information units. Legacy source remains intact. */
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-monitoring .live-izin-header,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-monitoring .live-role-column .role-header .role-count,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-users .role-summary,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-users .history-count,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-voucher .voucher-summary,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-voucher .history-count,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-history .history-count,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .shift-stats-wrapper,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-historyshift [data-mi-legacy-summary="historyshift"],
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-evaluation #csEvalStatsGrid,
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #sidebarBadgeIzin,
+/* Mecha Sidebar = navigation + attention/live urgency. Keep Monitoring's existing badge in its
+   proven position; suppress non-attention numeric Users/Voucher badges only in Mecha. */
 html[data-theme="light"][data-theme-variant="mecha-ivory"] #sidebarBadgeTotal,
 html[data-theme="light"][data-theme-variant="mecha-ivory"] #sidebarBadgeVoucher{
   display:none!important;
 }
-
-/* Sidebar is navigation + attention/live urgency in Mecha. Legacy badges remain byte-owned by Legacy. */
-html[data-theme="light"][data-theme-variant="mecha-ivory"] #menuMonitoring .mi-sidebar-live-badge{
-  display:inline-flex!important;
-  align-items:center!important;justify-content:center!important;
+html[data-theme="light"][data-theme-variant="mecha-ivory"] #menuMonitoring #sidebarBadgeIzin{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
   min-width:22px!important;height:18px!important;padding:0 6px!important;
   border:1px solid rgba(117,150,157,.24)!important;border-radius:2px!important;
   background:rgba(231,239,237,.72)!important;color:#566c70!important;
@@ -89575,236 +89423,30 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #menuMonitoring .mi-s
   box-shadow:inset 0 1px 0 rgba(255,255,255,.6)!important;
 }
 html[data-theme="light"][data-theme-variant="mecha-ivory"] #menuShifts .mi-sidebar-attention-dot:not([hidden]){
-  display:inline-block!important;
-  width:6px!important;
-  height:6px!important;
-  min-width:6px!important;
-  margin-left:auto!important;
-  border-radius:0!important;
-  background:#c18a2f!important;
+  display:inline-block!important;width:6px!important;height:6px!important;min-width:6px!important;
+  margin-left:auto!important;border-radius:0!important;background:#c18a2f!important;
   box-shadow:0 0 0 1px rgba(193,138,47,.18)!important;
 }
-
-@media(max-width:1179px){
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary{
-    grid-template-columns:minmax(148px,.7fr) minmax(0,3.3fr);
-  }
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metrics{
-    grid-template-columns:repeat(auto-fit,minmax(96px,1fr));
-  }
-}
-@media(max-width:820px){
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary{
-    grid-template-columns:1fr;
-  }
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-identity{
-    border-right:0!important;
-    border-bottom:1px solid var(--mi-summary-line)!important;
-    min-height:42px;
-  }
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metrics{
-    grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
-  }
-}
-@media(max-width:520px){
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metrics{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metric:nth-child(odd){border-left:0!important;}
-  html[data-theme="light"][data-theme-variant="mecha-ivory"] .mi-route-summary-metric:nth-child(n+3){border-top:1px solid var(--mi-summary-line)!important;}
-}
 </style>
-<script id="mi-m2-p4-summary-architecture-runtime">
-/* M2 Phase 4 — Mecha Ivory Summary Architecture runtime.
-   Presentation consumer only: no fetch, RPC, channel, timer, heartbeat or business-data ownership. */
+<script id="mi-m2-p4-correction-position-runtime">
+/* M2 Phase 4 CORRECTION runtime.
+   Presentation-only: Dashboard formatting/operator context + Shift sidebar attention.
+   No route Summary insertion, fetch, RPC, channel, Presence track, timer, heartbeat, or polling. */
 (()=>{
   'use strict';
   const MECHA_SELECTOR='html[data-theme="light"][data-theme-variant="mecha-ivory"]';
-  const ROUTE_META=Object.freeze({
-    monitoring:['LIVE PERMIT OPERATIONS','CURRENT AUTHORITATIVE STATE'],
-    users:['PERSONNEL REGISTRY STATE','ACTIVE WORKFORCE COMPOSITION'],
-    voucher:['RESOURCE READINESS','ACTIVE OPERATIONAL ROSTER'],
-    history:['PERMIT ACTIVITY & COMPLIANCE','CURRENT LOADED / FILTERED SCOPE'],
-    shifts:['WORKFORCE ALLOCATION STATE','CURRENT SHIFT ALLOCATION'],
-    historyshift:['ALLOCATION ARCHIVE CONTEXT','CURRENT LOADED / FILTERED SCOPE'],
-    evaluation:['PERFORMANCE & APPEAL STATE','CURRENT LOADED EVALUATION STATE']
-  });
   const state={bound:false,dashboardObserver:null,dashboardDiscovery:null,operatorObserver:null,themeObserver:null};
-
   function isMecha(){return document.documentElement.matches(MECHA_SELECTOR);}
-  function activeRoute(){
-    const active=document.querySelector('main.main-content > .tab-content.active');
-    return active?.id?.replace(/^tab-/,'')||'dashboard';
-  }
-  function counter(value){
-    if(!Number.isFinite(value))return '—';
-    const n=Math.max(0,Math.trunc(value));
-    return n<10?String(n).padStart(2,'0'):String(n);
-  }
-  function duration(value){
-    if(!Number.isFinite(value)||value<0)return '—';
-    const total=Math.round(value),minutes=Math.floor(total/60),seconds=total%60;
-    return minutes>0?`${minutes}m ${seconds}s`:`${seconds}s`;
-  }
-  function dateTime(value){
-    if(!value)return '—';
-    const d=new Date(value);if(Number.isNaN(d.getTime()))return '—';
-    const date=d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
-    const time=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-    return `${date} · ${time}`;
-  }
-  function makeMetric(key,label,value,kind='counter'){
-    const text=kind==='counter'?counter(value):kind==='duration'?duration(value):String(value??'—');
-    return {key,label,text,unknown:text==='—'};
-  }
-  function placement(route){
-    const tab=document.getElementById(`tab-${route}`);if(!tab)return null;
-    if(route==='monitoring')return {parent:tab.querySelector('.monitoring-page-shell')||tab,before:(tab.querySelector('.monitoring-page-shell')||tab).firstElementChild};
-    if(route==='evaluation')return {parent:tab.querySelector('#csEvaluationShell')||tab,before:(tab.querySelector('#csEvaluationShell')||tab).firstElementChild};
-    const anchors={users:'usersContent',voucher:'voucherContent',shifts:'shiftsContent',historyshift:'historyShiftContent'};
-    const anchor=anchors[route]?document.getElementById(anchors[route]):tab.firstElementChild;
-    return {parent:anchor?.parentElement||tab,before:anchor||tab.firstElementChild};
-  }
-  function ensureSummary(route){
-    let el=document.querySelector(`.mi-route-summary[data-mi-summary-route="${route}"]`);
-    if(el)return el;
-    const meta=ROUTE_META[route];if(!meta)return null;
-    const pos=placement(route);if(!pos?.parent)return null;
-    el=document.createElement('section');
-    el.className='mi-route-summary';
-    el.dataset.miSummaryRoute=route;
-    el.setAttribute('aria-label',meta[0]);
-    el.innerHTML=`<div class="mi-route-summary-identity"><strong class="mi-route-summary-kicker"></strong><span class="mi-route-summary-context"></span><span class="mi-route-summary-alert" hidden>UNSAVED</span></div><div class="mi-route-summary-metrics"></div>`;
-    el.querySelector('.mi-route-summary-kicker').textContent=meta[0];
-    el.querySelector('.mi-route-summary-context').textContent=meta[1];
-    pos.parent.insertBefore(el,pos.before||null);
-    return el;
-  }
-  function renderSummary(route,metrics,{hidden=false,unsaved=false}={}){
+  function counter(value){if(!Number.isFinite(value))return '—';const n=Math.max(0,Math.trunc(value));return n<10?String(n).padStart(2,'0'):String(n);}
+  function normalizeDashboardGlobalSummary(){
     if(!isMecha())return;
-    const el=ensureSummary(route);if(!el)return;
-    el.hidden=!!hidden;
-    if(hidden)return;
-    const bank=el.querySelector('.mi-route-summary-metrics');
-    const sig=metrics.map(x=>`${x.key}:${x.label}`).join('|');
-    if(bank.dataset.miMetricSignature!==sig){
-      bank.dataset.miMetricSignature=sig;
-      bank.innerHTML=metrics.map(x=>`<div class="mi-route-summary-metric" data-mi-metric-key="${x.key}"><b class="mi-route-summary-value"></b><span class="mi-route-summary-metric-label"></span></div>`).join('');
-      metrics.forEach(x=>{const item=bank.querySelector(`[data-mi-metric-key="${CSS.escape(x.key)}"]`);if(item)item.querySelector('.mi-route-summary-metric-label').textContent=x.label;});
-    }
-    bank.style.setProperty('--mi-summary-count',String(Math.max(1,metrics.length)));
-    metrics.forEach(x=>{
-      const item=bank.querySelector(`[data-mi-metric-key="${CSS.escape(x.key)}"]`);if(!item)return;
-      const value=item.querySelector('.mi-route-summary-value');if(!value)return;
-      if(value.textContent!==x.text)value.textContent=x.text;
-      value.classList.toggle('is-unknown',!!x.unknown);
-    });
-    const alert=el.querySelector('.mi-route-summary-alert');if(alert)alert.hidden=!unsaved;
+    const rail=document.querySelector('.miw-status-rail');if(!rail)return;
+    rail.querySelectorAll('.miw-status b').forEach(value=>{const raw=(value.textContent||'').trim();if(/^\d+$/.test(raw)){const next=counter(Number(raw));if(raw!==next)value.textContent=next;}});
   }
-  function unmountSummaries(){
-    document.querySelectorAll('.mi-route-summary,.mi-operator-context').forEach(el=>el.remove());
-    document.querySelectorAll('[data-mi-legacy-summary="historyshift"]').forEach(el=>el.removeAttribute('data-mi-legacy-summary'));
-    document.querySelectorAll('.mi-sidebar-live-badge,.mi-sidebar-attention-dot').forEach(el=>el.remove());
-    if(state.dashboardObserver){state.dashboardObserver.disconnect();state.dashboardObserver=null;}
-    if(state.dashboardDiscovery){state.dashboardDiscovery.disconnect();state.dashboardDiscovery=null;}
-    if(state.operatorObserver){state.operatorObserver.disconnect();state.operatorObserver=null;}
-  }
-
-  function monitoringState(){
-    const ready=!!(dashboardSummarySourceAuthority?.users&&dashboardSummarySourceAuthority?.izin);
-    if(!ready)return ['active','csline','cs','kapten','kasir'].map((key,i)=>makeMetric(key,['ACTIVE PERMIT','CS LINE','CS','KAPTEN','KASIR'][i],null));
-    const rows=getMonitoringIzinList();
-    const counts={csline:0,cs:0,kapten:0,kasir:0};
-    rows.forEach(row=>{if(Object.prototype.hasOwnProperty.call(counts,row?.role))counts[row.role]++;});
-    return [makeMetric('active','ACTIVE PERMIT',rows.length),makeMetric('csline','CS LINE',counts.csline),makeMetric('cs','CS',counts.cs),makeMetric('kapten','KAPTEN',counts.kapten),makeMetric('kasir','KASIR',counts.kasir)];
-  }
-  function usersState(){
-    const ready=!!dashboardSummarySourceAuthority?.users;
-    const labels=[['total','ACTIVE WORKFORCE'],['leader','LEADER'],['csline','CS LINE'],['cs','CS'],['kapten','KAPTEN'],['kasir','KASIR']];
-    if(!ready)return labels.map(([key,label])=>makeMetric(key,label,null));
-    const counts={leader:0,csline:0,cs:0,kapten:0,kasir:0};
-    listUsers.forEach(user=>{if(Object.prototype.hasOwnProperty.call(counts,user?.role))counts[user.role]++;});
-    return [makeMetric('total','ACTIVE WORKFORCE',listUsers.length),...labels.slice(1).map(([key,label])=>makeMetric(key,label,counts[key]))];
-  }
-  function voucherState(){
-    const ready=!!(dashboardSummarySourceAuthority?.users&&dashboardSummarySourceAuthority?.vouchers);
-    if(!ready)return [makeMetric('ready','VOUCHER READY',null),makeMetric('holders','HOLDERS',null),makeMetric('zero','ZERO BALANCE',null)];
-    const names=[...new Set(listUsers.map(user=>formatName(user?.name)).filter(Boolean))];
-    let readyUnits=0,holders=0;
-    names.forEach(name=>{const value=Math.max(0,Number(voucherData[name])||0);readyUnits+=value;if(value>0)holders++;});
-    return [makeMetric('ready','VOUCHER READY',readyUnits),makeMetric('holders','HOLDERS',holders),makeMetric('zero','ZERO BALANCE',Math.max(0,names.length-holders))];
-  }
-  function filteredHistoryRows(){
-    let filtered=[...historyData];
-    const filterNama=document.getElementById('filterNama'),filterTanggal=document.getElementById('filterTanggal'),filterRole=document.getElementById('filterRole'),filterBulan=document.getElementById('filterBulan');
-    const namaValue=filterNama?.value||'',tanggalValue=filterTanggal?.value||'',roleValue=filterRole?.value||'',bulanValue=filterBulan?.value||'';
-    if(tanggalValue){const selected=new Date(tanggalValue+'T00:00:00'),key=selected.toDateString();filtered=filtered.filter(h=>new Date(h.mulai).toDateString()===key);}
-    if(namaValue)filtered=filtered.filter(h=>h.nama===formatName(namaValue));
-    if(roleValue)filtered=filtered.filter(h=>h.role===roleValue);
-    if(bulanValue){const [year,month]=bulanValue.split('-').map(Number);filtered=filtered.filter(h=>{const d=new Date(h.mulai);return d.getFullYear()===year&&d.getMonth()===month-1;});}
-    return filtered;
-  }
-  function historyState(){
-    if(historyDataScope==='none')return [makeMetric('records','RECORDS',null),makeMetric('ontime','ON TIME',null),makeMetric('late','LATE',null),makeMetric('avg','AVG DURATION',null,'duration')];
-    const rows=filteredHistoryRows(),limit=Math.max(0,Number(jackpotLimitMinutes)||0)*60;
-    const durations=rows.map(item=>{const a=new Date(item.mulai).getTime(),b=new Date(item.selesai).getTime(),computed=(b-a)/1000;if(Number.isFinite(computed)&&computed>=0)return Math.floor(computed);const fallback=Number(item?.durasiDetik);return Number.isFinite(fallback)&&fallback>=0?fallback:null;}).filter(Number.isFinite);
-    const late=durations.filter(sec=>sec>=limit).length,ontime=durations.length-late;
-    const avg=durations.length?durations.reduce((sum,x)=>sum+x,0)/durations.length:null;
-    return [makeMetric('records','RECORDS',rows.length),makeMetric('ontime','ON TIME',ontime),makeMetric('late','LATE',late),makeMetric('avg','AVG DURATION',avg,'duration')];
-  }
-  function shiftsState(){
-    if(!isShiftInitialized)return {metrics:[makeMetric('total','TOTAL STAFF',null),makeMetric('unassigned','UNASSIGNED',null)],unsaved:false};
-    const total=availableUsers.length+shiftColumns.reduce((sum,col)=>sum+(Array.isArray(col?.users)?col.users.length:0),0);
-    const dynamic=shiftColumns.map((col,index)=>makeMetric(`shift-${String(col?.id||index)}`,String(col?.name||`SHIFT ${index+1}`).toUpperCase(),Array.isArray(col?.users)?col.users.length:0));
-    return {metrics:[makeMetric('total','TOTAL STAFF',total),...dynamic,makeMetric('unassigned','UNASSIGNED',availableUsers.length)],unsaved:!!shiftIsDirty};
-  }
-  function filteredShiftHistoryRows(){
-    let filtered=[...shiftHistoryData];
-    const search=(document.getElementById('historyShiftSearch')?.value||'').toLowerCase(),filter=document.getElementById('historyShiftFilter')?.value||'all';
-    if(search)filtered=filtered.filter(h=>`${h.periode_start||''} ${h.periode_end||''}`.toLowerCase().includes(search)||String(h.updated_by||'').toLowerCase().includes(search));
-    if(filter==='this_month'){const now=new Date(),m=now.getMonth(),y=now.getFullYear();filtered=filtered.filter(h=>{const d=new Date(h.created_at);return d.getMonth()===m&&d.getFullYear()===y;});}
-    else if(filter==='last_month'){const now=new Date(),m=now.getMonth()-1,y=now.getFullYear();filtered=filtered.filter(h=>{const d=new Date(h.created_at);return d.getMonth()===m&&d.getFullYear()===y;});}
-    else if(filter==='last_3_months'){const d=new Date();d.setMonth(d.getMonth()-3);filtered=filtered.filter(h=>new Date(h.created_at)>=d);}
-    else if(filter==='this_year'){const y=new Date().getFullYear();filtered=filtered.filter(h=>new Date(h.created_at).getFullYear()===y);}
-    return filtered;
-  }
-  function historyShiftState(){
-    const ready=lastShiftHistoryLoad>0;
-    if(!ready)return [makeMetric('visible','VISIBLE RECORDS',null),makeMetric('staff','NEWEST STAFF',null),makeMetric('shifts','NEWEST SHIFTS',null),makeMetric('saved','LATEST SAVE','—','text')];
-    const rows=filteredShiftHistoryRows();
-    if(!rows.length)return [makeMetric('visible','VISIBLE RECORDS',0),makeMetric('staff','NEWEST STAFF',null),makeMetric('shifts','NEWEST SHIFTS',null),makeMetric('saved','LATEST SAVE','—','text')];
-    const latest=rows[0];let staff=null,shifts=null;
-    try{const parsed=parseShiftHistoryPayload(latest.shift_data);shifts=Array.isArray(parsed?.columns)?parsed.columns.length:0;staff=(parsed?.columns||[]).reduce((sum,col)=>sum+(Array.isArray(col?.users)?col.users.length:0),0);}catch(_){staff=null;shifts=null;}
-    return [makeMetric('visible','VISIBLE RECORDS',rows.length),makeMetric('staff','NEWEST STAFF',staff),makeMetric('shifts','NEWEST SHIFTS',shifts),makeMetric('saved','LATEST SAVE',dateTime(latest.updated_at||latest.created_at||latest.tanggal),'text')];
-  }
-  function evaluationSnapshot(){
-    return typeof window.getMechaCsEvaluationSummaryState==='function'?window.getMechaCsEvaluationSummaryState():null;
-  }
-  function evaluationState(snapshot=evaluationSnapshot()){
-    if(!snapshot?.ready)return [makeMetric('records','RECORDS',null),makeMetric('points','LC POINTS',null),makeMetric('open','APPEALS OPEN',null),makeMetric('won','APPEALS WON',null)];
-    return [makeMetric('records','RECORDS',Number(snapshot.records)),makeMetric('points','LC POINTS',Number(snapshot.points)),makeMetric('open','APPEALS OPEN',Number(snapshot.appealsOpen)),makeMetric('won','APPEALS WON',Number(snapshot.appealsWon))];
-  }
-
-  function tagDynamicLegacy(route){
-    if(route!=='historyshift')return;
-    const host=document.querySelector('#tab-historyshift .history-shift-container');if(!host)return;
-    [...host.children].forEach(el=>{if(/Total ditampilkan:/i.test(el.textContent||''))el.dataset.miLegacySummary='historyshift';});
-  }
-  function syncRoute(route=activeRoute()){
-    if(!isMecha())return;
-    if(route==='monitoring')renderSummary(route,monitoringState());
-    else if(route==='users')renderSummary(route,usersState());
-    else if(route==='voucher')renderSummary(route,voucherState(),{hidden:!userPermissions?.canViewVoucher});
-    else if(route==='history')renderSummary(route,historyState());
-    else if(route==='shifts'){const x=shiftsState();renderSummary(route,x.metrics,{unsaved:x.unsaved});}
-    else if(route==='historyshift'){tagDynamicLegacy(route);renderSummary(route,historyShiftState());}
-    else if(route==='evaluation'){const snapshot=evaluationSnapshot();renderSummary(route,evaluationState(snapshot),{hidden:snapshot?.allowed===false});}
-  }
-  function ensureShiftAttention(){
-    const menu=document.getElementById('menuShifts');if(!menu)return null;
-    let dot=menu.querySelector('.mi-sidebar-attention-dot');
-    if(!dot){dot=document.createElement('span');dot.className='mi-sidebar-attention-dot';dot.setAttribute('aria-label','Perubahan shift belum disimpan');dot.title='Perubahan shift belum disimpan';dot.hidden=true;menu.appendChild(dot);}
-    return dot;
+  function ensureDashboardObserver(){
+    const rail=document.querySelector('.miw-status-rail');
+    if(rail&&!state.dashboardObserver){state.dashboardObserver=new MutationObserver(normalizeDashboardGlobalSummary);state.dashboardObserver.observe(rail,{subtree:true,childList:true,characterData:true});normalizeDashboardGlobalSummary();state.dashboardDiscovery?.disconnect();state.dashboardDiscovery=null;return;}
+    if(!rail&&!state.dashboardDiscovery){state.dashboardDiscovery=new MutationObserver(()=>ensureDashboardObserver());state.dashboardDiscovery.observe(document.body,{childList:true,subtree:true});}
   }
   function ensureOperatorContext(){
     const host=document.querySelector('#tab-dashboard .welcome-right');if(!host)return null;
@@ -89820,88 +89462,30 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #menuShifts .mi-sideb
     set('points',operatorCounterText(points));set('bonus',/^\d+(?:\.\d+)?%$/.test(bonus)?bonus:'—');set('voucher',dashboardSummarySourceAuthority?.vouchers?operatorCounterText(voucher):'—');
   }
   function ensureOperatorObserver(){
-    if(!isMecha()||state.operatorObserver)return;const targets=['quickCsPoints','quickCsBonus','quickVoucher'].map(id=>document.getElementById(id)).filter(Boolean);if(!targets.length)return;
+    if(!isMecha()||state.operatorObserver)return;
+    const targets=['quickCsPoints','quickCsBonus','quickVoucher'].map(id=>document.getElementById(id)).filter(Boolean);if(!targets.length)return;
     state.operatorObserver=new MutationObserver(syncOperatorContext);targets.forEach(node=>state.operatorObserver.observe(node,{childList:true,characterData:true,subtree:true}));
   }
-  function ensureMonitoringLiveBadge(){
-    const legacy=document.getElementById('sidebarBadgeIzin'),menu=document.getElementById('menuMonitoring');if(!legacy||!menu)return null;
-    let badge=menu.querySelector('.mi-sidebar-live-badge');
-    if(!badge){badge=document.createElement('span');badge.className='mi-sidebar-live-badge';badge.setAttribute('aria-label','Izin aktif');legacy.insertAdjacentElement('afterend',badge);}
-    return badge;
+  function ensureShiftAttention(){
+    const menu=document.getElementById('menuShifts');if(!menu)return null;
+    let dot=menu.querySelector('.mi-sidebar-attention-dot');
+    if(!dot){dot=document.createElement('span');dot.className='mi-sidebar-attention-dot';dot.setAttribute('aria-label','Perubahan shift belum disimpan');dot.title='Perubahan shift belum disimpan';dot.hidden=true;menu.appendChild(dot);}
+    return dot;
   }
-  function syncSidebar(){
-    if(!isMecha()){document.querySelectorAll('.mi-sidebar-live-badge,.mi-sidebar-attention-dot').forEach(el=>el.remove());return;}
-    const badge=ensureMonitoringLiveBadge();
-    if(badge){const ready=!!(dashboardSummarySourceAuthority?.users&&dashboardSummarySourceAuthority?.izin);badge.textContent=ready?counter(getMonitoringIzinList().length):'—';}
-    const dot=ensureShiftAttention();if(dot)dot.hidden=!shiftIsDirty;
+  function syncSidebarAttention(){if(!isMecha()){document.querySelectorAll('.mi-sidebar-attention-dot').forEach(el=>el.remove());return;}const dot=ensureShiftAttention();if(dot)dot.hidden=!shiftIsDirty;}
+  function cleanupMechaRuntime(){
+    document.querySelectorAll('.mi-operator-context,.mi-sidebar-attention-dot,.mi-route-summary,.mi-sidebar-live-badge').forEach(el=>el.remove());
+    document.querySelectorAll('[data-mi-legacy-summary="historyshift"]').forEach(el=>el.removeAttribute('data-mi-legacy-summary'));
+    if(state.dashboardObserver){state.dashboardObserver.disconnect();state.dashboardObserver=null;}
+    if(state.dashboardDiscovery){state.dashboardDiscovery.disconnect();state.dashboardDiscovery=null;}
+    if(state.operatorObserver){state.operatorObserver.disconnect();state.operatorObserver=null;}
   }
-  function normalizeDashboardGlobalSummary(){
-    if(!isMecha())return;
-    const rail=document.querySelector('.miw-status-rail');if(!rail)return;
-    rail.querySelectorAll('.miw-status b').forEach(value=>{const raw=(value.textContent||'').trim();if(/^\d+$/.test(raw)){const next=counter(Number(raw));if(raw!==next)value.textContent=next;}});
-  }
-  function ensureDashboardObserver(){
-    const rail=document.querySelector('.miw-status-rail');
-    if(rail&&!state.dashboardObserver){
-      state.dashboardObserver=new MutationObserver(normalizeDashboardGlobalSummary);
-      state.dashboardObserver.observe(rail,{subtree:true,childList:true,characterData:true});
-      normalizeDashboardGlobalSummary();
-      state.dashboardDiscovery?.disconnect();state.dashboardDiscovery=null;
-      return;
-    }
-    if(!rail&&!state.dashboardDiscovery){
-      state.dashboardDiscovery=new MutationObserver(()=>ensureDashboardObserver());
-      state.dashboardDiscovery.observe(document.body,{childList:true,subtree:true});
-    }
-  }
-  function syncPresentation(route=activeRoute()){
-    if(!isMecha()){
-      unmountSummaries();return;
-    }
-    ensureDashboardObserver();normalizeDashboardGlobalSummary();ensureOperatorObserver();syncOperatorContext();syncSidebar();syncRoute(route);
-  }
-  window.syncMechaSummaryArchitecture=()=>syncPresentation(activeRoute());
-
-  function wrap(name,after){
-    const base=window[name];if(typeof base!=='function'||base.__miM2P4Wrapped)return;
-    const wrapped=function(...args){
-      const result=base.apply(this,args);
-      const finish=()=>{try{after?.(...args);}catch(error){console.warn(`Mecha Summary sync ${name}:`,error);}};
-      if(result&&typeof result.then==='function')result.finally(finish);else finish();
-      return result;
-    };
-    Object.defineProperty(wrapped,'__miM2P4Wrapped',{value:true});
-    Object.defineProperty(wrapped,'__miM2P4Base',{value:base});
-    window[name]=wrapped;
-  }
-  function bindHooks(){
-    if(state.bound)return;state.bound=true;
-    wrap('updateQuickStats',()=>syncPresentation(activeRoute()));
-    wrap('updateAllSidebarBadges',()=>{syncSidebar();normalizeDashboardGlobalSummary();});
-    wrap('renderLiveIzin',()=>syncRoute('monitoring'));
-    wrap('renderUsersPage',()=>syncRoute('users'));
-    wrap('renderVoucherPage',()=>syncRoute('voucher'));
-    wrap('renderHistory',()=>syncRoute('history'));
-    wrap('renderShiftPage',()=>{syncRoute('shifts');syncSidebar();});
-    wrap('renderShiftHistory',()=>syncRoute('historyshift'));
-    window.addEventListener('cs-evaluation-view-ready',()=>syncRoute('evaluation'));
-    wrap('switchTab',(route)=>syncPresentation(route||activeRoute()));
-    if(typeof window.syncDashboardOperationalSummary==='function'){
-      const base=window.syncDashboardOperationalSummary;
-      if(!base.__miM2P4Wrapped){
-        const wrapped=function(...args){const result=base.apply(this,args);normalizeDashboardGlobalSummary();return result;};
-        Object.defineProperty(wrapped,'__miM2P4Wrapped',{value:true});
-        Object.defineProperty(wrapped,'__miM2P4Base',{value:base});
-        window.syncDashboardOperationalSummary=wrapped;
-      }
-    }
-  }
-  function bindTheme(){
-    if(state.themeObserver)return;
-    state.themeObserver=new MutationObserver(mutations=>{if(mutations.some(m=>m.attributeName==='data-theme'||m.attributeName==='data-theme-variant'))syncPresentation(activeRoute());});
-    state.themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant']});
-  }
-  function boot(){bindHooks();bindTheme();ensureDashboardObserver();syncPresentation(activeRoute());}
+  function syncPresentation(){if(!isMecha()){cleanupMechaRuntime();return;}ensureDashboardObserver();normalizeDashboardGlobalSummary();ensureOperatorObserver();syncOperatorContext();syncSidebarAttention();}
+  window.syncMechaSummaryArchitecture=syncPresentation;
+  function wrap(name,after){const base=window[name];if(typeof base!=='function'||base.__miM2P4CorrectionWrapped)return;const wrapped=function(...args){const result=base.apply(this,args);const finish=()=>{try{after?.(...args);}catch(error){console.warn(`Mecha presentation sync ${name}:`,error);}};if(result&&typeof result.then==='function')result.finally(finish);else finish();return result;};Object.defineProperty(wrapped,'__miM2P4CorrectionWrapped',{value:true});Object.defineProperty(wrapped,'__miM2P4CorrectionBase',{value:base});window[name]=wrapped;}
+  function bindHooks(){if(state.bound)return;state.bound=true;wrap('updateQuickStats',syncPresentation);wrap('renderShiftPage',syncSidebarAttention);if(typeof window.syncDashboardOperationalSummary==='function'){const base=window.syncDashboardOperationalSummary;if(!base.__miM2P4CorrectionWrapped){const wrapped=function(...args){const result=base.apply(this,args);normalizeDashboardGlobalSummary();return result;};Object.defineProperty(wrapped,'__miM2P4CorrectionWrapped',{value:true});Object.defineProperty(wrapped,'__miM2P4CorrectionBase',{value:base});window.syncDashboardOperationalSummary=wrapped;}}}
+  function bindTheme(){if(state.themeObserver)return;state.themeObserver=new MutationObserver(m=>{if(m.some(x=>x.attributeName==='data-theme'||x.attributeName==='data-theme-variant'))syncPresentation();});state.themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-theme-variant']});}
+  function boot(){bindHooks();bindTheme();syncPresentation();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
