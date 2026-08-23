@@ -87678,7 +87678,17 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
     [state.full,state.compact].filter(Boolean).forEach(shell=>{const p=shell.querySelector('.miv2-profile');if(!p)return;const b=p.querySelector('b'),sp=p.querySelector('span'),sm=p.querySelector('small');if(b)b.textContent=name.toUpperCase();if(sp)sp.textContent=role.toUpperCase();if(sm)sm.textContent=status.toUpperCase();});
   }
   function syncFrozenNavState(){
-    for(const [item,b] of state.navBindings){const allowed=functionalAllowed(item),active=item.classList.contains('active');[b.full,b.compact].filter(Boolean).forEach(row=>{row.classList.toggle('miv2-item-active',active);row.style.setProperty('display',allowed?'':'none',allowed?'':'important');if(allowed)row.style.removeProperty('display');});}
+    for(const [item,b] of state.navBindings){
+      const allowed=functionalAllowed(item),active=item.classList.contains('active');
+      if(item.dataset.tab==='history'){
+        const semanticLabel=item.dataset.tooltip||item.querySelector('.menu-label')?.textContent?.trim()||'History Izin';
+        const fullLabel=b.full?.querySelector(':scope > span:not(.miv2-icon):not(.miv2-meta):not(.sbn-source-indicator)');
+        if(fullLabel&&fullLabel.textContent!==semanticLabel)fullLabel.textContent=semanticLabel;
+        [b.full,b.compact].filter(Boolean).forEach(row=>{row.dataset.miHistoryRoute='true';row.setAttribute('aria-label',semanticLabel);});
+        if(b.compact)b.compact.title=semanticLabel;
+      }
+      [b.full,b.compact].filter(Boolean).forEach(row=>{row.classList.toggle('miv2-item-active',active);row.style.setProperty('display',allowed?'':'none',allowed?'':'important');if(allowed)row.style.removeProperty('display');});
+    }
     [state.full,state.compact].filter(Boolean).forEach(shell=>shell.querySelectorAll('.miv2-group').forEach(group=>{const any=[...group.querySelectorAll('.miv2-item')].some(row=>getComputedStyle(row).display!=='none');if(any)group.style.removeProperty('display');else group.style.setProperty('display','none','important');}));
     syncFrozenDock();
   }
@@ -89686,6 +89696,18 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     const start=formatHistoryCoverageDate(snapshot?.coverage_start),end=formatHistoryCoverageDate(snapshot?.coverage_end);
     return start&&end?`History Coverage · ${start} — ${end}`:'History Coverage · —';
   }
+  function syncHistoryCoverageContext(){
+    const coverage=historyCoverageText();const available=!coverage.endsWith('—');
+    document.querySelectorAll('[data-mi-history-route="true"]').forEach(row=>{
+      const compact=row.closest('.miv2-compact');
+      if(compact){row.title=available?`History Izin · ${coverage}`:'History Izin';}
+      else{
+        row.classList.toggle('history-tooltip-target',available);
+        if(available){row.dataset.tooltip=coverage;row.dataset.tooltipIcon='info';row.setAttribute('aria-description',coverage);}
+        else{delete row.dataset.tooltip;delete row.dataset.tooltipIcon;row.removeAttribute('aria-description');}
+      }
+    });
+  }
   async function loadHistoryGlobalSummary(requestId,preserveSnapshot=false){
     try{
       const {data,error}=await supabaseDashboard.rpc('get_history_global_summary');
@@ -89742,7 +89764,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
       const label=document.createElement('span');label.textContent=metric.label;
       item.append(value,label);fragment.appendChild(item);
     });
-    if(route==='history'){const coverage=document.createElement('div');coverage.className='mi-m3-history-coverage';coverage.textContent=historyCoverageText();fragment.appendChild(coverage);}
+    if(route==='history')syncHistoryCoverageContext();
     rail.replaceChildren(fragment);rail.dataset.route=route;rail.hidden=false;
   }
 
