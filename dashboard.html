@@ -89825,6 +89825,13 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
   'use strict';
   const owned = new Map();
   let activeRoute = null;
+  let verifyFrame = 0;
+  let pendingVerifyKey = '';
+  const setClipIfChanged = (el, value) => {
+    if (el.style.getPropertyValue('clip-path') === value && el.style.getPropertyPriority('clip-path') === 'important') return false;
+    el.style.setProperty('clip-path', value, 'important');
+    return true;
+  };
 
   const saveClip = el => {
     if (!el || owned.has(el)) return;
@@ -89849,7 +89856,7 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     saveClip(el);
     const rect = el.getBoundingClientRect();
     const topInset = clampPaintY(viewportBottom - rect.top, rect.height);
-    el.style.setProperty('clip-path', `inset(${topInset}px 0px 0px 0px)`, 'important');
+    setClipIfChanged(el, `inset(${topInset}px 0px 0px 0px)`);
   };
   const applyWorkspaceBoundary = (el, viewportBottom) => {
     if (!el) return;
@@ -89858,15 +89865,28 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     const leftOuter = clampPaintY(viewportBottom - 10 - rect.top, rect.height);
     const inner = clampPaintY(viewportBottom - rect.top, rect.height);
     const rightOuter = clampPaintY(viewportBottom - 9 - rect.top, rect.height);
-    el.style.setProperty(
-      'clip-path',
-      `polygon(0px ${leftOuter}px, 9px ${inner}px, calc(100% - 10px) ${inner}px, 100% ${rightOuter}px, 100% 100%, 0px 100%)`,
-      'important'
+    setClipIfChanged(
+      el,
+      `polygon(0px ${leftOuter}px, 9px ${inner}px, calc(100% - 10px) ${inner}px, 100% ${rightOuter}px, 100% 100%, 0px 100%)`
     );
   };
   const mechaActive = () =>
     document.documentElement.getAttribute('data-mi-frozen-presentation') === 'mecha-ivory' &&
     document.body?.dataset.sysStage === 'app';
+
+  const currentBoundaryKey = () => {
+    if (!mechaActive()) return 'off';
+    const main = document.querySelector('main.main-content.sys-content');
+    const header = main?.querySelector(':scope > .topbar.sys-header');
+    const workspace = main?.querySelector(':scope > .sys-workspace');
+    const route = main?.querySelector(':scope > .tab-content.active');
+    if (!header || !workspace || !route) return 'missing';
+    const hr = header.getBoundingClientRect();
+    const wr = workspace.getBoundingClientRect();
+    const rr = route.getBoundingClientRect();
+    const px = value => Math.round(value * 1000) / 1000;
+    return [route.id, px(hr.bottom), px(wr.top), px(wr.height), px(rr.top), px(rr.height)].join('|');
+  };
 
   function syncModelBPaintBoundary(){
     if (!mechaActive()) {
@@ -89888,8 +89908,20 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     applyRouteBoundary(route, protectedBottom);
   }
 
-  document.addEventListener('scroll', syncModelBPaintBoundary, {passive:true, capture:true});
-  window.addEventListener('resize', syncModelBPaintBoundary, {passive:true});
+  const syncAndVerifyModelBPaintBoundary = () => {
+    syncModelBPaintBoundary();
+    pendingVerifyKey = currentBoundaryKey();
+    if (verifyFrame) return;
+    verifyFrame = requestAnimationFrame(() => {
+      verifyFrame = 0;
+      const before = pendingVerifyKey;
+      const after = currentBoundaryKey();
+      if (after !== before) syncModelBPaintBoundary();
+    });
+  };
+
+  document.addEventListener('scroll', syncAndVerifyModelBPaintBoundary, {passive:true, capture:true});
+  window.addEventListener('resize', syncAndVerifyModelBPaintBoundary, {passive:true});
 
   const mutationObserver = new MutationObserver(syncModelBPaintBoundary);
   mutationObserver.observe(document.documentElement, {
