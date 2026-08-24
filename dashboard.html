@@ -89840,12 +89840,29 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     else el.style.removeProperty('clip-path');
     owned.delete(el);
   };
-  const applyBoundary = (el, viewportBottom) => {
+  // TARGETED VISUAL REFINEMENT v1 — paint geometry only.
+  // Route keeps the original rectangular protected boundary.
+  // Workspace follows the frozen G1-P05 lower chamfer: 10px / 9px / 10px / 9px.
+  const clampPaintY = (value, height) => Math.max(0, Math.min(height, value));
+  const applyRouteBoundary = (el, viewportBottom) => {
     if (!el) return;
     saveClip(el);
     const rect = el.getBoundingClientRect();
-    const topInset = Math.max(0, Math.min(rect.height, viewportBottom - rect.top));
+    const topInset = clampPaintY(viewportBottom - rect.top, rect.height);
     el.style.setProperty('clip-path', `inset(${topInset}px 0px 0px 0px)`, 'important');
+  };
+  const applyWorkspaceBoundary = (el, viewportBottom) => {
+    if (!el) return;
+    saveClip(el);
+    const rect = el.getBoundingClientRect();
+    const leftOuter = clampPaintY(viewportBottom - 10 - rect.top, rect.height);
+    const inner = clampPaintY(viewportBottom - rect.top, rect.height);
+    const rightOuter = clampPaintY(viewportBottom - 9 - rect.top, rect.height);
+    el.style.setProperty(
+      'clip-path',
+      `polygon(0px ${leftOuter}px, 9px ${inner}px, calc(100% - 10px) ${inner}px, 100% ${rightOuter}px, 100% 100%, 0px 100%)`,
+      'important'
+    );
   };
   const mechaActive = () =>
     document.documentElement.getAttribute('data-mi-frozen-presentation') === 'mecha-ivory' &&
@@ -89867,8 +89884,8 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
     activeRoute = route;
 
     const protectedBottom = header.getBoundingClientRect().bottom;
-    applyBoundary(workspace, protectedBottom);
-    applyBoundary(route, protectedBottom);
+    applyWorkspaceBoundary(workspace, protectedBottom);
+    applyRouteBoundary(route, protectedBottom);
   }
 
   document.addEventListener('scroll', syncModelBPaintBoundary, {passive:true, capture:true});
