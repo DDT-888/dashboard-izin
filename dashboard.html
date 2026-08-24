@@ -87652,7 +87652,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   function setHeaderInteraction(slot,cls,on){if(slot)slot.classList.toggle(cls,!!on);}
   function bindPresentationFeedback(){
     state.interactionAbort?.abort();state.interactionAbort=new AbortController();const signal=state.interactionAbort.signal;
-    addEventListener('scroll',syncHeaderJunctionOcclusion,{passive:true,capture:true,signal});
+    /* Native-scroll visual study: static chassis occlusion is CSS-owned; no junction scroll synchronization. */
     state.navItems.forEach(item=>{
       const binding=state.navBindings.get(item);
       [binding?.full,binding?.compact].filter(Boolean).forEach(row=>{
@@ -87740,12 +87740,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body #pageLoader[data-mi-frozen-
   }
   function scheduleHeaderSync(){if(state.headerFrame)return;state.headerFrame=requestAnimationFrame(()=>{state.headerFrame=0;if(state.active)syncHeaderVisual();});}
   function syncHeaderJunctionOcclusion(){
-    const top=document.querySelector('main.main-content>.topbar.sys-header'),plane=state.workspacePlane;if(!state.active||!top||!plane)return;
-    const mobile=innerWidth<=900,hr=top.getBoundingClientRect(),wr=plane.getBoundingClientRect(),mb=parseFloat(getComputedStyle(top).marginBottom)||0,dpr=window.devicePixelRatio||1;
-    const junctionTop=hr.bottom+mb,reveal=!mobile&&Math.round(wr.top*dpr)===Math.round(junctionTop*dpr),mode=mobile?'mobile':(reveal?'reveal':'sealed'),sealed=mode==='sealed';
-    if(state.junctionMode===mode&&top.classList.contains('mi-junction-carrier')===sealed&&top.style.getPropertyValue('background')==='transparent'&&top.style.getPropertyValue('background-color')==='transparent')return;
-    state.junctionMode=mode;top.classList.toggle('mi-junction-carrier',sealed);
-    top.style.setProperty('background','transparent','important');top.style.setProperty('background-color','transparent','important');
+    /* Native-scroll visual study: intentionally static. The existing call sites remain
+       lifecycle-compatible, but no scrollY/geometry read or paint mutation occurs here. */
   }
   function positionHeaderControls(){
     const top=document.querySelector('.main-content > .topbar'),h=state.header;if(!top||!h)return;const tr=top.getBoundingClientRect();
@@ -89804,159 +89800,87 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
 </script>
 
 
+<style id="mi-native-scroll-global-field-workspace-recess-v1">
+/* =====================================================================
+   Mecha Ivory — Native Scroll + Global Field & Workspace Recess Visual v1
+   VISUAL INSPECTION ONLY. No Model-B clip synchronization.
+   G1-P05 geometry and G1-P08 shell architecture remain untouched.
+   ===================================================================== */
+html[data-mi-frozen-presentation="mecha-ivory"]{
+  /* Retune the legitimate Global Field variables rather than creating a second field.
+     The canonical 34px square register remains; illumination is intentionally quiet. */
+  --m2p1-field:#d5d3cd;
+  --m2p1-field-color:#d5d3cd;
+  --m2p1-field-background:
+    radial-gradient(circle at 12% 4%,rgba(255,255,255,.24),transparent 30%) no-repeat,
+    repeating-linear-gradient(0deg,rgba(57,64,64,.026) 0 1px,transparent 1px 34px),
+    repeating-linear-gradient(90deg,rgba(57,64,64,.026) 0 1px,transparent 1px 34px),
+    #d5d3cd;
+}
 
-<!-- =====================================================================
-     MODEL B — ISOLATED ROUTE PAINT BOUNDARY PROTOTYPE
-     Architecture experiment only. Not production authority.
-     Layout/document scroll remain owned by the existing application.
-     ===================================================================== -->
-<style id="mi-model-b-route-paint-boundary-prototype">
-@media (min-width:901px){
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header.sys-header::before,
-  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header.mi-junction-carrier.mi-junction-carrier::before{
-    background:transparent!important;
-    background-image:none!important;
-    background-color:transparent!important;
-  }
+/* Actual application Global Field remains the application background. */
+html[data-mi-frozen-presentation="mecha-ivory"],
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]{
+  background:var(--m2p1-field-background)!important;
+  background-color:var(--m2p1-field-color)!important;
+}
+
+/* Static Header-owned chassis underlay.
+   It ends exactly at Header.bottom: there is NO cover block below Header.
+   Its lower edge follows the frozen G1-P05 lower chamfer, preserving the accepted
+   diagonal Header→Workspace junction instead of reintroducing a rectangular notch.
+   No scrollY, animation, rAF, timer, transform or new scroll owner is involved. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]
+main.main-content.sys-content>.topbar.sys-header::before,
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]
+main.main-content.sys-content>.topbar.sys-header.mi-junction-carrier::before{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:-8px!important;
+  height:calc(100% + 8px)!important;
+  background:var(--m2p1-field-background)!important;
+  background-color:var(--m2p1-field-color)!important;
+  clip-path:polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 9px),
+    calc(100% - 10px) 100%,
+    9px 100%,
+    0 calc(100% - 10px)
+  )!important;
+  pointer-events:none!important;
+  z-index:0!important;
+  transition:none!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]
+main.main-content.sys-content>.topbar.sys-header>.mih-shell{
+  position:relative!important;
+  z-index:1!important;
+}
+
+/* Recessed mechanical Workspace bay. Geometry/clip-path/padding are NOT changed.
+   All four edges receive only low-amplitude tonal depth; existing asymmetric
+   G1-P04 corner, datum and lower-line geometry remains authoritative. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"]
+.sys-workspace .miw-plane{
+  background:
+    linear-gradient(180deg,rgba(70,78,76,.050),transparent 10px),
+    linear-gradient(90deg,rgba(70,78,76,.032),transparent 9px),
+    linear-gradient(270deg,rgba(70,78,76,.026),transparent 9px),
+    linear-gradient(0deg,rgba(70,78,76,.038),transparent 10px),
+    rgba(240,236,228,.955)!important;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.80),
+    inset 1px 0 rgba(255,255,255,.34),
+    inset -1px 0 rgba(73,82,79,.064),
+    inset 0 -1px rgba(73,82,79,.086),
+    inset 0 8px 14px rgba(46,54,52,.017),
+    inset 0 -10px 16px rgba(46,54,52,.014)!important;
 }
 </style>
-<script id="mi-model-b-route-paint-boundary-prototype-runtime">
-(() => {
-  'use strict';
-  const owned = new Map();
-  let activeRoute = null;
-  let verifyFrame = 0;
-  let pendingVerifyKey = '';
-  const setClipIfChanged = (el, value) => {
-    if (el.style.getPropertyValue('clip-path') === value && el.style.getPropertyPriority('clip-path') === 'important') return false;
-    el.style.setProperty('clip-path', value, 'important');
-    return true;
-  };
 
-  const saveClip = el => {
-    if (!el || owned.has(el)) return;
-    owned.set(el, {
-      value: el.style.getPropertyValue('clip-path'),
-      priority: el.style.getPropertyPriority('clip-path')
-    });
-  };
-  const restoreClip = el => {
-    if (!el || !owned.has(el)) return;
-    const prev = owned.get(el);
-    if (prev.value) el.style.setProperty('clip-path', prev.value, prev.priority || '');
-    else el.style.removeProperty('clip-path');
-    owned.delete(el);
-  };
-  // TARGETED VISUAL REFINEMENT v1 — paint geometry only.
-  // Route keeps the original rectangular protected boundary.
-  // Workspace follows the frozen G1-P05 lower chamfer: 10px / 9px / 10px / 9px.
-  const clampPaintY = (value, height) => Math.max(0, Math.min(height, value));
-  const px = value => Math.round(value * 1000) / 1000;
-  const boundaryKey = (route, hr, wr, rr) =>
-    [route.id, px(hr.bottom), px(wr.top), px(wr.height), px(rr.top), px(rr.height)].join('|');
-
-  const applyRouteBoundary = (el, viewportBottom, rect) => {
-    if (!el) return;
-    saveClip(el);
-    const topInset = clampPaintY(viewportBottom - rect.top, rect.height);
-    setClipIfChanged(el, `inset(${topInset}px 0px 0px 0px)`);
-  };
-  const applyWorkspaceBoundary = (el, viewportBottom, rect) => {
-    if (!el) return;
-    saveClip(el);
-    const leftOuter = clampPaintY(viewportBottom - 10 - rect.top, rect.height);
-    const inner = clampPaintY(viewportBottom - rect.top, rect.height);
-    const rightOuter = clampPaintY(viewportBottom - 9 - rect.top, rect.height);
-    setClipIfChanged(
-      el,
-      `polygon(0px ${leftOuter}px, 9px ${inner}px, calc(100% - 10px) ${inner}px, 100% ${rightOuter}px, 100% 100%, 0px 100%)`
-    );
-  };
-  const mechaActive = () =>
-    document.documentElement.getAttribute('data-mi-frozen-presentation') === 'mecha-ivory' &&
-    document.body?.dataset.sysStage === 'app';
-
-  const currentBoundaryKey = () => {
-    if (!mechaActive()) return 'off';
-    const main = document.querySelector('main.main-content.sys-content');
-    const header = main?.querySelector(':scope > .topbar.sys-header');
-    const workspace = main?.querySelector(':scope > .sys-workspace');
-    const route = main?.querySelector(':scope > .tab-content.active');
-    if (!header || !workspace || !route) return 'missing';
-    const hr = header.getBoundingClientRect();
-    const wr = workspace.getBoundingClientRect();
-    const rr = route.getBoundingClientRect();
-    return boundaryKey(route, hr, wr, rr);
-  };
-
-  function syncModelBPaintBoundary(){
-    if (!mechaActive()) {
-      [...owned.keys()].forEach(restoreClip);
-      activeRoute = null;
-      return 'off';
-    }
-    const main = document.querySelector('main.main-content.sys-content');
-    const header = main?.querySelector(':scope > .topbar.sys-header');
-    const workspace = main?.querySelector(':scope > .sys-workspace');
-    const route = main?.querySelector(':scope > .tab-content.active');
-    if (!header || !workspace || !route) return 'missing';
-
-    if (activeRoute && activeRoute !== route) restoreClip(activeRoute);
-    activeRoute = route;
-
-    // Candidate F — smoothness-first micro hardening.
-    // Group every layout read before clip-path writes, then reuse those rects.
-    // This removes Candidate E's immediate write -> geometry-read sequence while
-    // preserving the same one-shot verification and exact settled geometry.
-    const hr = header.getBoundingClientRect();
-    const wr = workspace.getBoundingClientRect();
-    const rr = route.getBoundingClientRect();
-    const key = boundaryKey(route, hr, wr, rr);
-    const protectedBottom = hr.bottom;
-    applyWorkspaceBoundary(workspace, protectedBottom, wr);
-    applyRouteBoundary(route, protectedBottom, rr);
-    return key;
-  }
-
-  const syncAndVerifyModelBPaintBoundary = () => {
-    pendingVerifyKey = syncModelBPaintBoundary();
-    if (verifyFrame) return;
-    verifyFrame = requestAnimationFrame(() => {
-      verifyFrame = 0;
-      const before = pendingVerifyKey;
-      const after = currentBoundaryKey();
-      if (after !== before) syncModelBPaintBoundary();
-    });
-  };
-
-  document.addEventListener('scroll', syncAndVerifyModelBPaintBoundary, {passive:true, capture:true});
-  window.addEventListener('resize', syncAndVerifyModelBPaintBoundary, {passive:true});
-
-  const mutationObserver = new MutationObserver(syncModelBPaintBoundary);
-  mutationObserver.observe(document.documentElement, {
-    attributes:true,
-    attributeFilter:['data-mi-frozen-presentation','data-selected-theme','data-theme','data-theme-variant']
-  });
-  mutationObserver.observe(document.body, {
-    attributes:true,
-    subtree:true,
-    attributeFilter:['class','data-sys-stage']
-  });
-
-  const resizeObserver = new ResizeObserver(syncModelBPaintBoundary);
-  const observeHeader = () => {
-    const header = document.querySelector('main.main-content.sys-content > .topbar.sys-header');
-    if (header) resizeObserver.observe(header);
-  };
-  observeHeader();
-  document.addEventListener('DOMContentLoaded', observeHeader, {once:true});
-  requestAnimationFrame(syncModelBPaintBoundary);
-
-  window.__MI_MODEL_B_ROUTE_PAINT_BOUNDARY_PROTOTYPE__ = Object.freeze({
-    sync: syncModelBPaintBoundary,
-    classification: 'architecture-prototype-only'
-  });
-})();
-</script>
 </body>
 </html>
