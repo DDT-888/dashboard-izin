@@ -89803,5 +89803,102 @@ html[data-theme="light"][data-theme-variant="mecha-ivory"] #tab-shifts .mi-m2p5a
 })();
 </script>
 
+
+
+<!-- =====================================================================
+     MODEL B — ISOLATED ROUTE PAINT BOUNDARY PROTOTYPE
+     Architecture experiment only. Not production authority.
+     Layout/document scroll remain owned by the existing application.
+     ===================================================================== -->
+<style id="mi-model-b-route-paint-boundary-prototype">
+@media (min-width:901px){
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header.sys-header::before,
+  html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] main.main-content.sys-content>.topbar.sys-header.mi-junction-carrier.mi-junction-carrier::before{
+    background:transparent!important;
+    background-image:none!important;
+    background-color:transparent!important;
+  }
+}
+</style>
+<script id="mi-model-b-route-paint-boundary-prototype-runtime">
+(() => {
+  'use strict';
+  const owned = new Map();
+  let activeRoute = null;
+
+  const saveClip = el => {
+    if (!el || owned.has(el)) return;
+    owned.set(el, {
+      value: el.style.getPropertyValue('clip-path'),
+      priority: el.style.getPropertyPriority('clip-path')
+    });
+  };
+  const restoreClip = el => {
+    if (!el || !owned.has(el)) return;
+    const prev = owned.get(el);
+    if (prev.value) el.style.setProperty('clip-path', prev.value, prev.priority || '');
+    else el.style.removeProperty('clip-path');
+    owned.delete(el);
+  };
+  const applyBoundary = (el, viewportBottom) => {
+    if (!el) return;
+    saveClip(el);
+    const rect = el.getBoundingClientRect();
+    const topInset = Math.max(0, Math.min(rect.height, viewportBottom - rect.top));
+    el.style.setProperty('clip-path', `inset(${topInset}px 0px 0px 0px)`, 'important');
+  };
+  const mechaActive = () =>
+    document.documentElement.getAttribute('data-mi-frozen-presentation') === 'mecha-ivory' &&
+    document.body?.dataset.sysStage === 'app';
+
+  function syncModelBPaintBoundary(){
+    if (!mechaActive()) {
+      [...owned.keys()].forEach(restoreClip);
+      activeRoute = null;
+      return;
+    }
+    const main = document.querySelector('main.main-content.sys-content');
+    const header = main?.querySelector(':scope > .topbar.sys-header');
+    const workspace = main?.querySelector(':scope > .sys-workspace');
+    const route = main?.querySelector(':scope > .tab-content.active');
+    if (!header || !workspace || !route) return;
+
+    if (activeRoute && activeRoute !== route) restoreClip(activeRoute);
+    activeRoute = route;
+
+    const protectedBottom = header.getBoundingClientRect().bottom;
+    applyBoundary(workspace, protectedBottom);
+    applyBoundary(route, protectedBottom);
+  }
+
+  document.addEventListener('scroll', syncModelBPaintBoundary, {passive:true, capture:true});
+  window.addEventListener('resize', syncModelBPaintBoundary, {passive:true});
+
+  const mutationObserver = new MutationObserver(syncModelBPaintBoundary);
+  mutationObserver.observe(document.documentElement, {
+    attributes:true,
+    attributeFilter:['data-mi-frozen-presentation','data-selected-theme','data-theme','data-theme-variant']
+  });
+  mutationObserver.observe(document.body, {
+    attributes:true,
+    subtree:true,
+    attributeFilter:['class','data-sys-stage']
+  });
+
+  const resizeObserver = new ResizeObserver(syncModelBPaintBoundary);
+  const observeHeader = () => {
+    const header = document.querySelector('main.main-content.sys-content > .topbar.sys-header');
+    if (header) resizeObserver.observe(header);
+  };
+  observeHeader();
+  document.addEventListener('DOMContentLoaded', observeHeader, {once:true});
+  requestAnimationFrame(syncModelBPaintBoundary);
+
+  window.__MI_MODEL_B_ROUTE_PAINT_BOUNDARY_PROTOTYPE__ = Object.freeze({
+    sync: syncModelBPaintBoundary,
+    classification: 'architecture-prototype-only'
+  });
+})();
+</script>
 </body>
 </html>
