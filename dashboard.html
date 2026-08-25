@@ -50854,15 +50854,26 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             }
 
             try {
-                const { data, error } = await supabaseDashboard
-                    .from('voucher_events')
-                    .select('id,nama,action,delta,balance_after,actor_name,source,source_history_id,occurred_at')
-                    .order('occurred_at', { ascending: false })
-                    .limit(VOUCHER_EVENT_LIMIT);
+                const allRows = [];
+                let from = 0;
 
-                if (error) throw error;
+                while (true) {
+                    const to = from + VOUCHER_EVENT_LIMIT - 1;
+                    const { data, error } = await supabaseDashboard
+                        .from('voucher_events')
+                        .select('id,nama,action,delta,balance_after,actor_name,source,source_history_id,occurred_at')
+                        .order('occurred_at', { ascending: false })
+                        .range(from, to);
 
-                voucherEventData = (data || []).map(normalizeVoucherEvent);
+                    if (error) throw error;
+
+                    const page = data || [];
+                    allRows.push(...page);
+                    if (page.length < VOUCHER_EVENT_LIMIT) break;
+                    from += VOUCHER_EVENT_LIMIT;
+                }
+
+                voucherEventData = allRows.map(normalizeVoucherEvent);
                 voucherEventDataLoaded = true;
                 voucherEventLastLoad = Date.now();
 
@@ -54153,6 +54164,68 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             ) || null;
         }
 
+        function voucherEventTimeValue(event) {
+            if (!event?.occurredAt) return 0;
+            const value = new Date(event.occurredAt).getTime();
+            return Number.isFinite(value) ? value : 0;
+        }
+
+        function buildVoucherHistoryUnits() {
+            const groups = new Map();
+
+            voucherEventData.forEach(event => {
+                const key = formatName(event.nama);
+                if (!key) return;
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(event);
+            });
+
+            const units = [];
+
+            groups.forEach((events, nama) => {
+                const timeline = events.slice().sort((a, b) =>
+                    voucherEventTimeValue(a) - voucherEventTimeValue(b) ||
+                    (Number(a.id) || 0) - (Number(b.id) || 0)
+                );
+                const earnedUnits = [];
+                const availableQueue = [];
+
+                timeline.forEach(event => {
+                    if (event.action === 'earned') {
+                        const unit = {
+                            nama,
+                            earnedEvent: event,
+                            reducedEvent: null,
+                            legacyReduced: false
+                        };
+                        earnedUnits.push(unit);
+                        availableQueue.push(unit);
+                        return;
+                    }
+
+                    if (event.action === 'reduced') {
+                        const unit = availableQueue.shift();
+                        if (unit) unit.reducedEvent = event;
+                    }
+                });
+
+                const unmatched = earnedUnits.filter(unit => !unit.reducedEvent);
+                const currentBalance = Math.max(0, getVoucherCount(nama));
+                const legacyReductionCount = Math.max(0, unmatched.length - currentBalance);
+
+                for (let index = 0; index < legacyReductionCount; index += 1) {
+                    unmatched[index].legacyReduced = true;
+                }
+
+                units.push(...earnedUnits);
+            });
+
+            return units.sort((a, b) =>
+                voucherEventTimeValue(b.earnedEvent) - voucherEventTimeValue(a.earnedEvent) ||
+                (Number(b.earnedEvent?.id) || 0) - (Number(a.earnedEvent?.id) || 0)
+            );
+        }
+
         window.setVoucherSubtab = function(nextTab) {
             voucherSubtab = nextTab === 'history' ? 'history' : 'active';
             renderVoucherPage();
@@ -54199,7 +54272,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 .sort((a, b) => b.voucher - a.voucher || a.name.localeCompare(b.name, 'id'));
 
             const totalVoucher = Object.values(voucherData).reduce((a, b) => a + Math.max(0, Number(b) || 0), 0);
-            const completedEvents = voucherEventData.filter(event => event.action === 'reduced');
             const roleLabels = { leader: 'Leader', csline: 'CS Line', cs: 'CS', kapten: 'Kapten', kasir: 'Kasir' };
 
             const tabs = `
@@ -54212,32 +54284,43 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             let countText = '';
 
             if (voucherSubtab === 'history') {
-                const historyRows = completedEvents.length
-                    ? completedEvents.map((event, index) => {
-                        const matchedUser = listUsers.find(user => formatName(user.name) === formatName(event.nama));
+                const voucherHistoryUnits = buildVoucherHistoryUnits();
+                const historyRows = voucherHistoryUnits.length
+                    ? voucherHistoryUnits.map((unit, index) => {
+                        const matchedUser = listUsers.find(user => formatName(user.name) === formatName(unit.nama));
                         const roleLabel = matchedUser ? (roleLabels[matchedUser.role] || matchedUser.role) : '—';
-                        const balance = event.balanceAfter == null ? '—' : event.balanceAfter;
-                        const actor = event.actorName && event.actorName !== 'SYSTEM' ? event.actorName : 'SYSTEM';
+                        const earnedAt = formatVoucherAuditDateTime(unit.earnedEvent?.occurredAt);
+
+                        let reducedAt = '<span class="voucher-audit-state is-active">Belum digunakan</span>';
+                        let actor = '—';
+                        if (unit.reducedEvent) {
+                            reducedAt = formatVoucherAuditDateTime(unit.reducedEvent.occurredAt);
+                            actor = unit.reducedEvent.actorName || 'SYSTEM';
+                        } else if (unit.legacyReduced) {
+                            reducedAt = '<span class="voucher-audit-state is-legacy">Data lama · waktu tidak tercatat</span>';
+                            actor = 'ANDRY WIJAYA';
+                        }
+
                         return `
                             <tr>
                                 <td>${index + 1}</td>
-                                <td><span class="nama-cell">${event.nama}</span></td>
+                                <td><span class="nama-cell">${unit.nama}</span></td>
                                 <td><span class="badge role-${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
-                                <td><span class="voucher-audit-time">${formatVoucherAuditDateTime(event.occurredAt)}</span></td>
+                                <td><span class="voucher-audit-time">${earnedAt}</span></td>
+                                <td><span class="voucher-audit-time">${reducedAt}</span></td>
                                 <td><span class="voucher-audit-actor">${actor}</span></td>
-                                <td><span class="voucher-audit-balance">${balance}</span></td>
                             </tr>`;
                     }).join('')
-                    : `<tr><td colspan="6"><div class="voucher-empty-state"><span class="voucher-empty-icon">${ticketIcon}</span><strong>Belum ada voucher selesai yang tercatat</strong><span>Pengurangan voucher berikutnya akan mencatat waktu dan akun yang melakukan pengurangan.</span></div></td></tr>`;
+                    : `<tr><td colspan="6"><div class="voucher-empty-state"><span class="voucher-empty-icon">${ticketIcon}</span><strong>Belum ada voucher yang pernah didapat</strong><span>Voucher baru akan otomatis tercatat bersama waktu diperolehnya.</span></div></td></tr>`;
 
                 tableHtml = `
                     <div class="table-wrap voucher-table-wrap voucher-history-wrap">
                         <table>
-                            <thead><tr><th>#</th><th>Nama</th><th>Role</th><th>Dikurangi Pada</th><th>Dikurangi Oleh</th><th>Sisa</th></tr></thead>
+                            <thead><tr><th>#</th><th>Nama</th><th>Role</th><th>Terakhir Didapat</th><th>Dikurangi Pada</th><th>Dikurangi Oleh</th></tr></thead>
                             <tbody>${historyRows}</tbody>
                         </table>
                     </div>`;
-                countText = `Total Voucher Selesai Tercatat: <strong>${completedEvents.length}</strong>`;
+                countText = `Total Voucher Pernah Didapat: <strong>${voucherHistoryUnits.length}</strong>`;
             } else {
                 let rows = '';
                 if (voucherList.length === 0) {
@@ -90308,6 +90391,9 @@ html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subt
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtab-btn:hover{color:var(--text-primary);background:var(--bg-card);}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtab-btn.active{color:var(--text-primary);background:var(--bg-card);box-shadow:0 1px 4px rgba(0,0,0,.08);}
 #tab-voucher .voucher-audit-time,#tab-voucher .voucher-audit-actor,#tab-voucher .voucher-audit-balance{white-space:nowrap;font-size:10px;}
+#tab-voucher .voucher-audit-state{display:inline-block;white-space:nowrap;font-size:10px;font-weight:620;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-state.is-active{color:var(--text-secondary);opacity:.78;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-state.is-legacy{color:var(--text-secondary);opacity:.66;font-weight:560;}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-time{color:var(--text-secondary);}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-actor{color:var(--text-primary);font-weight:620;}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-balance{color:var(--text-secondary);font-weight:680;}
@@ -90320,6 +90406,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-subtab-btn
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-subtab-btn.active{background:rgba(244,241,233,.82);color:#394441;box-shadow:inset 0 1px rgba(255,255,255,.72),0 1px 3px rgba(52,61,58,.08);}
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher :is(.voucher-audit-time,.voucher-audit-balance),
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher :is(.voucher-audit-time,.voucher-audit-balance){color:#66716e;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-audit-state.is-active,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-state.is-active{color:#6b7774;opacity:.78;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-audit-state.is-legacy,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-state.is-legacy{color:#78817f;opacity:.68;font-weight:560;}
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor,
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor{color:#3d4845;font-weight:660;}
 @media(max-width:700px){#tab-voucher .voucher-subtabs{width:100%;}#tab-voucher .voucher-subtab-btn{flex:1;}.voucher-history-wrap{overflow-x:auto;}}
