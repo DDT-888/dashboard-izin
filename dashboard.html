@@ -49674,6 +49674,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 status: row.status || 'selesai',
                 role: row.role || 'cs',
                 durasiDetik: Number(row.durasi_detik ?? row.durasiDetik) || 0,
+                thresholdAtEventSeconds: Number.isFinite(Number(row.threshold_at_event_seconds ?? row.thresholdAtEventSeconds))
+                    ? Math.max(1, Number(row.threshold_at_event_seconds ?? row.thresholdAtEventSeconds))
+                    : null,
                 isQuotaValid:
                     row.is_quota_valid !== undefined
                         ? Boolean(row.is_quota_valid)
@@ -49683,6 +49686,12 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                                 : true
                         )
             };
+        }
+
+        function getHistoryEventThresholdSeconds(item = {}) {
+            const captured = Number(item.thresholdAtEventSeconds ?? item.threshold_at_event_seconds);
+            if (Number.isFinite(captured) && captured > 0) return Math.floor(captured);
+            return 1200; // legacy authority: fixed 20 minutes
         }
 
         function historyRecordsMatch(a = {}, b = {}) {
@@ -49907,7 +49916,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
 
             const { data, error } = await supabaseDashboard
                 .from('history')
-                .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
+                .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds')
                 .gte('selesai', since)
                 .order('selesai', { ascending: true })
                 .limit(250);
@@ -50789,7 +50798,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             try {
                 const { data, error } = await supabaseDashboard
                     .from('history')
-                    .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
+                    .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds')
                     .order('mulai', { ascending: false })
                     .limit(HISTORY_INITIAL_LIMIT);
 
@@ -50821,6 +50830,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
         let voucherEventDataLoaded = false;
         let voucherEventLastLoad = 0;
         let voucherSubtab = 'active';
+        let voucherRecapPeriod = 'all';
         const VOUCHER_EVENT_REFRESH_MIN_GAP_MS = 15000;
         const VOUCHER_EVENT_LIMIT = 1000;
 
@@ -50962,7 +50972,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
 
                     let query = supabaseDashboard
                         .from('history')
-                        .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid')
+                        .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds')
                         .order('mulai', { ascending: false });
 
                     if (historyLoadMode === 'today') {
@@ -53720,7 +53730,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                         const menit = Math.floor(validDiff / 60);
                         const detik = validDiff % 60;
 
-                        const batasDetik = (jackpotLimitMinutes * 60) - 1;
+                        const batasDetik = jackpotLimitMinutes * 60;
                         const isOverLimit = validDiff > batasDetik;
                         const isJackpot = isOverLimit;
 
@@ -54226,8 +54236,62 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             );
         }
 
+        function voucherEventMonthKey(value) {
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Phnom_Penh', year: 'numeric', month: '2-digit'
+            }).formatToParts(date);
+            const year = parts.find(part => part.type === 'year')?.value;
+            const month = parts.find(part => part.type === 'month')?.value;
+            return year && month ? `${year}-${month}` : '';
+        }
+
+        function formatVoucherRecapMonth(key) {
+            const match = /^(\d{4})-(\d{2})$/.exec(String(key || ''));
+            if (!match) return 'Semua Waktu';
+            const date = new Date(`${match[1]}-${match[2]}-01T00:00:00+07:00`);
+            return date.toLocaleDateString('id-ID', {
+                timeZone: 'Asia/Phnom_Penh', month: 'long', year: 'numeric'
+            });
+        }
+
+        function getVoucherRecapPeriods() {
+            return [...new Set(voucherEventData
+                .filter(event => event.action === 'earned')
+                .map(event => voucherEventMonthKey(event.occurredAt))
+                .filter(Boolean))]
+                .sort((a, b) => b.localeCompare(a));
+        }
+
+        function buildVoucherRecap(period = 'all') {
+            const groups = new Map();
+            voucherEventData.forEach(event => {
+                if (event.action !== 'earned') return;
+                if (period !== 'all' && voucherEventMonthKey(event.occurredAt) !== period) return;
+                const nama = formatName(event.nama);
+                if (!nama) return;
+                if (!groups.has(nama)) groups.set(nama, { nama, count: 0, latestAt: null });
+                const row = groups.get(nama);
+                row.count += 1;
+                if (!row.latestAt || voucherEventTimeValue(event) > new Date(row.latestAt).getTime()) {
+                    row.latestAt = event.occurredAt;
+                }
+            });
+            return [...groups.values()].sort((a, b) =>
+                b.count - a.count ||
+                new Date(b.latestAt || 0).getTime() - new Date(a.latestAt || 0).getTime() ||
+                a.nama.localeCompare(b.nama, 'id')
+            );
+        }
+
+        window.setVoucherRecapPeriod = function(value) {
+            voucherRecapPeriod = value || 'all';
+            if (voucherSubtab === 'recap') renderVoucherPage();
+        };
+
         window.setVoucherSubtab = function(nextTab) {
-            voucherSubtab = nextTab === 'history' ? 'history' : 'active';
+            voucherSubtab = nextTab === 'history' || nextTab === 'recap' ? nextTab : 'active';
             renderVoucherPage();
             if (!voucherEventDataLoaded) loadVoucherEventData(false);
         };
@@ -54278,12 +54342,55 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 <div class="voucher-subtabs" role="tablist" aria-label="Tampilan Voucher">
                     <button type="button" class="voucher-subtab-btn ${voucherSubtab === 'active' ? 'active' : ''}" onclick="setVoucherSubtab('active')" role="tab" aria-selected="${voucherSubtab === 'active'}">Voucher Aktif</button>
                     <button type="button" class="voucher-subtab-btn ${voucherSubtab === 'history' ? 'active' : ''}" onclick="setVoucherSubtab('history')" role="tab" aria-selected="${voucherSubtab === 'history'}">History Voucher</button>
+                    <button type="button" class="voucher-subtab-btn ${voucherSubtab === 'recap' ? 'active' : ''}" onclick="setVoucherSubtab('recap')" role="tab" aria-selected="${voucherSubtab === 'recap'}">Rekap Voucher</button>
                 </div>`;
 
             let tableHtml = '';
             let countText = '';
 
-            if (voucherSubtab === 'history') {
+            if (voucherSubtab === 'recap') {
+                const periods = getVoucherRecapPeriods();
+                if (voucherRecapPeriod !== 'all' && !periods.includes(voucherRecapPeriod)) voucherRecapPeriod = 'all';
+                const recapRowsData = buildVoucherRecap(voucherRecapPeriod);
+                const recapVoucherTotal = recapRowsData.reduce((sum, row) => sum + row.count, 0);
+                const periodOptions = [
+                    `<option value="all" ${voucherRecapPeriod === 'all' ? 'selected' : ''}>Semua Waktu</option>`,
+                    ...periods.map(period => `<option value="${period}" ${voucherRecapPeriod === period ? 'selected' : ''}>${formatVoucherRecapMonth(period)}</option>`)
+                ].join('');
+
+                const recapRows = recapRowsData.length
+                    ? recapRowsData.map((row, index) => {
+                        const matchedUser = listUsers.find(user => formatName(user.name) === row.nama);
+                        const roleLabel = matchedUser ? (roleLabels[matchedUser.role] || matchedUser.role) : '—';
+                        const activeVoucher = getVoucherCount(row.nama);
+                        return `
+                            <tr>
+                                <td><span class="voucher-rank-index ${index < 3 ? `is-top-${index + 1}` : ''}">${index + 1}</span></td>
+                                <td><span class="nama-cell">${row.nama}</span></td>
+                                <td><span class="badge role-${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
+                                <td><strong class="voucher-recap-earned">${row.count}</strong></td>
+                                <td><span class="voucher-recap-active">${activeVoucher}</span></td>
+                                <td><span class="voucher-audit-time">${formatVoucherAuditDateTime(row.latestAt)}</span></td>
+                            </tr>`;
+                    }).join('')
+                    : `<tr><td colspan="6"><div class="voucher-empty-state"><span class="voucher-empty-icon">${ticketIcon}</span><strong>Belum ada voucher pada periode ini</strong><span>Pilih periode lain atau Semua Waktu.</span></div></td></tr>`;
+
+                tableHtml = `
+                    <div class="voucher-recap-toolbar">
+                        <div class="voucher-recap-period">
+                            <label for="voucherRecapPeriod">Periode</label>
+                            <select id="voucherRecapPeriod" onchange="setVoucherRecapPeriod(this.value)">${periodOptions}</select>
+                        </div>
+                        <div class="voucher-recap-meta"><strong>${recapVoucherTotal}</strong> voucher didapat · <strong>${recapRowsData.length}</strong> user</div>
+                    </div>
+                    <div class="table-wrap voucher-table-wrap voucher-recap-wrap">
+                        <table>
+                            <thead><tr><th>Rank</th><th>Nama</th><th>Role</th><th>Voucher Didapat</th><th>Voucher Aktif</th><th>Terakhir Didapat</th></tr></thead>
+                            <tbody>${recapRows}</tbody>
+                        </table>
+                    </div>`;
+                countText = `Peringkat berdasarkan voucher yang didapat pada <strong>${voucherRecapPeriod === 'all' ? 'Semua Waktu' : formatVoucherRecapMonth(voucherRecapPeriod)}</strong>`;
+            } else if (voucherSubtab === 'history') {
                 const voucherHistoryUnits = buildVoucherHistoryUnits();
                 const historyRows = voucherHistoryUnits.length
                     ? voucherHistoryUnits.map((unit, index) => {
@@ -54359,7 +54466,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             container.innerHTML = `
                 <div class="voucher-page-heading">
                     <span class="voucher-heading-icon">${ticketIcon}</span>
-                    <div><h2>Manajemen Voucher</h2><p>Lihat voucher aktif, waktu diperoleh, dan history voucher yang telah digunakan.</p></div>
+                    <div><h2>Manajemen Voucher</h2><p>Lihat voucher aktif, riwayat penggunaan, dan rekap peringkat voucher per periode.</p></div>
                 </div>
                 <div class="voucher-summary">
                     <div class="voucher-summary-main"><span class="voucher-summary-icon">${ticketIcon}</span><div class="voucher-summary-copy"><small>Total Voucher Aktif</small><div><span class="voucher-badge voucher-count-badge total" data-voucher="${totalVoucher}"><span class="icon">🎫</span><strong>${totalVoucher}</strong></span><span class="voucher-user-total">${voucherList.length} user</span></div></div></div>
@@ -54453,7 +54560,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 const menit = Math.floor(durasiDetik / 60);
                 const detik = durasiDetik % 60;
 
-                const batasDetik = (jackpotLimitMinutes * 60) - 1;
+                const batasDetik = getHistoryEventThresholdSeconds(item);
                 const isOverLimit = durasiDetik > batasDetik;
                 const roleLabel = roleLabels[item.role] || item.role;
 
@@ -54563,7 +54670,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 const durasiDetik = Math.floor((tSelesai - tMulai) / 1000);
                 const menit = Math.floor(durasiDetik / 60);
                 const detik = durasiDetik % 60;
-                const batasDetik = (jackpotLimitMinutes * 60) - 1;
+                const batasDetik = getHistoryEventThresholdSeconds(item);
                 const isOverLimit = durasiDetik > batasDetik;
                 const status = isOverLimit ? 'Telat' : 'Selesai';
                 const tanggal = tMulai.toLocaleDateString('id-ID');
@@ -54657,7 +54764,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                     : Math.max(0, Math.floor((tSelesai - tMulai) / 1000));
                 const menit = Math.floor(durasiDetik / 60);
                 const detik = durasiDetik % 60;
-                const batasDetik = (jackpotLimitMinutes * 60) - 1;
+                const batasDetik = getHistoryEventThresholdSeconds(item);
                 const isOverLimit = durasiDetik > batasDetik;
                 const status = isOverLimit ? 'Telat' : 'Selesai';
                 const tanggal = tMulai.toLocaleDateString('id-ID');
@@ -90369,12 +90476,15 @@ body:has(#aps-layer:not([hidden])) #historyActionTooltip{z-index:24020}
 /* Legacy-only sidebar: zero is informational absence, non-zero remains attention-bearing. */
 html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"]) body
 .sidebar-menu-categorized .sidebar-category > .menu-item.sidebar-standard-row > :is(#sidebarBadgeIzin,#sidebarBadgeVoucher,#sidebarBadgeTotal)[aria-label="0 notifikasi"]{
-  opacity:.46!important;color:var(--text-muted)!important;background:color-mix(in srgb,var(--bg-hover) 72%,transparent)!important;
-  border-color:color-mix(in srgb,var(--border-color) 68%,transparent)!important;box-shadow:none!important;text-shadow:none!important;
+  opacity:.54!important;
+  color:color-mix(in srgb,var(--sidebar-text) 38%,var(--sidebar-bg))!important;
+  background:color-mix(in srgb,var(--sidebar-bg) 96%,var(--sidebar-text) 4%)!important;
+  border-color:color-mix(in srgb,var(--sidebar-border) 56%,var(--sidebar-bg))!important;
+  box-shadow:none!important;text-shadow:none!important;filter:saturate(.32)!important;
 }
 html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) body
 .sidebar-menu-categorized .sidebar-category > .menu-item.sidebar-standard-row > :is(#sidebarBadgeIzin,#sidebarBadgeVoucher,#sidebarBadgeTotal)[aria-label="0 notifikasi"]{
-  opacity:.42!important;color:#677166!important;background:#0d100d!important;border-color:#1d241d!important;box-shadow:none!important;
+  opacity:.50!important;color:#4e594d!important;background:#090b09!important;border-color:#151a15!important;box-shadow:none!important;filter:saturate(.22)!important;
 }
 
 /* Evaluation: this note is still readable, but intentionally lower-priority than actionable errors. */
@@ -90412,7 +90522,38 @@ html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-audit-stat
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-state.is-legacy{color:#78817f;opacity:.68;font-weight:560;}
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor,
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor{color:#3d4845;font-weight:660;}
-@media(max-width:700px){#tab-voucher .voucher-subtabs{width:100%;}#tab-voucher .voucher-subtab-btn{flex:1;}.voucher-history-wrap{overflow-x:auto;}}
+
+#tab-voucher .voucher-recap-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:4px 0 10px;}
+#tab-voucher .voucher-recap-period{display:grid;gap:4px;min-width:190px;}
+#tab-voucher .voucher-recap-period label{font-size:9px;font-weight:720;letter-spacing:.45px;text-transform:uppercase;}
+#tab-voucher .voucher-recap-period select{height:32px;padding:0 30px 0 10px;font:inherit;font-size:11px;font-weight:620;outline:none;}
+#tab-voucher .voucher-recap-meta{font-size:10px;white-space:nowrap;}
+#tab-voucher .voucher-rank-index{display:inline-grid;place-items:center;min-width:22px;height:22px;font-size:10px;font-weight:760;font-variant-numeric:tabular-nums;}
+#tab-voucher .voucher-recap-earned{font-size:12px;font-variant-numeric:tabular-nums;}
+#tab-voucher .voucher-recap-active{font-size:11px;font-weight:650;font-variant-numeric:tabular-nums;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period label,
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-meta{color:var(--text-muted);}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period select{color:var(--text-primary);background:var(--bg-card);border:1px solid var(--border-color);border-radius:7px;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index{color:var(--text-secondary);background:var(--bg-hover);border:1px solid var(--border-color);border-radius:6px;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index.is-top-1{color:var(--accent-strong);border-color:color-mix(in srgb,var(--accent) 25%,var(--border-color));background:rgba(var(--accent-rgb),.07);}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index:is(.is-top-2,.is-top-3){color:var(--text-primary);}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-earned{color:var(--accent-strong);}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-active{color:var(--text-secondary);}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period label,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period label,
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-meta,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-meta{color:#75807d;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period select,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period select{color:#394441;background:rgba(244,241,233,.76);border:1px solid rgba(89,100,97,.18);border-radius:1px;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-rank-index,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-rank-index{color:#56615e;background:rgba(215,214,207,.38);border:1px solid rgba(89,100,97,.15);border-radius:1px;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-rank-index.is-top-1,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-rank-index.is-top-1{color:#436a75;border-color:rgba(83,126,139,.27);background:rgba(145,190,202,.12);}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-earned,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-earned{color:#435d64;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-active,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-active{color:#687370;}
+@media(max-width:700px){#tab-voucher .voucher-subtabs{width:100%;}#tab-voucher .voucher-subtab-btn{flex:1;padding-inline:8px;}.voucher-history-wrap,.voucher-recap-wrap{overflow-x:auto;}#tab-voucher .voucher-recap-toolbar{align-items:stretch;flex-direction:column;gap:7px;}#tab-voucher .voucher-recap-period{min-width:0;}#tab-voucher .voucher-recap-meta{white-space:normal;}}
 </style>
 <script id="global-operational-fixes-v1-evaluation-note-priority">
 (() => {
