@@ -50817,20 +50817,80 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             }
         }
 
-        async function loadVoucherData(force = false) {
-            const now = Date.now();
+        let voucherEventData = [];
+        let voucherEventDataLoaded = false;
+        let voucherEventLastLoad = 0;
+        let voucherSubtab = 'active';
+        const VOUCHER_EVENT_REFRESH_MIN_GAP_MS = 15000;
+        const VOUCHER_EVENT_LIMIT = 1000;
 
+        function normalizeVoucherEvent(row) {
+            return {
+                id: row?.id ?? null,
+                nama: formatName(row?.nama || ''),
+                action: String(row?.action || ''),
+                delta: Number(row?.delta) || 0,
+                balanceAfter: row?.balance_after == null ? null : Math.max(0, Number(row.balance_after) || 0),
+                actorName: formatName(row?.actor_name || '') || 'SYSTEM',
+                source: String(row?.source || ''),
+                sourceHistoryId: row?.source_history_id ?? null,
+                occurredAt: row?.occurred_at || null
+            };
+        }
+
+        async function loadVoucherEventData(force = false) {
+            if (TEST_MODE) {
+                voucherEventDataLoaded = true;
+                return false;
+            }
+
+            const now = Date.now();
             if (
                 !force &&
-                lastVoucherSyncAt > 0 &&
-                (now - lastVoucherSyncAt) < VOUCHER_REFRESH_MIN_GAP_MS
+                voucherEventDataLoaded &&
+                (now - voucherEventLastLoad) < VOUCHER_EVENT_REFRESH_MIN_GAP_MS
             ) {
                 return false;
             }
 
-            return syncVoucherSnapshot({
-                reason: force ? 'voucher-force' : 'voucher-open'
-            });
+            try {
+                const { data, error } = await supabaseDashboard
+                    .from('voucher_events')
+                    .select('id,nama,action,delta,balance_after,actor_name,source,source_history_id,occurred_at')
+                    .order('occurred_at', { ascending: false })
+                    .limit(VOUCHER_EVENT_LIMIT);
+
+                if (error) throw error;
+
+                voucherEventData = (data || []).map(normalizeVoucherEvent);
+                voucherEventDataLoaded = true;
+                voucherEventLastLoad = Date.now();
+
+                if (currentTab === 'voucher') renderVoucherPage();
+                return true;
+            } catch (error) {
+                console.error('Gagal memuat audit voucher:', error);
+                return false;
+            }
+        }
+
+        async function loadVoucherData(force = false) {
+            const now = Date.now();
+            const snapshotFresh =
+                !force &&
+                lastVoucherSyncAt > 0 &&
+                (now - lastVoucherSyncAt) < VOUCHER_REFRESH_MIN_GAP_MS;
+
+            const jobs = [];
+            if (!snapshotFresh) {
+                jobs.push(syncVoucherSnapshot({
+                    reason: force ? 'voucher-force' : 'voucher-open'
+                }));
+            }
+
+            jobs.push(loadVoucherEventData(force));
+            const results = await Promise.allSettled(jobs);
+            return results.some(result => result.status === 'fulfilled' && result.value === true);
         }
 
         // ============================================================
@@ -53127,7 +53187,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                         )
                     );
                     const isQuotaValid = durasiDetik >= MIN_IZIN_DURATION_SECONDS;
-                    const isOverLimit = durasiDetik >= (jackpotLimitMinutes * 60);
+                    const isOverLimit = durasiDetik > (jackpotLimitMinutes * 60);
 
                     currentData.status = 'selesai';
                     currentData.selesai = selesaiTime;
@@ -54073,6 +54133,32 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
         // ============================================================
         // RENDER VOUCHER PAGE
         // ============================================================
+        function formatVoucherAuditDateTime(value) {
+            if (!value) return '—';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '—';
+            const dateText = date.toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            });
+            const timeText = date.toLocaleTimeString('id-ID', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            return `${dateText} · ${timeText}`;
+        }
+
+        function getLatestVoucherEarnedEvent(nama) {
+            const key = formatName(nama);
+            return voucherEventData.find(event =>
+                event.action === 'earned' && formatName(event.nama) === key
+            ) || null;
+        }
+
+        window.setVoucherSubtab = function(nextTab) {
+            voucherSubtab = nextTab === 'history' ? 'history' : 'active';
+            renderVoucherPage();
+            if (!voucherEventDataLoaded) loadVoucherEventData(false);
+        };
+
         function renderVoucherPage() {
             const container = document.getElementById('voucherContent');
             if (!container) return;
@@ -54102,137 +54188,107 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 container.innerHTML = `
                     <div class="voucher-access-denied">
                         <span class="voucher-access-icon">${lockIcon}</span>
-                        <div>
-                            <h3>Akses Ditolak</h3>
-                            <p>Anda tidak memiliki izin untuk mengakses halaman ini.</p>
-                        </div>
-                    </div>
-                `;
+                        <div><h3>Akses Ditolak</h3><p>Anda tidak memiliki izin untuk mengakses halaman ini.</p></div>
+                    </div>`;
                 return;
             }
 
             const voucherList = listUsers
-                .map(user => ({
-                    ...user,
-                    voucher: getVoucherCount(user.name)
-                }))
+                .map(user => ({ ...user, voucher: getVoucherCount(user.name) }))
                 .filter(user => user.voucher > 0)
-                .sort((a, b) => b.voucher - a.voucher);
+                .sort((a, b) => b.voucher - a.voucher || a.name.localeCompare(b.name, 'id'));
 
-            let rows = '';
-            if (voucherList.length === 0) {
-                rows = `
-                    <tr>
-                        <td colspan="${userPermissions.canManageVoucher ? 5 : 4}">
-                            <div class="voucher-empty-state">
-                                <span class="voucher-empty-icon">${ticketIcon}</span>
-                                <strong>Belum ada voucher aktif</strong>
-                                <span>Anggota yang mendapatkan voucher akan tampil di sini.</span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+            const totalVoucher = Object.values(voucherData).reduce((a, b) => a + Math.max(0, Number(b) || 0), 0);
+            const completedEvents = voucherEventData.filter(event => event.action === 'reduced');
+            const roleLabels = { leader: 'Leader', csline: 'CS Line', cs: 'CS', kapten: 'Kapten', kasir: 'Kasir' };
+
+            const tabs = `
+                <div class="voucher-subtabs" role="tablist" aria-label="Tampilan Voucher">
+                    <button type="button" class="voucher-subtab-btn ${voucherSubtab === 'active' ? 'active' : ''}" onclick="setVoucherSubtab('active')" role="tab" aria-selected="${voucherSubtab === 'active'}">Voucher Aktif</button>
+                    <button type="button" class="voucher-subtab-btn ${voucherSubtab === 'history' ? 'active' : ''}" onclick="setVoucherSubtab('history')" role="tab" aria-selected="${voucherSubtab === 'history'}">History Voucher</button>
+                </div>`;
+
+            let tableHtml = '';
+            let countText = '';
+
+            if (voucherSubtab === 'history') {
+                const historyRows = completedEvents.length
+                    ? completedEvents.map((event, index) => {
+                        const matchedUser = listUsers.find(user => formatName(user.name) === formatName(event.nama));
+                        const roleLabel = matchedUser ? (roleLabels[matchedUser.role] || matchedUser.role) : '—';
+                        const balance = event.balanceAfter == null ? '—' : event.balanceAfter;
+                        const actor = event.actorName && event.actorName !== 'SYSTEM' ? event.actorName : 'SYSTEM';
+                        return `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><span class="nama-cell">${event.nama}</span></td>
+                                <td><span class="badge role-${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
+                                <td><span class="voucher-audit-time">${formatVoucherAuditDateTime(event.occurredAt)}</span></td>
+                                <td><span class="voucher-audit-actor">${actor}</span></td>
+                                <td><span class="voucher-audit-balance">${balance}</span></td>
+                            </tr>`;
+                    }).join('')
+                    : `<tr><td colspan="6"><div class="voucher-empty-state"><span class="voucher-empty-icon">${ticketIcon}</span><strong>Belum ada voucher selesai yang tercatat</strong><span>Pengurangan voucher berikutnya akan mencatat waktu dan akun yang melakukan pengurangan.</span></div></td></tr>`;
+
+                tableHtml = `
+                    <div class="table-wrap voucher-table-wrap voucher-history-wrap">
+                        <table>
+                            <thead><tr><th>#</th><th>Nama</th><th>Role</th><th>Dikurangi Pada</th><th>Dikurangi Oleh</th><th>Sisa</th></tr></thead>
+                            <tbody>${historyRows}</tbody>
+                        </table>
+                    </div>`;
+                countText = `Total Voucher Selesai Tercatat: <strong>${completedEvents.length}</strong>`;
             } else {
-                rows = voucherList.map((user, index) => {
-                    const roleClass = `role-${user.role}`;
-                    const roleLabels = {
-                        leader: 'Leader',
-                        csline: 'CS Line',
-                        cs: 'CS',
-                        kapten: 'Kapten',
-                        kasir: 'Kasir'
-                    };
-                    const roleLabel = roleLabels[user.role] || user.role;
-                    const canRemove = userPermissions.canManageVoucher && user.voucher > 0;
+                let rows = '';
+                if (voucherList.length === 0) {
+                    rows = `<tr><td colspan="${userPermissions.canManageVoucher ? 6 : 5}"><div class="voucher-empty-state"><span class="voucher-empty-icon">${ticketIcon}</span><strong>Belum ada voucher aktif</strong><span>Anggota yang mendapatkan voucher akan tampil di sini.</span></div></td></tr>`;
+                } else {
+                    rows = voucherList.map((user, index) => {
+                        const roleLabel = roleLabels[user.role] || user.role;
+                        const canRemove = userPermissions.canManageVoucher && user.voucher > 0;
+                        const earnedEvent = getLatestVoucherEarnedEvent(user.name);
+                        const earnedAt = formatVoucherAuditDateTime(earnedEvent?.occurredAt);
+                        const actionColumn = userPermissions.canManageVoucher ? `
+                            <td><button class="btn-voucher" onclick="kurangiVoucher('${user.name}')" ${!canRemove ? 'disabled' : ''}><span class="button-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></span><span>Kurangi</span></button></td>` : '';
+                        return `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><span class="nama-cell">${user.name}</span></td>
+                                <td><span class="badge role-${user.role}">${roleLabel}</span></td>
+                                <td><span class="voucher-badge voucher-count-badge" data-voucher="${user.voucher}"><span class="icon">🎫</span><strong>${user.voucher}</strong></span></td>
+                                <td><span class="voucher-audit-time">${earnedAt}</span></td>
+                                ${actionColumn}
+                            </tr>`;
+                    }).join('');
+                }
 
-                    const actionColumn = userPermissions.canManageVoucher ? `
-                        <td>
-                            <button class="btn-voucher" onclick="kurangiVoucher('${user.name}')" ${!canRemove ? 'disabled' : ''}>
-                                <span class="button-icon">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
-                                </span>
-                                <span>Kurangi</span>
-                            </button>
-                        </td>
-                    ` : '';
-
-                    return `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td><span class="nama-cell">${user.name}</span></td>
-                            <td><span class="badge ${roleClass}">${roleLabel}</span></td>
-                            <td>
-                                <span class="voucher-badge voucher-count-badge" data-voucher="${user.voucher}">
-                                    <span class="icon">🎫</span>
-                                    <strong>${user.voucher}</strong>
-                                </span>
-                            </td>
-                            ${actionColumn}
-                        </tr>
-                    `;
-                }).join('');
+                const headers = userPermissions.canManageVoucher
+                    ? ['#', 'Nama', 'Role', 'Voucher', 'Terakhir Didapat', 'Aksi']
+                    : ['#', 'Nama', 'Role', 'Voucher', 'Terakhir Didapat'];
+                tableHtml = `<div class="table-wrap voucher-table-wrap"><table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+                countText = `Total User dengan Voucher: <strong>${voucherList.length}</strong> user`;
             }
 
-            const totalVoucher = Object.values(voucherData).reduce((a, b) => a + b, 0);
-
-            const headers = userPermissions.canManageVoucher ?
-                ['#', 'Nama', 'Role', 'Voucher', 'Aksi'] :
-                ['#', 'Nama', 'Role', 'Voucher'];
-
-            const headerRow = headers.map(h => `<th>${h}</th>`).join('');
-
-            const infoText = userPermissions.canManageVoucher ?
-                'Kurangi voucher setelah voucher digunakan oleh anggota.' :
-                'Mode lihat aktif. Permission Kelola Voucher belum diberikan untuk role ini.';
+            const infoText = userPermissions.canManageVoucher
+                ? 'Kurangi voucher setelah voucher digunakan oleh anggota.'
+                : 'Mode lihat aktif. Permission Kelola Voucher belum diberikan untuk role ini.';
 
             container.innerHTML = `
                 <div class="voucher-page-heading">
                     <span class="voucher-heading-icon">${ticketIcon}</span>
-                    <div>
-                        <h2>Manajemen Voucher</h2>
-                        <p>Lihat jumlah voucher aktif dan kelola voucher yang telah digunakan.</p>
-                    </div>
+                    <div><h2>Manajemen Voucher</h2><p>Lihat voucher aktif, waktu diperoleh, dan history voucher yang telah digunakan.</p></div>
                 </div>
-
                 <div class="voucher-summary">
-                    <div class="voucher-summary-main">
-                        <span class="voucher-summary-icon">${ticketIcon}</span>
-                        <div class="voucher-summary-copy">
-                            <small>Total Voucher Aktif</small>
-                            <div>
-                                <span class="voucher-badge voucher-count-badge total" data-voucher="${totalVoucher}">
-                                    <span class="icon">🎫</span>
-                                    <strong>${totalVoucher}</strong>
-                                </span>
-                                <span class="voucher-user-total">${voucherList.length} user</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="voucher-summary-info">
-                        <span class="voucher-info-icon">${infoIcon}</span>
-                        <span>${infoText}</span>
-                    </div>
+                    <div class="voucher-summary-main"><span class="voucher-summary-icon">${ticketIcon}</span><div class="voucher-summary-copy"><small>Total Voucher Aktif</small><div><span class="voucher-badge voucher-count-badge total" data-voucher="${totalVoucher}"><span class="icon">🎫</span><strong>${totalVoucher}</strong></span><span class="voucher-user-total">${voucherList.length} user</span></div></div></div>
+                    <div class="voucher-summary-info"><span class="voucher-info-icon">${infoIcon}</span><span>${infoText}</span></div>
                 </div>
-
-                <div class="table-wrap voucher-table-wrap">
-                    <table>
-                        <thead>
-                            <tr>${headerRow}</tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-
-                <div class="history-count">
-                    Total User dengan Voucher: <strong>${voucherList.length}</strong> user
-                </div>
-            `;
+                ${tabs}
+                ${tableHtml}
+                <div class="history-count">${countText}</div>`;
 
             document.querySelectorAll('.voucher-badge').forEach(function(el) {
                 el.removeEventListener('mouseenter', handleVoucherMouseEnter);
                 el.removeEventListener('mouseleave', handleVoucherMouseLeave);
-
                 el.addEventListener('mouseenter', handleVoucherMouseEnter);
                 el.addEventListener('mouseleave', handleVoucherMouseLeave);
             });
@@ -54460,63 +54516,82 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
             showToast(`Export ${dateDisplay} berhasil! (${dataToExport.length} data)`, 'success');
         };
 
-        window.exportHistoryBulanan = function() {
+        window.exportHistoryBulanan = async function() {
             const filterBulan = document.getElementById('filterBulan');
-            if (!filterBulan) {
+            if (!filterBulan || !filterBulan.value) {
                 showToast('Pilih bulan terlebih dahulu!', 'warning');
                 return;
             }
 
-            const bulanValue = filterBulan.value;
-            if (!bulanValue) {
-                showToast('Pilih bulan terlebih dahulu!', 'warning');
+            const [year, month] = filterBulan.value.split('-').map(Number);
+            const monthName = new Date(year, month - 1, 1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+            const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
+            const endDate = new Date(year, month, 1, 0, 0, 0, 0);
+            let filtered = [];
+
+            try {
+                if (TEST_MODE) {
+                    filtered = historyData.filter(h => {
+                        const d = new Date(h.mulai);
+                        return d >= startDate && d < endDate;
+                    });
+                } else {
+                    const PAGE_SIZE = 1000;
+                    let offset = 0;
+                    while (true) {
+                        const { data, error } = await supabaseDashboard
+                            .from('history')
+                            .select('id,nama,tanggal,mulai,selesai,status,role,durasi_detik,is_quota_valid,threshold_at_event_seconds')
+                            .gte('mulai', startDate.toISOString())
+                            .lt('mulai', endDate.toISOString())
+                            .order('mulai', { ascending: true })
+                            .range(offset, offset + PAGE_SIZE - 1);
+
+                        if (error) throw error;
+                        const page = data || [];
+                        filtered.push(...page);
+                        if (page.length < PAGE_SIZE) break;
+                        offset += PAGE_SIZE;
+                    }
+                }
+            } catch (error) {
+                console.error('Export History bulanan gagal:', error);
+                showToast(`Gagal memuat data bulan ${monthName} dari database.`, 'error', 5000);
                 return;
             }
-
-            const [year, month] = bulanValue.split('-').map(Number);
-            const monthName = new Date(year, month - 1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-
-            const filtered = historyData.filter(h => {
-                const d = new Date(h.mulai);
-                return d.getFullYear() === year && d.getMonth() === month - 1;
-            });
 
             if (filtered.length === 0) {
                 showToast(`Tidak ada data untuk bulan ${monthName}`, 'warning');
                 return;
             }
 
-            let csv =
-                'No,Nama,Role,Tanggal,Mulai,Selesai,Durasi(menit),Durasi(detik),Status\n';
+            let csv = 'No,Nama,Role,Tanggal,Mulai,Selesai,Durasi(menit),Durasi(detik),Status\n';
             filtered.forEach((item, index) => {
                 const tMulai = new Date(item.mulai);
                 const tSelesai = new Date(item.selesai);
-                const durasiDetik = Math.floor((tSelesai - tMulai) / 1000);
+                const durasiDetik = Number.isFinite(Number(item.durasi_detik))
+                    ? Math.max(0, Number(item.durasi_detik))
+                    : Math.max(0, Math.floor((tSelesai - tMulai) / 1000));
                 const menit = Math.floor(durasiDetik / 60);
                 const detik = durasiDetik % 60;
                 const batasDetik = (jackpotLimitMinutes * 60) - 1;
                 const isOverLimit = durasiDetik > batasDetik;
                 const status = isOverLimit ? 'Telat' : 'Selesai';
                 const tanggal = tMulai.toLocaleDateString('id-ID');
-                const waktuMulai = tMulai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit',
-                    second: '2-digit' });
-                const waktuSelesai = tSelesai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit',
-                    second: '2-digit' });
+                const waktuMulai = tMulai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const waktuSelesai = tSelesai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const roleLabel = ROLE_LABELS[item.role] || item.role;
-
-                csv +=
-                    `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${status}\n`;
+                csv += `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${status}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download =
-                `history-izin-${year}-${String(month).padStart(2, '0')}.csv`;
+            a.download = `history-izin-${year}-${String(month).padStart(2, '0')}.csv`;
             a.click();
             window.URL.revokeObjectURL(url);
-            showToast(`Export bulan ${monthName} berhasil!`, 'success');
+            showToast(`Export bulan ${monthName} berhasil! (${filtered.length} data)`, 'success');
         };
 
         // ============================================================
@@ -54857,6 +54932,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                     `1 voucher ${formattedNama} berhasil dikurangi. Sisa: ${result.jumlah}`,
                     'success'
                 );
+                await loadVoucherEventData(true);
                 renderVoucherPage();
                 renderDashboardTable();
                 updateSidebarBadge();
@@ -90202,6 +90278,72 @@ body:has(#aps-layer:not([hidden])) #historyActionTooltip{z-index:24020}
 
   window.openActivePermitSession=open;
   window.minimizeActivePermitSession=minimize;
+})();
+</script>
+
+
+<style id="global-operational-fixes-v1-style">
+/* Legacy-only sidebar: zero is informational absence, non-zero remains attention-bearing. */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"]) body
+.sidebar-menu-categorized .sidebar-category > .menu-item.sidebar-standard-row > :is(#sidebarBadgeIzin,#sidebarBadgeVoucher,#sidebarBadgeTotal)[aria-label="0 notifikasi"]{
+  opacity:.46!important;color:var(--text-muted)!important;background:color-mix(in srgb,var(--bg-hover) 72%,transparent)!important;
+  border-color:color-mix(in srgb,var(--border-color) 68%,transparent)!important;box-shadow:none!important;text-shadow:none!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) body
+.sidebar-menu-categorized .sidebar-category > .menu-item.sidebar-standard-row > :is(#sidebarBadgeIzin,#sidebarBadgeVoucher,#sidebarBadgeTotal)[aria-label="0 notifikasi"]{
+  opacity:.42!important;color:#677166!important;background:#0d100d!important;border-color:#1d241d!important;box-shadow:none!important;
+}
+
+/* Evaluation: this note is still readable, but intentionally lower-priority than actionable errors. */
+#tab-evaluation .cs-eval-error-type.is-note-unending{font-weight:520!important;opacity:.68!important;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-evaluation .cs-eval-error-type.is-note-unending{color:var(--text-muted)!important;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-evaluation .cs-eval-error-type.is-note-unending,
+html[data-mi-native-presentation="mecha-ivory"] #tab-evaluation .cs-eval-error-type.is-note-unending{color:#8e9794!important;}
+
+/* Voucher active/history switch: shared architecture, theme-native surface. */
+#tab-voucher .voucher-subtabs{display:flex;align-items:center;gap:6px;margin:10px 0 10px;padding:3px;width:max-content;max-width:100%;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtabs{border:1px solid var(--border-color);border-radius:9px;background:var(--bg-hover);}
+#tab-voucher .voucher-subtab-btn{min-height:30px;padding:0 12px;border:0;cursor:pointer;font:inherit;font-size:10px;font-weight:680;letter-spacing:.18px;transition:background .16s ease,color .16s ease,border-color .16s ease;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtab-btn{border-radius:7px;background:transparent;color:var(--text-muted);}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtab-btn:hover{color:var(--text-primary);background:var(--bg-card);}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtab-btn.active{color:var(--text-primary);background:var(--bg-card);box-shadow:0 1px 4px rgba(0,0,0,.08);}
+#tab-voucher .voucher-audit-time,#tab-voucher .voucher-audit-actor,#tab-voucher .voucher-audit-balance{white-space:nowrap;font-size:10px;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-time{color:var(--text-secondary);}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-actor{color:var(--text-primary);font-weight:620;}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-balance{color:var(--text-secondary);font-weight:680;}
+
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-subtabs,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-subtabs{border:1px solid rgba(89,100,97,.16);border-radius:2px;background:rgba(205,204,197,.34);clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-subtab-btn,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-subtab-btn{border-radius:1px;background:transparent;color:#737d7a;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-subtab-btn.active,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-subtab-btn.active{background:rgba(244,241,233,.82);color:#394441;box-shadow:inset 0 1px rgba(255,255,255,.72),0 1px 3px rgba(52,61,58,.08);}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher :is(.voucher-audit-time,.voucher-audit-balance),
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher :is(.voucher-audit-time,.voucher-audit-balance){color:#66716e;}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor{color:#3d4845;font-weight:660;}
+@media(max-width:700px){#tab-voucher .voucher-subtabs{width:100%;}#tab-voucher .voucher-subtab-btn{flex:1;}.voucher-history-wrap{overflow-x:auto;}}
+</style>
+<script id="global-operational-fixes-v1-evaluation-note-priority">
+(() => {
+  'use strict';
+  const normalize = value => String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
+  const isUnending = value => {
+    const v=normalize(value);
+    return v==='note pengecekkan tidak berujung' || v==='note pengecekan tidak berujung';
+  };
+  function decorate(root){
+    (root || document).querySelectorAll?.('.cs-eval-error-type').forEach(el=>{
+      el.classList.toggle('is-note-unending',isUnending(el.textContent));
+    });
+  }
+  function install(){
+    const host=document.getElementById('tab-evaluation');
+    if(!host || host.dataset.notePriorityObserver==='1') return;
+    host.dataset.notePriorityObserver='1'; decorate(host);
+    new MutationObserver(()=>decorate(host)).observe(host,{childList:true,subtree:true,characterData:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install,{once:true}); else install();
 })();
 </script>
 
