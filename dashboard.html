@@ -54294,8 +54294,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
         }
 
         window.setVoucherRecapPeriod = function(value) {
+            const scrollRoot = document.scrollingElement || document.documentElement;
+            const previousScrollLeft = scrollRoot ? scrollRoot.scrollLeft : 0;
             voucherRecapPeriod = value || 'all';
-            if (voucherSubtab === 'recap') renderVoucherPage();
+            if (voucherSubtab === 'recap') {
+                renderVoucherPage();
+                if (scrollRoot) scrollRoot.scrollLeft = previousScrollLeft;
+            }
         };
 
         window.setVoucherSubtab = function(nextTab) {
@@ -54375,7 +54380,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
 
                 toolbarMeta = `
                     <div class="voucher-recap-tools voucher-toolbar-meta">
-                        <div class="voucher-recap-count voucher-toolbar-count"><strong>${recapVoucherTotal}</strong> voucher didapat · <strong>${recapRowsData.length}</strong> user</div>
+                        <div class="voucher-recap-count voucher-toolbar-count"><strong>${recapVoucherTotal}</strong> voucher · <strong>${recapRowsData.length}</strong> user</div>
                         <div class="voucher-recap-period voucher-recap-period-inline">
                             <label for="voucherRecapPeriod">Periode</label>
                             <select id="voucherRecapPeriod" onchange="setVoucherRecapPeriod(this.value)">${periodOptions}</select>
@@ -54426,7 +54431,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                             <tbody>${historyRows}</tbody>
                         </table>
                     </div>`;
-                toolbarMeta = `<div class="voucher-toolbar-meta"><div class="voucher-recap-count voucher-toolbar-count"><strong>${voucherHistoryUnits.length}</strong> voucher pernah didapat</div></div>`;
+                toolbarMeta = `<div class="voucher-toolbar-meta"><div class="voucher-recap-count voucher-toolbar-count"><strong>${voucherHistoryUnits.length}</strong> voucher</div></div>`;
             } else {
                 let rows = '';
                 if (voucherList.length === 0) {
@@ -54438,7 +54443,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                         const earnedEvent = getLatestVoucherEarnedEvent(user.name);
                         const earnedAt = formatVoucherAuditDateTime(earnedEvent?.occurredAt);
                         const actionColumn = userPermissions.canManageVoucher ? `
-                            <td><button class="btn-voucher" onclick="kurangiVoucher('${user.name}')" ${!canRemove ? 'disabled' : ''}><span class="button-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></span><span>Kurangi</span></button></td>` : '';
+                            <td><button class="btn-voucher voucher-remove-icon history-tooltip-target" onclick="kurangiVoucher('${user.name}')" aria-label="Kurangi voucher ${user.name}" data-tooltip="Kurangi voucher" ${!canRemove ? 'disabled' : ''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h14v3a2 2 0 0 0 0 3v3H5v-3a2 2 0 0 0 0-3Z"/><path d="M9 12h6"/></svg></button></td>` : '';
                         return `
                             <tr>
                                 <td>${index + 1}</td>
@@ -90632,6 +90637,161 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install,{once:true}); else install();
 })();
 </script>
+
+
+<style id="voucher-recap-interaction-action-refinement-v1">
+/* Voucher recap: viewport-stable control rail + compact left-anchored table. */
+#tab-voucher{
+  max-width:100%!important;
+  min-width:0!important;
+  overflow-x:clip!important;
+}
+#tab-voucher #voucherContent,
+#tab-voucher .voucher-subtab-row,
+#tab-voucher .voucher-subtabs,
+#tab-voucher .voucher-toolbar-meta,
+#tab-voucher .voucher-recap-tools,
+#tab-voucher .voucher-recap-wrap{
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+#tab-voucher .voucher-recap-tools{
+  overflow:visible!important;
+}
+#tab-voucher .voucher-recap-period select{
+  width:164px!important;
+  min-width:164px!important;
+  max-width:164px!important;
+  box-sizing:border-box!important;
+}
+#tab-voucher .voucher-recap-wrap{
+  overflow-x:hidden!important;
+}
+#tab-voucher .voucher-recap-wrap table{
+  width:640px!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  table-layout:fixed!important;
+}
+#tab-voucher .voucher-recap-wrap th,
+#tab-voucher .voucher-recap-wrap td{
+  text-align:left!important;
+}
+#tab-voucher .voucher-recap-wrap th:nth-child(1),
+#tab-voucher .voucher-recap-wrap td:nth-child(1){width:64px!important;}
+#tab-voucher .voucher-recap-wrap th:nth-child(2),
+#tab-voucher .voucher-recap-wrap td:nth-child(2){width:286px!important;}
+#tab-voucher .voucher-recap-wrap th:nth-child(3),
+#tab-voucher .voucher-recap-wrap td:nth-child(3){width:138px!important;}
+#tab-voucher .voucher-recap-wrap th:nth-child(4),
+#tab-voucher .voucher-recap-wrap td:nth-child(4){width:132px!important;}
+
+/* Active Voucher action: icon-only, quiet at rest, explicit on hover. */
+#tab-voucher .btn-voucher.voucher-remove-icon{
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  min-height:30px!important;
+  padding:0!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  gap:0!important;
+  text-transform:none!important;
+  letter-spacing:0!important;
+  transform:none!important;
+  box-shadow:none!important;
+}
+#tab-voucher .btn-voucher.voucher-remove-icon svg{
+  width:15px!important;
+  height:15px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.7!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  pointer-events:none!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .btn-voucher.voucher-remove-icon{
+  color:var(--text-muted)!important;
+  background:color-mix(in srgb,var(--bg-card) 88%,var(--bg-hover))!important;
+  border:1px solid color-mix(in srgb,var(--border-color) 84%,transparent)!important;
+  border-radius:7px!important;
+  transition:background-color .14s ease,border-color .14s ease,color .14s ease!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .btn-voucher.voucher-remove-icon:hover:not(:disabled){
+  color:var(--warning)!important;
+  background:color-mix(in srgb,var(--warning-bg) 42%,var(--bg-card))!important;
+  border-color:color-mix(in srgb,var(--warning) 30%,var(--border-color))!important;
+  transform:none!important;
+  box-shadow:none!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .btn-voucher.voucher-remove-icon:active:not(:disabled){
+  transform:none!important;
+  background:color-mix(in srgb,var(--warning-bg) 58%,var(--bg-card))!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .btn-voucher.voucher-remove-icon,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .btn-voucher.voucher-remove-icon{
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  min-height:30px!important;
+  color:#69736f!important;
+  background:rgba(232,229,221,.42)!important;
+  border:1px solid rgba(83,94,91,.18)!important;
+  border-radius:1px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42)!important;
+  transition:background-color .14s ease,border-color .14s ease,color .14s ease!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .btn-voucher.voucher-remove-icon:hover:not(:disabled),
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .btn-voucher.voucher-remove-icon:hover:not(:disabled){
+  color:#8a6534!important;
+  background:rgba(212,190,151,.16)!important;
+  border-color:rgba(138,101,52,.28)!important;
+  transform:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34)!important;
+}
+#tab-voucher .btn-voucher.voucher-remove-icon:disabled{
+  opacity:.32!important;
+  cursor:not-allowed!important;
+  transform:none!important;
+  box-shadow:none!important;
+}
+
+@media (max-width:720px){
+  #tab-voucher .voucher-recap-wrap table{width:100%!important;}
+  #tab-voucher .voucher-recap-wrap th:nth-child(1),
+  #tab-voucher .voucher-recap-wrap td:nth-child(1){width:52px!important;}
+  #tab-voucher .voucher-recap-wrap th:nth-child(2),
+  #tab-voucher .voucher-recap-wrap td:nth-child(2){width:auto!important;}
+  #tab-voucher .voucher-recap-wrap th:nth-child(3),
+  #tab-voucher .voucher-recap-wrap td:nth-child(3){width:108px!important;}
+  #tab-voucher .voucher-recap-wrap th:nth-child(4),
+  #tab-voucher .voucher-recap-wrap td:nth-child(4){width:104px!important;}
+  #tab-voucher .voucher-recap-period select{
+    width:154px!important;
+    min-width:154px!important;
+    max-width:154px!important;
+  }
+}
+@media (max-width:520px){
+  #tab-voucher .voucher-subtab-row{align-items:flex-start!important;}
+  #tab-voucher .voucher-toolbar-meta,#tab-voucher .voucher-recap-tools{
+    width:100%!important;
+    margin-left:0!important;
+    justify-content:flex-start!important;
+  }
+  #tab-voucher .voucher-recap-wrap th,
+  #tab-voucher .voucher-recap-wrap td{padding-left:8px!important;padding-right:8px!important;}
+  #tab-voucher .voucher-recap-wrap th:nth-child(1),
+  #tab-voucher .voucher-recap-wrap td:nth-child(1){width:44px!important;}
+  #tab-voucher .voucher-recap-wrap th:nth-child(3),
+  #tab-voucher .voucher-recap-wrap td:nth-child(3){width:92px!important;}
+  #tab-voucher .voucher-recap-wrap th:nth-child(4),
+  #tab-voucher .voucher-recap-wrap td:nth-child(4){width:88px!important;}
+}
+</style>
 
 </body>
 </html>
