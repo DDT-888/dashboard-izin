@@ -54347,6 +54347,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
 
             let tableHtml = '';
             let countText = '';
+            let recapPeriodControl = '';
 
             if (voucherSubtab === 'recap') {
                 const periods = getVoucherRecapPeriods();
@@ -54362,34 +54363,30 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                     ? recapRowsData.map((row, index) => {
                         const matchedUser = listUsers.find(user => formatName(user.name) === row.nama);
                         const roleLabel = matchedUser ? (roleLabels[matchedUser.role] || matchedUser.role) : '—';
-                        const activeVoucher = getVoucherCount(row.nama);
                         return `
                             <tr>
                                 <td><span class="voucher-rank-index ${index < 3 ? `is-top-${index + 1}` : ''}">${index + 1}</span></td>
                                 <td><span class="nama-cell">${row.nama}</span></td>
                                 <td><span class="badge role-${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
                                 <td><strong class="voucher-recap-earned">${row.count}</strong></td>
-                                <td><span class="voucher-recap-active">${activeVoucher}</span></td>
-                                <td><span class="voucher-audit-time">${formatVoucherAuditDateTime(row.latestAt)}</span></td>
                             </tr>`;
                     }).join('')
-                    : `<tr><td colspan="6"><div class="voucher-empty-state"><span class="voucher-empty-icon">${ticketIcon}</span><strong>Belum ada voucher pada periode ini</strong><span>Pilih periode lain atau Semua Waktu.</span></div></td></tr>`;
+                    : `<tr><td colspan="4"><div class="voucher-empty-state"><span class="voucher-empty-icon">${ticketIcon}</span><strong>Belum ada voucher pada periode ini</strong><span>Pilih periode lain atau Semua Waktu.</span></div></td></tr>`;
+
+                recapPeriodControl = `
+                    <div class="voucher-recap-period voucher-recap-period-inline">
+                        <label for="voucherRecapPeriod">Periode</label>
+                        <select id="voucherRecapPeriod" onchange="setVoucherRecapPeriod(this.value)">${periodOptions}</select>
+                    </div>`;
 
                 tableHtml = `
-                    <div class="voucher-recap-toolbar">
-                        <div class="voucher-recap-period">
-                            <label for="voucherRecapPeriod">Periode</label>
-                            <select id="voucherRecapPeriod" onchange="setVoucherRecapPeriod(this.value)">${periodOptions}</select>
-                        </div>
-                        <div class="voucher-recap-meta"><strong>${recapVoucherTotal}</strong> voucher didapat · <strong>${recapRowsData.length}</strong> user</div>
-                    </div>
                     <div class="table-wrap voucher-table-wrap voucher-recap-wrap">
                         <table>
-                            <thead><tr><th>Rank</th><th>Nama</th><th>Role</th><th>Voucher Didapat</th><th>Voucher Aktif</th><th>Terakhir Didapat</th></tr></thead>
+                            <thead><tr><th>Rank</th><th>Nama</th><th>Role</th><th>Voucher Didapat</th></tr></thead>
                             <tbody>${recapRows}</tbody>
                         </table>
                     </div>`;
-                countText = `Peringkat berdasarkan voucher yang didapat pada <strong>${voucherRecapPeriod === 'all' ? 'Semua Waktu' : formatVoucherRecapMonth(voucherRecapPeriod)}</strong>`;
+                countText = `<strong>${recapVoucherTotal}</strong> voucher didapat · <strong>${recapRowsData.length}</strong> user · Periode <strong>${voucherRecapPeriod === 'all' ? 'Semua Waktu' : formatVoucherRecapMonth(voucherRecapPeriod)}</strong>`;
             } else if (voucherSubtab === 'history') {
                 const voucherHistoryUnits = buildVoucherHistoryUnits();
                 const historyRows = voucherHistoryUnits.length
@@ -54472,7 +54469,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                     <div class="voucher-summary-main"><span class="voucher-summary-icon">${ticketIcon}</span><div class="voucher-summary-copy"><small>Total Voucher Aktif</small><div><span class="voucher-badge voucher-count-badge total" data-voucher="${totalVoucher}"><span class="icon">🎫</span><strong>${totalVoucher}</strong></span><span class="voucher-user-total">${voucherList.length} user</span></div></div></div>
                     <div class="voucher-summary-info"><span class="voucher-info-icon">${infoIcon}</span><span>${infoText}</span></div>
                 </div>
-                ${tabs}
+                <div class="voucher-subtab-row ${voucherSubtab === 'recap' ? 'has-period' : ''}">
+                    ${tabs}
+                    ${recapPeriodControl}
+                </div>
                 ${tableHtml}
                 <div class="history-count">${countText}</div>`;
 
@@ -90523,26 +90523,21 @@ html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-stat
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor,
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor{color:#3d4845;font-weight:660;}
 
-#tab-voucher .voucher-recap-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:4px 0 10px;}
-#tab-voucher .voucher-recap-period{display:grid;gap:4px;min-width:190px;}
-#tab-voucher .voucher-recap-period label{font-size:9px;font-weight:720;letter-spacing:.45px;text-transform:uppercase;}
-#tab-voucher .voucher-recap-period select{height:32px;padding:0 30px 0 10px;font:inherit;font-size:11px;font-weight:620;outline:none;}
-#tab-voucher .voucher-recap-meta{font-size:10px;white-space:nowrap;}
+#tab-voucher .voucher-subtab-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0;min-width:0;}
+#tab-voucher .voucher-subtab-row .voucher-subtabs{margin:0;flex:0 1 auto;}
+#tab-voucher .voucher-recap-period{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;margin-left:auto;}
+#tab-voucher .voucher-recap-period label{font-size:9px;font-weight:720;letter-spacing:.45px;text-transform:uppercase;white-space:nowrap;}
+#tab-voucher .voucher-recap-period select{height:32px;min-width:174px;padding:0 30px 0 10px;font:inherit;font-size:11px;font-weight:620;outline:none;}
 #tab-voucher .voucher-rank-index{display:inline-grid;place-items:center;min-width:22px;height:22px;font-size:10px;font-weight:760;font-variant-numeric:tabular-nums;}
 #tab-voucher .voucher-recap-earned{font-size:12px;font-variant-numeric:tabular-nums;}
-#tab-voucher .voucher-recap-active{font-size:11px;font-weight:650;font-variant-numeric:tabular-nums;}
-html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period label,
-html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-meta{color:var(--text-muted);}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period label{color:var(--text-muted);}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period select{color:var(--text-primary);background:var(--bg-card);border:1px solid var(--border-color);border-radius:7px;}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index{color:var(--text-secondary);background:var(--bg-hover);border:1px solid var(--border-color);border-radius:6px;}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index.is-top-1{color:var(--accent-strong);border-color:color-mix(in srgb,var(--accent) 25%,var(--border-color));background:rgba(var(--accent-rgb),.07);}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index:is(.is-top-2,.is-top-3){color:var(--text-primary);}
 html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-earned{color:var(--accent-strong);}
-html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-active{color:var(--text-secondary);}
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period label,
-html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period label,
-html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-meta,
-html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-meta{color:#75807d;}
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period label{color:#75807d;}
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period select,
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period select{color:#394441;background:rgba(244,241,233,.76);border:1px solid rgba(89,100,97,.18);border-radius:1px;}
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-rank-index,
@@ -90551,9 +90546,49 @@ html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-rank-index
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-rank-index.is-top-1{color:#436a75;border-color:rgba(83,126,139,.27);background:rgba(145,190,202,.12);}
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-earned,
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-earned{color:#435d64;}
-html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-active,
-html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-active{color:#687370;}
-@media(max-width:700px){#tab-voucher .voucher-subtabs{width:100%;}#tab-voucher .voucher-subtab-btn{flex:1;padding-inline:8px;}.voucher-history-wrap,.voucher-recap-wrap{overflow-x:auto;}#tab-voucher .voucher-recap-toolbar{align-items:stretch;flex-direction:column;gap:7px;}#tab-voucher .voucher-recap-period{min-width:0;}#tab-voucher .voucher-recap-meta{white-space:normal;}}
+
+/* Venom Green: dedicated voucher extension skin; do not inherit Cyber Dark presentation. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtabs{
+  background:linear-gradient(180deg,#111611 0%,#0d110d 100%) !important;
+  border-color:rgba(68,214,44,.18) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 22px rgba(0,0,0,.16) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtab-btn{color:#8f9f8b !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtab-btn:hover{
+  color:#eaf5e7 !important;background:rgba(68,214,44,.055) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-subtab-btn.active{
+  color:#eef8eb !important;background:linear-gradient(180deg,rgba(68,214,44,.13),rgba(68,214,44,.065)) !important;
+  box-shadow:inset 0 0 0 1px rgba(68,214,44,.18),0 1px 5px rgba(0,0,0,.16) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period label{color:#91a48d !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period select{
+  color:#eef6ec !important;background:linear-gradient(180deg,#101410,#0d100d) !important;border-color:#29402b !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period select:hover{border-color:#365e39 !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period select:focus{border-color:rgba(68,214,44,.56) !important;box-shadow:0 0 0 3px rgba(68,214,44,.09) !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index{
+  color:#b6c3b3 !important;background:#111711 !important;border-color:#29332a !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index.is-top-1{
+  color:#74ea62 !important;background:rgba(68,214,44,.095) !important;border-color:rgba(68,214,44,.28) !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-rank-index:is(.is-top-2,.is-top-3){color:#edf4eb !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-earned{color:#66df52 !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher :is(.voucher-audit-time,.voucher-audit-state.is-active){color:#aab6a7 !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-state.is-legacy{color:#7f8d7c !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-actor{color:#e6efe3 !important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .history-count{color:#8f9f8b !important;}
+
+@media(max-width:700px){
+  #tab-voucher .voucher-subtab-row{align-items:stretch;flex-direction:column;gap:8px;}
+  #tab-voucher .voucher-subtabs{width:100%;}
+  #tab-voucher .voucher-subtab-btn{flex:1;padding-inline:8px;}
+  #tab-voucher .voucher-recap-period{justify-content:flex-end;margin-left:0;}
+  #tab-voucher .voucher-recap-period select{min-width:min(180px,58vw);}
+  .voucher-history-wrap,.voucher-recap-wrap{overflow-x:auto;}
+}
 </style>
 <script id="global-operational-fixes-v1-evaluation-note-priority">
 (() => {
