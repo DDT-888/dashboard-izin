@@ -54315,13 +54315,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 </svg>
             `;
 
-            const infoIcon = `
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 11v5M12 8h.01"/>
-                </svg>
-            `;
-
             const lockIcon = `
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="5" y="10" width="14" height="10" rx="2"/>
@@ -54354,8 +54347,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                 </div>`;
 
             let tableHtml = '';
-            let countText = '';
-            let recapPeriodControl = '';
+            let toolbarMeta = '';
 
             if (voucherSubtab === 'recap') {
                 const periods = getVoucherRecapPeriods();
@@ -54381,9 +54373,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                     }).join('')
                     : `<tr><td colspan="4"><div class="voucher-empty-state"><span class="voucher-empty-icon">${ticketIcon}</span><strong>Belum ada voucher pada periode ini</strong><span>Pilih periode lain atau Semua Waktu.</span></div></td></tr>`;
 
-                recapPeriodControl = `
-                    <div class="voucher-recap-tools">
-                        <div class="voucher-recap-count"><strong>${recapVoucherTotal}</strong> voucher didapat · <strong>${recapRowsData.length}</strong> user</div>
+                toolbarMeta = `
+                    <div class="voucher-recap-tools voucher-toolbar-meta">
+                        <div class="voucher-recap-count voucher-toolbar-count"><strong>${recapVoucherTotal}</strong> voucher didapat · <strong>${recapRowsData.length}</strong> user</div>
                         <div class="voucher-recap-period voucher-recap-period-inline">
                             <label for="voucherRecapPeriod">Periode</label>
                             <select id="voucherRecapPeriod" onchange="setVoucherRecapPeriod(this.value)">${periodOptions}</select>
@@ -54397,7 +54389,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                             <tbody>${recapRows}</tbody>
                         </table>
                     </div>`;
-                countText = '';
             } else if (voucherSubtab === 'history') {
                 const voucherHistoryUnits = buildVoucherHistoryUnits();
                 const historyRows = voucherHistoryUnits.length
@@ -54435,7 +54426,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                             <tbody>${historyRows}</tbody>
                         </table>
                     </div>`;
-                countText = `Total Voucher Pernah Didapat: <strong>${voucherHistoryUnits.length}</strong>`;
+                toolbarMeta = `<div class="voucher-toolbar-meta"><div class="voucher-recap-count voucher-toolbar-count"><strong>${voucherHistoryUnits.length}</strong> voucher pernah didapat</div></div>`;
             } else {
                 let rows = '';
                 if (voucherList.length === 0) {
@@ -54464,28 +54455,15 @@ html[data-mi-frozen-presentation="mecha-ivory"] :is(.employee-rank-badge,.welcom
                     ? ['#', 'Nama', 'Role', 'Voucher', 'Terakhir Didapat', 'Aksi']
                     : ['#', 'Nama', 'Role', 'Voucher', 'Terakhir Didapat'];
                 tableHtml = `<div class="table-wrap voucher-table-wrap"><table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
-                countText = `Total User dengan Voucher: <strong>${voucherList.length}</strong> user`;
+                toolbarMeta = `<div class="voucher-toolbar-meta"><div class="voucher-recap-count voucher-toolbar-count"><strong>${totalVoucher}</strong> voucher aktif · <strong>${voucherList.length}</strong> user</div></div>`;
             }
 
-            const infoText = userPermissions.canManageVoucher
-                ? 'Kurangi voucher setelah voucher digunakan oleh anggota.'
-                : 'Mode lihat aktif. Permission Kelola Voucher belum diberikan untuk role ini.';
-
             container.innerHTML = `
-                <div class="voucher-page-heading">
-                    <span class="voucher-heading-icon">${ticketIcon}</span>
-                    <div><h2>Manajemen Voucher</h2><p>Lihat voucher aktif, riwayat penggunaan, dan rekap peringkat voucher per periode.</p></div>
-                </div>
-                <div class="voucher-summary">
-                    <div class="voucher-summary-main"><span class="voucher-summary-icon">${ticketIcon}</span><div class="voucher-summary-copy"><small>Total Voucher Aktif</small><div><span class="voucher-badge voucher-count-badge total" data-voucher="${totalVoucher}"><span class="icon">🎫</span><strong>${totalVoucher}</strong></span><span class="voucher-user-total">${voucherList.length} user</span></div></div></div>
-                    <div class="voucher-summary-info"><span class="voucher-info-icon">${infoIcon}</span><span>${infoText}</span></div>
-                </div>
                 <div class="voucher-subtab-row ${voucherSubtab === 'recap' ? 'has-period' : ''}">
                     ${tabs}
-                    ${recapPeriodControl}
+                    ${toolbarMeta}
                 </div>
-                ${tableHtml}
-                ${countText ? `<div class="history-count">${countText}</div>` : ''}`;
+                ${tableHtml}`;
 
             document.querySelectorAll('.voucher-badge').forEach(function(el) {
                 el.removeEventListener('mouseenter', handleVoucherMouseEnter);
@@ -90534,14 +90512,17 @@ html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-stat
 html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor,
 html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-audit-actor{color:#3d4845;font-weight:660;}
 
-#tab-voucher .voucher-subtab-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0;min-width:0;}
-#tab-voucher .voucher-subtab-row .voucher-subtabs{margin:0;flex:0 1 auto;}
-#tab-voucher .voucher-recap-tools{display:flex;align-items:center;justify-content:flex-end;gap:14px;min-width:0;margin-left:auto;flex:0 1 auto;}
+#tab-voucher,#tab-voucher #voucherContent{width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
+#tab-voucher #voucherContent{overflow-x:hidden;}
+#tab-voucher .voucher-subtab-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 10px;min-width:0;width:100%;max-width:100%;box-sizing:border-box;flex-wrap:wrap;}
+#tab-voucher .voucher-subtab-row .voucher-subtabs{margin:0;flex:0 1 auto;min-width:0;}
+#tab-voucher .voucher-toolbar-meta,#tab-voucher .voucher-recap-tools{display:flex;align-items:center;justify-content:flex-end;gap:14px;min-width:0;margin-left:auto;flex:0 1 auto;}
 #tab-voucher .voucher-recap-count{font-size:10px;line-height:1.25;white-space:nowrap;font-variant-numeric:tabular-nums;}
 #tab-voucher .voucher-recap-period{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;margin-left:0;}
-#tab-voucher .voucher-recap-wrap{width:100%;max-width:100%;box-sizing:border-box;overflow-x:hidden!important;}
-#tab-voucher .voucher-recap-wrap table{width:100%!important;max-width:100%!important;min-width:0!important;table-layout:fixed;}
-#tab-voucher .voucher-recap-wrap th,#tab-voucher .voucher-recap-wrap td{min-width:0;overflow:hidden;text-overflow:ellipsis;}
+#tab-voucher .voucher-recap-wrap{display:block;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;overflow:hidden!important;}
+#tab-voucher .voucher-recap-wrap table{width:100%!important;max-width:100%!important;min-width:0!important;table-layout:fixed!important;border-spacing:0;box-sizing:border-box;}
+#tab-voucher .voucher-recap-wrap th,#tab-voucher .voucher-recap-wrap td{min-width:0!important;max-width:100%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;padding-left:12px!important;padding-right:12px!important;}
+#tab-voucher .voucher-recap-wrap .nama-cell{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #tab-voucher .voucher-recap-wrap th:nth-child(1),#tab-voucher .voucher-recap-wrap td:nth-child(1){width:76px;}
 #tab-voucher .voucher-recap-wrap th:nth-child(3),#tab-voucher .voucher-recap-wrap td:nth-child(3){width:132px;}
 #tab-voucher .voucher-recap-wrap th:nth-child(4),#tab-voucher .voucher-recap-wrap td:nth-child(4){width:150px;}
@@ -90608,16 +90589,22 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-audit-actor{color:#e6efe3 !important;}
 html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .history-count{color:#8f9f8b !important;}
 
+@media(max-width:1040px){
+  #tab-voucher .voucher-subtab-row{flex-wrap:wrap;}
+  #tab-voucher .voucher-toolbar-meta,#tab-voucher .voucher-recap-tools{flex-wrap:wrap;}
+}
+
 @media(max-width:700px){
   #tab-voucher .voucher-subtab-row{align-items:stretch;flex-direction:column;gap:8px;}
-  #tab-voucher .voucher-subtabs{width:100%;}
-  #tab-voucher .voucher-subtab-btn{flex:1;padding-inline:8px;}
-  #tab-voucher .voucher-recap-tools{width:100%;margin-left:0;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  #tab-voucher .voucher-subtabs{width:100%;max-width:100%;}
+  #tab-voucher .voucher-subtab-btn{flex:1;min-width:0;padding-inline:8px;white-space:nowrap;}
+  #tab-voucher .voucher-toolbar-meta,#tab-voucher .voucher-recap-tools{width:100%;max-width:100%;margin-left:0;justify-content:space-between;gap:10px;flex-wrap:wrap;box-sizing:border-box;}
   #tab-voucher .voucher-recap-count{white-space:normal;}
   #tab-voucher .voucher-recap-period{justify-content:flex-end;margin-left:auto;}
-  #tab-voucher .voucher-recap-period select{min-width:min(180px,58vw);}
+  #tab-voucher .voucher-recap-period select{min-width:min(180px,58vw);max-width:58vw;}
   .voucher-history-wrap{overflow-x:auto;}
-  #tab-voucher .voucher-recap-wrap{overflow-x:hidden!important;}
+  #tab-voucher .voucher-recap-wrap{overflow:hidden!important;}
+  #tab-voucher .voucher-recap-wrap th,#tab-voucher .voucher-recap-wrap td{padding-left:8px!important;padding-right:8px!important;}
   #tab-voucher .voucher-recap-wrap th:nth-child(1),#tab-voucher .voucher-recap-wrap td:nth-child(1){width:50px;}
   #tab-voucher .voucher-recap-wrap th:nth-child(3),#tab-voucher .voucher-recap-wrap td:nth-child(3){width:92px;}
   #tab-voucher .voucher-recap-wrap th:nth-child(4),#tab-voucher .voucher-recap-wrap td:nth-child(4){width:112px;}
