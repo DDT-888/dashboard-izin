@@ -44073,6 +44073,35 @@ html:has(body #pageLoader:not(.is-hidden)):has(#tab-voucher.tab-content.active){
   }
 }
 </style>
+
+<style id="voucher-preproduction-micro-refinement-v7">
+/* Voucher pre-production micro refinement:
+   - PERIODE is metadata, so keep it quieter than the summary and Unified Filter trigger.
+   - No geometry/filter-system changes. */
+#tab-voucher .voucher-recap-period-label{
+  display:inline-flex;
+  align-items:center;
+  font-size:7.5px!important;
+  line-height:1!important;
+  font-weight:760!important;
+  letter-spacing:.44px!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+  opacity:.78;
+}
+html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period-label{
+  color:var(--text-muted)!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period-label,
+html[data-mi-native-presentation="mecha-ivory"] #tab-voucher .voucher-recap-period-label{
+  color:#75807d!important;
+  opacity:.72;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-voucher .voucher-recap-period-label{
+  color:#849680!important;
+  opacity:.72;
+}
+</style>
 </head>
 
 <body>
@@ -54401,9 +54430,20 @@ html:has(body #pageLoader:not(.is-hidden)):has(#tab-voucher.tab-content.active){
             }
 
             const voucherList = listUsers
-                .map(user => ({ ...user, voucher: getVoucherCount(user.name) }))
+                .map(user => {
+                    const latestEarnedEvent = getLatestVoucherEarnedEvent(user.name);
+                    return {
+                        ...user,
+                        voucher: getVoucherCount(user.name),
+                        latestVoucherEarnedEvent,
+                        latestVoucherEarnedAt: voucherEventTimeValue(latestEarnedEvent)
+                    };
+                })
                 .filter(user => user.voucher > 0)
-                .sort((a, b) => b.voucher - a.voucher || a.name.localeCompare(b.name, 'id'));
+                .sort((a, b) =>
+                    b.latestVoucherEarnedAt - a.latestVoucherEarnedAt ||
+                    a.name.localeCompare(b.name, 'id')
+                );
 
             const totalVoucher = Object.values(voucherData).reduce((a, b) => a + Math.max(0, Number(b) || 0), 0);
             const roleLabels = { leader: 'Leader', csline: 'CS Line', cs: 'CS', kapten: 'Kapten', kasir: 'Kasir' };
@@ -54509,7 +54549,7 @@ html:has(body #pageLoader:not(.is-hidden)):has(#tab-voucher.tab-content.active){
                     rows = voucherList.map((user, index) => {
                         const roleLabel = roleLabels[user.role] || user.role;
                         const canRemove = userPermissions.canManageVoucher && user.voucher > 0;
-                        const earnedEvent = getLatestVoucherEarnedEvent(user.name);
+                        const earnedEvent = user.latestVoucherEarnedEvent || getLatestVoucherEarnedEvent(user.name);
                         const earnedAt = formatVoucherAuditDateTime(earnedEvent?.occurredAt);
                         const actionColumn = userPermissions.canManageVoucher ? `
                             <td><button class="btn-voucher voucher-remove-icon history-tooltip-target" onclick="kurangiVoucher('${user.name}')" aria-label="Kurangi voucher ${user.name}" data-tooltip="Kurangi voucher" ${!canRemove ? 'disabled' : ''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h14v3a2 2 0 0 0 0 3v3H5v-3a2 2 0 0 0 0-3Z"/><path d="M9 12h6"/></svg></button></td>` : '';
