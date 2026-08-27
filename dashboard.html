@@ -54582,7 +54582,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                             <tr>
                                 <td><span class="voucher-rank-index ${index < 3 ? `is-top-${index + 1}` : ''}">${index + 1}</span></td>
                                 <td><span class="nama-cell">${row.nama}</span></td>
-                                <td><span class="badge role-${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
+                                <td><span class="role-tag ${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
                                 <td><strong class="voucher-recap-earned">${row.count}</strong></td>
                             </tr>`;
                     }).join('')
@@ -54628,7 +54628,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                             <tr>
                                 <td>${index + 1}</td>
                                 <td><span class="nama-cell">${unit.nama}</span></td>
-                                <td><span class="badge role-${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
+                                <td><span class="role-tag ${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
                                 <td><span class="voucher-audit-time">${earnedAt}</span></td>
                                 <td><span class="voucher-audit-time">${reducedAt}</span></td>
                                 <td><span class="voucher-audit-actor">${actor}</span></td>
@@ -54660,7 +54660,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                             <tr>
                                 <td>${index + 1}</td>
                                 <td><span class="nama-cell">${user.name}</span></td>
-                                <td><span class="badge role-${user.role}">${roleLabel}</span></td>
+                                <td><span class="role-tag ${user.role}">${roleLabel}</span></td>
                                 <td><span class="voucher-badge voucher-count-badge" data-voucher="${user.voucher}"><span class="icon">🎫</span><strong>${user.voucher}</strong></span></td>
                                 <td><span class="voucher-audit-time">${earnedAt}</span></td>
                                 ${actionColumn}
@@ -61349,7 +61349,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                 return `<tr>
                     <td class="sticky-left-one"><span class="employee-status-badge ${user.status === 'active' ? 'active' : 'inactive'}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
                     <td class="sticky-left-two"><span class="employee-user-name">${employeeEscape(user.name)}${isCurrentUser ? ' <span class="employee-current-user-mark">Anda</span>' : ''}</span><span class="employee-user-email">${employeeEscape(user.email)}</span></td>
-                    <td><span class="badge role-${user.role}">${employeeEscape(roleLabel)}</span></td>
+                    <td><span class="role-tag ${user.role}">${employeeEscape(roleLabel)}</span></td>
                     <td>${employeeInlineCell(user, 'passport_number', employeeEscape(passportNumber))}</td>
                     <td>${employeeInlineCell(user, 'passport_expiry_date', profile.passport_expiry_date ? `${passportMonths} bulan` : '—', profile.passport_expiry_date ? `Berakhir ${employeeFormatDate(profile.passport_expiry_date)}` : 'Tanggal belum diisi', passportIcon)}</td>
                     <td>${employeeInlineCell(user, 'visa_expiry_date', profile.visa_expiry_date ? `${visaDays} hari` : '—', profile.visa_expiry_date ? `Berakhir ${employeeFormatDate(profile.visa_expiry_date)}` : 'Tanggal belum diisi', visaIcon)}</td>
@@ -92381,52 +92381,6 @@ html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presen
 }
 
 /* ---------------------------------------------------------------------
-   D. ROLE BADGE AUTHORITY — Monitoring Izin is the visual reference.
-   Apply its matte semantic badge to Voucher, History Izin and Users only.
-   --------------------------------------------------------------------- */
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(
-  #tab-voucher .voucher-table-wrap .badge[class*="role-"],
-  #tab-history > .table-wrap .role-tag,
-  #tab-users .employee-table-wrap .badge[class*="role-"],
-  #tab-users .employee-users-shell .badge[class*="role-"]
-){
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  min-width:0!important;
-  min-height:0!important;
-  padding:4px 8px!important;
-  border:1px solid color-mix(in srgb,var(--v16-role-color,var(--accent)) 28%,transparent)!important;
-  border-radius:7px!important;
-  background:color-mix(in srgb,var(--v16-role-color,var(--accent)) 11%,var(--bg-card))!important;
-  background-image:none!important;
-  color:var(--v16-role-color,var(--accent))!important;
-  font-family:inherit!important;
-  font-size:9px!important;
-  line-height:1!important;
-  font-weight:750!important;
-  letter-spacing:.035em!important;
-  text-transform:none!important;
-  white-space:nowrap!important;
-  text-shadow:none!important;
-  box-shadow:none!important;
-}
-/* Semantic mapping mirrors the Monitoring role tokens. */
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users) :is(.role-tag.leader,.badge.role-leader){--v16-role-color:var(--role-leader)!important;}
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users) :is(.role-tag.csline,.badge.role-csline){--v16-role-color:var(--role-csline)!important;}
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users) :is(.role-tag.cs,.badge.role-cs){--v16-role-color:var(--role-cs)!important;}
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users) :is(.role-tag.kapten,.badge.role-kapten){--v16-role-color:var(--role-kapten)!important;}
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users) :is(.role-tag.kasir,.badge.role-kasir){--v16-role-color:var(--role-kasir)!important;}
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users) :is(.role-tag.admin,.badge.role-admin){--v16-role-color:var(--role-admin)!important;}
-
-/* ---------------------------------------------------------------------
    E. USERS ACTION HARDWARE — same restrained equipment language as Riwayat
    Shift, with clear semantic separation: Edit amber, Power blue/green,
    Delete red. No dark "holes" behind Edit/Delete.
@@ -92540,55 +92494,6 @@ body.historyshift-mode #tab-historyshift .history-table-wrap > table > thead > t
   background-clip:padding-box!important;
 }
 
-/* C. ROLE BADGE COLOR AUTHORITY — exact Monitoring Izin matte palette.
-      Geometry remains V16. Explicit colors avoid invalid color-mix() when an
-      older Dark/Venom role token resolves to a gradient rather than a color. */
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.csline,.badge.role-csline){background:#e9f8ef!important;color:#168247!important;border-color:#9bd9b4!important;}
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.cs,.badge.role-cs){background:#edf4ff!important;color:#3568b5!important;border-color:#b6cdf2!important;}
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.kapten,.badge.role-kapten){background:#fff6e8!important;color:#a56513!important;border-color:#eac98f!important;}
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.kasir,.badge.role-kasir){background:#f4efff!important;color:#7251b5!important;border-color:#cdbcf0!important;}
-/* Admin is not present in the Monitoring reference; retain its established
-   destructive/privileged semantic as a restrained matte red. */
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.admin,.badge.role-admin){background:#fff0f1!important;color:#b83d49!important;border-color:#edb9be!important;}
-
-/* Dark/Cyber and Venom use the exact dark Monitoring palette. */
-html[data-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.csline,.badge.role-csline){background:#123f2f!important;color:#8ee0ae!important;border-color:#2b6f53!important;}
-html[data-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.cs,.badge.role-cs){background:#142f4a!important;color:#9ec7f7!important;border-color:#31587f!important;}
-html[data-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.kapten,.badge.role-kapten){background:#423019!important;color:#f0c47d!important;border-color:#72532d!important;}
-html[data-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.kasir,.badge.role-kasir){background:#2d2348!important;color:#c9b5f5!important;border-color:#5a4780!important;}
-html[data-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.admin,.badge.role-admin){background:#431f24!important;color:#ef9ba3!important;border-color:#71353d!important;}
-
-/* Leader stays special: restore the established premium navy/gold treatment
-   after V16's generic matte role geometry/color layer. */
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.leader,.badge.role-leader){
-  background:linear-gradient(135deg,#111a2d 0%,#283a59 100%)!important;
-  color:#f7d978!important;
-  border:1px solid #d5a83f!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 4px 12px rgba(17,26,45,.18)!important;
-}
-
 /* D. USERS ACTION HARDWARE — Venom-native surface matching Riwayat Shift,
       while retaining V16 semantic colors (Edit amber / Power blue-green /
       Delete red). */
@@ -92623,128 +92528,6 @@ html.theme-fallback-transition:not([data-mi-native-presentation="mecha-ivory"])
   will-change:auto!important;
 }
 </style>
-<style id="v18-role-badge-monitoring-exact-reconciliation-authority">
-/* =====================================================================
-   V18 — ROLE BADGE MONITORING EXACT RECONCILIATION
-   Exact V17 additive presentation correction only.
-   - Leader: explicit cross-route special authority on Voucher / History / Users.
-   - Light: copy the actual final Monitoring Izin role badge presentation
-     (solid semantic color + exact density), replacing V17's matte interpretation.
-   Dark/Cyber + Venom palette from V17 remains untouched.
-   ===================================================================== */
-
-/* A. Shared exact Monitoring density for target-route role badges.
-   Reassert only the presentation metrics so route-specific legacy .badge/.role-tag
-   rules cannot alter perceived text density. */
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(
-  .role-tag.leader,.role-tag.csline,.role-tag.cs,.role-tag.kapten,.role-tag.kasir,.role-tag.admin,
-  .badge.role-leader,.badge.role-csline,.badge.role-cs,.badge.role-kapten,.badge.role-kasir,.badge.role-admin
-){
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  min-width:0!important;
-  min-height:0!important;
-  padding:4px 8px!important;
-  border-radius:7px!important;
-  font-family:inherit!important;
-  font-size:9px!important;
-  line-height:1!important;
-  font-weight:750!important;
-  letter-spacing:.035em!important;
-  text-transform:none!important;
-  text-align:center!important;
-  white-space:nowrap!important;
-  vertical-align:middle!important;
-  box-sizing:border-box!important;
-  text-shadow:none!important;
-  opacity:1!important;
-  visibility:visible!important;
-}
-
-/* B. LEADER — special navy/gold authority, explicit for every markup form used
-   by the three routes. Do not derive it from --role-leader because that token
-   is theme-dependent and historically changed type (solid/gradient). */
-html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(
-  .role-tag.leader,
-  .role-tag.role-leader,
-  .badge.role-leader,
-  .badge.leader,
-  .role-badge.leader,
-  .badge-role.leader
-){
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  min-width:0!important;
-  min-height:0!important;
-  padding:4px 8px!important;
-  border-radius:7px!important;
-  background:linear-gradient(135deg,#111a2d 0%,#283a59 100%)!important;
-  background-image:linear-gradient(135deg,#111a2d 0%,#283a59 100%)!important;
-  color:#f7d978!important;
-  -webkit-text-fill-color:#f7d978!important;
-  border:1px solid #d5a83f!important;
-  font-family:inherit!important;
-  font-size:9px!important;
-  line-height:1!important;
-  font-weight:850!important;
-  letter-spacing:.035em!important;
-  text-transform:none!important;
-  white-space:nowrap!important;
-  opacity:1!important;
-  visibility:visible!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 4px 12px rgba(17,26,45,.18)!important;
-  text-shadow:none!important;
-}
-
-/* C. LIGHT — actual Monitoring Izin final palette.
-   Monitoring Light resolves to solid semantic role surfaces; V17 used a matte
-   pastel translation, which is why the route badges looked lighter/less dense.
-   Copy the visible Monitoring authority literally for Light only. */
-html[data-theme="light"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.csline,.badge.role-csline){
-  background:#06c755!important;
-  background-image:none!important;
-  color:#ffffff!important;
-  -webkit-text-fill-color:#ffffff!important;
-  border:1px solid transparent!important;
-  box-shadow:none!important;
-}
-html[data-theme="light"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.cs,.badge.role-cs){
-  background:#3b82f6!important;
-  background-image:none!important;
-  color:#ffffff!important;
-  -webkit-text-fill-color:#ffffff!important;
-  border:1px solid transparent!important;
-  box-shadow:none!important;
-}
-html[data-theme="light"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.kapten,.badge.role-kapten){
-  background:#f59e0b!important;
-  background-image:none!important;
-  color:#4b2b00!important;
-  -webkit-text-fill-color:#4b2b00!important;
-  border:1px solid transparent!important;
-  box-shadow:none!important;
-}
-html[data-theme="light"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
-:is(#tab-voucher,#tab-history,#tab-users)
-:is(.role-tag.kasir,.badge.role-kasir){
-  background:#8b5cf6!important;
-  background-image:none!important;
-  color:#ffffff!important;
-  -webkit-text-fill-color:#ffffff!important;
-  border:1px solid transparent!important;
-  box-shadow:none!important;
-}
-</style></body>
+<!-- V19: Role badge root-cause correction: Voucher/Users now use exact Monitoring Izin role-tag markup; V16-V18 target-role imitation overrides removed. -->
+</body>
 </html>
