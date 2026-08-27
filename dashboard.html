@@ -56636,22 +56636,26 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                                              ondragleave="onColumnDragLeave(event)"
                                              ondrop="onColumnDrop(event, '${col.id}')">
                                             <div class="title-wrap">
-                                                <span class="col-name" 
+                                                <span class="col-name history-tooltip-target" 
                                                       onclick="editColumnName('${col.id}')"
-                                                      title="Klik untuk edit nama">
+                                                      data-tooltip="Klik untuk edit nama"
+                                                      data-tooltip-icon="edit"
+                                                      aria-label="Klik untuk edit nama">
                                                     ${col.name}
                                                 </span>
                                                 <span class="col-count">${col.users.length}</span>
                                             </div>
                                             <div class="col-actions">
                                                 ${canEdit ? `
-                                                    <span class="note-badge ${col.users.some(u => u.note && u.note.trim() !== '') ? 'has-note' : ''}" 
+                                                    <span class="note-badge history-tooltip-target ${col.users.some(u => u.note && u.note.trim() !== '') ? 'has-note' : ''}" 
                                                           onclick="toggleNotePanel('${col.id}')"
-                                                          title="Toggle note panel">
+                                                          data-tooltip="Buka / tutup Note"
+                                                          data-tooltip-icon="info"
+                                                          aria-label="Buka / tutup Note">
                                                         ${col.users.some(u => u.note && u.note.trim() !== '') ? '<span class="badge-dot"></span>' : ''}
                                                         note
                                                     </span>
-                                                    <button class="delete-col" onclick="deleteShiftColumn('${col.id}')" title="Hapus kolom" aria-label="Hapus kolom">
+                                                    <button class="delete-col history-tooltip-target" onclick="deleteShiftColumn('${col.id}')" data-tooltip="Hapus kolom" data-tooltip-icon="delete" aria-label="Hapus kolom">
                                                         <svg viewBox="0 0 24 24" aria-hidden="true">
                                                             <path d="M3 6h18"/>
                                                             <path d="M8 6V4h8v2"/>
@@ -56708,7 +56712,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                                     <div class="shift-note-panel ${openShiftNoteColumnIds.has(String(col.id)) ? 'open' : ''}" id="notePanel_${col.id}">
                                         <div class="note-panel-header">
                                             <div class="panel-actions">
-                                                <button onclick="toggleNotePanel('${col.id}')" title="Tutup Note" aria-label="Tutup Note">
+                                                <button class="history-tooltip-target" onclick="toggleNotePanel('${col.id}')" data-tooltip="Tutup Note" data-tooltip-icon="info" aria-label="Tutup Note">
                                                     <svg viewBox="0 0 24 24" aria-hidden="true">
                                                         <path d="m6 6 12 12M18 6 6 18"/>
                                                     </svg>
@@ -57829,22 +57833,18 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
             const nameEl = document.querySelector(`.shift-column-wrapper[data-column-id="${columnId}"] .col-name`);
             if (!nameEl) return;
 
+            // V13 root-cause correction: once contenteditable is active, another
+            // click belongs to native caret/selection handling. The old toggle
+            // branch treated that second click as Save+Close, making text editing
+            // unnecessarily difficult. Commit remains owned by blur / Enter.
             if (nameEl.classList.contains('editing')) {
-                const newName = nameEl.textContent.trim();
-                if (newName && newName.length > 0 && newName !== col.name) {
-                    const oldName = col.name;
-                    col.name = newName.toUpperCase();
-                    shiftIsDirty = true;
-                    updateShiftActive();
-                    insertShiftLog('EDIT_NAME', getCurrentUserName(), `Mengubah nama kolom "${oldName}" menjadi "${col
-                        .name}"`);
-                }
-                nameEl.classList.remove('editing');
-                nameEl.contentEditable = false;
-                renderShiftPage();
                 return;
             }
 
+            if (typeof hideHistoryActionTooltip === 'function') {
+                hideHistoryActionTooltip();
+            }
+            nameEl.classList.remove('history-tooltip-target');
             nameEl.contentEditable = true;
             nameEl.classList.add('editing');
             nameEl.focus();
@@ -91675,6 +91675,96 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 #tab-shifts .note-badge .badge-dot {
     flex: 0 0 auto !important;
     align-self: center !important;
+}
+</style>
+
+
+<style id="v13-shift-drag-rename-note-root-cause">
+/* =====================================================================
+   V13 — SHIFT DRAG / RENAME / NOTE ROOT-CAUSE CORRECTION
+   1) During a staff drag, user cards stop owning pointer hit-testing so the
+      valid parent dropzone remains the native HTML5 target across card rows.
+   2) Rename editor is a Venom-native text surface; second click stays inside
+      contenteditable and is no longer a Save/Close gesture (JS authority).
+   3) The wrapper must never paint a combined border around Shift + Note.
+      Shift and Note own independent borders, removing the horizontal bridge.
+   ===================================================================== */
+
+/* Native no-drop feedback over destination cards: the destination card itself
+   is draggable, so let the already-valid lane/dropzone own hit-testing while
+   a staff drag is active. Visual card geometry remains untouched. */
+body.shift-staff-drag-active #tab-shifts :is(
+    .shift-column-dropzone,
+    .shift-available-dropzone
+) .user-card-shift {
+    pointer-events: none !important;
+}
+
+/* Rename editor — Venom Green, no inherited Cyber Dark editor plate. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-column .column-header .title-wrap .col-name.editing {
+    box-sizing: border-box !important;
+    cursor: text !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    color: #9aee8b !important;
+    -webkit-text-fill-color: #9aee8b !important;
+    caret-color: #44d62c !important;
+    background: rgba(68,214,44,.055) !important;
+    background-image: none !important;
+    border: 1px solid rgba(68,214,44,.46) !important;
+    outline: 0 !important;
+    border-radius: 4px !important;
+    box-shadow: inset 0 0 0 1px rgba(68,214,44,.035) !important;
+}
+
+/* The combined wrapper inherited a Venom border. When Note opens its width
+   expands across the gap, so that border literally paints the horizontal line
+   that visually connects Shift and Note. Remove ownership from the wrapper;
+   each child surface keeps its own perimeter. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-column-wrapper,
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-column-wrapper.has-note-open {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    background-image: none !important;
+}
+
+/* Note perimeter explicitly belongs to Venom; generic/Cyber border tokens are
+   no longer allowed to leak into the open Note surface. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-column-wrapper.has-note-open .shift-note-panel,
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-column-wrapper .shift-note-panel.open {
+    border: 1px solid #292d29 !important;
+    background: #0d0e0d !important;
+    background-image: none !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-note-panel .note-panel-header {
+    background: #0b0c0b !important;
+    background-image: none !important;
+    border: 0 !important;
+    border-bottom: 0 !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-note-panel .note-panel-body {
+    background: #0d0e0d !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-note-panel::before,
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-note-panel::after {
+    content: none !important;
+    display: none !important;
 }
 </style>
 
