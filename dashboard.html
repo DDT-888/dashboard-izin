@@ -51817,7 +51817,6 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                         textarea.title = editable
                             ? ''
                             : 'Mode baca — note tidak dapat diedit';
-                        updateNoteAlignment(textarea);
                     });
                 };
 
@@ -56816,6 +56815,9 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 
             const userCards = column.querySelectorAll('.user-card-shift');
             const noteItems = panel.querySelectorAll('.note-user-item');
+            const shouldAlignVisibleNotes =
+                wrapper.classList.contains('has-note-open') ||
+                panel.classList.contains('open');
 
             if (userCards.length !== noteItems.length) return;
 
@@ -56830,7 +56832,9 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                         textarea.style.height = (cardHeight - 4) + 'px';
                         textarea.style.minHeight = (cardHeight - 4) + 'px';
                         textarea.style.maxHeight = (cardHeight - 4) + 'px';
-                        updateNoteAlignment(textarea);
+                        if (shouldAlignVisibleNotes) {
+                            updateNoteAlignment(textarea);
+                        }
                     }
                 }
             });
@@ -57279,6 +57283,142 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
         // ============================================================
         let staffDragData = null;
 
+        // ============================================================
+        // V12 — STAFF DRAG CORRIDOR / NATIVE NO-DROP ELIMINATION
+        // Root cause: HTML5 drag shows the native no-drop cursor whenever the
+        // pointer leaves the short visual dropzone, even though the intended
+        // lane continues vertically toward the Shift Log. Keep the visual
+        // tables intrinsic, but make the interaction corridor continuous.
+        // ============================================================
+        function setShiftStaffDragActive(active) {
+            document.body?.classList.toggle('shift-staff-drag-active', Boolean(active));
+        }
+
+        function isNativeShiftStaffDropTarget(target) {
+            return target instanceof Element && Boolean(
+                target.closest('.shift-column-dropzone, .shift-available-dropzone')
+            );
+        }
+
+        function resolveShiftStaffDropCorridor(clientX, clientY) {
+            if (!staffDragData || currentTab !== 'shifts') return null;
+
+            const tab = document.getElementById('tab-shifts');
+            if (!tab?.classList.contains('active')) return null;
+
+            const logContainer = document.getElementById('shiftLogContainer');
+            const tabRect = tab.getBoundingClientRect();
+            const logRect = logContainer?.getBoundingClientRect();
+            const corridorBottom = logRect && logRect.height > 0
+                ? Math.min(logRect.top, tabRect.bottom)
+                : tabRect.bottom;
+
+            const available = document.querySelector('#shiftsContent .shift-available');
+            if (available) {
+                const laneRect = available.getBoundingClientRect();
+                const header = available.querySelector('.header');
+                const headerRect = header?.getBoundingClientRect();
+                const corridorTop = headerRect?.bottom ?? laneRect.top;
+
+                if (
+                    clientX >= laneRect.left && clientX <= laneRect.right &&
+                    clientY >= corridorTop && clientY < corridorBottom
+                ) {
+                    return {
+                        type: 'available',
+                        dropzone: document.getElementById('availableDropzone')
+                    };
+                }
+            }
+
+            const wrappers = document.querySelectorAll(
+                '#shiftsContent .shift-column-wrapper[data-column-id]'
+            );
+
+            for (const wrapper of wrappers) {
+                const column = wrapper.querySelector('.shift-column');
+                const header = column?.querySelector('.column-header');
+                if (!column || !header) continue;
+
+                const laneRect = column.getBoundingClientRect();
+                const headerRect = header.getBoundingClientRect();
+
+                if (
+                    clientX >= laneRect.left && clientX <= laneRect.right &&
+                    clientY >= headerRect.bottom && clientY < corridorBottom
+                ) {
+                    const columnId = String(wrapper.dataset.columnId || '');
+                    return {
+                        type: 'column',
+                        columnId,
+                        dropzone: document.getElementById(`columnDropzone_${columnId}`)
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        function buildShiftStaffCorridorDropEvent(target) {
+            const payload = JSON.stringify(staffDragData || {});
+            return {
+                currentTarget: target?.dropzone || null,
+                preventDefault() {},
+                dataTransfer: {
+                    getData(type) {
+                        return type === 'staff-drag' || type === 'text/plain'
+                            ? payload
+                            : '';
+                    }
+                }
+            };
+        }
+
+        function onShiftStaffGlobalDragOver(e) {
+            if (!staffDragData) return;
+
+            // A prevented dragover is the browser contract for an allowed move.
+            // This removes the native stop/no-drop feedback without faking the
+            // visual height of any Shift table.
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        }
+
+        function onShiftStaffGlobalDrop(e) {
+            if (!staffDragData) return;
+
+            // Existing body dropzones keep their original handlers. The V12
+            // corridor only owns the empty vertical area below a short table.
+            if (isNativeShiftStaffDropTarget(e.target)) {
+                window.setTimeout(() => {
+                    staffDragData = null;
+                    setShiftStaffDragActive(false);
+                }, 0);
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const target = resolveShiftStaffDropCorridor(e.clientX, e.clientY);
+            if (target?.dropzone) {
+                const corridorEvent = buildShiftStaffCorridorDropEvent(target);
+                if (target.type === 'available') {
+                    onAvailableDrop(corridorEvent);
+                } else if (target.type === 'column' && target.columnId) {
+                    onStaffDrop(corridorEvent, target.columnId);
+                }
+            }
+
+            window.setTimeout(() => {
+                staffDragData = null;
+                setShiftStaffDragActive(false);
+            }, 0);
+        }
+
+        document.addEventListener('dragover', onShiftStaffGlobalDragOver, true);
+        document.addEventListener('drop', onShiftStaffGlobalDrop, true);
+
         function onStaffDragStart(e, userId, sourceType, columnId) {
             if (!canEditShift()) {
                 e.preventDefault();
@@ -57290,6 +57430,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                 sourceType: sourceType,
                 columnId: columnId || null
             };
+            setShiftStaffDragActive(true);
 
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('staff-drag', JSON.stringify(staffDragData));
@@ -57322,6 +57463,9 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
         }
 
         function onStaffDragEnd(e) {
+            staffDragData = null;
+            setShiftStaffDragActive(false);
+
             const target = e.target.closest('.user-card-shift');
             if (target) {
                 target.classList.remove('dragging');
@@ -91485,6 +91629,52 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
     #tab-settings .settings-index-preview-entry{left:8.7%;width:45%;padding-left:8px;}
     #tab-settings .settings-index-preview-entry p{display:none;}
     #tab-settings .settings-index-preview-security small{max-width:82px;}
+}
+</style>
+
+
+<style id="v12-shift-drag-corridor-smoothness-root-cause">
+/* =====================================================================
+   V12 — SHIFT DRAG CORRIDOR + VISUAL / SMOOTHNESS ROOT-CAUSE CORRECTION
+   - No fake table height: interaction range is owned by JS hit-testing.
+   - Venom Shift title hover no longer paints the inherited Cyber Dark tile.
+   - Note badge uses explicit border-box centering at the existing 18px height.
+   ===================================================================== */
+
+/* While a staff drag is active, use one stable interaction cursor. The native
+   HTML5 no-drop state is separately eliminated by the capture dragover owner. */
+body.shift-staff-drag-active #tab-shifts,
+body.shift-staff-drag-active #tab-shifts * {
+    cursor: grabbing !important;
+}
+
+/* Column names remain visually native to Venom. Editing keeps its dedicated
+   editor surface; hover alone must not resurrect the old Cyber Dark chip. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-column .column-header .title-wrap .col-name:not(.editing):hover {
+    background: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Existing badge geometry is retained; only its internal vertical ownership is
+   made deterministic so the word "note" and optional dot share one centerline. */
+#tab-shifts .note-badge {
+    box-sizing: border-box !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+}
+#tab-shifts .note-badge .badge-dot {
+    flex: 0 0 auto !important;
+    align-self: center !important;
 }
 </style>
 
