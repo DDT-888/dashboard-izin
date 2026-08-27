@@ -92,6 +92,34 @@
             animation: environmentIn .55s ease-out both;
         }
 
+        #indexLiveWallpaper {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: var(--index-wallpaper-size);
+            object-position: var(--index-wallpaper-position);
+            background: transparent;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .34s ease, visibility 0s linear .34s;
+        }
+
+        html[data-index-media="video"] #indexLiveWallpaper.is-ready {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity .34s ease, visibility 0s linear 0s;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #indexLiveWallpaper {
+                display: none !important;
+            }
+        }
+
         .vignette {
             position: fixed;
             inset: 0;
@@ -868,6 +896,16 @@
 </head>
 <body>
 
+    <video
+        id="indexLiveWallpaper"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        aria-hidden="true"
+    ></video>
+
     <div class="vignette" aria-hidden="true"></div>
 
     <div class="clock-container" id="clockContainer" aria-label="Waktu sistem">
@@ -981,16 +1019,107 @@
             };
         }
 
+        function detectIndexMediaType(url) {
+            if (!url) return 'fallback';
+            try {
+                const pathname = new URL(url, window.location.href).pathname.toLowerCase();
+                return /\.(mp4|webm|m4v)$/i.test(pathname) ? 'video' : 'image';
+            } catch {
+                return 'image';
+            }
+        }
+
+        function shouldReduceIndexVideo() {
+            const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+            const saveData = navigator.connection?.saveData === true;
+            return reducedMotion || saveData;
+        }
+
+        function resetIndexVideo() {
+            const video = document.getElementById('indexLiveWallpaper');
+            if (!video) return;
+            video.classList.remove('is-ready');
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+        }
+
+        function activateIndexVideo(url) {
+            const video = document.getElementById('indexLiveWallpaper');
+            if (!video || !url || shouldReduceIndexVideo()) return false;
+
+            const resolvedUrl = new URL(url, window.location.href).href;
+            video.classList.remove('is-ready');
+
+            const reveal = async () => {
+                video.classList.add('is-ready');
+                try {
+                    await video.play();
+                } catch (error) {
+                    console.warn('Live wallpaper autoplay tidak tersedia; fallback environment dipertahankan:', error);
+                    video.classList.remove('is-ready');
+                }
+            };
+
+            video.oncanplay = reveal;
+            video.onerror = () => {
+                console.warn('Live wallpaper gagal dimuat; fallback environment dipertahankan.');
+                video.classList.remove('is-ready');
+                document.documentElement.dataset.indexMedia = 'fallback';
+            };
+
+            if (video.src !== resolvedUrl) {
+                video.src = resolvedUrl;
+                video.load();
+            } else if (video.readyState >= 3) {
+                reveal();
+            }
+
+            return true;
+        }
+
         function applyPublicIndexAppearance(raw) {
             const appearance = normalizePublicAppearance(raw);
-            const wallpaperValue = appearance.wallpaper_url
-                ? `url("${new URL(appearance.wallpaper_url, window.location.href).href.replaceAll('"', '%22')}")`
-                : 'none';
-            document.documentElement.style.setProperty('--index-wallpaper-url', wallpaperValue);
-            document.documentElement.style.setProperty('--index-wallpaper-position', appearance.position);
-            document.documentElement.style.setProperty('--index-wallpaper-size', appearance.size);
-            document.documentElement.style.setProperty('--index-wallpaper-overlay', String(appearance.overlay / 100));
+            const root = document.documentElement;
+            const mediaType = detectIndexMediaType(appearance.wallpaper_url);
+
+            root.style.setProperty('--index-wallpaper-position', appearance.position);
+            root.style.setProperty('--index-wallpaper-size', appearance.size);
+            root.style.setProperty('--index-wallpaper-overlay', String(appearance.overlay / 100));
+
+            if (mediaType === 'video') {
+                root.style.setProperty('--index-wallpaper-url', 'none');
+                root.dataset.indexMedia = 'video';
+
+                if (!activateIndexVideo(appearance.wallpaper_url)) {
+                    resetIndexVideo();
+                    root.dataset.indexMedia = 'fallback';
+                }
+                return;
+            }
+
+            resetIndexVideo();
+
+            if (mediaType === 'image') {
+                const resolvedUrl = new URL(appearance.wallpaper_url, window.location.href).href.replaceAll('"', '%22');
+                root.style.setProperty('--index-wallpaper-url', `url("${resolvedUrl}")`);
+                root.dataset.indexMedia = 'image';
+            } else {
+                root.style.setProperty('--index-wallpaper-url', 'none');
+                root.dataset.indexMedia = 'fallback';
+            }
         }
+
+        document.addEventListener('visibilitychange', () => {
+            const video = document.getElementById('indexLiveWallpaper');
+            if (!video || document.documentElement.dataset.indexMedia !== 'video') return;
+
+            if (document.hidden) {
+                video.pause();
+            } else if (video.classList.contains('is-ready')) {
+                video.play().catch(() => {});
+            }
+        });
 
         async function loadPublicIndexAppearance() {
             try {
