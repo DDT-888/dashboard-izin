@@ -44187,6 +44187,41 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
   opacity:.72;
 }
 </style>
+
+<style id="index-live-wallpaper-phase1-dashboard">
+/* Index Live Wallpaper Integration — Phase 1
+   Functional media layer only. Existing Index preview composition remains authority. */
+#tab-settings #indexAppearanceSettingsPanel .settings-index-preview-live-video{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    width:100%;
+    height:100%;
+    display:block;
+    object-fit:cover;
+    object-position:center center;
+    opacity:0;
+    pointer-events:none;
+    background:#070c0f;
+    transition:opacity .22s ease;
+}
+#tab-settings #indexAppearanceSettingsPanel .settings-index-preview[data-media-type="video"] .settings-index-preview-live-video{
+    opacity:1;
+}
+#tab-settings #indexAppearanceSettingsPanel .settings-index-preview-video-overlay{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    display:none;
+    pointer-events:none;
+}
+#tab-settings #indexAppearanceSettingsPanel .settings-index-preview[data-media-type="video"] .settings-index-preview-video-overlay{
+    display:block;
+}
+@media (prefers-reduced-motion: reduce){
+    #tab-settings #indexAppearanceSettingsPanel .settings-index-preview-live-video{transition:none;}
+}
+</style>
 </head>
 
 <body>
@@ -45345,22 +45380,22 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                     <div class="settings-table-heading">
                         <div>
                             <span class="settings-table-kicker">TAMPILAN HALAMAN</span>
-                            <h3>Wallpaper Halaman Login</h3>
-                            <p>Atur wallpaper login, posisi gambar, ukuran tampilan, dan overlay gelap.</p>
+                            <h3>Background Halaman Login</h3>
+                            <p>Atur background login berupa image atau video, posisi tampilan, ukuran, dan overlay gelap.</p>
                         </div>
                         <span class="view-only-indicator" id="indexAppearanceViewOnly" style="display:none;">View Only</span>
                     </div>
 
                     <div class="settings-index-appearance-content">
                         <div class="form-group settings-index-url-field">
-                            <label for="indexWallpaperUrlInput">URL Wallpaper</label>
-                            <input id="indexWallpaperUrlInput" type="text" placeholder="/assets/index-wallpaper.webp" oninput="renderIndexWallpaperPreview()" />
-                            <div class="hint">Contoh: /assets/index-wallpaper.webp atau https://raw.githubusercontent.com/...</div>
+                            <label for="indexWallpaperUrlInput">URL Background (Image / Video)</label>
+                            <input id="indexWallpaperUrlInput" type="text" placeholder="/assets/index-wallpaper.webp atau /assets/index-live.mp4" oninput="renderIndexWallpaperPreview()" />
+                            <div class="hint">Image: .webp/.jpg/.png · Video: .mp4/.webm. URL relatif maupun HTTPS tetap didukung.</div>
                         </div>
 
                         <div class="settings-index-options">
                             <div class="form-group">
-                                <label for="indexWallpaperPosition">Posisi Gambar</label>
+                                <label for="indexWallpaperPosition">Posisi Background</label>
                                 <select id="indexWallpaperPosition" onchange="renderIndexWallpaperPreview()">
                                     <option value="center center">Tengah</option>
                                     <option value="center top">Atas</option>
@@ -45370,7 +45405,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="indexWallpaperSize">Ukuran Gambar</label>
+                                <label for="indexWallpaperSize">Ukuran Background</label>
                                 <select id="indexWallpaperSize" onchange="renderIndexWallpaperPreview()">
                                     <option value="cover">Cover</option>
                                     <option value="contain">Contain</option>
@@ -45386,6 +45421,8 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                         </div>
 
                         <div class="settings-index-preview" id="indexWallpaperPreview" aria-label="Preview tampilan halaman index">
+                            <video class="settings-index-preview-live-video" id="indexWallpaperPreviewVideo" muted loop playsinline preload="metadata" aria-hidden="true"></video>
+                            <span class="settings-index-preview-video-overlay" id="indexWallpaperPreviewVideoOverlay" aria-hidden="true"></span>
                             <div class="settings-index-preview-clock" aria-hidden="true">
                                 <strong>22:14</strong>
                                 <small>THURSDAY · 27 AUG</small>
@@ -79762,9 +79799,22 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
         applyV6476SettingsPermissions();
     }
 
+    function getIndexWallpaperMediaType(url) {
+        const value = String(url || '').trim();
+        if (!value) return 'none';
+        try {
+            const parsed = new URL(value, window.location.href);
+            return /\.(?:mp4|webm)$/i.test(parsed.pathname) ? 'video' : 'image';
+        } catch (_) {
+            return /\.(?:mp4|webm)(?:[?#]|$)/i.test(value) ? 'video' : 'image';
+        }
+    }
+
     window.renderIndexWallpaperPreview = function() {
         const preview = document.getElementById('indexWallpaperPreview');
         if (!preview) return;
+        const previewVideo = document.getElementById('indexWallpaperPreviewVideo');
+        const videoOverlay = document.getElementById('indexWallpaperPreviewVideoOverlay');
         const urlInput = document.getElementById('indexWallpaperUrlInput');
         const position = document.getElementById('indexWallpaperPosition')?.value || 'center center';
         const size = document.getElementById('indexWallpaperSize')?.value || 'cover';
@@ -79781,18 +79831,55 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
         const overlay = normalized ? requestedOverlay : 0;
         const overlayAlpha = overlay / 100;
         const resolvedWallpaper = resolvePreviewUrl(normalized).replaceAll('"', '%22');
+        const mediaType = getIndexWallpaperMediaType(normalized);
+        const isVideo = mediaType === 'video';
 
-        /* Sama seperti body::before pada index saat wallpaper valid. Tanpa
-           wallpaper, inline image dilepas agar surface preview existing menjadi fallback. */
+        preview.dataset.mediaType = mediaType;
+        preview.dataset.overlay = String(overlay);
+        preview.style.setProperty('--index-preview-overlay', '0');
+        preview.style.setProperty('--index-preview-aspect-ratio', `${viewportWidth} / ${viewportHeight}`);
+
+        if (isVideo && previewVideo && resolvedWallpaper) {
+            /* Video stays below the existing preview authority layers. Reuse the
+               same element/source when only position, size, or overlay changes. */
+            preview.style.backgroundImage = 'none';
+            preview.style.backgroundPosition = 'center center';
+            preview.style.backgroundSize = 'cover';
+            preview.style.backgroundRepeat = 'no-repeat';
+            previewVideo.style.objectPosition = position;
+            previewVideo.style.objectFit = size;
+            if (videoOverlay) videoOverlay.style.background = `rgba(4,9,12,${overlayAlpha})`;
+
+            if (previewVideo.dataset.sourceUrl !== resolvedWallpaper) {
+                previewVideo.pause();
+                previewVideo.dataset.sourceUrl = resolvedWallpaper;
+                previewVideo.src = resolvedWallpaper;
+                previewVideo.load();
+            }
+            const playPromise = previewVideo.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {});
+            }
+            return;
+        }
+
+        if (previewVideo) {
+            previewVideo.pause();
+            if (previewVideo.dataset.sourceUrl) {
+                previewVideo.removeAttribute('src');
+                previewVideo.dataset.sourceUrl = '';
+                previewVideo.load();
+            }
+        }
+        if (videoOverlay) videoOverlay.style.background = 'transparent';
+
+        /* Image mode preserves the exact V22 preview rendering path. */
         preview.style.backgroundImage = normalized
             ? `linear-gradient(rgba(4,9,12,${overlayAlpha}), rgba(4,9,12,${overlayAlpha})), url("${resolvedWallpaper}")`
             : 'none';
         preview.style.backgroundPosition = normalized ? `center center, ${position}` : 'center center';
         preview.style.backgroundSize = normalized ? `100% 100%, ${size}` : 'cover';
         preview.style.backgroundRepeat = normalized ? 'no-repeat, no-repeat' : 'no-repeat';
-        preview.style.setProperty('--index-preview-overlay', '0');
-        preview.style.setProperty('--index-preview-aspect-ratio', `${viewportWidth} / ${viewportHeight}`);
-        preview.dataset.overlay = String(overlay);
     };
 
     function showSavedNotice(id) {
