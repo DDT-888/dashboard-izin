@@ -56743,12 +56743,14 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 
             renderShiftLogs();
 
-            setTimeout(() => {
-                document.querySelectorAll('.shift-column-wrapper').forEach(wrapper => {
-                    const colId = wrapper.dataset.columnId;
-                    syncNoteHeight(colId);
-                });
-            }, 100);
+            // V11 root-cause correction: note geometry belongs to the same render
+            // transaction as the Shift cards. Delaying this by 100 ms allowed the
+            // unsynchronised note items to participate in wrapper height for a
+            // visible frame, producing the transient extra-row footprint.
+            document.querySelectorAll('.shift-column-wrapper').forEach(wrapper => {
+                const colId = wrapper.dataset.columnId;
+                syncNoteHeight(colId);
+            });
 
             animateShiftCardLayout(previousCardLayout);
         }
@@ -78922,11 +78924,52 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
     border-collapse:collapse !important;
     border-spacing:0 !important;
 }
+/* V11 root-cause correction: later Settings architecture had converted the
+   table descendants back to block/grid/flex. Restoring only <table> in V10
+   left those descendants outside the native border grid. Reconstitute the
+   complete table formatting context at this final Venom authority layer. */
 html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
-#tab-settings.active #permissionMatrixPanel .permission-matrix-table > thead,
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > colgroup{
+    display:table-column-group !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > colgroup > col{
+    display:table-column !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > colgroup > .permission-feature-col{
+    width:auto !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > colgroup > .permission-role-col{
+    width:38px !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > thead{
+    display:table-header-group !important;
+    width:auto !important;
+}
 html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
 #tab-settings.active #permissionMatrixPanel .permission-matrix-table > tbody{
-    width:100% !important;
+    display:table-row-group !important;
+    width:auto !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > thead > tr,
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > tbody > tr{
+    display:table-row !important;
+    width:auto !important;
+    grid-template-columns:none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > thead > tr > th,
+html[data-theme="dark"][data-theme-variant="venom"] body.settings-mode
+#tab-settings.active #permissionMatrixPanel .permission-matrix-table > tbody > tr > td{
+    display:table-cell !important;
+    width:auto !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
 }
 html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) body.settings-mode
 #tab-settings.active #permissionMatrixPanel .permission-matrix-table thead tr{
@@ -78971,7 +79014,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 }
 html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) body.settings-mode
 #tab-settings.active #permissionMatrixPanel .permission-group-row > td[colspan]{
-    width:100% !important;
+    width:auto !important;
     background:#111611 !important;
     background-image:none !important;
     border:0 !important;
@@ -80014,7 +80057,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
     padding-left: 1px !important;
     padding-right: 1px !important;}
 html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
-#tab-settings #indexAppearanceSettingsPanel > .settings-table-heading{background: transparent !important;background-image: none !important;box-shadow: none !important;border-radius: 0 !important;}
+#tab-settings #indexAppearanceSettingsPanel > .settings-table-heading{background: transparent !important;background-image: none !important;box-shadow: none !important;border-radius: 0 !important;border-bottom-color: rgba(68,214,44,.16) !important;}
 html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
 #tab-settings #indexAppearanceSettingsPanel > .settings-table-heading > div{background: transparent !important;background-image: none !important;box-shadow: none !important;}
 html[data-theme="dark"][data-theme-variant="venom"]
