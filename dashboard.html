@@ -57716,6 +57716,48 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
         }
 
         // ============================================================
+        // V14 — COLUMN DRAG NATIVE MOVE OWNERSHIP
+        // Mirror the staff-drag contract: while a Shift column is being
+        // dragged inside the Shift route, the application owns dragover at
+        // capture phase so the browser never falls back to native no-drop.
+        // Reordering itself remains header-owned through onColumnDrop().
+        // ============================================================
+        function setShiftColumnDragActive(active) {
+            document.body?.classList.toggle('shift-column-drag-active', Boolean(active));
+        }
+
+        function onShiftColumnGlobalDragOver(e) {
+            if (!columnDragData || staffDragData || currentTab !== 'shifts') return;
+
+            const tab = document.getElementById('tab-shifts');
+            if (!tab?.classList.contains('active')) return;
+            if (!(e.target instanceof Node) || !tab.contains(e.target)) return;
+
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        }
+
+        function onShiftColumnGlobalDrop(e) {
+            if (!columnDragData || staffDragData || currentTab !== 'shifts') return;
+
+            const tab = document.getElementById('tab-shifts');
+            if (!tab?.classList.contains('active')) return;
+            if (!(e.target instanceof Element) || !tab.contains(e.target)) return;
+
+            // Valid column reorder remains exclusively owned by a target
+            // column header. Any other Shift surface is an allowed visual
+            // travel area, but not a reorder destination. Consume that drop
+            // before staff-drop handlers can misinterpret column data.
+            if (e.target.closest('.column-header')) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        document.addEventListener('dragover', onShiftColumnGlobalDragOver, true);
+        document.addEventListener('drop', onShiftColumnGlobalDrop, true);
+
+        // ============================================================
         // DRAG & DROP KOLOM SHIFT
         // ============================================================
         function onColumnDragStart(e, columnId) {
@@ -57733,6 +57775,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
             columnDragData = {
                 columnId: columnId
             };
+            setShiftColumnDragActive(true);
 
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('column-drag', JSON.stringify(columnDragData));
@@ -57752,6 +57795,8 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
             document.querySelectorAll('.shift-column-wrapper.drag-over-col').forEach(el => {
                 el.classList.remove('drag-over-col');
             });
+            columnDragData = null;
+            setShiftColumnDragActive(false);
         }
 
         function onColumnDragOver(e) {
@@ -91765,6 +91810,102 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 #tab-shifts .shift-note-panel::after {
     content: none !important;
     display: none !important;
+}
+</style>
+
+
+
+<style id="v14-shift-column-drag-filter-design-authority">
+/* =====================================================================
+   V14 — SHIFT COLUMN DRAG + FILTER ACTIVE DESIGN AUTHORITY
+   1) During staff drag, inner lane bodies surrender hit-testing to their
+      parent dropzones, closing the remaining border/padding no-drop seams.
+   2) During column drag, non-header Shift surfaces are travel surfaces only;
+      capture-phase JS keeps native feedback in MOVE state while headers remain
+      the only actual reorder destinations.
+   3) Venom active-filter identity belongs to the trigger/value/edge accent,
+      not to a solid neon icon badge. Filter glyphs return to a light accent.
+   ===================================================================== */
+
+/* Staff drag: body padding / descendants must never become an intermediate
+   HTML5 target. The existing parent dropzone owns the entire lane interior. */
+body.shift-staff-drag-active #tab-shifts .shift-column-dropzone > .column-body,
+body.shift-staff-drag-active #tab-shifts .shift-available-dropzone > .body {
+    pointer-events: none !important;
+}
+
+/* Column drag: keep one stable interaction cursor. Body/note surfaces are not
+   reorder targets, so let their parent layout surfaces receive the global
+   allowed-move contract while target headers stay interactive. */
+body.shift-column-drag-active #tab-shifts,
+body.shift-column-drag-active #tab-shifts * {
+    cursor: grabbing !important;
+}
+body.shift-column-drag-active #tab-shifts :is(
+    .shift-column-dropzone,
+    .shift-available-dropzone,
+    .shift-note-panel
+) {
+    pointer-events: none !important;
+}
+
+/* Venom active-filter refinement. The filter is still clearly active through
+   its trigger edge accent, border and selected value; the SVG itself is a
+   restrained glyph rather than a full bright-green badge. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+    #tab-users .employee-custom-filter.has-active-filter,
+    .unified-custom-filter.has-active-filter,
+    .premium-select.has-active-filter
+) :is(
+    .employee-custom-filter-leading,
+    .unified-custom-filter-leading,
+    .premium-select-leading
+) {
+    color: #70cf62 !important;
+    background: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+    #tab-users .employee-custom-filter.has-active-filter,
+    .unified-custom-filter.has-active-filter,
+    .premium-select.has-active-filter
+) :is(
+    .employee-custom-filter-leading,
+    .unified-custom-filter-leading,
+    .premium-select-leading
+) svg {
+    color: inherit !important;
+    stroke: currentColor !important;
+    filter: none !important;
+    opacity: .9 !important;
+}
+
+/* Evaluasi uses its own filter-leading class; keep the same authority. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar .has-active-filter :is(
+    .cs-eval-filter-leading,
+    .cs-eval-v6423-filter-leading
+) {
+    color: #70cf62 !important;
+    background: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar .has-active-filter :is(
+    .cs-eval-filter-leading,
+    .cs-eval-v6423-filter-leading
+) svg {
+    color: inherit !important;
+    stroke: currentColor !important;
+    filter: none !important;
+    opacity: .9 !important;
 }
 </style>
 
