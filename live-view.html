@@ -89,17 +89,8 @@
             overflow: hidden;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            background: linear-gradient(135deg, #032631 0%, #05333f 58%, #064454 100%);
-            box-shadow: 0 14px 32px rgba(0, 0, 0, .24);
-        }
-
-        .header::before {
-            content: "";
-            position: absolute;
-            inset: 0 0 auto;
-            height: 1px;
-            pointer-events: none;
-            background: linear-gradient(90deg, rgba(var(--accent-rgb), .72), rgba(var(--accent-rgb), .08) 58%, transparent);
+            background: linear-gradient(135deg, #03242d 0%, #04303a 62%, #043843 100%);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
         }
 
         .header-left {
@@ -164,10 +155,11 @@
             align-items: center;
             gap: 6px;
             padding: 3px 8px;
-            border: 1px solid rgba(65, 216, 154, .28);
+            border: 0;
             border-radius: 999px;
-            color: #78e5b5;
-            background: rgba(11, 59, 48, .78);
+            color: #86e8ba;
+            background: rgba(11, 59, 48, .62);
+            box-shadow: inset 0 0 0 1px rgba(65, 216, 154, .08);
             font-size: 6.8px;
             font-weight: 820;
             letter-spacing: .09em;
@@ -189,15 +181,15 @@
 
         .live-badge[data-status="connecting"] {
             color: var(--warning);
-            border-color: rgba(255, 194, 103, .26);
-            background: rgba(64, 47, 23, .82);
+            background: rgba(64, 47, 23, .66);
+            box-shadow: inset 0 0 0 1px rgba(255, 194, 103, .08);
         }
         .live-badge[data-status="connecting"] .dot { background: var(--warning); }
 
         .live-badge[data-status="offline"] {
             color: #ff9ca4;
-            border-color: rgba(255, 125, 136, .28);
-            background: rgba(64, 33, 40, .82);
+            background: rgba(64, 33, 40, .68);
+            box-shadow: inset 0 0 0 1px rgba(255, 125, 136, .08);
         }
         .live-badge[data-status="offline"] .dot { background: var(--danger); animation: none; }
 
@@ -234,8 +226,7 @@
 
         .datum-rule {
             flex: 1 1 auto;
-            height: 1px;
-            background: linear-gradient(90deg, rgba(var(--accent-rgb), .26), var(--border-light));
+            height: 0;
         }
 
         .datum-title { white-space: nowrap; }
@@ -303,11 +294,12 @@
         .status-dots { display: none; }
 
         .summary-meta {
-            min-width: 116px;
+            min-width: 118px;
             display: grid;
             grid-template-rows: 1fr 1fr;
-            border-left: 1px solid rgba(var(--accent-rgb), .12);
-            background: rgba(3, 23, 30, .22);
+            gap: 6px;
+            padding: 8px;
+            background: rgba(3, 23, 30, .16);
         }
 
         .summary-meta-item {
@@ -316,11 +308,14 @@
             flex-direction: column;
             justify-content: center;
             align-items: flex-end;
-            padding: 9px 12px;
+            padding: 8px 9px;
+            border-radius: 7px;
+            background: rgba(7, 45, 55, .46);
+            box-shadow: inset 0 0 0 1px rgba(127, 214, 227, .055);
         }
 
         .summary-meta-item + .summary-meta-item {
-            border-top: 1px solid rgba(var(--accent-rgb), .09);
+            border-top: 0;
         }
 
         .summary-meta-item span {
@@ -350,19 +345,6 @@
             background: var(--bg-primary);
         }
 
-        .table-wrap::before {
-            content: "";
-            position: absolute;
-            z-index: 2;
-            top: 0;
-            left: 0;
-            width: 54px;
-            height: 1px;
-            pointer-events: none;
-            background: linear-gradient(90deg, rgba(var(--accent-rgb), .72), rgba(var(--accent-rgb), .08));
-        }
-
-
         .table-wrap::-webkit-scrollbar { display: none; }
 
         table {
@@ -379,9 +361,9 @@
             padding: 0 8px;
             overflow: hidden;
             text-align: left;
-            color: #789fa8;
-            background: var(--bg-table-header);
-            border-bottom: 1px solid #123b45;
+            color: #789ca4;
+            background: #041b22;
+            border-bottom: 1px solid #10343d;
             font-size: 7.1px;
             font-weight: 780;
             letter-spacing: .09em;
@@ -403,10 +385,28 @@
             vertical-align: middle;
         }
 
-        tbody tr:nth-child(even) td { background: #041a21; }
+        tbody tr:nth-child(even) td { background: #04191f; }
         tbody tr:last-child td { border-bottom: 0; }
 
+        .name-status {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .name-status-dot {
+            width: 6px;
+            height: 6px;
+            flex: 0 0 6px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 0 3px rgba(65, 216, 154, .055);
+            animation: pulse-dot 1.9s ease-in-out infinite;
+        }
+
         .nama-cell {
+            min-width: 0;
             display: block;
             overflow: hidden;
             color: #eaf9fb;
@@ -441,33 +441,6 @@
         .role-tag.kapten { background:#423019; color:#f0c47d; border-color:#72532d; }
         .role-tag.kasir { background:#2d2348; color:#c9b5f5; border-color:#5a4780; }
 
-        .status-cell {
-            width: 100%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        tbody td.col-status {
-            position: relative;
-        }
-
-        tbody td.col-status::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 11px;
-            bottom: 11px;
-            width: 2px;
-            border-radius: 0 2px 2px 0;
-            background: rgba(65, 216, 154, .34);
-        }
-
-        .status-cell .dot {
-            width: 7px;
-            height: 7px;
-            box-shadow: 0 0 0 3px rgba(65, 216, 154, .07);
-        }
 
         .timer-cell {
             display: block;
@@ -532,10 +505,9 @@
         .footer strong { color: #7aa4ad; }
         .footer-system { white-space: nowrap; }
 
-        .col-status { width: 9%; text-align: center; }
-        .col-nama { width: 32%; }
-        .col-role { width: 26%; }
-        .col-durasi { width: 33%; text-align: right; }
+        .col-nama { width: 43%; }
+        .col-role { width: 25%; }
+        .col-durasi { width: 32%; text-align: right; }
 
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse-dot {
@@ -577,10 +549,9 @@
             .role-tag { padding: 4px 6px; font-size: 7.2px; }
             .timer-cell { font-size: 11px; }
 
-            .col-status { width: 8%; }
-            .col-nama { width: 31%; }
-            .col-role { width: 26%; }
-            .col-durasi { width: 35%; }
+            .col-nama { width: 43%; }
+            .col-role { width: 24%; }
+            .col-durasi { width: 33%; }
         }
 
         @media (max-width: 340px) {
@@ -620,7 +591,7 @@
             <div class="header-left">
                 <img src="https://dashboard-izin.pages.dev/assets/Logo%20DDT%20-%20Full.png" alt="DDT" class="logo-img" width="176" height="76" decoding="async" fetchpriority="high" />
                 <div class="title">
-                    <small>DDT / Legacy Operations</small>
+                    <small>DDT / Live Operations</small>
                     LIVE IZIN
                 </div>
             </div>
@@ -635,7 +606,7 @@
 
         <main class="workspace-plane">
             <div class="workspace-datum">
-                <span class="datum-index">LIVE / 01</span>
+                <span class="datum-index">PERMIT / LIVE</span>
                 <span class="datum-rule" aria-hidden="true"></span>
                 <span class="datum-title">Real-time Monitoring</span>
                 <span class="datum-sync" id="lastSyncDisplay">SYNC —</span>
@@ -667,7 +638,6 @@
                 <table aria-label="Daftar anggota yang sedang izin">
                     <thead>
                         <tr>
-                            <th class="col-status">Live</th>
                             <th class="col-nama">Nama</th>
                             <th class="col-role">Role</th>
                             <th class="col-durasi">Durasi</th>
@@ -675,7 +645,7 @@
                     </thead>
                     <tbody id="tableBody">
                         <tr>
-                            <td colspan="4">
+                            <td colspan="3">
                                 <div class="loading-spinner">
                                     <div class="spinner" aria-hidden="true"></div>
                                     <span>Memuat data izin</span>
@@ -809,7 +779,7 @@
 
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4">
+                        <td colspan="3">
                             <div class="empty-state">
                                 <div class="icon">⚠️</div>
                                 <h3>${escapeHtml(message)}</h3>
@@ -1026,7 +996,7 @@
                 if (onlineUsers.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="4">
+                            <td colspan="3">
                                 <div class="empty-state">
                                     <div class="icon">😴</div>
                                     <h3>Belum ada yang izin</h3>
@@ -1059,13 +1029,11 @@
 
                     html += `
                         <tr style="animation: fadeIn 0.25s ease ${delay}s both;">
-                            <td class="col-status">
-                                <span class="status-cell">
-                                    <span class="dot"></span>
-                                </span>
-                            </td>
                             <td class="col-nama">
-                                <span class="nama-cell">${safeName}</span>
+                                <span class="name-status">
+                                    <span class="name-status-dot" aria-hidden="true"></span>
+                                    <span class="nama-cell">${safeName}</span>
+                                </span>
                             </td>
                             <td class="col-role">
                                 <span class="role-tag ${safeRole}">${escapeHtml(roleLabel)}</span>
