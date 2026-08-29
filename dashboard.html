@@ -93140,9 +93140,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 <style id="shift-user-pointer-transport-chrome152">
 /* =====================================================================
    SHIFT USER CARD — POINTER TRANSPORT / CHROME 152 COMPATIBILITY
+   SMOOTHNESS REFINEMENT
    - User Card only: bypasses native HTML5 DnD initiation.
+   - Movement is compositor-only (translate3d) and rAF-throttled.
    - V12 corridor + existing onStaffDrop/onAvailableDrop remain commit owners.
-   - V13/V14 styles are preserved byte-for-byte; column drag remains native.
+   - V13/V14 styles remain untouched; column drag remains native.
    ===================================================================== */
 #tab-shifts .user-card-shift.shift-pointer-source {
     cursor: grabbing !important;
@@ -93153,14 +93155,16 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 }
 .shift-staff-pointer-ghost {
     position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
     z-index: 2147483000 !important;
     pointer-events: none !important;
     margin: 0 !important;
     opacity: .92 !important;
-    transform: scale(.985) !important;
-    transform-origin: center !important;
+    transform-origin: top left !important;
     box-shadow: 0 12px 28px rgba(10, 35, 42, .18) !important;
-    will-change: left, top, transform !important;
+    will-change: transform !important;
+    backface-visibility: hidden !important;
 }
 </style>
 
@@ -93170,6 +93174,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 
     const MOVE_THRESHOLD = 5;
     let state = null;
+    let frameRequest = 0;
 
     function isShiftCardTarget(target) {
         return target instanceof Element
@@ -93177,27 +93182,49 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             : null;
     }
 
-    function clearPointerHighlights() {
-        document.querySelectorAll('#tab-shifts .shift-column-wrapper.drag-over-col').forEach(el => el.classList.remove('drag-over-col'));
-        document.querySelectorAll('#tab-shifts .shift-column-dropzone.drag-over').forEach(el => el.classList.remove('drag-over'));
-        document.querySelectorAll('#tab-shifts .shift-available-dropzone.drag-over').forEach(el => el.classList.remove('drag-over'));
-        document.querySelectorAll('#tab-shifts .empty-drop.drag-over').forEach(el => el.classList.remove('drag-over'));
+    function targetIdentity(target) {
+        if (!target?.dropzone) return '';
+        return target.type === 'available'
+            ? 'available'
+            : `column:${String(target.columnId || '')}`;
+    }
+
+    function clearPointerHighlight() {
+        const nodes = state?.highlightNodes || [];
+        nodes.forEach(node => node?.classList?.remove('drag-over', 'drag-over-col'));
+        if (state) {
+            state.highlightNodes = [];
+            state.highlightKey = '';
+        }
     }
 
     function setPointerHighlight(target) {
-        clearPointerHighlights();
+        if (!state) return;
+        const nextKey = targetIdentity(target);
+        if (nextKey === state.highlightKey) return;
+
+        clearPointerHighlight();
         if (!target?.dropzone) return;
 
-        if (target.type === 'available') {
-            target.dropzone.classList.add('drag-over');
-            return;
+        const nodes = [];
+        target.dropzone.classList.add('drag-over');
+        nodes.push(target.dropzone);
+
+        if (target.type === 'column') {
+            const wrapper = target.dropzone.closest('.shift-column-wrapper');
+            if (wrapper) {
+                wrapper.classList.add('drag-over-col');
+                nodes.push(wrapper);
+            }
+            const emptyDrop = target.dropzone.querySelector('.empty-drop');
+            if (emptyDrop) {
+                emptyDrop.classList.add('drag-over');
+                nodes.push(emptyDrop);
+            }
         }
 
-        target.dropzone.classList.add('drag-over');
-        const wrapper = target.dropzone.closest('.shift-column-wrapper');
-        if (wrapper) wrapper.classList.add('drag-over-col');
-        const emptyDrop = target.dropzone.querySelector('.empty-drop');
-        if (emptyDrop) emptyDrop.classList.add('drag-over');
+        state.highlightNodes = nodes;
+        state.highlightKey = nextKey;
     }
 
     function createGhost(card, clientX, clientY) {
@@ -93211,8 +93238,6 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         ghost.classList.add('shift-staff-pointer-ghost');
         ghost.style.width = `${rect.width}px`;
         ghost.style.height = `${rect.height}px`;
-        ghost.style.left = `${rect.left}px`;
-        ghost.style.top = `${rect.top}px`;
         document.body.appendChild(ghost);
         return {
             node: ghost,
@@ -93223,13 +93248,35 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 
     function moveGhost(clientX, clientY) {
         if (!state?.ghost?.node) return;
-        state.ghost.node.style.left = `${clientX - state.ghost.offsetX}px`;
-        state.ghost.node.style.top = `${clientY - state.ghost.offsetY}px`;
+        const x = clientX - state.ghost.offsetX;
+        const y = clientY - state.ghost.offsetY;
+        state.ghost.node.style.transform = `translate3d(${x}px, ${y}px, 0) scale(.985)`;
+    }
+
+    function processPointerFrame() {
+        frameRequest = 0;
+        if (!state?.active) return;
+
+        const x = state.pendingX;
+        const y = state.pendingY;
+        moveGhost(x, y);
+
+        const target = resolveShiftStaffDropCorridor(x, y);
+        setPointerHighlight(target);
+    }
+
+    function schedulePointerFrame() {
+        if (frameRequest || !state?.active) return;
+        frameRequest = requestAnimationFrame(processPointerFrame);
     }
 
     function beginPointerDrag(e) {
         if (!state || state.active) return;
         state.active = true;
+        state.pendingX = e.clientX;
+        state.pendingY = e.clientY;
+        state.highlightKey = '';
+        state.highlightNodes = [];
 
         staffDragData = {
             userId: state.userId,
@@ -93240,15 +93287,21 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         document.body.classList.add('shift-staff-pointer-drag-active');
         state.card.classList.add('shift-pointer-source', 'dragging');
         state.ghost = createGhost(state.card, e.clientX, e.clientY);
+
+        /* First frame is immediate so pickup feels attached to the pointer. */
         moveGhost(e.clientX, e.clientY);
         setPointerHighlight(resolveShiftStaffDropCorridor(e.clientX, e.clientY));
     }
 
     function cleanupPointerDrag({restoreNative = true} = {}) {
         const current = state;
-        state = null;
+        if (frameRequest) {
+            cancelAnimationFrame(frameRequest);
+            frameRequest = 0;
+        }
 
-        clearPointerHighlights();
+        clearPointerHighlight();
+        state = null;
         document.body.classList.remove('shift-staff-pointer-drag-active');
 
         if (current?.ghost?.node?.isConnected) current.ghost.node.remove();
@@ -93305,13 +93358,16 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             columnId,
             startX: e.clientX,
             startY: e.clientY,
+            pendingX: e.clientX,
+            pendingY: e.clientY,
             active: false,
             ghost: null,
+            highlightKey: '',
+            highlightNodes: [],
             previousDraggable: card.draggable
         };
 
-        /* Critical: prevent Chromium 152 from entering native DataTransfer DnD
-           for User Cards. Column headers remain untouched/native V14. */
+        /* User Cards use pointer transport. Column headers stay native V14. */
         card.draggable = false;
         try { card.setPointerCapture?.(e.pointerId); } catch (_) {}
         e.preventDefault();
@@ -93322,14 +93378,15 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 
         const dx = e.clientX - state.startX;
         const dy = e.clientY - state.startY;
-        if (!state.active && Math.hypot(dx, dy) >= MOVE_THRESHOLD) {
+        if (!state.active && (dx * dx + dy * dy) >= (MOVE_THRESHOLD * MOVE_THRESHOLD)) {
             beginPointerDrag(e);
         }
         if (!state.active) return;
 
         e.preventDefault();
-        moveGhost(e.clientX, e.clientY);
-        setPointerHighlight(resolveShiftStaffDropCorridor(e.clientX, e.clientY));
+        state.pendingX = e.clientX;
+        state.pendingY = e.clientY;
+        schedulePointerFrame();
     }, {capture: true, passive: false});
 
     document.addEventListener('pointerup', (e) => {
@@ -93337,6 +93394,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 
         if (state.active) {
             e.preventDefault();
+            /* Drop uses the exact pointerup coordinates, independent of rAF. */
             commitPointerDrop(e);
         }
         cleanupPointerDrag();
@@ -93347,8 +93405,6 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         cleanupPointerDrag();
     }, true);
 
-    /* Safety net: User Cards must never enter native HTML5 DnD in this
-       compatibility transport. This does not match column headers. */
     document.addEventListener('dragstart', (e) => {
         const card = e.target instanceof Element ? e.target.closest('#tab-shifts .user-card-shift') : null;
         if (!card) return;
