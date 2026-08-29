@@ -47518,8 +47518,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 'false'
             );
 
+            // V5: establish safe focus synchronously so the first Tab advances
+            // from Batal to the next action instead of merely entering the modal.
+            try { cancelButton?.focus({ preventScroll: true }); }
+            catch (_) { cancelButton?.focus(); }
+
             window.setTimeout(
-                () => cancelButton?.focus(),
+                () => cancelButton?.focus({ preventScroll: true }),
                 70
             );
 
@@ -94076,6 +94081,184 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         #tab-users .employee-inline-cell-editing .employee-segmented-date-control+.employee-inline-edit-actions{margin-left:3px}
         @media (max-width:760px){#tab-users .employee-inline-cell-editing .employee-segmented-date-control{min-width:142px}}
     </style>
+
+
+    <style id="users-inactive-lifecycle-v5-focus-flat-date-refinement">
+        /* V5 — keyboard/modal focus authority + flat segmented date presentation. */
+        .employee-date-segments{
+            border:0!important;
+            border-radius:0!important;
+            background:transparent!important;
+            box-shadow:none!important;
+            overflow:visible!important;
+            height:30px;
+            transition:none!important;
+        }
+        .employee-date-segments:focus-within{
+            border-color:transparent!important;
+            background:transparent!important;
+            box-shadow:none!important;
+        }
+        .employee-date-segment{
+            border:0!important;
+            border-radius:0!important;
+            background:transparent!important;
+            box-shadow:none!important;
+            outline:none!important;
+            padding:0 1px!important;
+        }
+        .employee-date-segment:focus,
+        .employee-date-segment:focus-visible{
+            border:0!important;
+            border-radius:0!important;
+            background:transparent!important;
+            box-shadow:none!important;
+            outline:none!important;
+        }
+        .employee-date-separator{opacity:.82}
+    </style>
+
+
+    <script id="dashboard-modal-focus-authority-v1">
+    (() => {
+        'use strict';
+
+        const DIALOG_SELECTOR = '[role="dialog"][aria-modal="true"]';
+        const FOCUSABLE_SELECTOR = [
+            'button:not([disabled])',
+            'input:not([disabled]):not([type="hidden"])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            'a[href]',
+            '[tabindex]:not([tabindex="-1"])'
+        ].join(',');
+
+        const registered = new WeakSet();
+        let focusFrame = 0;
+
+        function elementVisible(el) {
+            if (!(el instanceof HTMLElement) || el.hidden) return false;
+            let node = el;
+            while (node && node !== document.body) {
+                if (node.hidden || node.getAttribute?.('aria-hidden') === 'true') return false;
+                const style = getComputedStyle(node);
+                if (style.display === 'none' || style.visibility === 'hidden') return false;
+                node = node.parentElement;
+            }
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        }
+
+        function dialogFocusables(dialog) {
+            return Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR))
+                .filter(el => elementVisible(el) && el.tabIndex !== -1);
+        }
+
+        function safeAction(dialog) {
+            const marked = dialog.querySelector('[data-modal-initial-focus]');
+            if (marked && elementVisible(marked) && !marked.disabled) return marked;
+
+            const buttons = Array.from(dialog.querySelectorAll('button:not([disabled])'))
+                .filter(elementVisible);
+            const safeText = /^(batal|cancel|tutup|kembali)$/i;
+            const byMeaning = buttons.find(button => {
+                const text = String(button.textContent || '').replace(/\s+/g, ' ').trim();
+                const aria = String(button.getAttribute('aria-label') || '').trim();
+                const id = String(button.id || '');
+                return safeText.test(text) || safeText.test(aria) || /cancel|close/i.test(id);
+            });
+            if (byMeaning) return byMeaning;
+
+            const auto = dialog.querySelector('[autofocus]');
+            if (auto && elementVisible(auto) && !auto.disabled) return auto;
+
+            return dialogFocusables(dialog)[0] || null;
+        }
+
+        function visibleDialogs() {
+            return Array.from(document.querySelectorAll(DIALOG_SELECTOR))
+                .filter(dialog => dialog.id !== 'aps-console' && elementVisible(dialog));
+        }
+
+        function topDialog() {
+            const dialogs = visibleDialogs();
+            return dialogs.length ? dialogs[dialogs.length - 1] : null;
+        }
+
+        function establishDialogFocus(dialog = topDialog()) {
+            if (!dialog || !elementVisible(dialog)) return;
+            if (dialog.contains(document.activeElement)) return;
+            const target = safeAction(dialog);
+            if (!target) return;
+            try { target.focus({ preventScroll: true }); }
+            catch (_) { try { target.focus(); } catch (_) {} }
+        }
+
+        function scheduleFocus(dialog) {
+            if (focusFrame) cancelAnimationFrame(focusFrame);
+            // Microtask handles synchronous popup paint; rAF handles class/transition based popups.
+            queueMicrotask(() => establishDialogFocus(dialog));
+            focusFrame = requestAnimationFrame(() => {
+                focusFrame = 0;
+                establishDialogFocus(dialog);
+            });
+        }
+
+        function registerDialog(dialog) {
+            if (!(dialog instanceof HTMLElement) || registered.has(dialog) || dialog.id === 'aps-console') return;
+            registered.add(dialog);
+            const targets = [dialog];
+            if (dialog.parentElement && dialog.parentElement !== document.body) targets.push(dialog.parentElement);
+            const observer = new MutationObserver(() => {
+                if (elementVisible(dialog)) scheduleFocus(dialog);
+            });
+            targets.forEach(target => observer.observe(target, {
+                attributes: true,
+                attributeFilter: ['class', 'aria-hidden', 'hidden', 'style']
+            }));
+            if (elementVisible(dialog)) scheduleFocus(dialog);
+        }
+
+        function registerAll(root = document) {
+            if (root instanceof Element && root.matches(DIALOG_SELECTOR)) registerDialog(root);
+            root.querySelectorAll?.(DIALOG_SELECTOR).forEach(registerDialog);
+        }
+
+        registerAll(document);
+
+        new MutationObserver(records => {
+            for (const record of records) {
+                for (const node of record.addedNodes) {
+                    if (node instanceof Element) registerAll(node);
+                }
+            }
+        }).observe(document.body, { childList: true, subtree: true });
+
+        document.addEventListener('keydown', event => {
+            if (event.key !== 'Tab' || event.defaultPrevented) return;
+            const dialog = topDialog();
+            if (!dialog || dialog.contains(document.activeElement)) return;
+
+            const focusables = dialogFocusables(dialog);
+            if (!focusables.length) return;
+            const preferred = safeAction(dialog) || focusables[0];
+            let index = Math.max(0, focusables.indexOf(preferred));
+            index = event.shiftKey
+                ? (index <= 0 ? focusables.length - 1 : index - 1)
+                : (index >= focusables.length - 1 ? 0 : index + 1);
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            try { focusables[index].focus({ preventScroll: true }); }
+            catch (_) { focusables[index].focus(); }
+        }, true);
+
+        window.DashboardModalFocusAuthority = Object.freeze({
+            establish: establishDialogFocus,
+            register: registerDialog
+        });
+    })();
+    </script>
 
 </body>
 </html>
