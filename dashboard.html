@@ -54582,7 +54582,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                             <tr>
                                 <td><span class="voucher-rank-index ${index < 3 ? `is-top-${index + 1}` : ''}">${index + 1}</span></td>
                                 <td><span class="nama-cell">${row.nama}</span></td>
-                                <td><span class="badge role-${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
+                                <td><span class="role-tag ${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
                                 <td><strong class="voucher-recap-earned">${row.count}</strong></td>
                             </tr>`;
                     }).join('')
@@ -54628,7 +54628,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                             <tr>
                                 <td>${index + 1}</td>
                                 <td><span class="nama-cell">${unit.nama}</span></td>
-                                <td><span class="badge role-${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
+                                <td><span class="role-tag ${matchedUser?.role || 'cs'}">${roleLabel}</span></td>
                                 <td><span class="voucher-audit-time">${earnedAt}</span></td>
                                 <td><span class="voucher-audit-time">${reducedAt}</span></td>
                                 <td><span class="voucher-audit-actor">${actor}</span></td>
@@ -54660,7 +54660,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                             <tr>
                                 <td>${index + 1}</td>
                                 <td><span class="nama-cell">${user.name}</span></td>
-                                <td><span class="badge role-${user.role}">${roleLabel}</span></td>
+                                <td><span class="role-tag ${user.role}">${roleLabel}</span></td>
                                 <td><span class="voucher-badge voucher-count-badge" data-voucher="${user.voucher}"><span class="icon">🎫</span><strong>${user.voucher}</strong></span></td>
                                 <td><span class="voucher-audit-time">${earnedAt}</span></td>
                                 ${actionColumn}
@@ -61349,7 +61349,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
                 return `<tr>
                     <td class="sticky-left-one"><span class="employee-status-badge ${user.status === 'active' ? 'active' : 'inactive'}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
                     <td class="sticky-left-two"><span class="employee-user-name">${employeeEscape(user.name)}${isCurrentUser ? ' <span class="employee-current-user-mark">Anda</span>' : ''}</span><span class="employee-user-email">${employeeEscape(user.email)}</span></td>
-                    <td><span class="badge role-${user.role}">${employeeEscape(roleLabel)}</span></td>
+                    <td><span class="role-tag ${user.role}">${employeeEscape(roleLabel)}</span></td>
                     <td>${employeeInlineCell(user, 'passport_number', employeeEscape(passportNumber))}</td>
                     <td>${employeeInlineCell(user, 'passport_expiry_date', profile.passport_expiry_date ? `${passportMonths} bulan` : '—', profile.passport_expiry_date ? `Berakhir ${employeeFormatDate(profile.passport_expiry_date)}` : 'Tanggal belum diisi', passportIcon)}</td>
                     <td>${employeeInlineCell(user, 'visa_expiry_date', profile.visa_expiry_date ? `${visaDays} hari` : '—', profile.visa_expiry_date ? `Berakhir ${employeeFormatDate(profile.visa_expiry_date)}` : 'Tanggal belum diisi', visaIcon)}</td>
@@ -91909,5 +91909,807 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 }
 </style>
 
+<style id="v15-premium-operational-table-family-authority">
+/* =====================================================================
+   V15 — PREMIUM OPERATIONAL TABLE FAMILY + VENOM COMPLETION
+   Scope:
+   A) Legacy-wide shared table architecture for Voucher, History Izin,
+      and Riwayat Shift. Geometry/typography are shared; palette remains
+      theme-owned through existing CSS tokens.
+   B) Venom-only Evaluasi CS active-filter completion.
+   C) Venom-only perimeter ownership cleanup for Monitoring Tabel Anggota
+      and Riwayat Shift (one shell owns each perimeter/corner).
+   Monitoring Izin / Users / Evaluasi tables are intentionally excluded
+   from the Premium Operational Table Family.
+   ===================================================================== */
+
+/* ---------- Shared Legacy operational-table design tokens ---------- */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+){
+  --pot-shell:var(--bg-card);
+  --pot-head:color-mix(in srgb,var(--bg-secondary) 88%,var(--bg-card));
+  --pot-border:color-mix(in srgb,var(--border-color) 88%,var(--accent) 12%);
+  --pot-line:color-mix(in srgb,var(--border-light) 78%,transparent);
+  --pot-head-text:color-mix(in srgb,var(--text-muted) 82%,var(--text-primary) 18%);
+  --pot-hover:color-mix(in srgb,var(--accent) 4.5%,var(--bg-card));
+  --pot-primary:var(--text-primary);
+  --pot-secondary:var(--text-muted);
+  position:relative!important;
+  border:1px solid var(--pot-border)!important;
+  border-radius:10px!important;
+  background:var(--pot-shell)!important;
+  background-image:none!important;
+  box-shadow:
+    0 10px 26px color-mix(in srgb,#000 7%,transparent),
+    inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent)!important;
+}
+
+/* One perimeter owner: internal table geometry is always square/neutral. */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) :is(table,thead,tbody,tr,th,td){
+  border-radius:0!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) table{
+  width:100%!important;
+  margin:0!important;
+  border:0!important;
+  outline:0!important;
+  border-collapse:separate!important;
+  border-spacing:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  color:var(--pot-primary)!important;
+  font-variant-numeric:tabular-nums!important;
+  font-feature-settings:"tnum" 1!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) thead,
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) thead tr{
+  border:0!important;
+  outline:0!important;
+  background:var(--pot-head)!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) thead th{
+  height:36px!important;
+  padding:8px 12px!important;
+  border:0!important;
+  border-bottom:1px solid var(--pot-border)!important;
+  background:var(--pot-head)!important;
+  background-image:none!important;
+  color:var(--pot-head-text)!important;
+  font-family:inherit!important;
+  font-size:10.25px!important;
+  line-height:1.1!important;
+  font-weight:700!important;
+  letter-spacing:.052em!important;
+  text-transform:none!important;
+  text-shadow:none!important;
+  box-shadow:none!important;
+  white-space:nowrap;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) tbody tr{
+  border:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) tbody td{
+  padding:9px 12px!important;
+  border:0!important;
+  border-bottom:1px solid var(--pot-line)!important;
+  background:transparent!important;
+  background-image:none!important;
+  color:var(--pot-primary)!important;
+  font-family:inherit!important;
+  font-size:11.5px!important;
+  line-height:1.35!important;
+  font-weight:500!important;
+  text-shadow:none!important;
+  box-shadow:none!important;
+  vertical-align:middle!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) tbody tr:last-child > td{
+  border-bottom:0!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+) tbody tr:hover > td{
+  background:var(--pot-hover)!important;
+  background-image:none!important;
+  color:var(--pot-primary)!important;
+  box-shadow:none!important;
+}
+
+/* Typography hierarchy: primary identities are slightly stronger, metadata quieter. */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-voucher .voucher-table-wrap .nama-cell{
+  color:var(--pot-primary)!important;
+  font-size:11.7px!important;
+  font-weight:650!important;
+  letter-spacing:-.008em!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-voucher .voucher-table-wrap :is(.voucher-audit-time,.voucher-audit-actor){
+  color:var(--pot-secondary)!important;
+  font-size:10.6px!important;
+  font-weight:520!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-history > .table-wrap tbody td:nth-child(2){
+  font-weight:620!important;
+  letter-spacing:-.006em!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-history > .table-wrap tbody :is(td:nth-child(4),td:nth-child(5),td:nth-child(6),td:nth-child(7)){
+  font-variant-numeric:tabular-nums!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-table-wrap tbody td:nth-child(2){
+  font-weight:620!important;
+  letter-spacing:-.006em!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-table-wrap :is(.shift-history-note-text,tbody td:nth-child(6),tbody td:nth-child(7)){
+  color:var(--pot-secondary)!important;
+  font-size:10.7px!important;
+}
+
+/* Route-owned density: same family, deliberately different scanning rhythm. */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-voucher .voucher-table-wrap tbody td{height:40px!important;}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-history > .table-wrap tbody td{height:38px!important;}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-table-wrap tbody td{height:40px!important;}
+
+/* Riwayat Shift outer container is layout-only. The table wrapper owns the table shell. */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-shift-container{
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+
+/* ---------- Venom palette translation for Premium Operational Tables ---------- */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  #tab-voucher .voucher-table-wrap,
+  #tab-history > .table-wrap,
+  #tab-historyshift .history-table-wrap
+){
+  --pot-shell:#0d0f0d;
+  --pot-head:#101410;
+  --pot-border:#292f29;
+  --pot-line:rgba(255,255,255,.055);
+  --pot-head-text:#96a293;
+  --pot-hover:#131813;
+  --pot-primary:#dce5da;
+  --pot-secondary:#879484;
+  border-color:var(--pot-border)!important;
+  background:var(--pot-shell)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+
+/* ---------- Venom Evaluasi CS: complete active-filter state ---------- */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar > :is(.premium-select,.unified-custom-filter).has-active-filter > :is(.premium-select-trigger,.unified-custom-filter-trigger),
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar .cs-eval-search.has-active-filter{
+  color:#dce8da!important;
+  background:linear-gradient(180deg,#151a15 0%,#101410 100%)!important;
+  background-image:linear-gradient(180deg,#151a15 0%,#101410 100%)!important;
+  border-color:rgba(68,214,44,.30)!important;
+  box-shadow:inset 3px 0 0 rgba(68,214,44,.48),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar > :is(.premium-select,.unified-custom-filter).has-active-filter.open > :is(.premium-select-trigger,.unified-custom-filter-trigger),
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar > :is(.premium-select,.unified-custom-filter).has-active-filter > :is(.premium-select-trigger,.unified-custom-filter-trigger):focus-visible{
+  border-color:rgba(68,214,44,.42)!important;
+  background:linear-gradient(180deg,#171d17 0%,#111611 100%)!important;
+  box-shadow:inset 3px 0 0 rgba(68,214,44,.62),0 0 0 2px rgba(68,214,44,.055)!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar .has-active-filter :is(.premium-select-value,.unified-custom-filter-value){
+  color:#b9deb3!important;
+  font-weight:650!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-option,.unified-custom-filter-option).active,
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-evaluation .cs-eval-toolbar :is(.premium-select-option,.unified-custom-filter-option)[aria-selected="true"]{
+  color:#b9e8b1!important;
+  background:rgba(68,214,44,.075)!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  box-shadow:inset 2px 0 0 rgba(68,214,44,.38)!important;
+}
+
+/* ---------- Venom Monitoring Tabel Anggota: one perimeter owner ----------
+   The rounded monitoring panel owns the outer silhouette. Header/table layers
+   are internal planes and must not draw independent rounded/vertical edges. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-members-panel .table-dashboard-wrap,
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-members-panel .table-dashboard-wrap :is(table,thead,tbody,tr,th,td){
+  border-radius:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-members-panel .table-dashboard-wrap table{
+  border:0!important;
+  border-left:0!important;
+  border-right:0!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-members-panel .table-dashboard-wrap thead th:first-child,
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-members-panel .table-dashboard-wrap thead th:last-child{
+  border-left:0!important;
+  border-right:0!important;
+  border-radius:0!important;
+}
+
+/* ---------- Venom Riwayat Shift: wrapper owns all four corners ---------- */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-table-wrap{
+  overflow:clip!important;
+  border:1px solid #292f29!important;
+  border-radius:10px!important;
+  background:#0d0f0d!important;
+  background-image:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-table-wrap :is(table,thead,tbody,tr,th,td){
+  border-radius:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-table-wrap table{
+  border:0!important;
+  background:transparent!important;
+  background-image:none!important;
+}
+
+@media (max-width:760px){
+  html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+  :is(
+    #tab-voucher .voucher-table-wrap,
+    #tab-history > .table-wrap,
+    #tab-historyshift .history-table-wrap
+  ) thead th{
+    padding-left:10px!important;
+    padding-right:10px!important;
+    font-size:9.8px!important;
+  }
+  html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+  :is(
+    #tab-voucher .voucher-table-wrap,
+    #tab-history > .table-wrap,
+    #tab-historyshift .history-table-wrap
+  ) tbody td{
+    padding-left:10px!important;
+    padding-right:10px!important;
+    font-size:11px!important;
+  }
+}
+</style>
+<style id="v16-legacy-role-actions-filter-table-reconciliation-authority">
+/* =====================================================================
+   V16 — LEGACY ROLE / ACTION / FILTER / TABLE RECONCILIATION
+   CSS-only presentation refinement built on exact V15.
+   - Venom filter glyphs: no badge surface; Monitoring Role icon normalized.
+   - Venom Voucher + History header/border palette = Riwayat Shift authority.
+   - Riwayat Shift corner clipping fixed across Legacy themes.
+   - Voucher / History Izin / Users role badges = Monitoring Izin role badge DNA.
+   - Users Edit / Power / Delete action hardware reconciled with Riwayat Shift.
+   Mecha Ivory is explicitly excluded.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   A. VENOM FILTER GLYPH CLEANUP — glyph only, no badge/chip surface.
+   The trigger remains the active-state owner; the funnel is just an icon.
+   --------------------------------------------------------------------- */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  .employee-custom-filter-leading,
+  .unified-custom-filter-leading,
+  .premium-select-leading,
+  #tab-evaluation .cs-eval-filter-leading,
+  #tab-evaluation .cs-eval-v6423-filter-leading
+){
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  min-height:16px!important;
+  flex:0 0 16px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+  color:#70cf62!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+  .employee-custom-filter-leading,
+  .unified-custom-filter-leading,
+  .premium-select-leading,
+  #tab-evaluation .cs-eval-filter-leading,
+  #tab-evaluation .cs-eval-v6423-filter-leading
+) :is(svg,.employee-filter-funnel,.unified-custom-filter-funnel,.premium-select-leading-icon){
+  width:11px!important;
+  height:11px!important;
+  min-width:11px!important;
+  min-height:11px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.8!important;
+  filter:none!important;
+  opacity:.92!important;
+}
+/* Monitoring Role previously appeared larger because its generic leading box
+   retained the 22px badge footprint. It now uses the exact Venom glyph metric. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-role-filter .unified-custom-filter-leading{
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  min-height:16px!important;
+  flex-basis:16px!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-role-filter .unified-custom-filter-leading svg{
+  width:11px!important;
+  height:11px!important;
+}
+
+/* ---------------------------------------------------------------------
+   B. VENOM PREMIUM TABLE PALETTE RECONCILIATION.
+   Voucher and History now use the same header plane + perimeter authority
+   already accepted on Riwayat Shift. Specific selectors close older overrides.
+   --------------------------------------------------------------------- */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-voucher .voucher-table-wrap,#tab-history > .table-wrap,#tab-historyshift .history-table-wrap){
+  --pot-shell:#0d0f0d!important;
+  --pot-head:#101410!important;
+  --pot-border:#292f29!important;
+  --pot-line:rgba(255,255,255,.055)!important;
+  border-color:#292f29!important;
+  background:#0d0f0d!important;
+  background-image:none!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-voucher .voucher-table-wrap,#tab-history > .table-wrap,#tab-historyshift .history-table-wrap) :is(thead,thead tr,thead th){
+  background:#101410!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-voucher .voucher-table-wrap,#tab-history > .table-wrap,#tab-historyshift .history-table-wrap) thead th{
+  border-left:0!important;
+  border-right:0!important;
+  border-top:0!important;
+  border-bottom:1px solid #292f29!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-voucher .voucher-table-wrap,#tab-history > .table-wrap,#tab-historyshift .history-table-wrap) tbody td{
+  border-left:0!important;
+  border-right:0!important;
+  border-top:0!important;
+  border-bottom:1px solid rgba(255,255,255,.055)!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-voucher .voucher-table-wrap,#tab-history > .table-wrap,#tab-historyshift .history-table-wrap) tbody tr:last-child > td{
+  border-bottom:0!important;
+}
+
+/* ---------------------------------------------------------------------
+   C. RIWAYAT SHIFT CORNERS — one clipped shell for every Legacy theme.
+   V15 already made the wrapper the perimeter owner; V16 completes the contract
+   by clipping the internal square header/body paint to that owner.
+   --------------------------------------------------------------------- */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-table-wrap{
+  overflow:hidden!important;
+  border-radius:10px!important;
+  background-clip:padding-box!important;
+  isolation:isolate!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-historyshift .history-table-wrap :is(table,thead,tbody,tr,th,td){
+  border-radius:0!important;
+  outline:0!important;
+}
+
+/* ---------------------------------------------------------------------
+   E. USERS ACTION HARDWARE — same restrained equipment language as Riwayat
+   Shift, with clear semantic separation: Edit amber, Power blue/green,
+   Delete red. No dark "holes" behind Edit/Delete.
+   --------------------------------------------------------------------- */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button{
+  width:27px!important;
+  height:27px!important;
+  min-width:27px!important;
+  min-height:27px!important;
+  padding:0!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  border:1px solid color-mix(in srgb,var(--border-color) 86%,var(--text-muted) 14%)!important;
+  border-radius:7px!important;
+  background:color-mix(in srgb,var(--bg-card) 86%,var(--bg-secondary) 14%)!important;
+  background-image:none!important;
+  color:var(--text-muted)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  transition:transform .14s ease,border-color .14s ease,background-color .14s ease,color .14s ease!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button :is(svg,path,circle,rect){
+  stroke:currentColor!important;
+  fill:none!important;
+  filter:none!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.edit:not(:disabled){
+  color:#d97706!important;
+  border-color:color-mix(in srgb,#d97706 28%,var(--border-color))!important;
+  background:color-mix(in srgb,#d97706 7%,var(--bg-card))!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.status.inactive-action:not(:disabled){
+  color:#3b82f6!important;
+  border-color:color-mix(in srgb,#3b82f6 28%,var(--border-color))!important;
+  background:color-mix(in srgb,#3b82f6 7%,var(--bg-card))!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.status.active-action:not(:disabled){
+  color:#22a06b!important;
+  border-color:color-mix(in srgb,#22a06b 28%,var(--border-color))!important;
+  background:color-mix(in srgb,#22a06b 7%,var(--bg-card))!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.delete:not(:disabled){
+  color:#c94f5b!important;
+  border-color:color-mix(in srgb,#c94f5b 28%,var(--border-color))!important;
+  background:color-mix(in srgb,#c94f5b 7%,var(--bg-card))!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button:hover:not(:disabled){
+  transform:translateY(-1px)!important;
+  box-shadow:none!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.edit:hover:not(:disabled){background:color-mix(in srgb,#d97706 13%,var(--bg-card))!important;border-color:color-mix(in srgb,#d97706 44%,var(--border-color))!important;}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.status.inactive-action:hover:not(:disabled){background:color-mix(in srgb,#3b82f6 13%,var(--bg-card))!important;border-color:color-mix(in srgb,#3b82f6 44%,var(--border-color))!important;}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.status.active-action:hover:not(:disabled){background:color-mix(in srgb,#22a06b 13%,var(--bg-card))!important;border-color:color-mix(in srgb,#22a06b 44%,var(--border-color))!important;}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.delete:hover:not(:disabled){background:color-mix(in srgb,#c94f5b 13%,var(--bg-card))!important;border-color:color-mix(in srgb,#c94f5b 44%,var(--border-color))!important;}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button:disabled{
+  color:var(--text-muted)!important;
+  border-color:var(--border-color)!important;
+  background:color-mix(in srgb,var(--bg-card) 92%,var(--bg-secondary) 8%)!important;
+  opacity:.42!important;
+  box-shadow:none!important;
+}
+</style>
+
+<style id="v17-role-palette-corner-theme-switch-reconciliation-authority">
+/* =====================================================================
+   V17 — ROLE PALETTE / CORNER / THEME-SWITCH RECONCILIATION
+   Exact V16 additive presentation correction only.
+   - Venom Voucher + History: remove legacy green top-edge pseudo accent.
+   - Riwayat Shift: top header paint follows shell radius without breaking
+     responsive horizontal overflow.
+   - Voucher / History / Users role colors: exact Monitoring matte palette;
+     Leader retains the existing premium navy/gold authority.
+   - Users actions: Venom-native hardware surface + theme-transition isolation.
+   ===================================================================== */
+
+/* A. VENOM PREMIUM TABLES — Riwayat Shift has no decorative top-edge stripe;
+      Voucher and History now follow the same material language. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-voucher .voucher-table-wrap,#tab-history > .table-wrap)::before,
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-voucher .voucher-table-wrap,#tab-history > .table-wrap)::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+
+/* B. RIWAYAT SHIFT TOP CORNERS — legacy responsive rules intentionally keep
+      overflow visible/auto. Radius the actual header paint at the shell edge
+      instead of forcing overflow:hidden and risking horizontal-scroll loss. */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+body.historyshift-mode #tab-historyshift .history-table-wrap > table > thead > tr:first-child > th:first-child{
+  border-top-left-radius:9px!important;
+  background-clip:padding-box!important;
+}
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+body.historyshift-mode #tab-historyshift .history-table-wrap > table > thead > tr:first-child > th:last-child{
+  border-top-right-radius:9px!important;
+  background-clip:padding-box!important;
+}
+
+/* D. USERS ACTION HARDWARE — Venom-native surface matching Riwayat Shift,
+      while retaining V16 semantic colors (Edit amber / Power blue-green /
+      Delete red). */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button{
+  background:#111511!important;
+  background-image:none!important;
+  border-color:#303830!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.018)!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.edit:not(:disabled){color:#d8aa52!important;border-color:rgba(216,170,82,.22)!important;background:rgba(216,170,82,.075)!important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.status.inactive-action:not(:disabled){color:#75a8e8!important;border-color:rgba(117,168,232,.22)!important;background:rgba(117,168,232,.065)!important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.status.active-action:not(:disabled){color:#69d758!important;border-color:rgba(105,215,88,.22)!important;background:rgba(105,215,88,.065)!important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button.delete:not(:disabled){color:#c86c73!important;border-color:rgba(200,108,115,.22)!important;background:rgba(200,108,115,.065)!important;}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-action-button:hover:not(:disabled){box-shadow:none!important;}
+
+/* Theme switching already has one global ViewTransition/fallback owner. V16's
+   per-button !important transition could out-rank that owner, making action
+   hardware tween separately during Light <-> Dark/Venom. Disable local button
+   tween only for the transition epoch; normal hover transitions remain intact. */
+html.theme-view-transition:not([data-mi-native-presentation="mecha-ivory"])
+#tab-users .employee-action-button,
+html.theme-fallback-transition:not([data-mi-native-presentation="mecha-ivory"])
+#tab-users .employee-action-button{
+  transition:none!important;
+  animation:none!important;
+  will-change:auto!important;
+}
+</style>
+<!-- V19: Role badge root-cause correction: Voucher/Users now use exact Monitoring Izin role-tag markup; V16-V18 target-role imitation overrides removed. -->
+<style id="v22-role-badge-typography-reconciliation-root-cause">
+/* ============================================================================
+   V22 — ROLE BADGE TYPOGRAPHY RECONCILIATION / ROOT-CAUSE CORRECTION
+   Exact baseline: V21 SHA-256 17bdf2cf33c550876091460ebf64f6ccc6ad5e79aa75b39a225d1e448b3981e4
+
+   Authority scope:
+   - Monitoring Izin
+   - Voucher
+   - History Izin
+   - Users
+   Legacy only. Mecha Ivory remains untouched.
+
+   Root-cause correction:
+   1) data-selected-theme is the theme identity owner. data-theme is only the
+      rendered surface (Venom intentionally renders as dark).
+   2) Light-family palette is restored to the exact pre-experiment Monitoring
+      Role authority that existed before V16-V20 role-badge reconciliation.
+   3) Dark Cyber and Venom retain their established matte Monitoring palettes.
+   4) Standard-role typography is reconciled to exact pre-V16 Monitoring authority:
+      9px / 750 / .035em / line-height 1.
+   5) Shared geometry, V21 palette ownership, and navy-gold Leader remain preserved.
+   ============================================================================ */
+
+/* Shared Monitoring geometry — one box model on all four routes. */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(
+    #tab-monitoring .monitoring-members-panel,
+    #tab-voucher,
+    #tab-history,
+    #tab-users
+) .role-tag {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 4px 8px !important;
+    border: 1px solid transparent !important;
+    border-radius: 7px !important;
+    box-sizing: border-box !important;
+    font-size: 9px !important;
+    font-weight: 750 !important;
+    letter-spacing: .035em !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    background-image: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   LIGHT FAMILY
+   Exact Monitoring Light palette from the pre-V16 authority.
+   -------------------------------------------------------------------------- */
+html:is(
+    [data-selected-theme="light"],
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+):not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.csline {
+    background: #e9f8ef !important;
+    color: #168247 !important;
+    border-color: #9bd9b4 !important;
+}
+html:is(
+    [data-selected-theme="light"],
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+):not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.cs {
+    background: #edf4ff !important;
+    color: #3568b5 !important;
+    border-color: #b6cdf2 !important;
+}
+html:is(
+    [data-selected-theme="light"],
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+):not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.kapten {
+    background: #fff6e8 !important;
+    color: #a56513 !important;
+    border-color: #eac98f !important;
+}
+html:is(
+    [data-selected-theme="light"],
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+):not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.kasir {
+    background: #f4efff !important;
+    color: #7251b5 !important;
+    border-color: #cdbcf0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   DARK CYBER — selected-theme owned, independent from rendered/variant state.
+   -------------------------------------------------------------------------- */
+html[data-selected-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.csline {
+    background: #123f2f !important;
+    color: #8ee0ae !important;
+    border-color: #2b6f53 !important;
+}
+html[data-selected-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.cs {
+    background: #142f4a !important;
+    color: #9ec7f7 !important;
+    border-color: #31587f !important;
+}
+html[data-selected-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.kapten {
+    background: #423019 !important;
+    color: #f0c47d !important;
+    border-color: #72532d !important;
+}
+html[data-selected-theme="dark"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.kasir {
+    background: #2d2348 !important;
+    color: #c9b5f5 !important;
+    border-color: #5a4780 !important;
+}
+
+/* --------------------------------------------------------------------------
+   VENOM GREEN — selected-theme owned. Venom may keep data-theme="dark" without
+   ever entering the Dark Cyber Role branch.
+   -------------------------------------------------------------------------- */
+html[data-selected-theme="venom"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.csline {
+    background: #102315 !important;
+    color: #79e793 !important;
+    border-color: #295d36 !important;
+}
+html[data-selected-theme="venom"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.cs {
+    background: #101b27 !important;
+    color: #8bc8f5 !important;
+    border-color: #28465f !important;
+}
+html[data-selected-theme="venom"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.kapten {
+    background: #281c10 !important;
+    color: #efbd72 !important;
+    border-color: #624421 !important;
+}
+html[data-selected-theme="venom"]:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.kasir {
+    background: #1d1729 !important;
+    color: #c9aff2 !important;
+    border-color: #49376b !important;
+}
+
+/* Leader: V20 PASS authority preserved exactly; only geometry owner is shared. */
+html:not([data-mi-native-presentation="mecha-ivory"]):not([data-mi-frozen-presentation="mecha-ivory"])
+:is(#tab-monitoring .monitoring-members-panel,#tab-voucher,#tab-history,#tab-users) .role-tag.leader {
+    background: linear-gradient(135deg, #172033 0%, #0f1727 100%) !important;
+    color: #f6cf62 !important;
+    border-color: #c99b35 !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-radius: 7px !important;
+    padding: 4px 8px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    letter-spacing: .3px !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+</style>
 </body>
 </html>
