@@ -44455,20 +44455,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 }
 
 </style>
-
-
-<style id="shift-user-card-source-pointer-ownership-v2">
-/* =====================================================================
-   SHIFT KERJA — USER CARD SOURCE POINTER OWNERSHIP v2
-   Root cause: V14 correctly surrenders lane-body hit-testing during a staff
-   drag, but that also makes the native source inherit pointer-events:none.
-   Keep only the already-marked source card as an explicit pointer owner.
-   Destination cards/bodies continue using the proven V13/V14 dropzone model.
-   ===================================================================== */
-body.shift-staff-drag-active #tab-shifts .user-card-shift.dragging {
-    pointer-events: auto !important;
-}
-</style>
 </head>
 
 <body>
@@ -57713,45 +57699,41 @@ body.shift-staff-drag-active #tab-shifts .user-card-shift.dragging {
                 return false;
             }
 
-            const target = e.target.closest('.user-card-shift');
-            if (!target) {
-                e.preventDefault();
-                return false;
-            }
-
             staffDragData = {
                 userId: userId,
                 sourceType: sourceType,
                 columnId: columnId || null
             };
+            setShiftStaffDragActive(true);
 
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('staff-drag', JSON.stringify(staffDragData));
             e.dataTransfer.setData('text/plain', JSON.stringify(staffDragData));
 
-            const rect = target.getBoundingClientRect();
-            const dragImage = target.cloneNode(true);
-            dragImage.style.position = 'fixed';
-            dragImage.style.pointerEvents = 'none';
-            dragImage.style.opacity = '0.7';
-            dragImage.style.transform = 'scale(0.95)';
-            dragImage.style.width = rect.width + 'px';
-            dragImage.style.borderRadius = '8px';
-            dragImage.style.background = 'var(--bg-card)';
-            dragImage.style.boxShadow = 'var(--shadow-xl)';
-            document.body.appendChild(dragImage);
-            e.dataTransfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
-            setTimeout(() => {
-                document.body.removeChild(dragImage);
-            }, 100);
+            const target = e.target.closest('.user-card-shift');
+            if (target) {
+                setTimeout(() => {
+                    target.classList.add('dragging');
+                }, 10);
+            }
 
-            // Source ownership must be established BEFORE the global staff-drag
-            // state makes destination card/body surfaces surrender hit-testing.
-            // V14 intentionally sets lane bodies to pointer-events:none; the
-            // explicit .dragging source override below keeps the native source
-            // alive throughout Chromium drag initiation.
-            target.classList.add('dragging');
-            setShiftStaffDragActive(true);
+            if (e.target.closest('.user-card-shift')) {
+                const rect = target.getBoundingClientRect();
+                const dragImage = target.cloneNode(true);
+                dragImage.style.position = 'fixed';
+                dragImage.style.pointerEvents = 'none';
+                dragImage.style.opacity = '0.7';
+                dragImage.style.transform = 'scale(0.95)';
+                dragImage.style.width = rect.width + 'px';
+                dragImage.style.borderRadius = '8px';
+                dragImage.style.background = 'var(--bg-card)';
+                dragImage.style.boxShadow = 'var(--shadow-xl)';
+                document.body.appendChild(dragImage);
+                e.dataTransfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
+                setTimeout(() => {
+                    document.body.removeChild(dragImage);
+                }, 100);
+            }
         }
 
         function onStaffDragEnd(e) {
@@ -93154,5 +93136,311 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
     box-shadow: none !important;
 }
 </style>
+
+    <!-- ============================================================ -->
+    <!-- SHIFT USER CARD — POINTER INITIATION FALLBACK BRIDGE         -->
+    <!-- Native HTML5 V12/V13/V14 remains primary authority.          -->
+    <!-- ============================================================ -->
+    <style id="shift-user-card-pointer-bridge-style">
+        .shift-pointer-drag-ghost {
+            position: fixed !important;
+            inset: auto !important;
+            margin: 0 !important;
+            pointer-events: none !important;
+            z-index: 2147483646 !important;
+            opacity: .92 !important;
+            will-change: transform !important;
+            contain: layout paint style !important;
+            transition: none !important;
+        }
+    </style>
+    <script id="shift-user-card-pointer-bridge">
+    (() => {
+        'use strict';
+
+        // Architecture contract:
+        // - Native HTML5 drag (V12/V13/V14) is untouched and remains primary.
+        // - This bridge arms only on an editable Shift user card.
+        // - If native dragstart fires, the bridge immediately yields.
+        // - Only when native dragstart fails to materialize does pointer fallback
+        //   own transport, while final commit still calls the existing V12/V13
+        //   drop authorities (onStaffDrop / onAvailableDrop).
+        const MOVE_THRESHOLD_PX = 7;
+        const NATIVE_GRACE_MS = 120;
+
+        let pointerDrag = null;
+        let suppressClickUntil = 0;
+
+        function isEditableShiftCard(card) {
+            if (!card || currentTab !== 'shifts') return false;
+            const tab = document.getElementById('tab-shifts');
+            if (!tab?.classList.contains('active') || !tab.contains(card)) return false;
+            if (card.getAttribute('draggable') !== 'true') return false;
+            return typeof canEditShift === 'function' && canEditShift();
+        }
+
+        function clearDropVisuals() {
+            document.querySelectorAll('#tab-shifts .shift-column-wrapper.drag-over-col').forEach(el => {
+                el.classList.remove('drag-over-col');
+            });
+            document.querySelectorAll('#tab-shifts .shift-column-dropzone.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+            document.querySelectorAll('#tab-shifts .shift-available-dropzone.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+            document.querySelectorAll('#tab-shifts .empty-drop.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+        }
+
+        function paintDropTarget(target) {
+            clearDropVisuals();
+            if (!target?.dropzone) return;
+
+            if (target.type === 'available') {
+                target.dropzone.classList.add('drag-over');
+                return;
+            }
+
+            if (target.type === 'column') {
+                target.dropzone.classList.add('drag-over');
+                target.dropzone.querySelector('.empty-drop')?.classList.add('drag-over');
+                target.dropzone.closest('.shift-column-wrapper')?.classList.add('drag-over-col');
+            }
+        }
+
+        function removeGhost(state) {
+            if (state?.ghost?.isConnected) state.ghost.remove();
+            if (state) state.ghost = null;
+        }
+
+        function restoreNativeDraggable(state) {
+            const card = state?.card;
+            if (!card?.isConnected) return;
+            if (state.originalDraggableAttr == null) {
+                card.removeAttribute('draggable');
+            } else {
+                card.setAttribute('draggable', state.originalDraggableAttr);
+            }
+        }
+
+        function cleanupPointerDrag({ preserveStaffData = false } = {}) {
+            const state = pointerDrag;
+            if (!state) return;
+
+            if (state.armTimer) {
+                clearTimeout(state.armTimer);
+                state.armTimer = null;
+            }
+
+            state.card?.classList.remove('dragging');
+            restoreNativeDraggable(state);
+            removeGhost(state);
+            clearDropVisuals();
+            setShiftStaffDragActive(false);
+            if (!preserveStaffData) staffDragData = null;
+            pointerDrag = null;
+        }
+
+        function cancelPendingPointerCandidate() {
+            const state = pointerDrag;
+            if (!state || state.started) return;
+            if (state.armTimer) clearTimeout(state.armTimer);
+            pointerDrag = null;
+        }
+
+        function createGhost(state) {
+            const card = state.card;
+            const rect = card.getBoundingClientRect();
+            const cs = window.getComputedStyle(card);
+            const ghost = card.cloneNode(true);
+            ghost.removeAttribute('id');
+            ghost.removeAttribute('draggable');
+            ghost.removeAttribute('ondragstart');
+            ghost.removeAttribute('ondragend');
+            ghost.classList.remove('dragging');
+            ghost.classList.add('shift-pointer-drag-ghost');
+            ghost.style.width = `${rect.width}px`;
+            ghost.style.height = `${rect.height}px`;
+            ghost.style.background = cs.background;
+            ghost.style.border = cs.border;
+            ghost.style.borderRadius = cs.borderRadius;
+            ghost.style.boxShadow = cs.boxShadow === 'none'
+                ? '0 14px 32px rgba(0,0,0,.22)'
+                : cs.boxShadow;
+            document.body.appendChild(ghost);
+            state.ghost = ghost;
+            state.offsetX = Math.max(0, Math.min(rect.width, state.lastX - rect.left));
+            state.offsetY = Math.max(0, Math.min(rect.height, state.lastY - rect.top));
+        }
+
+        function positionGhost(state) {
+            if (!state?.ghost) return;
+            const x = state.lastX - state.offsetX;
+            const y = state.lastY - state.offsetY;
+            state.ghost.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0) scale(.985)`;
+        }
+
+        function startPointerFallback() {
+            const state = pointerDrag;
+            if (!state || state.started || state.nativeStarted || !state.card?.isConnected) return;
+            if (!isEditableShiftCard(state.card)) {
+                cleanupPointerDrag();
+                return;
+            }
+
+            state.started = true;
+            state.armTimer = null;
+            state.originalDraggableAttr = state.card.getAttribute('draggable');
+
+            // Native did not start inside the grace window. Disable native only
+            // for this one source card to prevent a late double-start.
+            state.card.setAttribute('draggable', 'false');
+
+            staffDragData = {
+                userId: state.userId,
+                sourceType: state.sourceType,
+                columnId: state.columnId || null
+            };
+
+            state.card.classList.add('dragging');
+            createGhost(state);
+            positionGhost(state);
+            setShiftStaffDragActive(true);
+            window.getSelection?.()?.removeAllRanges?.();
+
+            const target = resolveShiftStaffDropCorridor(state.lastX, state.lastY);
+            paintDropTarget(target);
+        }
+
+        function armFallbackIfNeeded(state) {
+            if (!state || state.started || state.nativeStarted || state.armTimer) return;
+            const dx = state.lastX - state.startX;
+            const dy = state.lastY - state.startY;
+            if ((dx * dx + dy * dy) < MOVE_THRESHOLD_PX * MOVE_THRESHOLD_PX) return;
+
+            state.armTimer = window.setTimeout(() => {
+                if (pointerDrag === state && !state.nativeStarted && !state.started) {
+                    startPointerFallback();
+                }
+            }, NATIVE_GRACE_MS);
+        }
+
+        document.addEventListener('pointerdown', (e) => {
+            if (e.pointerType !== 'mouse' || e.button !== 0) return;
+            const card = e.target instanceof Element ? e.target.closest('.user-card-shift') : null;
+            if (!isEditableShiftCard(card)) return;
+
+            if (pointerDrag) cleanupPointerDrag();
+
+            pointerDrag = {
+                pointerId: e.pointerId,
+                card,
+                userId: String(card.dataset.userId || ''),
+                sourceType: String(card.dataset.source || ''),
+                columnId: card.dataset.columnId ? String(card.dataset.columnId) : null,
+                startX: e.clientX,
+                startY: e.clientY,
+                lastX: e.clientX,
+                lastY: e.clientY,
+                started: false,
+                nativeStarted: false,
+                armTimer: null,
+                ghost: null,
+                originalDraggableAttr: null,
+                offsetX: 0,
+                offsetY: 0
+            };
+        }, true);
+
+        // If native V12/V13/V14 drag starts successfully, yield immediately.
+        document.addEventListener('dragstart', (e) => {
+            const card = e.target instanceof Element ? e.target.closest('.user-card-shift') : null;
+            if (!card || !pointerDrag || pointerDrag.card !== card) return;
+
+            if (pointerDrag.started) {
+                // Extremely late native start after fallback takeover: keep one
+                // owner only and prevent duplicate transport/commit.
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
+
+            pointerDrag.nativeStarted = true;
+            cancelPendingPointerCandidate();
+        }, true);
+
+        document.addEventListener('pointermove', (e) => {
+            const state = pointerDrag;
+            if (!state || e.pointerId !== state.pointerId) return;
+            state.lastX = e.clientX;
+            state.lastY = e.clientY;
+
+            if (!state.started) {
+                armFallbackIfNeeded(state);
+                return;
+            }
+
+            e.preventDefault();
+            positionGhost(state);
+            const target = resolveShiftStaffDropCorridor(e.clientX, e.clientY);
+            paintDropTarget(target);
+        }, { capture: true, passive: false });
+
+        document.addEventListener('pointerup', (e) => {
+            const state = pointerDrag;
+            if (!state || e.pointerId !== state.pointerId) return;
+
+            if (!state.started) {
+                cancelPendingPointerCandidate();
+                return;
+            }
+
+            e.preventDefault();
+            state.lastX = e.clientX;
+            state.lastY = e.clientY;
+            const target = resolveShiftStaffDropCorridor(e.clientX, e.clientY);
+
+            try {
+                if (target?.dropzone) {
+                    const corridorEvent = buildShiftStaffCorridorDropEvent(target);
+                    if (target.type === 'available') {
+                        onAvailableDrop(corridorEvent);
+                    } else if (target.type === 'column' && target.columnId) {
+                        onStaffDrop(corridorEvent, target.columnId);
+                    }
+                }
+            } finally {
+                suppressClickUntil = performance.now() + 350;
+                cleanupPointerDrag();
+            }
+        }, { capture: true, passive: false });
+
+        document.addEventListener('pointercancel', (e) => {
+            if (pointerDrag && e.pointerId === pointerDrag.pointerId) cleanupPointerDrag();
+        }, true);
+
+        document.addEventListener('click', (e) => {
+            if (performance.now() < suppressClickUntil && e.target instanceof Element && e.target.closest('.user-card-shift')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        window.addEventListener('blur', () => {
+            if (pointerDrag?.started) cleanupPointerDrag();
+            else cancelPendingPointerCandidate();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') {
+                if (pointerDrag?.started) cleanupPointerDrag();
+                else cancelPendingPointerCandidate();
+            }
+        });
+    })();
+    </script>
+
 </body>
 </html>
