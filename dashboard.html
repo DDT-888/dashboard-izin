@@ -62159,8 +62159,46 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             email: '',
             name: '',
             role: 'kasir',
-            dirty: false
+            dirty: false,
+            focusField: '',
+            selectionStart: null,
+            selectionEnd: null,
+            selectionDirection: 'none'
         };
+
+        function employeeRegisterFieldKey(element) {
+            if (!element) return '';
+            if (element.id === 'inputUserEmail') return 'email';
+            if (element.id === 'inputUserName') return 'name';
+            if (element.id === 'inputUserRole') return 'role';
+            return '';
+        }
+
+        function employeeRememberRegisterFocus(element) {
+            const key = employeeRegisterFieldKey(element);
+            if (!key) return;
+            employeeRegisterDraftState.focusField = key;
+            if (element instanceof HTMLInputElement) {
+                employeeRegisterDraftState.selectionStart = Number.isInteger(element.selectionStart) ? element.selectionStart : null;
+                employeeRegisterDraftState.selectionEnd = Number.isInteger(element.selectionEnd) ? element.selectionEnd : employeeRegisterDraftState.selectionStart;
+                employeeRegisterDraftState.selectionDirection = element.selectionDirection || 'none';
+            } else {
+                employeeRegisterDraftState.selectionStart = null;
+                employeeRegisterDraftState.selectionEnd = null;
+                employeeRegisterDraftState.selectionDirection = 'none';
+            }
+        }
+
+        function employeeBindRegisterDraftFocusTracking(form) {
+            if (!form || form.dataset.registerDraftFocusBound === '1') return;
+            form.dataset.registerDraftFocusBound = '1';
+            const tracked = form.querySelectorAll('#inputUserEmail, #inputUserName, #inputUserRole');
+            tracked.forEach(control => {
+                ['focus', 'input', 'keyup', 'click', 'select'].forEach(type => {
+                    control.addEventListener(type, () => employeeRememberRegisterFocus(control));
+                });
+            });
+        }
 
         function employeeCaptureRegisterDraftFromDOM() {
             const form = document.querySelector('#tab-users .user-register-form');
@@ -62169,6 +62207,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const nameInput = form.querySelector('#inputUserName');
             const roleSelect = form.querySelector('#inputUserRole');
             if (!emailInput || !nameInput || !roleSelect) return;
+
+            const active = document.activeElement;
+            if (active && form.contains(active)) employeeRememberRegisterFocus(active);
 
             const email = String(emailInput.value || '');
             const name = String(nameInput.value || '');
@@ -62182,15 +62223,36 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         }
 
         function employeeRestoreRegisterDraftToDOM() {
-            if (!employeeRegisterDraftState.dirty) return;
             const form = document.querySelector('#tab-users .user-register-form');
             if (!form) return;
             const emailInput = form.querySelector('#inputUserEmail');
             const nameInput = form.querySelector('#inputUserName');
             const roleSelect = form.querySelector('#inputUserRole');
+            employeeBindRegisterDraftFocusTracking(form);
+
+            if (!employeeRegisterDraftState.dirty) return;
             if (emailInput) emailInput.value = employeeRegisterDraftState.email;
             if (nameInput) nameInput.value = employeeRegisterDraftState.name;
             if (roleSelect) roleSelect.value = employeeRegisterDraftState.role;
+
+            const target = employeeRegisterDraftState.focusField === 'email' ? emailInput
+                : employeeRegisterDraftState.focusField === 'name' ? nameInput
+                : employeeRegisterDraftState.focusField === 'role' ? roleSelect
+                : null;
+            if (!target || target.disabled) return;
+
+            requestAnimationFrame(() => {
+                if (!target.isConnected) return;
+                try { target.focus({ preventScroll: true }); }
+                catch (_) { target.focus(); }
+                if (target instanceof HTMLInputElement && employeeRegisterDraftState.selectionStart != null) {
+                    const max = target.value.length;
+                    const start = Math.min(employeeRegisterDraftState.selectionStart, max);
+                    const end = Math.min(employeeRegisterDraftState.selectionEnd ?? start, max);
+                    try { target.setSelectionRange(start, end, employeeRegisterDraftState.selectionDirection || 'none'); }
+                    catch (_) { /* unsupported input selection type */ }
+                }
+            });
         }
 
         window.clearEmployeeRegisterDraft = function() {
@@ -62198,6 +62260,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             employeeRegisterDraftState.name = '';
             employeeRegisterDraftState.role = 'kasir';
             employeeRegisterDraftState.dirty = false;
+            employeeRegisterDraftState.focusField = '';
+            employeeRegisterDraftState.selectionStart = null;
+            employeeRegisterDraftState.selectionEnd = null;
+            employeeRegisterDraftState.selectionDirection = 'none';
         };
 
         function renderUsersPage() {
@@ -94368,5 +94434,81 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             color:var(--text-muted)!important;
         }
     </style>
+
+
+    <style id="users-inactive-lifecycle-v7-focus-spacing-venom-refinement">
+        /* V7 — tighter segmented-date rhythm + exact Venom lifecycle ownership. */
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control{
+            grid-template-columns:max-content 24px!important;
+            gap:2px!important;
+            width:max-content!important;
+            min-width:0!important;
+            justify-content:start!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-segments{
+            display:grid!important;
+            grid-template-columns:22px 7px 22px 7px 42px!important;
+            gap:0!important;
+            width:max-content!important;
+            min-width:0!important;
+            justify-content:start!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-segments input.employee-date-segment{
+            width:100%!important;
+            padding:0!important;
+            letter-spacing:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-separator{
+            width:7px!important;
+            min-width:7px!important;
+            text-align:center!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-inline-cell-editing .employee-segmented-date-control{min-width:102px!important}
+
+        /* Legacy Venom Green: lifecycle controls must not inherit Dark/Cyber paint. */
+        html[data-selected-theme="venom"] body #tab-users .employee-action-button.status.active-action.active-state-action.lifecycle-power.history-tooltip-target:not(:disabled),
+        html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .employee-action-button.status.active-action.active-state-action.lifecycle-power.history-tooltip-target:not(:disabled){
+            color:#58e041!important;
+            background:rgba(68,214,44,.10)!important;
+            border-color:rgba(94,239,69,.30)!important;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+        }
+        html[data-selected-theme="venom"] body #tab-users .employee-action-button.status.active-action.active-state-action.lifecycle-power.history-tooltip-target:hover:not(:disabled),
+        html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .employee-action-button.status.active-action.active-state-action.lifecycle-power.history-tooltip-target:hover:not(:disabled){
+            color:#76ee62!important;
+            background:rgba(68,214,44,.17)!important;
+            border-color:rgba(94,239,69,.46)!important;
+            box-shadow:0 0 0 1px rgba(68,214,44,.06),0 8px 18px rgba(68,214,44,.10)!important;
+        }
+        html[data-selected-theme="venom"] body #tab-users .employee-action-button.status.lifecycle-power.inactive-state-action.history-tooltip-target:not(:disabled),
+        html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .employee-action-button.status.lifecycle-power.inactive-state-action.history-tooltip-target:not(:disabled){
+            color:#e6757c!important;
+            background:rgba(202,72,82,.10)!important;
+            border-color:rgba(230,117,124,.30)!important;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+        }
+        html[data-selected-theme="venom"] body #tab-users .employee-action-button.status.lifecycle-power.inactive-state-action.history-tooltip-target:hover:not(:disabled),
+        html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .employee-action-button.status.lifecycle-power.inactive-state-action.history-tooltip-target:hover:not(:disabled){
+            color:#f08a91!important;
+            background:rgba(202,72,82,.16)!important;
+            border-color:rgba(240,138,145,.44)!important;
+            box-shadow:0 0 0 1px rgba(202,72,82,.05),0 8px 18px rgba(202,72,82,.10)!important;
+        }
+        html[data-selected-theme="venom"] body #tab-users .employee-inactive-section-icon,
+        html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .employee-inactive-section-icon{
+            color:#e6757c!important;
+            background:rgba(202,72,82,.09)!important;
+            border-color:rgba(230,117,124,.27)!important;
+            box-shadow:none!important;
+        }
+        html[data-selected-theme="venom"] body #tab-users .employee-status-badge.lifecycle-inactive,
+        html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .employee-status-badge.lifecycle-inactive{
+            color:#e6757c!important;
+            background:rgba(202,72,82,.09)!important;
+            border-color:rgba(230,117,124,.28)!important;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important;
+        }
+    </style>
+
 </body>
 </html>
