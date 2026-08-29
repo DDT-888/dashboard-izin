@@ -57699,41 +57699,44 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 return false;
             }
 
+            const target = e.target.closest('.user-card-shift');
+            if (!target) {
+                e.preventDefault();
+                return false;
+            }
+
             staffDragData = {
                 userId: userId,
                 sourceType: sourceType,
                 columnId: columnId || null
             };
-            setShiftStaffDragActive(true);
 
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('staff-drag', JSON.stringify(staffDragData));
             e.dataTransfer.setData('text/plain', JSON.stringify(staffDragData));
 
-            const target = e.target.closest('.user-card-shift');
-            if (target) {
-                setTimeout(() => {
-                    target.classList.add('dragging');
-                }, 10);
-            }
+            const rect = target.getBoundingClientRect();
+            const dragImage = target.cloneNode(true);
+            dragImage.style.position = 'fixed';
+            dragImage.style.pointerEvents = 'none';
+            dragImage.style.opacity = '0.7';
+            dragImage.style.transform = 'scale(0.95)';
+            dragImage.style.width = rect.width + 'px';
+            dragImage.style.borderRadius = '8px';
+            dragImage.style.background = 'var(--bg-card)';
+            dragImage.style.boxShadow = 'var(--shadow-xl)';
+            document.body.appendChild(dragImage);
+            e.dataTransfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
+            setTimeout(() => {
+                document.body.removeChild(dragImage);
+            }, 100);
 
-            if (e.target.closest('.user-card-shift')) {
-                const rect = target.getBoundingClientRect();
-                const dragImage = target.cloneNode(true);
-                dragImage.style.position = 'fixed';
-                dragImage.style.pointerEvents = 'none';
-                dragImage.style.opacity = '0.7';
-                dragImage.style.transform = 'scale(0.95)';
-                dragImage.style.width = rect.width + 'px';
-                dragImage.style.borderRadius = '8px';
-                dragImage.style.background = 'var(--bg-card)';
-                dragImage.style.boxShadow = 'var(--shadow-xl)';
-                document.body.appendChild(dragImage);
-                e.dataTransfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
-                setTimeout(() => {
-                    document.body.removeChild(dragImage);
-                }, 100);
-            }
+            // Keep the native drag source hit-testable while destination cards
+            // surrender pointer ownership to their parent dropzones. This avoids
+            // cancelling drag initiation in Chromium when pointer-events changes
+            // during dragstart.
+            target.classList.add('dragging');
+            setShiftStaffDragActive(true);
         }
 
         function onStaffDragEnd(e) {
@@ -92061,7 +92064,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 body.shift-staff-drag-active #tab-shifts :is(
     .shift-column-dropzone,
     .shift-available-dropzone
-) .user-card-shift {
+) .user-card-shift:not(.dragging) {
     pointer-events: none !important;
 }
 
