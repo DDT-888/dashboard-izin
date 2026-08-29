@@ -93142,7 +93142,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
    SHIFT USER CARD — POINTER TRANSPORT / CHROME 152 COMPATIBILITY
    SMOOTHNESS REFINEMENT
    - User Card only: bypasses native HTML5 DnD initiation.
-   - Movement is compositor-only (translate3d) and rAF-throttled.
+   - Visual ghost is cursor-locked with direct compositor-only translate3d.
+   - Corridor/highlight work remains rAF-throttled.
+   - User-card inherited transitions are disabled on the drag ghost.
    - V12 corridor + existing onStaffDrop/onAvailableDrop remain commit owners.
    - V13/V14 styles remain untouched; column drag remains native.
    ===================================================================== */
@@ -93165,6 +93167,14 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     box-shadow: 0 12px 28px rgba(10, 35, 42, .18) !important;
     will-change: transform !important;
     backface-visibility: hidden !important;
+    transition: none !important;
+    animation: none !important;
+    contain: layout paint style !important;
+}
+.shift-staff-pointer-ghost,
+.shift-staff-pointer-ghost * {
+    transition: none !important;
+    animation: none !important;
 }
 </style>
 
@@ -93259,7 +93269,6 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 
         const x = state.pendingX;
         const y = state.pendingY;
-        moveGhost(x, y);
 
         const target = resolveShiftStaffDropCorridor(x, y);
         setPointerHighlight(target);
@@ -93386,6 +93395,13 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         e.preventDefault();
         state.pendingX = e.clientX;
         state.pendingY = e.clientY;
+
+        /*
+         * Visual transport must stay cursor-locked. This is a compositor-only
+         * transform write: no layout read, no corridor scan, no DOM traversal.
+         * Expensive corridor/highlight work remains rAF-throttled below.
+         */
+        moveGhost(e.clientX, e.clientY);
         schedulePointerFrame();
     }, {capture: true, passive: false});
 
