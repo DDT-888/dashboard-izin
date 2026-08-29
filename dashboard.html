@@ -55985,6 +55985,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             document.getElementById('inputUserEmail').value = '';
             document.getElementById('inputUserName').value = '';
             if (roleElement) roleElement.value = 'kasir';
+            if (typeof window.clearEmployeeRegisterDraft === 'function') window.clearEmployeeRegisterDraft();
             renderUsers();
             renderAll();
             updateQuickStats();
@@ -62152,9 +62153,57 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             }).join('');
         }
 
+        // V6 — Register User draft preservation.
+        // Realtime/table reconciliation may freely rerender Users; only the register form draft is restored.
+        const employeeRegisterDraftState = {
+            email: '',
+            name: '',
+            role: 'kasir',
+            dirty: false
+        };
+
+        function employeeCaptureRegisterDraftFromDOM() {
+            const form = document.querySelector('#tab-users .user-register-form');
+            if (!form) return;
+            const emailInput = form.querySelector('#inputUserEmail');
+            const nameInput = form.querySelector('#inputUserName');
+            const roleSelect = form.querySelector('#inputUserRole');
+            if (!emailInput || !nameInput || !roleSelect) return;
+
+            const email = String(emailInput.value || '');
+            const name = String(nameInput.value || '');
+            const role = String(roleSelect.value || 'kasir');
+            employeeRegisterDraftState.email = email;
+            employeeRegisterDraftState.name = name;
+            employeeRegisterDraftState.role = role;
+            employeeRegisterDraftState.dirty = Boolean(
+                email.trim() || name.trim() || role !== 'kasir'
+            );
+        }
+
+        function employeeRestoreRegisterDraftToDOM() {
+            if (!employeeRegisterDraftState.dirty) return;
+            const form = document.querySelector('#tab-users .user-register-form');
+            if (!form) return;
+            const emailInput = form.querySelector('#inputUserEmail');
+            const nameInput = form.querySelector('#inputUserName');
+            const roleSelect = form.querySelector('#inputUserRole');
+            if (emailInput) emailInput.value = employeeRegisterDraftState.email;
+            if (nameInput) nameInput.value = employeeRegisterDraftState.name;
+            if (roleSelect) roleSelect.value = employeeRegisterDraftState.role;
+        }
+
+        window.clearEmployeeRegisterDraft = function() {
+            employeeRegisterDraftState.email = '';
+            employeeRegisterDraftState.name = '';
+            employeeRegisterDraftState.role = 'kasir';
+            employeeRegisterDraftState.dirty = false;
+        };
+
         function renderUsersPage() {
             const container = document.getElementById('usersContent');
             if (!container) return;
+            employeeCaptureRegisterDraftFromDOM();
             if (!employeeCan('employee_data_view')) {
                 container.innerHTML = `<div class="voucher-access-denied"><div><h3>Akses Ditolak</h3><p>Anda tidak memiliki izin untuk melihat data kepegawaian.</p></div></div>`;
                 return;
@@ -62194,6 +62243,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <div class="history-count employee-inactive-history-count">Total <span>${inactiveUsers.length}</span> user nonaktif</div>
                 </section>
             </div>`;
+            employeeRestoreRegisterDraftToDOM();
         }
 
         window.setEmployeeUserFilter = function(key, value) {
@@ -94260,5 +94310,63 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     })();
     </script>
 
+
+    <style id="users-inactive-lifecycle-v6-flat-date-authority">
+        /* V6 — segmented dates keep keyboard segmentation but must visually read as plain DD / MM / YYYY. */
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell.employee-inline-cell-editing:has(.employee-segmented-date-control){
+            background:transparent!important;
+            background-image:none!important;
+            border:0!important;
+            border-radius:0!important;
+            box-shadow:none!important;
+            outline:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-segments{
+            border:0!important;
+            border-radius:0!important;
+            background:transparent!important;
+            background-image:none!important;
+            box-shadow:none!important;
+            outline:0!important;
+            overflow:visible!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-segments input.employee-date-segment,
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-segments input.employee-date-segment:hover,
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-segments input.employee-date-segment:focus,
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-segments input.employee-date-segment:focus-visible{
+            -webkit-appearance:none!important;
+            appearance:none!important;
+            display:block!important;
+            min-width:0!important;
+            min-height:0!important;
+            height:26px!important;
+            margin:0!important;
+            padding:0 1px!important;
+            border:0!important;
+            border-width:0!important;
+            border-style:none!important;
+            border-color:transparent!important;
+            border-radius:0!important;
+            background:transparent!important;
+            background-color:transparent!important;
+            background-image:none!important;
+            box-shadow:none!important;
+            outline:0!important;
+            color:var(--text-primary)!important;
+            caret-color:currentColor!important;
+            text-align:center!important;
+            font:inherit!important;
+            font-size:11px!important;
+            font-weight:700!important;
+            line-height:26px!important;
+            font-variant-numeric:tabular-nums!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-separator{
+            background:transparent!important;
+            border:0!important;
+            box-shadow:none!important;
+            color:var(--text-muted)!important;
+        }
+    </style>
 </body>
 </html>
