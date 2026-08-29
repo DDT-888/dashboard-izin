@@ -44455,6 +44455,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 }
 
 </style>
+
+
+
 </head>
 
 <body>
@@ -51643,7 +51646,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
                 const { data: users, error: usersError } = await supabaseDashboard
                     .from('users')
-                    .select('id, name, role')
+                    .select('id, name, role, status')
+                    .eq('status', 'active')
                     .in('role', ['csline', 'cs', 'kapten', 'kasir'])
                     .order('role', { ascending: true })
                     .order('name', { ascending: true });
@@ -54441,6 +54445,188 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         // ============================================================
         // RENDER USERS PAGE
         // ============================================================
+        function employeeLifecycleActorLabel(user) {
+            return employeeEscape(user?.inactive_by || '—');
+        }
+
+        function employeeLifecycleInlineCell(user, field, main, sub = '') {
+            const editable = userPermissions.canManage && String(user.status || '').toLowerCase() === 'inactive';
+            return `<button type="button" class="employee-inline-cell employee-lifecycle-inline ${editable ? 'is-editable' : ''}" ${editable ? `data-user-id="${user.id}" data-field="${field}" ondblclick="beginEmployeeLifecycleInlineEdit(this)" aria-label="Edit ${field === 'inactive_at' ? 'Tanggal Nonaktif' : 'Alasan'}"` : 'disabled'}><span style="min-width:0"><span class="employee-inline-main">${main}</span>${sub ? `<span class="employee-inline-sub">${sub}</span>` : ''}</span>${editable ? `<span class="employee-edit-mark"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></span>` : ''}</button>`;
+        }
+
+        function ensureEmployeeLifecycleModal() {
+            let modal = document.getElementById('employeeLifecycleModal');
+            if (modal) return modal;
+            modal = document.createElement('div');
+            modal.id = 'employeeLifecycleModal';
+            modal.className = 'employee-lifecycle-overlay';
+            modal.setAttribute('aria-hidden', 'true');
+            modal.innerHTML = `
+                <div class="employee-lifecycle-card" role="dialog" aria-modal="true" aria-labelledby="employeeLifecycleTitle">
+                    <div class="employee-lifecycle-heading">
+                        <div class="employee-lifecycle-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5v9"/><path d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></div>
+                        <div><h3 id="employeeLifecycleTitle">Nonaktifkan User</h3><p id="employeeLifecycleMessage">Lengkapi informasi nonaktif user.</p></div>
+                    </div>
+                    <div class="employee-lifecycle-fields">
+                        <label><span>Tanggal Nonaktif</span><input id="employeeLifecycleDate" type="date" data-employee-date="true" /></label>
+                        <label><span>Alasan <small>Opsional</small></span><textarea id="employeeLifecycleReason" maxlength="250" rows="3" placeholder="Contoh: Resign"></textarea></label>
+                    </div>
+                    <div class="employee-lifecycle-actions">
+                        <button type="button" class="secondary" onclick="closeEmployeeLifecycleModal(false)">Batal</button>
+                        <button type="button" class="primary" id="employeeLifecycleConfirm" onclick="closeEmployeeLifecycleModal(true)">Nonaktifkan</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            bindEmployeeDateYearLock(modal.querySelector('#employeeLifecycleDate'));
+            modal.addEventListener('pointerdown', event => {
+                if (event.target === modal) closeEmployeeLifecycleModal(false);
+            });
+            return modal;
+        }
+
+        let employeeLifecycleResolver = null;
+        window.closeEmployeeLifecycleModal = function(confirmed = false) {
+            const modal = document.getElementById('employeeLifecycleModal');
+            if (!modal) return;
+            const resolver = employeeLifecycleResolver;
+            employeeLifecycleResolver = null;
+            let payload = null;
+            if (confirmed) {
+                const dateInput = modal.querySelector('#employeeLifecycleDate');
+                if (!validateEmployeeDateInput(dateInput, 'Tanggal Nonaktif')) {
+                    employeeLifecycleResolver = resolver;
+                    return;
+                }
+                payload = {
+                    inactiveAt: dateInput?.value || '',
+                    reason: (modal.querySelector('#employeeLifecycleReason')?.value || '').trim()
+                };
+            }
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            resolver?.(payload);
+        };
+
+        function requestEmployeeInactiveDetails(user) {
+            const modal = ensureEmployeeLifecycleModal();
+            const dateInput = modal.querySelector('#employeeLifecycleDate');
+            const reasonInput = modal.querySelector('#employeeLifecycleReason');
+            const message = modal.querySelector('#employeeLifecycleMessage');
+            if (employeeLifecycleResolver) employeeLifecycleResolver(null);
+            const today = new Date().toLocaleDateString('en-CA');
+            if (dateInput) {
+                dateInput.value = user?.inactive_at || today;
+                dateInput.max = today;
+            }
+            if (reasonInput) reasonInput.value = user?.inactive_reason || '';
+            if (message) message.textContent = `User ${user?.name || 'ini'} akan dikeluarkan dari data operasional aktif dan Shift Kerja.`;
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+            setTimeout(() => dateInput?.focus(), 30);
+            return new Promise(resolve => { employeeLifecycleResolver = resolve; });
+        }
+
+        async function persistEmployeeLifecycle(user, nextStatus, options = {}) {
+            const actor = getCurrentUserName() || getCurrentUserEmail();
+            const args = {
+                p_user_id: Number(user.id),
+                p_status: nextStatus,
+                p_inactive_at: options.inactiveAt || user.inactive_at || null,
+                p_inactive_reason: options.reason != null ? options.reason : (user.inactive_reason || null),
+                p_updated_by: actor
+            };
+            const { error } = await supabaseDashboard.rpc('save_employee_user_lifecycle', args);
+            if (error) throw error;
+            employeeDirectoryDirty = true;
+            await broadcastUserAccessChange(user, nextStatus);
+            await Promise.all([
+                loadEmployeeDirectory(true),
+                syncUsersSnapshot({ reason: 'employee-lifecycle-change' })
+            ]);
+            if (employeeCan('employee_data_view')) await loadEmployeeProfiles(null, 'employee-lifecycle-refresh', true);
+            renderUsersPage();
+            renderEmployeeDashboardMonitoring();
+        }
+
+        window.beginEmployeeLifecycleInlineEdit = function(button) {
+            if (!button || !userPermissions.canManage) return;
+            const userId = Number(button.dataset.userId);
+            const field = button.dataset.field;
+            const user = employeeUserDirectory.find(item => Number(item.id) === userId);
+            if (!user || String(user.status || '').toLowerCase() !== 'inactive') return;
+            const value = field === 'inactive_at' ? (user.inactive_at || '') : (user.inactive_reason || '');
+            const editor = field === 'inactive_at'
+                ? `<input class="employee-inline-editor" type="date" value="${employeeEscape(value)}" data-employee-date="true" />`
+                : `<input class="employee-inline-editor" type="text" maxlength="250" value="${employeeEscape(value)}" placeholder="Alasan nonaktif" />`;
+            button.outerHTML = `<div class="employee-inline-cell employee-inline-cell-editing" data-lifecycle-user-id="${userId}" data-lifecycle-field="${field}">${editor}<span class="employee-inline-edit-actions"><button class="save" type="button" onclick="commitEmployeeLifecycleInlineEdit(this)" aria-label="Simpan perubahan"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></button></span></div>`;
+            const wrapper = document.querySelector(`[data-lifecycle-user-id="${userId}"][data-lifecycle-field="${field}"]`);
+            const input = wrapper?.querySelector('.employee-inline-editor');
+            if (input?.type === 'date') bindEmployeeDateYearLock(input);
+            input?.addEventListener('keydown', event => {
+                if (event.key === 'Enter') { event.preventDefault(); wrapper?.querySelector('.save')?.click(); }
+                if (event.key === 'Escape') { event.preventDefault(); renderUsersPage(); }
+            });
+            input?.focus();
+        };
+
+        window.commitEmployeeLifecycleInlineEdit = async function(button) {
+            const wrapper = button?.closest('[data-lifecycle-user-id]');
+            if (!wrapper) return;
+            const userId = Number(wrapper.dataset.lifecycleUserId);
+            const field = wrapper.dataset.lifecycleField;
+            const input = wrapper.querySelector('.employee-inline-editor');
+            const user = employeeUserDirectory.find(item => Number(item.id) === userId);
+            if (!user) return;
+            let value = input?.value ?? '';
+            if (field === 'inactive_at' && value && !validateEmployeeDateInput(input, 'Tanggal Nonaktif')) return;
+            value = String(value).trim();
+            const oldValue = field === 'inactive_at' ? (user.inactive_at || '') : (user.inactive_reason || '');
+            if (oldValue === value) { renderUsersPage(); return; }
+            renderUsersPage();
+            const label = field === 'inactive_at' ? 'Tanggal Nonaktif' : 'Alasan';
+            const confirmed = await requestPremiumConfirmation({
+                title: 'Konfirmasi Perubahan',
+                message: `Ubah ${label} milik ${user.name}?`,
+                note: `Sebelumnya: ${oldValue || '—'}\nMenjadi: ${value || '—'}`,
+                confirmText: 'Simpan Perubahan',
+                variant: 'warning'
+            });
+            if (!confirmed) return;
+            try {
+                await persistEmployeeLifecycle(user, 'inactive', {
+                    inactiveAt: field === 'inactive_at' ? value : user.inactive_at,
+                    reason: field === 'inactive_reason' ? value : user.inactive_reason
+                });
+                showToast('Data nonaktif berhasil diperbarui.', 'success');
+            } catch (error) {
+                showToast('Gagal menyimpan data nonaktif: ' + error.message, 'error');
+                renderUsersPage();
+            }
+        };
+
+        function renderEmployeeInactiveRows(users) {
+            if (!users.length) return `<tr><td colspan="11"><div class="employee-empty-mini">Belum ada user nonaktif.</div></td></tr>`;
+            return users.map(user => {
+                const profile = employeeProfileFor(user.id);
+                const passportNumber = employeeCan('employee_passport_view') ? (profile.passport_number || '—') : '••••••••';
+                const roleLabel = ROLE_LABELS[user.role] || user.role;
+                const inactiveEnd = user.inactive_at || employeeToday();
+                return `<tr class="employee-inactive-row">
+                    <td class="sticky-left-one"><span class="employee-status-badge inactive lifecycle-inactive">Nonaktif</span></td>
+                    <td class="sticky-left-two employee-lifecycle-open-editor" ondblclick="openEmployeeEditor('${user.id}')"><span class="employee-user-name">${employeeEscape(user.name)}</span><span class="employee-user-email">${employeeEscape(user.email)}</span></td>
+                    <td class="employee-lifecycle-open-editor" ondblclick="openEmployeeEditor('${user.id}')"><span class="role-tag ${user.role}">${employeeEscape(roleLabel)}</span></td>
+                    <td>${employeeInlineCell(user, 'passport_number', employeeEscape(passportNumber), '', '', { allowInactive: true })}</td>
+                    <td><span class="employee-lifecycle-readonly"><span class="employee-inline-main">${employeeLifecycleActorLabel(user)}</span></span></td>
+                    <td>${employeeLifecycleInlineCell(user, 'inactive_reason', employeeEscape(user.inactive_reason || '—'))}</td>
+                    <td>${employeeInlineCell(user, 'join_smb_date', employeeFormatDate(profile.join_smb_date), 'JOIN SMB', '', { allowInactive: true })}</td>
+                    <td>${employeeInlineCell(user, 'join_site_date', employeeFormatDate(profile.join_site_date), 'JOIN DDT', '', { allowInactive: true })}</td>
+                    <td>${employeeLifecycleInlineCell(user, 'inactive_at', employeeFormatDate(user.inactive_at), 'Tanggal Nonaktif')}</td>
+                    <td>${employeeRankBadge(user, profile, inactiveEnd)}</td>
+                    <td class="sticky-right"><div class="employee-actions employee-inactive-actions"><button class="employee-action-button status lifecycle-power inactive-state-action history-tooltip-target" type="button" onclick="toggleEmployeeUserStatus('${user.id}')" data-tooltip="Aktifkan kembali" data-tooltip-icon="activate" aria-label="Aktifkan kembali" ${!userPermissions.canManage ? 'disabled' : ''}><svg class="employee-power-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="power-stem" d="M12 2.5v9"/><path class="power-ring" d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></button></div></td>
+                </tr>`;
+            }).join('');
+        }
+
         function renderUsersPage() {
             const container = document.getElementById('usersContent');
             if (!container) return;
@@ -59924,27 +60110,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     note: column.note,
                     users: column.users.map(savedUser => {
                         const userId = String(savedUser.id);
-                        assignedIds.add(userId);
-
                         const currentUser = userMap.get(userId);
-
+                        if (!currentUser) return null;
+                        assignedIds.add(userId);
                         return {
-                            ...(currentUser || {
-                                id: savedUser.id,
-                                name: savedUser.name,
-                                role: savedUser.role
-                            }),
-                            name:
-                                savedUser.name ||
-                                currentUser?.name ||
-                                'USER',
-                            role:
-                                savedUser.role ||
-                                currentUser?.role ||
-                                'cs',
+                            ...currentUser,
+                            name: savedUser.name || currentUser.name || 'USER',
+                            role: savedUser.role || currentUser.role || 'cs',
                             note: savedUser.note || ''
                         };
-                    })
+                    }).filter(Boolean)
                 }));
 
                 availableUsers = (activeUsers || [])
@@ -60613,6 +60788,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
         let employeeProfilesByUserId = new Map();
         let employeeUserDirectory = [];
+        let employeeDirectoryHasLifecycleAuthority = false;
         let employeeFeatureAvailable = true;
         let employeeModuleLoading = false;
         let employeeDirectoryDirty = true;
@@ -60727,9 +60903,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             return employeeFullMonthsBetween(employeeToday(), expiry);
         }
 
-        function employeeTenureParts(value) {
+        function employeeTenureParts(value, endValue = employeeToday()) {
             const start = employeeDateFromISO(value);
-            const end = employeeToday();
+            const end = endValue instanceof Date ? endValue : employeeDateFromISO(endValue);
             if (!start || start > end) return null;
             let years = end.getFullYear() - start.getFullYear();
             let months = end.getMonth() - start.getMonth();
@@ -60745,14 +60921,14 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             return { years: Math.max(0, years), months: Math.max(0, months), days: Math.max(0, days), totalMonths: employeeFullMonthsBetween(start, end) };
         }
 
-        function employeeTenureLabel(value, emptyLabel = '—') {
-            const parts = employeeTenureParts(value);
+        function employeeTenureLabel(value, emptyLabel = '—', endValue = employeeToday()) {
+            const parts = employeeTenureParts(value, endValue);
             if (!parts) return emptyLabel;
             return `${parts.years} tahun, ${parts.months} bulan, ${parts.days} hari`;
         }
 
-        function employeeTenureMiniLabel(value, emptyLabel = 'JOIN SMB belum diisi') {
-            const parts = employeeTenureParts(value);
+        function employeeTenureMiniLabel(value, emptyLabel = 'JOIN SMB belum diisi', endValue = employeeToday()) {
+            const parts = employeeTenureParts(value, endValue);
             if (!parts) return emptyLabel;
             return `${parts.years} th • ${parts.months} bl • ${parts.days} hr`;
         }
@@ -60959,11 +61135,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             }, { passive: false, capture: true });
         }
 
-        function employeeRankFor(user, profile) {
+        function employeeRankFor(user, profile, endValue = employeeToday()) {
             if (normalizeAccessRole(user?.role) === 'leader') {
                 return { key: 'mythical-immortal', label: 'Mythical Immortal' };
             }
-            const parts = employeeTenureParts(profile?.join_smb_date);
+            const parts = employeeTenureParts(profile?.join_smb_date, endValue);
             if (!parts) return { key: 'unavailable', label: 'Belum Tersedia' };
             const months = parts.totalMonths;
             if (months < 3) return { key: 'warrior', label: 'Warrior' };
@@ -61091,15 +61267,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             return `<span class="rank-side-dot" aria-hidden="true"></span>`;
         }
 
-        function employeeRankBadge(user, profile) {
-            const rank = employeeRankFor(user, profile);
+        function employeeRankBadge(user, profile, endValue = employeeToday()) {
+            const rank = employeeRankFor(user, profile, endValue);
             const tenure =
                 normalizeAccessRole(user?.role) === 'leader' &&
                 !profile?.join_smb_date
                     ? '- tahun, - bulan, - hari'
                     : employeeTenureLabel(
                         profile?.join_smb_date,
-                        'JOIN SMB belum diisi'
+                        'JOIN SMB belum diisi',
+                        endValue
                     );
 
             return `
@@ -61267,6 +61444,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             if (!force && !employeeDirectoryDirty && employeeUserDirectory.length) return employeeUserDirectory;
             if (TEST_MODE) {
                 employeeUserDirectory = [...listUsers];
+                employeeDirectoryHasLifecycleAuthority = false;
                 employeeDirectoryDirty = false;
                 return employeeUserDirectory;
             }
@@ -61279,6 +61457,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     role: normalizeAccessRole(user.role),
                     status: user.status || 'active'
                 }));
+                employeeDirectoryHasLifecycleAuthority = false;
                 employeeDirectoryDirty = false;
                 return employeeUserDirectory;
             }
@@ -61286,11 +61465,12 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             try {
                 const { data, error } = await supabaseDashboard
                     .from('users')
-                    .select('id, name, email, role, status, created_at, updated_at')
+                    .select('id, name, email, role, status, inactive_at, inactive_reason, inactive_by, reactivated_at, reactivated_by, created_at, updated_at')
                     .order('name', { ascending: true })
                     .limit(250);
                 if (error) throw error;
                 employeeUserDirectory = (data || []).map(user => ({ ...user, role: normalizeAccessRole(user.role), status: user.status || 'active' }));
+                employeeDirectoryHasLifecycleAuthority = true;
                 employeeDirectoryDirty = false;
                 return employeeUserDirectory;
             } catch (error) {
@@ -61300,7 +61480,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             }
         }
 
-        async function loadEmployeeProfiles(userIds = null, reason = 'employee-load') {
+        async function loadEmployeeProfiles(userIds = null, reason = 'employee-load', force = false) {
             if (TEST_MODE) {
                 employeeProfilesDirty = false;
                 return true;
@@ -61308,6 +61488,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             if (
                 (!Array.isArray(userIds) || userIds.length === 0) &&
+                !force &&
                 !employeeProfilesDirty &&
                 employeeProfilesByUserId.size > 0
             ) {
@@ -61333,8 +61514,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             if (employeeModuleLoading) return;
             employeeModuleLoading = true;
             try {
-                await loadEmployeeDirectory(force);
-                if (employeeCan('employee_data_view')) await loadEmployeeProfiles(null, force ? 'force' : 'initial');
+                const requireLifecycleDirectory = currentTab === 'users' && !employeeDirectoryHasLifecycleAuthority;
+                const forceDirectory = force || requireLifecycleDirectory;
+                await loadEmployeeDirectory(forceDirectory);
+                if (employeeCan('employee_data_view')) await loadEmployeeProfiles(null, forceDirectory ? 'force' : 'initial', forceDirectory);
                 renderEmployeeDashboardMonitoring();
                 if (currentTab === 'users') renderUsersPage();
                 ensureEmployeeSettingsPanel();
@@ -61452,8 +61635,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             scheduleEmployeeDirectoryReload();
         };
 
-        function employeeInlineCell(user, field, main, sub = '', alert = '') {
-            const editable = employeeCan('employee_data_edit') && user.status === 'active';
+        function employeeInlineCell(user, field, main, sub = '', alert = '', options = {}) {
+            const editable = employeeCan('employee_data_edit') && (user.status === 'active' || options.allowInactive === true);
             return `<button type="button" class="employee-inline-cell ${editable ? 'is-editable' : ''}" ${editable ? `data-user-id="${user.id}" data-field="${field}" ondblclick="beginEmployeeInlineEdit(this)" aria-label="Edit data"` : 'disabled'}><span style="min-width:0"><span class="employee-inline-main">${main}</span>${sub ? `<span class="employee-inline-sub">${sub}</span>` : ''}</span>${alert || (editable ? `<span class="employee-edit-mark"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></span>` : '')}</button>`;
         }
 
@@ -61571,16 +61754,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         function employeeFilteredUsers() {
             const source = employeeUserDirectory.length ? employeeUserDirectory : listUsers;
             return source.filter(user => {
+                if (String(user.status || 'active').toLowerCase() !== 'active') return false;
                 const profile = employeeProfileFor(user.id);
                 const rank = employeeRankFor(user, profile).key;
                 const alert = employeeAlertType(user, profile);
                 const query = employeeUserFilters.search.toLowerCase().trim();
                 const matchSearch = !query || `${user.name} ${user.email} ${profile.passport_number || ''}`.toLowerCase().includes(query);
-                const matchStatus = employeeUserFilters.status === 'all' || user.status === employeeUserFilters.status;
                 const matchRole = employeeUserFilters.role === 'all' || user.role === employeeUserFilters.role;
                 const matchRank = employeeUserFilters.rank === 'all' || rank === employeeUserFilters.rank;
                 const matchAlert = employeeUserFilters.alert === 'all' || alert === employeeUserFilters.alert;
-                return matchSearch && matchStatus && matchRole && matchRank && matchAlert;
+                return matchSearch && matchRole && matchRank && matchAlert;
             }).sort((a, b) => {
                 // Pertahankan kelompok role yang sudah berlaku.
                 const orderA = ROLE_ORDER_SORT[a.role] ?? 99;
@@ -61603,6 +61786,18 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             });
         }
 
+        function employeeInactiveUsers() {
+            const source = employeeUserDirectory.length ? employeeUserDirectory : [];
+            return source
+                .filter(user => String(user.status || 'active').toLowerCase() === 'inactive')
+                .sort((a, b) => {
+                    const dateA = String(a.inactive_at || '0000-00-00');
+                    const dateB = String(b.inactive_at || '0000-00-00');
+                    if (dateA !== dateB) return dateB.localeCompare(dateA);
+                    return String(a.name || '').localeCompare(String(b.name || ''), 'id');
+                });
+        }
+
         function renderEmployeeUserRows(users) {
             if (!users.length) return `<tr><td colspan="11"><div class="employee-empty-mini">Tidak ada data yang sesuai dengan filter.</div></td></tr>`;
             return users.map(user => {
@@ -61618,8 +61813,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const visaIcon = visaAlert ? employeeAlertIcon('visa', visaDays === 0 ? 'Visa sudah berakhir' : `Visa tersisa ${visaDays} hari`, visaDays === 0) : '';
                 return `<tr>
                     <td class="sticky-left-one"><span class="employee-status-badge ${user.status === 'active' ? 'active' : 'inactive'}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
-                    <td class="sticky-left-two"><span class="employee-user-name">${employeeEscape(user.name)}${isCurrentUser ? ' <span class="employee-current-user-mark">Anda</span>' : ''}</span><span class="employee-user-email">${employeeEscape(user.email)}</span></td>
-                    <td><span class="role-tag ${user.role}">${employeeEscape(roleLabel)}</span></td>
+                    <td class="sticky-left-two employee-lifecycle-open-editor" ondblclick="openEmployeeEditor('${user.id}')"><span class="employee-user-name">${employeeEscape(user.name)}${isCurrentUser ? ' <span class="employee-current-user-mark">Anda</span>' : ''}</span><span class="employee-user-email">${employeeEscape(user.email)}</span></td>
+                    <td class="employee-lifecycle-open-editor" ondblclick="openEmployeeEditor('${user.id}')"><span class="role-tag ${user.role}">${employeeEscape(roleLabel)}</span></td>
                     <td>${employeeInlineCell(user, 'passport_number', employeeEscape(passportNumber))}</td>
                     <td>${employeeInlineCell(user, 'passport_expiry_date', profile.passport_expiry_date ? `${passportMonths} bulan` : '—', profile.passport_expiry_date ? `Berakhir ${employeeFormatDate(profile.passport_expiry_date)}` : 'Tanggal belum diisi', passportIcon)}</td>
                     <td>${employeeInlineCell(user, 'visa_expiry_date', profile.visa_expiry_date ? `${visaDays} hari` : '—', profile.visa_expiry_date ? `Berakhir ${employeeFormatDate(profile.visa_expiry_date)}` : 'Tanggal belum diisi', visaIcon)}</td>
@@ -61627,10 +61822,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <td>${employeeInlineCell(user, 'join_site_date', employeeFormatDate(profile.join_site_date), 'JOIN DDT')}</td>
                     <td>${employeeInlineCell(user, 'training_status', employeeTrainingBadge(profile), profile.training_next_review_date ? `Review ${employeeFormatDate(profile.training_next_review_date)}` : '')}</td>
                     <td>${employeeRankBadge(user, profile)}</td>
-                    <td class="sticky-right"><div class="employee-actions">
-                        <button class="employee-action-button edit history-tooltip-target" type="button" onclick="openEmployeeEditor('${user.id}')" data-tooltip="Edit seluruh data" data-tooltip-icon="edit" aria-label="Edit seluruh data" ${!employeeCan('employee_data_edit') && !userPermissions.canManage ? 'disabled' : ''}><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>
-                        <button class="employee-action-button status ${user.status === 'active' ? 'inactive-action' : 'active-action'} history-tooltip-target" type="button" onclick="toggleEmployeeUserStatus('${user.id}')" data-tooltip="${user.status === 'active' ? 'Nonaktifkan user' : 'Aktifkan kembali'}" data-tooltip-icon="${user.status === 'active' ? 'power' : 'activate'}" aria-label="${user.status === 'active' ? 'Nonaktifkan user' : 'Aktifkan kembali'}" ${!userPermissions.canManage || isCurrentUser ? 'disabled' : ''}><svg class="employee-power-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="power-stem" d="M12 2.5v9"/><path class="power-ring" d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></button>
-                        <button class="employee-action-button delete history-tooltip-target" type="button" onclick="deleteEmployeeUser('${user.id}')" data-tooltip="Hapus user" data-tooltip-icon="delete" aria-label="Hapus user" ${!userPermissions.canManage || isCurrentUser ? 'disabled' : ''}><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
+                    <td class="sticky-right"><div class="employee-actions employee-lifecycle-actions-cell">
+                        <button class="employee-action-button status inactive-action active-state-action history-tooltip-target lifecycle-power" type="button" onclick="toggleEmployeeUserStatus('${user.id}')" data-tooltip="Nonaktifkan user" data-tooltip-icon="power" aria-label="Nonaktifkan user" ${!userPermissions.canManage || isCurrentUser ? 'disabled' : ''}><svg class="employee-power-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="power-stem" d="M12 2.5v9"/><path class="power-ring" d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></button>
                     </div></td>
                 </tr>`;
             }).join('');
@@ -61645,8 +61838,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             }
             const canManage = userPermissions.canManage;
             const users = employeeFilteredUsers();
+            const inactiveUsers = employeeInactiveUsers();
+            const activeDirectory = (employeeUserDirectory.length ? employeeUserDirectory : listUsers).filter(user => String(user.status || 'active').toLowerCase() === 'active');
             const roleCounts = { leader: 0, csline: 0, cs: 0, kapten: 0, kasir: 0 };
-            (employeeUserDirectory.length ? employeeUserDirectory : listUsers).filter(user => user.status === 'active').forEach(user => { if (roleCounts[user.role] != null) roleCounts[user.role] += 1; });
+            activeDirectory.forEach(user => { if (roleCounts[user.role] != null) roleCounts[user.role] += 1; });
             const viewOnlyText = !canManage ? `<span class="users-view-only">View Only</span>` : '';
             container.innerHTML = `<div class="employee-users-shell">
                 <div class="users-section-heading"><span class="users-section-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M19 8v6M16 11h6"/></svg></span><div><h2>Register User</h2><p>Register tetap sederhana. Data dokumen dan kepegawaian dapat dilengkapi melalui tabel atau tombol Edit.</p></div></div>
@@ -61659,7 +61854,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 <div class="users-list-heading"><div class="users-list-title"><span class="users-section-icon compact"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><h3>Data User</h3><p>Passport, visa, masa kerja, rank, training, dan status akun.</p></div></div><div class="role-summary"><span class="role-item role-leader"><span class="role-dot"></span><span class="role-label">Leader</span><strong>${roleCounts.leader}</strong></span><span class="role-item role-csline"><span class="role-dot"></span><span class="role-label">CS Line</span><strong>${roleCounts.csline}</strong></span><span class="role-item role-cs"><span class="role-dot"></span><span class="role-label">CS</span><strong>${roleCounts.cs}</strong></span><span class="role-item role-kapten"><span class="role-dot"></span><span class="role-label">Kapten</span><strong>${roleCounts.kapten}</strong></span><span class="role-item role-kasir"><span class="role-dot"></span><span class="role-label">Kasir</span><strong>${roleCounts.kasir}</strong></span></div></div>
                 <div class="employee-toolbar">
                     <input id="employeeUserSearch" type="search" value="${employeeEscape(employeeUserFilters.search)}" placeholder="Cari nama, email, atau passport..." oninput="setEmployeeUserFilter('search', this.value)"/>
-                    ${employeeStatusFilterMarkup()}
                     ${employeeRoleFilterMarkup()}
                     ${employeeRankFilterMarkup()}
                     ${employeeAlertFilterMarkup()}
@@ -61668,7 +61862,14 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 <div class="employee-table-wrap"><table class="employee-users-table"><thead><tr>
                     <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry">Masa Aktif Passport</th><th class="employee-col-expiry">Masa Aktif Visa</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-training">Training</th><th class="employee-col-tenure">Masa Kerja</th><th class="employee-col-actions sticky-right">Aksi</th>
                 </tr></thead><tbody>${renderEmployeeUserRows(users)}</tbody></table></div>
-                <div class="history-count">Menampilkan <span>${users.length}</span> dari <span>${employeeUserDirectory.length || listUsers.length}</span> user</div>
+                <div class="history-count">Menampilkan <span>${users.length}</span> dari <span>${activeDirectory.length}</span> user aktif</div>
+                <section class="employee-inactive-section">
+                    <div class="users-list-heading employee-inactive-heading"><div class="users-list-title"><span class="users-section-icon compact employee-inactive-section-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5v9"/><path d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></span><div><h3>User Nonaktif <span class="employee-inactive-count">${inactiveUsers.length}</span></h3><p>User yang sudah tidak bekerja di DDT. Data historis dan profil tetap dipertahankan.</p></div></div></div>
+                    <div class="employee-table-wrap employee-inactive-table-wrap"><table class="employee-users-table employee-inactive-table"><thead><tr>
+                        <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry history-tooltip-target" data-tooltip="User yang melakukan proses Nonaktif." aria-label="PIC Nonaktif — User yang melakukan proses Nonaktif">PIC Nonaktif</th><th class="employee-col-expiry">Alasan</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-training">Tgl Nonaktif</th><th class="employee-col-tenure">Masa Kerja</th><th class="employee-col-actions sticky-right">Aksi</th>
+                    </tr></thead><tbody>${renderEmployeeInactiveRows(inactiveUsers)}</tbody></table></div>
+                    <div class="history-count employee-inactive-history-count">Total <span>${inactiveUsers.length}</span> user nonaktif</div>
+                </section>
             </div>`;
         }
 
@@ -62357,6 +62558,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 ) {
                     closeEmployeeTrainingDateModal();
                 }
+
+
+                if (document.getElementById('employeeLifecycleModal')?.classList.contains('show')) {
+                    closeEmployeeLifecycleModal(false);
+                }
             }
         );
 
@@ -62391,7 +62597,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             );
 
             const canAccount = userPermissions.canManage;
-            ['employeeEditName','employeeEditEmail','employeeEditRole','employeeEditStatus'].forEach(id => { const element = document.getElementById(id); if (element) element.disabled = !canAccount; });
+            ['employeeEditName','employeeEditEmail','employeeEditRole'].forEach(id => { const element = document.getElementById(id); if (element) element.disabled = !canAccount; });
+            const lifecycleStatusField = document.getElementById('employeeEditStatus');
+            if (lifecycleStatusField) lifecycleStatusField.disabled = true;
             const canEmployeeEdit = employeeCan('employee_data_edit');
             ['employeeEditPassportNumber','employeeEditPassportExpiry','employeeEditVisaExpiry','employeeEditJoinSite','employeeEditJoinSmb'].forEach(id => { const element = document.getElementById(id); if (element) element.disabled = !canEmployeeEdit; });
             const canTraining = employeeCan('employee_training_edit');
@@ -62450,7 +62658,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 training_note: (document.getElementById('employeeEditTrainingNote')?.value || '').trim() || null
             };
             if (!userPatch.name || !userPatch.email.includes('@')) { showToast('Nama dan email harus valid.', 'warning'); return; }
-            const accountChanged = userPermissions.canManage && ['name','email','role','status'].some(key => String(employeeEditingSnapshot.user[key] || '') !== String(userPatch[key] || ''));
+            const accountChanged = userPermissions.canManage && ['name','email','role'].some(key => String(employeeEditingSnapshot.user[key] || '') !== String(userPatch[key] || ''));
+            userPatch.status = employeeEditingSnapshot.user.status || 'active';
             const profileChanged = employeeCan('employee_data_edit') && Object.keys(profilePatch).some(key => String(employeeEditingSnapshot.profile[key] || '') !== String(profilePatch[key] || ''));
             if (!accountChanged && !profileChanged) { closeEmployeeEditor(); return; }
             const changeNotes = [];
@@ -62503,37 +62712,27 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         window.toggleEmployeeUserStatus = async function(userId) {
             const user = employeeUserDirectory.find(item => String(item.id) === String(userId));
             if (!user || !userPermissions.canManage) return;
-            const nextStatus = user.status === 'active' ? 'inactive' : 'active';
-            const confirmed =
-                await requestPremiumConfirmation({
-                    title:
-                        nextStatus === 'inactive'
-                            ? 'Nonaktifkan User'
-                            : 'Aktifkan Kembali',
-                    message:
-                        `${nextStatus === 'inactive' ? 'Nonaktifkan' : 'Aktifkan'} akun ${user.name}?`,
-                    note:
-                        nextStatus === 'inactive'
-                            ? 'User tidak dapat masuk dan akan dikeluarkan dari daftar operasional aktif.'
-                            : 'User kembali dapat masuk dan muncul pada data operasional.',
-                    confirmText:
-                        nextStatus === 'inactive'
-                            ? 'Ya, Nonaktifkan'
-                            : 'Ya, Aktifkan',
-                    variant:
-                        nextStatus === 'inactive'
-                            ? 'warning'
-                            : 'info'
+            const isActive = String(user.status || 'active').toLowerCase() === 'active';
+            const nextStatus = isActive ? 'inactive' : 'active';
+            let lifecycleDetails = null;
+
+            if (isActive) {
+                lifecycleDetails = await requestEmployeeInactiveDetails(user);
+                if (!lifecycleDetails) return;
+            } else {
+                const confirmed = await requestPremiumConfirmation({
+                    title: 'Aktifkan Kembali',
+                    message: `Aktifkan kembali akun ${user.name}?`,
+                    note: 'User kembali dapat masuk dan muncul pada data operasional. Masa Kerja kembali dihitung dari JOIN SMB sampai hari ini.',
+                    confirmText: 'Ya, Aktifkan',
+                    variant: 'info'
                 });
-            if (!confirmed) return;
+                if (!confirmed) return;
+            }
+
             try {
-                const { error } = await supabaseDashboard.rpc('save_employee_user_account', { p_user_id: Number(user.id), p_name: user.name, p_email: user.email, p_role: user.role, p_status: nextStatus, p_updated_by: getCurrentUserEmail() });
-                if (error) throw error;
-                await broadcastUserAccessChange(user, nextStatus);
-                await Promise.all([loadEmployeeDirectory(true), syncUsersSnapshot({ reason: 'employee-status-change' })]);
-                renderUsersPage();
-                renderEmployeeDashboardMonitoring();
-                showToast(`User berhasil ${nextStatus === 'active' ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
+                await persistEmployeeLifecycle(user, nextStatus, lifecycleDetails || {});
+                showToast(`User berhasil ${nextStatus === 'active' ? 'diaktifkan kembali' : 'dinonaktifkan'}.`, 'success');
             } catch (error) {
                 showToast('Gagal mengubah status user: ' + error.message, 'error');
             }
@@ -63045,7 +63244,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         switchTab = function(tab) {
             employeeBaseSwitchTab(tab);
             if (currentTab === 'users') {
-                if (employeeDirectoryDirty || employeeProfilesDirty) loadEmployeeModuleData(false);
+                if (employeeDirectoryDirty || employeeProfilesDirty || !employeeDirectoryHasLifecycleAuthority) loadEmployeeModuleData(false);
                 else renderUsersPage();
             }
             if (currentTab === 'dashboard') renderEmployeeDashboardMonitoring();
@@ -93433,5 +93632,61 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     });
 })();
 </script>
+    <style id="users-inactive-lifecycle-v1-authority">
+        /* USERS INACTIVE LIFECYCLE v1 — additive presentation authority.
+           Typography inherits the existing Users system; only lifecycle color/state is introduced. */
+        #tab-users .employee-inactive-section{margin-top:28px;padding-top:2px}
+        #tab-users .employee-inactive-heading{margin-top:0;margin-bottom:10px}
+        #tab-users .employee-inactive-section-icon{color:#a84e54!important;background:color-mix(in srgb,#a84e54 9%,var(--bg-card))!important;border-color:color-mix(in srgb,#a84e54 28%,var(--border-color))!important}
+        #tab-users .employee-inactive-heading h3{display:flex;align-items:center;gap:8px}
+        #tab-users .employee-inactive-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 6px;border-radius:999px;font-size:10px;font-weight:800;line-height:1;color:#a84e54;background:color-mix(in srgb,#a84e54 9%,var(--bg-card));border:1px solid color-mix(in srgb,#a84e54 24%,var(--border-color))}
+        #tab-users .employee-inactive-table-wrap{border-color:color-mix(in srgb,#a84e54 28%,var(--border-color))!important;box-shadow:0 4px 14px color-mix(in srgb,#5c2b2e 7%,transparent)!important}
+        #tab-users .employee-inactive-table thead th{background:#5c2b2e!important;color:#f6eeee!important;border-color:#744247!important;box-shadow:none!important}
+        #tab-users .employee-inactive-table thead th.sticky-left-one,
+        #tab-users .employee-inactive-table thead th.sticky-left-two,
+        #tab-users .employee-inactive-table thead th.sticky-right{background:#5c2b2e!important;color:#f6eeee!important}
+        #tab-users .employee-inactive-table tbody tr{background:color-mix(in srgb,#a6474d 2.6%,var(--bg-card))}
+        #tab-users .employee-inactive-table tbody tr:hover{background:color-mix(in srgb,#a6474d 6%,var(--bg-card))!important}
+        #tab-users .employee-inactive-table tbody td{border-color:color-mix(in srgb,#a6474d 11%,var(--border-color))}
+        #tab-users .employee-inactive-table tbody td.sticky-left-one,
+        #tab-users .employee-inactive-table tbody td.sticky-left-two,
+        #tab-users .employee-inactive-table tbody td.sticky-right{background:color-mix(in srgb,#a6474d 2.6%,var(--bg-card))}
+        #tab-users .employee-inactive-table tbody tr:hover td.sticky-left-one,
+        #tab-users .employee-inactive-table tbody tr:hover td.sticky-left-two,
+        #tab-users .employee-inactive-table tbody tr:hover td.sticky-right{background:color-mix(in srgb,#a6474d 6%,var(--bg-card))!important}
+        #tab-users .employee-status-badge.lifecycle-inactive{color:#a6474d!important;border-color:color-mix(in srgb,#a6474d 30%,var(--border-color))!important;background:color-mix(in srgb,#a6474d 8%,var(--bg-card))!important}
+        #tab-users .employee-action-button.lifecycle-power.active-state-action:not(:disabled){color:#16835b!important;background:color-mix(in srgb,#16835b 8%,var(--bg-card))!important;border-color:color-mix(in srgb,#16835b 28%,var(--border-color))!important}
+        #tab-users .employee-action-button.lifecycle-power.active-state-action:hover:not(:disabled){color:#106d4a!important;background:color-mix(in srgb,#16835b 14%,var(--bg-card))!important;border-color:color-mix(in srgb,#16835b 42%,var(--border-color))!important;box-shadow:0 5px 12px color-mix(in srgb,#16835b 12%,transparent)!important}
+        #tab-users .employee-action-button.lifecycle-power.inactive-state-action:not(:disabled){color:#b14950!important;background:color-mix(in srgb,#b14950 8%,var(--bg-card))!important;border-color:color-mix(in srgb,#b14950 30%,var(--border-color))!important}
+        #tab-users .employee-action-button.lifecycle-power.inactive-state-action:hover:not(:disabled){color:#973b42!important;background:color-mix(in srgb,#b14950 14%,var(--bg-card))!important;border-color:color-mix(in srgb,#b14950 44%,var(--border-color))!important;box-shadow:0 5px 12px color-mix(in srgb,#b14950 12%,transparent)!important}
+        #tab-users .employee-inactive-actions{justify-content:center}
+        #tab-users .employee-lifecycle-actions-cell{justify-content:center}
+        #tab-users .employee-lifecycle-readonly{display:flex;align-items:center;min-height:34px;padding:5px 8px;min-width:0}
+        #tab-users .employee-lifecycle-readonly .employee-inline-main{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        #tab-users .employee-lifecycle-open-editor{cursor:default}
+        #tab-users .employee-lifecycle-open-editor:hover{background:color-mix(in srgb,#a6474d 4%,transparent)}
+        #tab-users .employee-inactive-history-count{color:color-mix(in srgb,#a6474d 72%,var(--text-secondary))}
+
+        .employee-lifecycle-overlay{position:fixed;inset:0;z-index:10070;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(8,18,22,.52);backdrop-filter:blur(5px)}
+        .employee-lifecycle-overlay.show{display:flex}
+        .employee-lifecycle-card{width:min(460px,calc(100vw - 32px));border:1px solid color-mix(in srgb,#a6474d 26%,var(--border-color));border-radius:16px;background:var(--bg-card);box-shadow:0 24px 60px rgba(15,23,28,.22);padding:20px;color:var(--text-primary)}
+        .employee-lifecycle-heading{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+        .employee-lifecycle-icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none;color:#a6474d;background:color-mix(in srgb,#a6474d 9%,var(--bg-card));border:1px solid color-mix(in srgb,#a6474d 26%,var(--border-color))}
+        .employee-lifecycle-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
+        .employee-lifecycle-heading h3{margin:0 0 4px;font-size:15px;font-weight:800;color:var(--text-primary)}
+        .employee-lifecycle-heading p{margin:0;font-size:12px;line-height:1.5;color:var(--text-secondary)}
+        .employee-lifecycle-fields{display:grid;gap:12px}
+        .employee-lifecycle-fields label{display:grid;gap:6px;font-size:11px;font-weight:750;color:var(--text-secondary)}
+        .employee-lifecycle-fields label span{display:flex;align-items:center;gap:6px}
+        .employee-lifecycle-fields label small{font-size:9px;font-weight:650;opacity:.68}
+        .employee-lifecycle-fields input,.employee-lifecycle-fields textarea{width:100%;box-sizing:border-box;border:1px solid var(--border-color);border-radius:9px;background:var(--input-bg,var(--bg-card));color:var(--text-primary);font:inherit;font-size:12px;padding:9px 10px;outline:none;resize:vertical}
+        .employee-lifecycle-fields input:focus,.employee-lifecycle-fields textarea:focus{border-color:color-mix(in srgb,#a6474d 52%,var(--border-color));box-shadow:0 0 0 3px color-mix(in srgb,#a6474d 9%,transparent)}
+        .employee-lifecycle-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+        .employee-lifecycle-actions button{min-height:34px;padding:0 13px;border-radius:9px;border:1px solid var(--border-color);font:inherit;font-size:11px;font-weight:800;cursor:pointer}
+        .employee-lifecycle-actions .secondary{background:var(--bg-card);color:var(--text-secondary)}
+        .employee-lifecycle-actions .primary{background:#a6474d;color:#fff;border-color:#a6474d}
+        .employee-lifecycle-actions .primary:hover{background:#913c42;border-color:#913c42}
+        @media (max-width:760px){#tab-users .employee-inactive-section{margin-top:20px}.employee-lifecycle-card{padding:17px}}
+    </style>
 </body>
 </html>
