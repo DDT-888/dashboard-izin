@@ -54538,7 +54538,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <input class="employee-date-segment employee-date-segment-year" type="text" inputmode="numeric" maxlength="4" value="${parts.year}" placeholder="YYYY" aria-label="Tahun" autocomplete="off" onfocus="this.select()" oninput="employeeSegmentedDateInput(this)" onblur="employeeSegmentedDateBlur(this)" />
                 </span>
                 <input class="employee-inline-editor employee-segmented-date-value" type="hidden" value="${parts.value}" />
-                <button type="button" class="employee-date-picker-button employee-segmented-date-picker" onclick="openEmployeeDatePicker(this.closest('.employee-segmented-date-control'))" aria-label="Pilih ${safeLabel}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button>
+                <input class="employee-native-date-proxy" type="date" tabindex="-1" aria-hidden="true" onchange="employeeNativeDateProxyChange(this)" />
+                <button type="button" class="employee-date-picker-button employee-segmented-date-picker" onclick="openEmployeeNativeDatePicker(this.closest('.employee-segmented-date-control'))" aria-label="Pilih ${safeLabel}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button>
             </span>`;
         }
 
@@ -54608,6 +54609,45 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             }
             target?.focus?.({ preventScroll: true });
         }
+
+        function employeeNativeDateTargetFromContainer(container) {
+            if (!container) return null;
+            if (container.classList?.contains('employee-segmented-date-control')) return container;
+            if (container.classList?.contains('employee-date-text-control')) {
+                return container.querySelector('input:not(.employee-native-date-proxy)');
+            }
+            return container;
+        }
+
+        window.employeeNativeDateProxyChange = function(proxy) {
+            if (!proxy?.value) return;
+            const container = proxy.closest('.employee-segmented-date-control, .employee-date-text-control');
+            const target = employeeNativeDateTargetFromContainer(container);
+            if (!target) return;
+            employeeDatePickerSetTarget(target, proxy.value);
+            const button = container?.querySelector('.employee-date-picker-button');
+            requestAnimationFrame(() => button?.focus({ preventScroll: true }));
+        };
+
+        window.openEmployeeNativeDatePicker = function(container) {
+            if (!container) return;
+            const target = employeeNativeDateTargetFromContainer(container);
+            const proxy = container.querySelector?.('.employee-native-date-proxy');
+            if (!target || !proxy) return;
+            if (!target.classList?.contains('employee-segmented-date-control') && (target.disabled || target.readOnly)) return;
+            const currentIso = employeeLifecycleInputToISO(employeeDatePickerTargetValue(target));
+            proxy.value = currentIso || '';
+            try {
+                if (typeof proxy.showPicker === 'function') {
+                    proxy.showPicker();
+                    return;
+                }
+            } catch (_) {}
+            try {
+                proxy.focus({ preventScroll: true });
+                proxy.click();
+            } catch (_) {}
+        };
 
         const EMPLOYEE_DATE_PICKER_MONTHS = [
             'Januari','Februari','Maret','April','Mei','Juni',
@@ -54729,7 +54769,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         };
 
         function employeeDateControlMarkup(inputMarkup, targetExpression = 'this.previousElementSibling') {
-            return `<span class="employee-date-text-control">${inputMarkup}<button type="button" class="employee-date-picker-button" onclick="openEmployeeDatePicker(${targetExpression})" aria-label="Pilih tanggal"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span>`;
+            return `<span class="employee-date-text-control">${inputMarkup}<input class="employee-native-date-proxy" type="date" tabindex="-1" aria-hidden="true" onchange="employeeNativeDateProxyChange(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeNativeDatePicker(this.closest('.employee-date-text-control'))" aria-label="Pilih tanggal"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span>`;
         }
 
         function employeeLifecycleReadDateInput(input, label = 'Tanggal Nonaktif') {
@@ -64014,15 +64054,15 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <div class="employee-editor-section-title">Dokumen</div>
                     <div class="employee-editor-grid">
                         <div class="employee-editor-field"><label>No. Passport</label><input id="employeeEditPassportNumber" type="text" placeholder="Nomor passport" /></div>
-                        <div class="employee-editor-field"><label>Tanggal Berakhir Passport</label><span class="employee-date-text-control"><input id="employeeEditPassportExpiry" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" onblur="normalizeEmployeeLifecycleDateInput(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeDatePicker('employeeEditPassportExpiry')" aria-label="Pilih Tanggal Berakhir Passport"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span></div>
-                        <div class="employee-editor-field"><label>Tanggal Berakhir Visa</label><span class="employee-date-text-control"><input id="employeeEditVisaExpiry" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" onblur="normalizeEmployeeLifecycleDateInput(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeDatePicker('employeeEditVisaExpiry')" aria-label="Pilih Tanggal Berakhir Visa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span></div>
+                        <div class="employee-editor-field"><label>Tanggal Berakhir Passport</label><span class="employee-date-text-control"><input id="employeeEditPassportExpiry" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" onblur="normalizeEmployeeLifecycleDateInput(this)" /><input class="employee-native-date-proxy" type="date" tabindex="-1" aria-hidden="true" onchange="employeeNativeDateProxyChange(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeNativeDatePicker(this.closest('.employee-date-text-control'))" aria-label="Pilih Tanggal Berakhir Passport"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span></div>
+                        <div class="employee-editor-field"><label>Tanggal Berakhir Visa</label><span class="employee-date-text-control"><input id="employeeEditVisaExpiry" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" onblur="normalizeEmployeeLifecycleDateInput(this)" /><input class="employee-native-date-proxy" type="date" tabindex="-1" aria-hidden="true" onchange="employeeNativeDateProxyChange(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeNativeDatePicker(this.closest('.employee-date-text-control'))" aria-label="Pilih Tanggal Berakhir Visa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span></div>
                     </div>
                 </section>
                 <section class="employee-editor-section">
                     <div class="employee-editor-section-title">Kepegawaian</div>
                     <div class="employee-editor-grid two">
-                        <div class="employee-editor-field"><label>JOIN SMB</label><span class="employee-date-text-control"><input id="employeeEditJoinSmb" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" onblur="normalizeEmployeeLifecycleDateInput(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeDatePicker('employeeEditJoinSmb')" aria-label="Pilih JOIN SMB"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span></div>
-                        <div class="employee-editor-field"><label>JOIN DDT</label><span class="employee-date-text-control"><input id="employeeEditJoinSite" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" onblur="normalizeEmployeeLifecycleDateInput(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeDatePicker('employeeEditJoinSite')" aria-label="Pilih JOIN DDT"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span></div>
+                        <div class="employee-editor-field"><label>JOIN SMB</label><span class="employee-date-text-control"><input id="employeeEditJoinSmb" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" onblur="normalizeEmployeeLifecycleDateInput(this)" /><input class="employee-native-date-proxy" type="date" tabindex="-1" aria-hidden="true" onchange="employeeNativeDateProxyChange(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeNativeDatePicker(this.closest('.employee-date-text-control'))" aria-label="Pilih JOIN SMB"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span></div>
+                        <div class="employee-editor-field"><label>JOIN DDT</label><span class="employee-date-text-control"><input id="employeeEditJoinSite" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" onblur="normalizeEmployeeLifecycleDateInput(this)" /><input class="employee-native-date-proxy" type="date" tabindex="-1" aria-hidden="true" onchange="employeeNativeDateProxyChange(this)" /><button type="button" class="employee-date-picker-button" onclick="openEmployeeNativeDatePicker(this.closest('.employee-date-text-control'))" aria-label="Pilih JOIN DDT"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button></span></div>
                     </div>
                 </section>
                 <section class="employee-editor-section">
@@ -94507,6 +94547,79 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             background:rgba(202,72,82,.09)!important;
             border-color:rgba(230,117,124,.28)!important;
             box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important;
+        }
+    </style>
+
+
+    <script id="users-inactive-lifecycle-v8-register-role-tab-authority">
+    (() => {
+        'use strict';
+        if (window.__usersLifecycleV8RoleTabAuthority) return;
+        window.__usersLifecycleV8RoleTabAuthority = true;
+        document.addEventListener('keydown', event => {
+            if (event.key !== 'Tab' || event.shiftKey) return;
+            const trigger = event.target?.closest?.('#tab-users .premium-select[data-select-id="inputUserRole"] .premium-select-trigger');
+            if (!trigger) return;
+            const button = document.getElementById('btnTambahUser');
+            if (!button || button.disabled || button.hidden) return;
+            const wrapper = trigger.closest('.premium-select');
+            wrapper?.classList.remove('open');
+            trigger.setAttribute('aria-expanded', 'false');
+            event.preventDefault();
+            button.focus({ preventScroll: true });
+        }, true);
+    })();
+    </script>
+
+    <style id="users-inactive-lifecycle-v8-compact-native-date-authority">
+        /* V8 — compact segmented date editor; native browser picker is the calendar engine. */
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing:has(.employee-segmented-date-control){
+            gap:1px!important;
+            padding-right:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control{
+            grid-template-columns:max-content 19px!important;
+            gap:0!important;
+            width:max-content!important;
+            min-width:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-segments{
+            grid-template-columns:20px 5px 20px 5px 38px!important;
+            gap:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control .employee-date-separator{
+            width:5px!important;
+            min-width:5px!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control>.employee-date-picker-button{
+            width:19px!important;
+            height:22px!important;
+            margin:0!important;
+            padding:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control>.employee-date-picker-button svg{
+            width:12px!important;
+            height:12px!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-inline-cell-editing .employee-segmented-date-control+.employee-inline-edit-actions{
+            margin-left:0!important;
+        }
+        .employee-native-date-proxy{
+            position:fixed!important;
+            left:-2px!important;
+            top:-2px!important;
+            width:1px!important;
+            height:1px!important;
+            min-width:1px!important;
+            min-height:1px!important;
+            margin:0!important;
+            padding:0!important;
+            border:0!important;
+            opacity:.001!important;
+            pointer-events:none!important;
+            box-shadow:none!important;
+            appearance:auto!important;
+            -webkit-appearance:auto!important;
         }
     </style>
 
