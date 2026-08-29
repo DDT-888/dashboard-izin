@@ -44455,6 +44455,20 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 }
 
 </style>
+
+
+<style id="shift-user-card-source-pointer-ownership-v2">
+/* =====================================================================
+   SHIFT KERJA — USER CARD SOURCE POINTER OWNERSHIP v2
+   Root cause: V14 correctly surrenders lane-body hit-testing during a staff
+   drag, but that also makes the native source inherit pointer-events:none.
+   Keep only the already-marked source card as an explicit pointer owner.
+   Destination cards/bodies continue using the proven V13/V14 dropzone model.
+   ===================================================================== */
+body.shift-staff-drag-active #tab-shifts .user-card-shift.dragging {
+    pointer-events: auto !important;
+}
+</style>
 </head>
 
 <body>
@@ -57731,10 +57745,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 document.body.removeChild(dragImage);
             }, 100);
 
-            // Keep the native drag source hit-testable while destination cards
-            // surrender pointer ownership to their parent dropzones. This avoids
-            // cancelling drag initiation in Chromium when pointer-events changes
-            // during dragstart.
+            // Source ownership must be established BEFORE the global staff-drag
+            // state makes destination card/body surfaces surrender hit-testing.
+            // V14 intentionally sets lane bodies to pointer-events:none; the
+            // explicit .dragging source override below keeps the native source
+            // alive throughout Chromium drag initiation.
             target.classList.add('dragging');
             setShiftStaffDragActive(true);
         }
@@ -92064,7 +92079,7 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 body.shift-staff-drag-active #tab-shifts :is(
     .shift-column-dropzone,
     .shift-available-dropzone
-) .user-card-shift:not(.dragging) {
+) .user-card-shift {
     pointer-events: none !important;
 }
 
