@@ -54633,10 +54633,27 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             if (!container) return;
             const target = employeeNativeDateTargetFromContainer(container);
             const proxy = container.querySelector?.('.employee-native-date-proxy');
+            const button = container.querySelector?.('.employee-date-picker-button');
             if (!target || !proxy) return;
             if (!target.classList?.contains('employee-segmented-date-control') && (target.disabled || target.readOnly)) return;
             const currentIso = employeeLifecycleInputToISO(employeeDatePickerTargetValue(target));
             proxy.value = currentIso || '';
+
+            /* V9: anchor the native picker to the visible calendar control instead of
+               the old off-screen proxy position. Chrome positions its date popup from
+               the input element's viewport box, so keep the proxy invisible but place
+               that box exactly over the calendar button immediately before showPicker. */
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                proxy.style.setProperty('--employee-native-picker-left', `${Math.round(rect.left)}px`);
+                proxy.style.setProperty('--employee-native-picker-top', `${Math.round(rect.top)}px`);
+                proxy.style.setProperty('--employee-native-picker-width', `${Math.max(18, Math.round(rect.width))}px`);
+                proxy.style.setProperty('--employee-native-picker-height', `${Math.max(20, Math.round(rect.height))}px`);
+                /* Force the anchored proxy box to commit before Chrome resolves the
+                   native picker popup position in this same trusted click task. */
+                proxy.getBoundingClientRect();
+            }
+
             try {
                 if (typeof proxy.showPicker === 'function') {
                     proxy.showPicker();
@@ -94620,6 +94637,67 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             box-shadow:none!important;
             appearance:auto!important;
             -webkit-appearance:auto!important;
+        }
+    </style>
+
+
+    <style id="users-inactive-lifecycle-v9-date-anchor-alignment-authority">
+        /* V9 — final compact inline-date cluster + native picker anchoring + inactive-date vertical parity. */
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell.employee-inline-cell-editing:has(.employee-segmented-date-control){
+            justify-content:flex-start!important;
+            align-items:center!important;
+            gap:0!important;
+            padding-right:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control{
+            flex:0 0 auto!important;
+            margin:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control+.employee-inline-edit-actions{
+            flex:0 0 auto!important;
+            margin:0 0 0 1px!important;
+            padding:0!important;
+            gap:0!important;
+        }
+        html[data-theme][data-selected-theme] body #tab-users .employee-users-table .employee-inline-cell-editing .employee-segmented-date-control+.employee-inline-edit-actions .save{
+            margin:0!important;
+        }
+
+        /* Native input remains visually hidden, but its viewport box follows the visible
+           calendar button so Chrome anchors the native picker at the correct control. */
+        .employee-native-date-proxy{
+            left:var(--employee-native-picker-left,-2px)!important;
+            top:var(--employee-native-picker-top,-2px)!important;
+            width:var(--employee-native-picker-width,1px)!important;
+            height:var(--employee-native-picker-height,1px)!important;
+            min-width:0!important;
+            min-height:0!important;
+            z-index:2147483000!important;
+        }
+
+        /* Tgl Nonaktif keeps its edit affordance but uses the same two-line vertical
+           rhythm/baseline as JOIN SMB and JOIN DDT. */
+        #tab-users .employee-inactive-row td:nth-child(7),
+        #tab-users .employee-inactive-row td:nth-child(8),
+        #tab-users .employee-inactive-row td:nth-child(9){
+            vertical-align:middle!important;
+        }
+        #tab-users .employee-inactive-row td:nth-child(9)>.employee-lifecycle-inline:not(.employee-inline-cell-editing){
+            min-height:28px!important;
+            padding-top:0!important;
+            padding-bottom:0!important;
+            align-items:center!important;
+        }
+        #tab-users .employee-inactive-row td:nth-child(9)>.employee-lifecycle-inline:not(.employee-inline-cell-editing)>span:first-child{
+            display:flex!important;
+            flex-direction:column!important;
+            align-items:flex-start!important;
+            justify-content:center!important;
+            gap:2px!important;
+            min-height:28px!important;
+        }
+        #tab-users .employee-inactive-row td:nth-child(9)>.employee-lifecycle-inline:not(.employee-inline-cell-editing) .employee-inline-sub{
+            margin-top:0!important;
         }
     </style>
 
