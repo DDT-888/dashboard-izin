@@ -54445,6 +54445,54 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         // ============================================================
         // RENDER USERS PAGE
         // ============================================================
+        function employeeLifecycleLocalTodayISO() {
+            const now = employeeToday();
+            const year = String(now.getFullYear()).padStart(4, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function employeeLifecycleDateToInput(value) {
+            const date = employeeDateFromISO(value);
+            if (!date) return '';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = String(date.getFullYear()).padStart(4, '0');
+            return `${day}/${month}/${year}`;
+        }
+
+        function employeeLifecycleInputToISO(value) {
+            const raw = String(value || '').trim();
+            const match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (!match) return null;
+            const day = Number(match[1]);
+            const month = Number(match[2]);
+            const year = Number(match[3]);
+            const date = new Date(year, month - 1, day);
+            if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+            return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        window.formatEmployeeLifecycleDateInput = function(input) {
+            if (!input) return;
+            const digits = String(input.value || '').replace(/\D/g, '').slice(0, 8);
+            let formatted = digits.slice(0, 2);
+            if (digits.length > 2) formatted += '/' + digits.slice(2, 4);
+            if (digits.length > 4) formatted += '/' + digits.slice(4, 8);
+            input.value = formatted;
+        };
+
+        function employeeLifecycleReadDateInput(input, label = 'Tanggal Nonaktif') {
+            const iso = employeeLifecycleInputToISO(input?.value || '');
+            if (!iso) {
+                showToast(`${label} harus menggunakan format DD/MM/YYYY.`, 'warning');
+                input?.focus();
+                return null;
+            }
+            return iso;
+        }
+
         function employeeLifecycleActorLabel(user) {
             return employeeEscape(user?.inactive_by || '—');
         }
@@ -54468,7 +54516,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         <div><h3 id="employeeLifecycleTitle">Nonaktifkan User</h3><p id="employeeLifecycleMessage">Lengkapi informasi nonaktif user.</p></div>
                     </div>
                     <div class="employee-lifecycle-fields">
-                        <label><span>Tanggal Nonaktif</span><input id="employeeLifecycleDate" type="date" data-employee-date="true" /></label>
+                        <label><span>Tanggal Nonaktif <small>DD/MM/YYYY</small></span><input id="employeeLifecycleDate" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="DD/MM/YYYY" aria-label="Tanggal Nonaktif format DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" /></label>
                         <label><span>Alasan <small>Opsional</small></span><textarea id="employeeLifecycleReason" maxlength="250" rows="3" placeholder="Contoh: Resign"></textarea></label>
                     </div>
                     <div class="employee-lifecycle-actions">
@@ -54477,7 +54525,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     </div>
                 </div>`;
             document.body.appendChild(modal);
-            bindEmployeeDateYearLock(modal.querySelector('#employeeLifecycleDate'));
             modal.addEventListener('pointerdown', event => {
                 if (event.target === modal) closeEmployeeLifecycleModal(false);
             });
@@ -54493,12 +54540,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             let payload = null;
             if (confirmed) {
                 const dateInput = modal.querySelector('#employeeLifecycleDate');
-                if (!validateEmployeeDateInput(dateInput, 'Tanggal Nonaktif')) {
+                const inactiveAt = employeeLifecycleReadDateInput(dateInput, 'Tanggal Nonaktif');
+                if (!inactiveAt) {
                     employeeLifecycleResolver = resolver;
                     return;
                 }
                 payload = {
-                    inactiveAt: dateInput?.value || '',
+                    inactiveAt,
                     reason: (modal.querySelector('#employeeLifecycleReason')?.value || '').trim()
                 };
             }
@@ -54513,10 +54561,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const reasonInput = modal.querySelector('#employeeLifecycleReason');
             const message = modal.querySelector('#employeeLifecycleMessage');
             if (employeeLifecycleResolver) employeeLifecycleResolver(null);
-            const today = new Date().toLocaleDateString('en-CA');
+            const today = employeeLifecycleLocalTodayISO();
             if (dateInput) {
-                dateInput.value = user?.inactive_at || today;
-                dateInput.max = today;
+                dateInput.value = employeeLifecycleDateToInput(today);
             }
             if (reasonInput) reasonInput.value = user?.inactive_reason || '';
             if (message) message.textContent = `User ${user?.name || 'ini'} akan dikeluarkan dari data operasional aktif dan Shift Kerja.`;
@@ -54554,14 +54601,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const field = button.dataset.field;
             const user = employeeUserDirectory.find(item => Number(item.id) === userId);
             if (!user || String(user.status || '').toLowerCase() !== 'inactive') return;
-            const value = field === 'inactive_at' ? (user.inactive_at || '') : (user.inactive_reason || '');
+            const value = field === 'inactive_at' ? employeeLifecycleDateToInput(user.inactive_at || '') : (user.inactive_reason || '');
             const editor = field === 'inactive_at'
-                ? `<input class="employee-inline-editor" type="date" value="${employeeEscape(value)}" data-employee-date="true" />`
+                ? `<input class="employee-inline-editor employee-lifecycle-date-editor" type="text" inputmode="numeric" maxlength="10" autocomplete="off" value="${employeeEscape(value)}" placeholder="DD/MM/YYYY" aria-label="Tanggal Nonaktif format DD/MM/YYYY" oninput="formatEmployeeLifecycleDateInput(this)" />`
                 : `<input class="employee-inline-editor" type="text" maxlength="250" value="${employeeEscape(value)}" placeholder="Alasan nonaktif" />`;
             button.outerHTML = `<div class="employee-inline-cell employee-inline-cell-editing" data-lifecycle-user-id="${userId}" data-lifecycle-field="${field}">${editor}<span class="employee-inline-edit-actions"><button class="save" type="button" onclick="commitEmployeeLifecycleInlineEdit(this)" aria-label="Simpan perubahan"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></button></span></div>`;
             const wrapper = document.querySelector(`[data-lifecycle-user-id="${userId}"][data-lifecycle-field="${field}"]`);
             const input = wrapper?.querySelector('.employee-inline-editor');
-            if (input?.type === 'date') bindEmployeeDateYearLock(input);
             input?.addEventListener('keydown', event => {
                 if (event.key === 'Enter') { event.preventDefault(); wrapper?.querySelector('.save')?.click(); }
                 if (event.key === 'Escape') { event.preventDefault(); renderUsersPage(); }
@@ -54578,16 +54624,23 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const user = employeeUserDirectory.find(item => Number(item.id) === userId);
             if (!user) return;
             let value = input?.value ?? '';
-            if (field === 'inactive_at' && value && !validateEmployeeDateInput(input, 'Tanggal Nonaktif')) return;
-            value = String(value).trim();
+            if (field === 'inactive_at') {
+                const parsedDate = employeeLifecycleReadDateInput(input, 'Tanggal Nonaktif');
+                if (!parsedDate) return;
+                value = parsedDate;
+            } else {
+                value = String(value).trim();
+            }
             const oldValue = field === 'inactive_at' ? (user.inactive_at || '') : (user.inactive_reason || '');
             if (oldValue === value) { renderUsersPage(); return; }
             renderUsersPage();
             const label = field === 'inactive_at' ? 'Tanggal Nonaktif' : 'Alasan';
+            const oldDisplay = field === 'inactive_at' ? employeeLifecycleDateToInput(oldValue) : oldValue;
+            const newDisplay = field === 'inactive_at' ? employeeLifecycleDateToInput(value) : value;
             const confirmed = await requestPremiumConfirmation({
                 title: 'Konfirmasi Perubahan',
                 message: `Ubah ${label} milik ${user.name}?`,
-                note: `Sebelumnya: ${oldValue || '—'}\nMenjadi: ${value || '—'}`,
+                note: `Sebelumnya: ${oldDisplay || '—'}\nMenjadi: ${newDisplay || '—'}`,
                 confirmText: 'Simpan Perubahan',
                 variant: 'warning'
             });
@@ -61823,7 +61876,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <td>${employeeInlineCell(user, 'training_status', employeeTrainingBadge(profile), profile.training_next_review_date ? `Review ${employeeFormatDate(profile.training_next_review_date)}` : '')}</td>
                     <td>${employeeRankBadge(user, profile)}</td>
                     <td class="sticky-right"><div class="employee-actions employee-lifecycle-actions-cell">
-                        <button class="employee-action-button status inactive-action active-state-action history-tooltip-target lifecycle-power" type="button" onclick="toggleEmployeeUserStatus('${user.id}')" data-tooltip="Nonaktifkan user" data-tooltip-icon="power" aria-label="Nonaktifkan user" ${!userPermissions.canManage || isCurrentUser ? 'disabled' : ''}><svg class="employee-power-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="power-stem" d="M12 2.5v9"/><path class="power-ring" d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></button>
+                        <button class="employee-action-button edit history-tooltip-target" type="button" onclick="openEmployeeEditor('${user.id}')" data-tooltip="Edit seluruh data" data-tooltip-icon="edit" aria-label="Edit seluruh data" ${!employeeCan('employee_data_edit') && !userPermissions.canManage ? 'disabled' : ''}><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>
+                        <button class="employee-action-button status active-action active-state-action history-tooltip-target lifecycle-power" type="button" onclick="toggleEmployeeUserStatus('${user.id}')" data-tooltip="Nonaktifkan user" data-tooltip-icon="power" aria-label="Nonaktifkan user" ${!userPermissions.canManage || isCurrentUser ? 'disabled' : ''}><svg class="employee-power-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="power-stem" d="M12 2.5v9"/><path class="power-ring" d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></button>
+                        <button class="employee-action-button delete history-tooltip-target" type="button" onclick="deleteEmployeeUser('${user.id}')" data-tooltip="Hapus user" data-tooltip-icon="delete" aria-label="Hapus user" ${!userPermissions.canManage || isCurrentUser ? 'disabled' : ''}><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
                     </div></td>
                 </tr>`;
             }).join('');
@@ -61864,7 +61919,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 </tr></thead><tbody>${renderEmployeeUserRows(users)}</tbody></table></div>
                 <div class="history-count">Menampilkan <span>${users.length}</span> dari <span>${activeDirectory.length}</span> user aktif</div>
                 <section class="employee-inactive-section">
-                    <div class="users-list-heading employee-inactive-heading"><div class="users-list-title"><span class="users-section-icon compact employee-inactive-section-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5v9"/><path d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></span><div><h3>User Nonaktif <span class="employee-inactive-count">${inactiveUsers.length}</span></h3><p>User yang sudah tidak bekerja di DDT. Data historis dan profil tetap dipertahankan.</p></div></div></div>
+                    <div class="users-list-heading employee-inactive-heading"><div class="users-list-title"><span class="users-section-icon compact employee-inactive-section-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5v9"/><path d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></span><div><h3>User Nonaktif</h3><p>User yang sudah tidak bekerja di DDT. Data historis dan profil tetap dipertahankan.</p></div></div></div>
                     <div class="employee-table-wrap employee-inactive-table-wrap"><table class="employee-users-table employee-inactive-table"><thead><tr>
                         <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry history-tooltip-target" data-tooltip="User yang melakukan proses Nonaktif." aria-label="PIC Nonaktif — User yang melakukan proses Nonaktif">PIC Nonaktif</th><th class="employee-col-expiry">Alasan</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-training">Tgl Nonaktif</th><th class="employee-col-tenure">Masa Kerja</th><th class="employee-col-actions sticky-right">Aksi</th>
                     </tr></thead><tbody>${renderEmployeeInactiveRows(inactiveUsers)}</tbody></table></div>
@@ -93639,7 +93694,6 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         #tab-users .employee-inactive-heading{margin-top:0;margin-bottom:10px}
         #tab-users .employee-inactive-section-icon{color:#a84e54!important;background:color-mix(in srgb,#a84e54 9%,var(--bg-card))!important;border-color:color-mix(in srgb,#a84e54 28%,var(--border-color))!important}
         #tab-users .employee-inactive-heading h3{display:flex;align-items:center;gap:8px}
-        #tab-users .employee-inactive-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 6px;border-radius:999px;font-size:10px;font-weight:800;line-height:1;color:#a84e54;background:color-mix(in srgb,#a84e54 9%,var(--bg-card));border:1px solid color-mix(in srgb,#a84e54 24%,var(--border-color))}
         #tab-users .employee-inactive-table-wrap{border-color:color-mix(in srgb,#a84e54 28%,var(--border-color))!important;box-shadow:0 4px 14px color-mix(in srgb,#5c2b2e 7%,transparent)!important}
         #tab-users .employee-inactive-table thead th{background:#5c2b2e!important;color:#f6eeee!important;border-color:#744247!important;box-shadow:none!important}
         #tab-users .employee-inactive-table thead th.sticky-left-one,
@@ -93655,10 +93709,10 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         #tab-users .employee-inactive-table tbody tr:hover td.sticky-left-two,
         #tab-users .employee-inactive-table tbody tr:hover td.sticky-right{background:color-mix(in srgb,#a6474d 6%,var(--bg-card))!important}
         #tab-users .employee-status-badge.lifecycle-inactive{color:#a6474d!important;border-color:color-mix(in srgb,#a6474d 30%,var(--border-color))!important;background:color-mix(in srgb,#a6474d 8%,var(--bg-card))!important}
-        #tab-users .employee-action-button.lifecycle-power.active-state-action:not(:disabled){color:#16835b!important;background:color-mix(in srgb,#16835b 8%,var(--bg-card))!important;border-color:color-mix(in srgb,#16835b 28%,var(--border-color))!important}
-        #tab-users .employee-action-button.lifecycle-power.active-state-action:hover:not(:disabled){color:#106d4a!important;background:color-mix(in srgb,#16835b 14%,var(--bg-card))!important;border-color:color-mix(in srgb,#16835b 42%,var(--border-color))!important;box-shadow:0 5px 12px color-mix(in srgb,#16835b 12%,transparent)!important}
-        #tab-users .employee-action-button.lifecycle-power.inactive-state-action:not(:disabled){color:#b14950!important;background:color-mix(in srgb,#b14950 8%,var(--bg-card))!important;border-color:color-mix(in srgb,#b14950 30%,var(--border-color))!important}
-        #tab-users .employee-action-button.lifecycle-power.inactive-state-action:hover:not(:disabled){color:#973b42!important;background:color-mix(in srgb,#b14950 14%,var(--bg-card))!important;border-color:color-mix(in srgb,#b14950 44%,var(--border-color))!important;box-shadow:0 5px 12px color-mix(in srgb,#b14950 12%,transparent)!important}
+        html #tab-users .employee-action-button.status.active-action.active-state-action.lifecycle-power.history-tooltip-target:not(:disabled){color:#16835b!important;background:color-mix(in srgb,#16835b 8%,var(--bg-card))!important;border-color:color-mix(in srgb,#16835b 28%,var(--border-color))!important}
+        html #tab-users .employee-action-button.status.active-action.active-state-action.lifecycle-power.history-tooltip-target:hover:not(:disabled){color:#106d4a!important;background:color-mix(in srgb,#16835b 14%,var(--bg-card))!important;border-color:color-mix(in srgb,#16835b 42%,var(--border-color))!important;box-shadow:0 5px 12px color-mix(in srgb,#16835b 12%,transparent)!important}
+        html #tab-users .employee-action-button.status.lifecycle-power.inactive-state-action.history-tooltip-target:not(:disabled){color:#b14950!important;background:color-mix(in srgb,#b14950 8%,var(--bg-card))!important;border-color:color-mix(in srgb,#b14950 30%,var(--border-color))!important}
+        html #tab-users .employee-action-button.status.lifecycle-power.inactive-state-action.history-tooltip-target:hover:not(:disabled){color:#973b42!important;background:color-mix(in srgb,#b14950 14%,var(--bg-card))!important;border-color:color-mix(in srgb,#b14950 44%,var(--border-color))!important;box-shadow:0 5px 12px color-mix(in srgb,#b14950 12%,transparent)!important}
         #tab-users .employee-inactive-actions{justify-content:center}
         #tab-users .employee-lifecycle-actions-cell{justify-content:center}
         #tab-users .employee-lifecycle-readonly{display:flex;align-items:center;min-height:34px;padding:5px 8px;min-width:0}
@@ -93681,6 +93735,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         .employee-lifecycle-fields label small{font-size:9px;font-weight:650;opacity:.68}
         .employee-lifecycle-fields input,.employee-lifecycle-fields textarea{width:100%;box-sizing:border-box;border:1px solid var(--border-color);border-radius:9px;background:var(--input-bg,var(--bg-card));color:var(--text-primary);font:inherit;font-size:12px;padding:9px 10px;outline:none;resize:vertical}
         .employee-lifecycle-fields input:focus,.employee-lifecycle-fields textarea:focus{border-color:color-mix(in srgb,#a6474d 52%,var(--border-color));box-shadow:0 0 0 3px color-mix(in srgb,#a6474d 9%,transparent)}
+        #employeeLifecycleDate,.employee-lifecycle-date-editor{font-variant-numeric:tabular-nums;letter-spacing:.035em}
         .employee-lifecycle-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
         .employee-lifecycle-actions button{min-height:34px;padding:0 13px;border-radius:9px;border:1px solid var(--border-color);font:inherit;font-size:11px;font-weight:800;cursor:pointer}
         .employee-lifecycle-actions .secondary{background:var(--bg-card);color:var(--text-secondary)}
