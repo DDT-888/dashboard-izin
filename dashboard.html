@@ -99963,5 +99963,124 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 15 — summary baseline + quiet move + natural name width -->
+<script id="ddt-shift-active-draft-candidate-v15-refinement">
+(function DDTShiftActiveDraftCandidateV15Refinement(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V15__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V15__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v15-refinement';
+
+    /* ================================================================
+       STAFF MOVE TOAST — SUCCESS MOVE OPERATIONS ONLY
+       Keep errors, warnings, reset, save, publish, copy, and other
+       operational feedback intact.
+       ================================================================ */
+    if (typeof showShiftToast === 'function' && !window.__DDT_SHIFT_MOVE_TOAST_FILTER_V15__) {
+        window.__DDT_SHIFT_MOVE_TOAST_FILTER_V15__ = true;
+        const baseShowShiftToastV15 = showShiftToast;
+
+        showShiftToast = function candidateV15ShowShiftToast(message, type = 'info', duration = 2000){
+            const clean = String(message || '')
+                .replace(/^\s*[✅❌⚠️ℹ️🔄]+\s*/u, '')
+                .trim();
+
+            const isStaffMovementSuccess =
+                String(type || '').toLowerCase() === 'success' &&
+                (
+                    /dikembalikan\s+ke\s+DATA\s+STAFF\s*$/i.test(clean) ||
+                    (
+                        /dipindahkan\s*$/i.test(clean) &&
+                        !/^Kolom\s+shift\s+dipindahkan\s*$/i.test(clean)
+                    )
+                );
+
+            if (isStaffMovementSuccess) {
+                return;
+            }
+
+            return baseShowShiftToastV15(message, type, duration);
+        };
+    }
+
+    function injectStylesV15(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* ==========================================================
+               Candidate V15 — targeted Root-Cause Correction
+               ========================================================== */
+
+            /*
+             * SUMMARY
+             * Keep the entire rail vertically centered through its parent.
+             * Only the label/value pair changes from center alignment to
+             * typographic baseline alignment.
+             */
+            #tab-shifts .shift-v12-summary-metric{
+                height:auto!important;
+                align-items:baseline!important;
+                align-self:center!important;
+            }
+
+            #tab-shifts .shift-v12-summary-label,
+            #tab-shifts .shift-v12-summary-value{
+                padding-top:0!important;
+                padding-bottom:0!important;
+                margin-top:0!important;
+                margin-bottom:0!important;
+                transform:none!important;
+            }
+
+            /*
+             * STAFF NAME
+             * Remove the historical fixed 96px cap. The .user-info flex
+             * area now consumes the real remaining width, while role badge
+             * and drag affordance stay protected as non-shrinking siblings.
+             */
+            #tab-shifts .user-card-shift .user-info{
+                flex:1 1 auto!important;
+                min-width:0!important;
+                max-width:none!important;
+            }
+
+            #tab-shifts .user-card-shift .user-name{
+                width:auto!important;
+                max-width:100%!important;
+                min-width:0!important;
+                white-space:nowrap!important;
+                overflow:hidden!important;
+                text-overflow:ellipsis!important;
+            }
+
+            #tab-shifts .user-card-shift .role-tag-shift{
+                flex:0 0 auto!important;
+                flex-shrink:0!important;
+            }
+
+            #tab-shifts .user-card-shift .drag-handle{
+                flex:0 0 auto!important;
+                flex-shrink:0!important;
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    injectStylesV15();
+
+    window.DDTShiftCandidateV15 = Object.freeze({
+        version:'v15',
+        suppressesStaffMoveSuccessToast:true,
+        naturalStaffNameWidth:true,
+        summaryBaselineAlignment:true
+    });
+})();
+</script>
+
 </body>
 </html>
