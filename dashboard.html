@@ -61179,6 +61179,55 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         };
         const EMPLOYEE_INACTIVE_PAGE_SIZE = 7;
         let employeeInactivePage = 1;
+        let employeeInactiveMeasuredRowHeight = 0;
+        let employeeInactiveMeasuredThemeKey = '';
+
+        function employeeInactiveThemeGeometryKey() {
+            const root = document.documentElement;
+            return String(root.dataset.selectedTheme || root.dataset.themeVariant || root.dataset.theme || 'default');
+        }
+
+        function employeeMeasureInactiveRowHeight(body, visibleRowCount) {
+            if (!body || visibleRowCount <= 0) return employeeInactiveMeasuredRowHeight || 43;
+            const themeKey = employeeInactiveThemeGeometryKey();
+            if (employeeInactiveMeasuredRowHeight > 0 && employeeInactiveMeasuredThemeKey === themeKey) {
+                return employeeInactiveMeasuredRowHeight;
+            }
+            const bodyHeight = body.getBoundingClientRect().height;
+            const measured = bodyHeight > 0 ? bodyHeight / visibleRowCount : 0;
+            if (Number.isFinite(measured) && measured > 20) {
+                employeeInactiveMeasuredRowHeight = measured;
+                employeeInactiveMeasuredThemeKey = themeKey;
+            }
+            return employeeInactiveMeasuredRowHeight || 43;
+        }
+
+        function employeeSyncInactiveFootprint(body, reserve, visibleRowCount) {
+            if (!body || !reserve) return;
+            const themeKey = employeeInactiveThemeGeometryKey();
+            if (employeeInactiveMeasuredThemeKey !== themeKey) {
+                employeeInactiveMeasuredRowHeight = 0;
+                employeeInactiveMeasuredThemeKey = '';
+            }
+            const rowHeight = employeeMeasureInactiveRowHeight(body, visibleRowCount);
+            const missingRows = Math.max(0, EMPLOYEE_INACTIVE_PAGE_SIZE - Math.max(0, visibleRowCount));
+            reserve.style.height = `${Math.max(0, missingRows * rowHeight)}px`;
+        }
+
+        let employeeInactiveThemeGeometryTimer = null;
+        if (typeof MutationObserver === 'function') {
+            const root = document.documentElement;
+            new MutationObserver(() => {
+                clearTimeout(employeeInactiveThemeGeometryTimer);
+                employeeInactiveThemeGeometryTimer = setTimeout(() => {
+                    const body = document.getElementById('employeeInactiveTableBody');
+                    const reserve = document.getElementById('employeeInactiveFootprintReserve');
+                    if (!body || !reserve) return;
+                    const visibleRows = body.rows ? body.rows.length : body.children.length;
+                    employeeSyncInactiveFootprint(body, reserve, visibleRows);
+                }, 90);
+            }).observe(root, { attributes: true, attributeFilter: ['data-selected-theme', 'data-theme-variant', 'data-theme'] });
+        }
 
         function employeeInactivePageState(totalItems) {
             const total = Math.max(0, Number(totalItems) || 0);
@@ -61215,10 +61264,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const allUsers = employeeInactiveUsers();
             const state = employeeInactivePageState(allUsers.length);
             const pageUsers = allUsers.slice(state.startIndex, state.endIndex);
-            const occupiedRows = Math.max(1, pageUsers.length);
-            const reserveHeight = Math.max(0, EMPLOYEE_INACTIVE_PAGE_SIZE - occupiedRows) * 43;
             body.innerHTML = renderEmployeeInactiveRows(pageUsers);
-            reserve.style.height = `${reserveHeight}px`;
+            employeeSyncInactiveFootprint(body, reserve, pageUsers.length);
             footerHost.innerHTML = employeeInactivePaginationMarkup(state);
         }
 
@@ -62401,8 +62448,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const inactiveUsersAll = employeeInactiveUsers();
             const inactivePageState = employeeInactivePageState(inactiveUsersAll.length);
             const inactiveUsers = inactiveUsersAll.slice(inactivePageState.startIndex, inactivePageState.endIndex);
-            const inactiveOccupiedRows = Math.max(1, inactiveUsers.length);
-            const inactiveReserveHeight = Math.max(0, EMPLOYEE_INACTIVE_PAGE_SIZE - inactiveOccupiedRows) * 43;
             const activeDirectory = (employeeUserDirectory.length ? employeeUserDirectory : listUsers).filter(user => String(user.status || 'active').toLowerCase() === 'active');
             const roleCounts = { leader: 0, csline: 0, cs: 0, kapten: 0, kasir: 0 };
             activeDirectory.forEach(user => { if (roleCounts[user.role] != null) roleCounts[user.role] += 1; });
@@ -62431,10 +62476,15 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <div class="users-list-heading employee-inactive-heading"><div class="users-list-title"><span class="users-section-icon compact employee-inactive-section-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5v9"/><path d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></span><div><h3>User Nonaktif</h3><p>Daftar user yang sudah tidak bekerja di DDT</p></div></div></div>
                     <div class="employee-table-wrap employee-inactive-table-wrap"><table class="employee-users-table employee-inactive-table"><thead><tr>
                         <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry history-tooltip-target" data-tooltip="User yang melakukan proses Nonaktif." aria-label="PIC Nonaktif — User yang melakukan proses Nonaktif">PIC Nonaktif</th><th class="employee-col-expiry">Alasan</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-training">Tgl Nonaktif</th><th class="employee-col-tenure">Masa Kerja</th><th class="employee-col-actions sticky-right">Aksi</th>
-                    </tr></thead><tbody id="employeeInactiveTableBody">${renderEmployeeInactiveRows(inactiveUsers)}</tbody></table><div id="employeeInactiveFootprintReserve" class="employee-inactive-footprint-reserve" aria-hidden="true" style="height:${inactiveReserveHeight}px"></div></div>
+                    </tr></thead><tbody id="employeeInactiveTableBody">${renderEmployeeInactiveRows(inactiveUsers)}</tbody></table><div id="employeeInactiveFootprintReserve" class="employee-inactive-footprint-reserve" aria-hidden="true" style="height:0px"></div></div>
                     <div id="employeeInactivePaginationHost">${employeeInactivePaginationMarkup(inactivePageState)}</div>
                 </section>
             </div>`;
+            employeeSyncInactiveFootprint(
+                document.getElementById('employeeInactiveTableBody'),
+                document.getElementById('employeeInactiveFootprintReserve'),
+                inactiveUsers.length
+            );
             employeeRestoreRegisterDraftToDOM();
         }
 
