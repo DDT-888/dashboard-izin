@@ -99600,5 +99600,266 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 13 — summary number polish + period/log/publish corrections -->
+<script id="ddt-shift-active-draft-candidate-v13-refinement">
+(function DDTShiftActiveDraftCandidateV13Refinement(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V13__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V13__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v13-refinement';
+    const baseRenderShiftPageV13 = typeof renderShiftPage === 'function' ? renderShiftPage : null;
+    if (!baseRenderShiftPageV13) return;
+
+    function workspaceModeV13(){
+        try {
+            if (typeof shiftWorkspaceMode !== 'undefined') return shiftWorkspaceMode === 'draft' ? 'draft' : 'active';
+        } catch (_) {}
+        return document.querySelector('#tab-shifts .shift-workspace-tab[data-shift-workspace-mode="draft"].active')
+            ? 'draft'
+            : 'active';
+    }
+
+    function currentPeriodV13(){
+        try { return activeShiftPeriod || null; }
+        catch (_) { return null; }
+    }
+
+    function normalizePeriodV13(period){
+        let normalized = period;
+        try {
+            if (typeof normalizeShiftPeriod === 'function') {
+                normalized = normalizeShiftPeriod(period) || period;
+            }
+        } catch (_) {}
+        return normalized;
+    }
+
+    function formatPeriodLongV13(period){
+        const normalized = normalizePeriodV13(period);
+        if (!normalized?.start || !normalized?.end) return 'Belum ditentukan';
+
+        const parts = value => {
+            const [year, month, day] = String(value).split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            return {
+                day: String(day).padStart(2, '0'),
+                month: date.toLocaleDateString('id-ID', { month:'long' }),
+                year: String(year)
+            };
+        };
+
+        const a = parts(normalized.start);
+        const b = parts(normalized.end);
+
+        if (normalized.start === normalized.end) {
+            return `${a.day} ${a.month} ${a.year}`;
+        }
+        if (a.year === b.year && a.month === b.month) {
+            return `${a.day} — ${b.day} ${b.month} ${b.year}`;
+        }
+        if (a.year === b.year) {
+            return `${a.day} ${a.month} — ${b.day} ${b.month} ${b.year}`;
+        }
+        return `${a.day} ${a.month} ${a.year} — ${b.day} ${b.month} ${b.year}`;
+    }
+
+    function applyPeriodPresentationV13(){
+        const context = document.querySelector('#tab-shifts .shift-workspace-context');
+        if (!context || context.querySelector('[data-shift-period-editor="true"]')) return;
+
+        const value = context.querySelector(
+            '[data-shift-v4-period-value], [data-shift-v3-period-value], [data-shift-period-value], .shift-v4-period-value, .shift-v3-period-value'
+        );
+
+        if (!value) return;
+
+        value.textContent = formatPeriodLongV13(currentPeriodV13());
+        value.classList.add('shift-v13-period-edit-target', 'history-tooltip-target');
+        value.setAttribute('data-tooltip', 'Edit Periode');
+        value.setAttribute('aria-label', 'Edit Periode');
+        value.removeAttribute('title');
+    }
+
+    function removeLogButtonTooltipsV13(){
+        document.querySelectorAll(
+            '#tab-shifts .shift-log-container .log-actions .refresh-btn,' +
+            '#tab-shifts .shift-log-container .log-actions .csv-btn'
+        ).forEach(button => {
+            button.removeAttribute('title');
+            button.removeAttribute('data-tooltip');
+            button.removeAttribute('aria-describedby');
+            button.classList.remove('history-tooltip-target', 'permission-tooltip-target');
+        });
+    }
+
+    function normalizePublishButtonV13(){
+        const publish = document.querySelector('#tab-shifts .shift-publish-draft');
+        if (!publish) return;
+        publish.classList.add('shift-v13-publish-action');
+    }
+
+    function applyV13(){
+        applyPeriodPresentationV13();
+        removeLogButtonTooltipsV13();
+        normalizePublishButtonV13();
+    }
+
+    function injectStylesV13(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* ==========================================================
+               Candidate V13 — targeted root-cause corrections
+               ========================================================== */
+
+            /* Summary numbers: refined as data values, not counters/badges. */
+            #tab-shifts .shift-v12-summary-value{
+                min-width:1.5ch!important;
+                margin-left:1px!important;
+                color:color-mix(in srgb,var(--text-primary) 88%,var(--text-secondary) 12%)!important;
+                font-size:8.85px!important;
+                font-weight:790!important;
+                line-height:1!important;
+                letter-spacing:.014em!important;
+                font-variant-numeric:tabular-nums lining-nums!important;
+                font-feature-settings:"tnum" 1,"lnum" 1!important;
+                text-align:right!important;
+                transform:translateY(.15px)!important;
+            }
+
+            #tab-shifts .shift-v12-summary-total .shift-v12-summary-value{
+                color:color-mix(in srgb,var(--text-primary) 93%,var(--accent) 7%)!important;
+                font-weight:805!important;
+            }
+
+            #tab-shifts .shift-v12-summary-unassigned.is-zero .shift-v12-summary-value{
+                color:color-mix(in srgb,var(--text-muted) 82%,var(--text-secondary) 18%)!important;
+                font-weight:735!important;
+            }
+
+            #tab-shifts .shift-v12-summary-unassigned.has-unassigned .shift-v12-summary-value{
+                color:color-mix(in srgb,var(--text-primary) 80%,var(--accent) 20%)!important;
+                font-weight:805!important;
+            }
+
+            /* Period display: editable affordance using the dashboard's existing tooltip system. */
+            #tab-shifts .shift-v13-period-edit-target{
+                cursor:pointer!important;
+                transition:
+                    color .14s ease,
+                    text-decoration-color .14s ease,
+                    opacity .14s ease!important;
+            }
+
+            #tab-shifts .shift-v13-period-edit-target:hover{
+                color:color-mix(in srgb,var(--text-primary) 82%,var(--accent) 18%)!important;
+                text-decoration-line:underline!important;
+                text-decoration-style:dotted!important;
+                text-decoration-thickness:1px!important;
+                text-underline-offset:3px!important;
+                text-decoration-color:color-mix(in srgb,var(--accent) 42%,transparent)!important;
+            }
+
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v13-period-edit-target:hover,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v13-period-edit-target:hover{
+                color:#416a73!important;
+                text-decoration-color:rgba(74,137,151,.42)!important;
+            }
+
+            /*
+             * Publish stays semantically prominent, but no longer inherits
+             * the legacy solid action-primary paint.
+             */
+            html body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:not(:disabled){
+                color:color-mix(in srgb,var(--text-primary) 82%,var(--accent) 18%)!important;
+                background:color-mix(in srgb,var(--bg-card) 92%,var(--accent) 8%)!important;
+                border:1px solid color-mix(in srgb,var(--border-color) 68%,var(--accent) 32%)!important;
+                box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important;
+                filter:none!important;
+            }
+
+            html body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:hover:not(:disabled){
+                color:color-mix(in srgb,var(--text-primary) 72%,var(--accent) 28%)!important;
+                background:color-mix(in srgb,var(--bg-card) 84%,var(--accent) 16%)!important;
+                border-color:color-mix(in srgb,var(--border-color) 48%,var(--accent) 52%)!important;
+                box-shadow:
+                    inset 0 1px 0 rgba(255,255,255,.20),
+                    0 5px 12px color-mix(in srgb,var(--accent) 10%,transparent)!important;
+                filter:none!important;
+            }
+
+            html body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:active:not(:disabled){
+                transform:translateY(0)!important;
+                background:color-mix(in srgb,var(--bg-card) 80%,var(--accent) 20%)!important;
+            }
+
+            /* Mecha Ivory: same family, slightly cooler datum treatment. */
+            html[data-mi-frozen-presentation="mecha-ivory"] body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:not(:disabled),
+            html[data-mi-native-presentation="mecha-ivory"] body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:not(:disabled){
+                color:#416a73!important;
+                background:rgba(74,137,151,.075)!important;
+                border-color:rgba(74,137,151,.27)!important;
+                box-shadow:inset 0 1px 0 rgba(255,255,255,.22)!important;
+            }
+
+            html[data-mi-frozen-presentation="mecha-ivory"] body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:hover:not(:disabled),
+            html[data-mi-native-presentation="mecha-ivory"] body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:hover:not(:disabled){
+                color:#315a64!important;
+                background:rgba(74,137,151,.13)!important;
+                border-color:rgba(74,137,151,.39)!important;
+            }
+
+            /* Venom: quiet green material, not a solid neon CTA. */
+            html[data-selected-theme="venom"] body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:not(:disabled),
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:not(:disabled){
+                color:#cce8c7!important;
+                background:rgba(68,214,44,.075)!important;
+                border-color:rgba(68,214,44,.27)!important;
+                box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:hover:not(:disabled),
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-publish-draft.shift-v13-publish-action:hover:not(:disabled){
+                color:#e8ffe4!important;
+                background:rgba(68,214,44,.13)!important;
+                border-color:rgba(68,214,44,.40)!important;
+                box-shadow:0 6px 14px rgba(68,214,44,.08)!important;
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    renderShiftPage = function candidateV13RenderShiftPage(previousCardLayout = null){
+        const result = baseRenderShiftPageV13(previousCardLayout);
+        injectStylesV13();
+        applyV13();
+        return result;
+    };
+
+    injectStylesV13();
+
+    const initial = () => {
+        applyV13();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initial, { once:true });
+    } else {
+        initial();
+    }
+
+    window.DDTShiftCandidateV13 = Object.freeze({
+        version:'v13',
+        apply:applyV13,
+        formatPeriodLong:formatPeriodLongV13
+    });
+})();
+</script>
+
 </body>
 </html>
