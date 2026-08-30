@@ -100082,5 +100082,624 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 16 — Preview Shift readability authority -->
+<script id="ddt-shift-active-draft-candidate-v16-preview-refinement">
+(function DDTShiftActiveDraftCandidateV16PreviewRefinement(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V16__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V16__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v16-preview-refinement';
+
+    function escapeV16(value){
+        const node = document.createElement('div');
+        node.textContent = String(value ?? '');
+        return node.innerHTML;
+    }
+
+    function modeV16(){
+        try {
+            return shiftWorkspaceMode === 'draft' ? 'draft' : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    function periodLabelV16(){
+        try {
+            if (window.DDTShiftCandidateV13?.formatPeriodLong) {
+                return window.DDTShiftCandidateV13.formatPeriodLong(activeShiftPeriod);
+            }
+        } catch (_) {}
+
+        try {
+            const formatted = formatShiftPeriodRange(activeShiftPeriod);
+            return formatted?.label || 'Periode belum ditentukan';
+        } catch (_) {
+            return 'Periode belum ditentukan';
+        }
+    }
+
+    function roleLabelV16(role){
+        return {
+            csline:'CS Line',
+            cs:'CS',
+            kapten:'Kapten',
+            kasir:'Kasir'
+        }[String(role || 'cs').toLowerCase()] || String(role || 'CS');
+    }
+
+    function roleClassV16(role){
+        const normalized = String(role || 'cs').toLowerCase();
+        return ['csline','cs','kapten','kasir'].includes(normalized)
+            ? normalized
+            : 'cs';
+    }
+
+    function cloneUserV16(user){
+        return user ? { ...user } : user;
+    }
+
+    function openPreviewV16(){
+        const columns = Array.isArray(shiftColumns) ? shiftColumns : [];
+        const available = Array.isArray(availableUsers) ? availableUsers : [];
+        const totalAssigned = columns.reduce(
+            (sum, column) => sum + (Array.isArray(column.users) ? column.users.length : 0),
+            0
+        );
+
+        previewData = {
+            columns: columns.map(column => ({
+                ...column,
+                users: Array.isArray(column.users)
+                    ? column.users.map(cloneUserV16)
+                    : []
+            })),
+            availableUsers: available.map(cloneUserV16),
+            totalStaff: totalAssigned + available.length,
+            totalAssigned,
+            unassigned: available.length,
+            createdBy: getCurrentUserName() || 'System',
+            createdAt: new Date().toLocaleString('id-ID'),
+            periodLabel: periodLabelV16(),
+            workspaceMode: modeV16()
+        };
+
+        renderPreviewV16();
+    }
+
+    function staffRowV16(user){
+        const role = roleClassV16(user?.role);
+        const note = String(user?.note || '').trim();
+        const name = String(user?.name || '-');
+
+        return `
+            <article class="preview-v16-user role-${role}">
+                <span class="preview-v16-avatar" aria-hidden="true">
+                    ${escapeV16(name.charAt(0) || '?')}
+                </span>
+
+                <span class="preview-v16-user-copy">
+                    <strong title="${escapeV16(name)}">${escapeV16(name)}</strong>
+                    ${note ? `<small title="${escapeV16(note)}">${escapeV16(note)}</small>` : ''}
+                </span>
+
+                <span class="preview-v16-role role-${role}">
+                    ${escapeV16(roleLabelV16(role))}
+                </span>
+            </article>
+        `;
+    }
+
+    function columnV16(column, index){
+        const users = Array.isArray(column?.users) ? column.users : [];
+        return `
+            <section class="preview-v16-column">
+                <header class="preview-v16-column-header">
+                    <span class="preview-v16-count">${users.length}</span>
+                    <h3>${escapeV16(column?.name || `SHIFT ${index + 1}`)}</h3>
+                </header>
+                <div class="preview-v16-users">
+                    ${users.length
+                        ? users.map(staffRowV16).join('')
+                        : `<div class="preview-v16-empty">Belum ada staff</div>`
+                    }
+                </div>
+            </section>
+        `;
+    }
+
+    function unassignedColumnV16(){
+        const users = Array.isArray(previewData?.availableUsers)
+            ? previewData.availableUsers
+            : [];
+
+        return `
+            <section class="preview-v16-column preview-v16-unassigned-column">
+                <header class="preview-v16-column-header">
+                    <span class="preview-v16-count">${users.length}</span>
+                    <h3>DATA STAFF</h3>
+                </header>
+                <div class="preview-v16-users">
+                    ${users.length
+                        ? users.map(staffRowV16).join('')
+                        : `<div class="preview-v16-empty">Semua staff sudah ditempatkan</div>`
+                    }
+                </div>
+            </section>
+        `;
+    }
+
+    function renderPreviewV16(){
+        const modal = document.getElementById('shiftPreviewModal');
+        if (!modal || !previewData) return;
+
+        const draft = previewData.workspaceMode === 'draft';
+        const modeText = draft ? 'DRAFT SHIFT' : 'SHIFT AKTIF';
+        const titleText = draft ? 'Preview Draft Shift' : 'Preview Shift Aktif';
+
+        modal.style.display = 'flex';
+        modal.classList.remove('show');
+
+        const columnsHtml = previewData.columns
+            .map((column, index) => columnV16(column, index))
+            .join('');
+
+        modal.innerHTML = `
+            <div class="preview-v16-shell">
+                <header class="preview-v16-header">
+                    <div class="preview-v16-heading">
+                        <span class="preview-v16-mode">${modeText}</span>
+                        <h2>${titleText}</h2>
+                        <p>${escapeV16(previewData.periodLabel || 'Periode belum ditentukan')}</p>
+                    </div>
+
+                    <button
+                        class="preview-v16-close"
+                        type="button"
+                        onclick="closeShiftPreview()"
+                        aria-label="Tutup preview"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m6 6 12 12M18 6 6 18"/>
+                        </svg>
+                    </button>
+                </header>
+
+                <div class="preview-v16-summary" aria-label="Ringkasan preview">
+                    <span><small>TOTAL STAFF</small><strong>${previewData.totalStaff || 0}</strong></span>
+                    <i aria-hidden="true"></i>
+                    <span><small>SHIFT</small><strong>${previewData.columns.length}</strong></span>
+                    <i aria-hidden="true"></i>
+                    <span><small>UNASSIGNED</small><strong>${previewData.unassigned || 0}</strong></span>
+                </div>
+
+                <div class="preview-v16-body">
+                    <div class="preview-v16-columns">
+                        ${unassignedColumnV16()}
+                        ${columnsHtml}
+                    </div>
+                </div>
+
+                <footer class="preview-v16-footer">
+                    <span class="preview-v16-generated">
+                        Diperbarui ${escapeV16(previewData.createdAt || '')}
+                    </span>
+
+                    <div class="preview-footer-actions">
+                        <button class="btn-shift action-neutral" onclick="closeShiftPreview()">
+                            <span>Tutup</span>
+                        </button>
+
+                        <button
+                            class="btn-shift action-primary"
+                            id="shiftScreenshotButton"
+                            onclick="captureShiftScreenshot()"
+                        >
+                            <span class="button-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M8 5l1-2h6l1 2"/>
+                                </svg>
+                            </span>
+                            <span>Screenshot</span>
+                        </button>
+                    </div>
+                </footer>
+            </div>
+        `;
+
+        document.body.style.overflow = 'hidden';
+
+        window.setTimeout(() => {
+            modal.classList.add('show');
+        }, 30);
+    }
+
+    function injectStylesV16(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* ==========================================================
+               V16 — Preview Shift Readability Authority
+               Preview mirrors the familiar Shift table as a read-only view.
+               ========================================================== */
+
+            #shiftPreviewModal.shift-preview-modal{
+                padding:18px!important;
+            }
+
+            #shiftPreviewModal .preview-v16-shell{
+                width:min(1540px,97vw)!important;
+                height:min(900px,94vh)!important;
+                max-height:94vh!important;
+                display:flex!important;
+                flex-direction:column!important;
+                overflow:hidden!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:16px!important;
+                background:var(--bg-card)!important;
+                box-shadow:0 28px 76px rgba(6,12,24,.30)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-header{
+                flex:0 0 auto!important;
+                min-height:72px!important;
+                display:flex!important;
+                align-items:center!important;
+                justify-content:space-between!important;
+                gap:18px!important;
+                padding:14px 18px!important;
+                border-bottom:1px solid var(--border-color)!important;
+                background:
+                    linear-gradient(135deg,rgba(var(--accent-rgb),.045),transparent 40%),
+                    var(--bg-card)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-heading{
+                min-width:0!important;
+            }
+
+            #shiftPreviewModal .preview-v16-mode{
+                display:block!important;
+                margin-bottom:4px!important;
+                color:var(--text-muted)!important;
+                font-size:7.5px!important;
+                line-height:1!important;
+                font-weight:820!important;
+                letter-spacing:.095em!important;
+                text-transform:uppercase!important;
+            }
+
+            #shiftPreviewModal .preview-v16-heading h2{
+                margin:0!important;
+                color:var(--text-primary)!important;
+                font-size:17px!important;
+                line-height:1.15!important;
+                font-weight:820!important;
+                letter-spacing:-.018em!important;
+            }
+
+            #shiftPreviewModal .preview-v16-heading p{
+                margin:5px 0 0!important;
+                color:var(--text-secondary)!important;
+                font-size:9.5px!important;
+                line-height:1.2!important;
+                font-weight:600!important;
+            }
+
+            #shiftPreviewModal .preview-v16-close{
+                width:34px!important;
+                height:34px!important;
+                flex:0 0 34px!important;
+                display:grid!important;
+                place-items:center!important;
+                padding:0!important;
+                cursor:pointer!important;
+                color:var(--text-muted)!important;
+                background:var(--bg-card)!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:9px!important;
+            }
+
+            #shiftPreviewModal .preview-v16-close:hover{
+                color:var(--text-primary)!important;
+                background:var(--bg-hover)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-close svg{
+                width:14px!important;
+                height:14px!important;
+                fill:none!important;
+                stroke:currentColor!important;
+                stroke-width:1.8!important;
+                stroke-linecap:round!important;
+            }
+
+            #shiftPreviewModal .preview-v16-summary{
+                flex:0 0 auto!important;
+                min-height:42px!important;
+                display:flex!important;
+                align-items:center!important;
+                gap:12px!important;
+                padding:0 18px!important;
+                border-bottom:1px solid var(--border-color)!important;
+                background:var(--bg-secondary)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-summary > span{
+                display:inline-flex!important;
+                align-items:baseline!important;
+                gap:8px!important;
+                white-space:nowrap!important;
+            }
+
+            #shiftPreviewModal .preview-v16-summary small{
+                color:var(--text-muted)!important;
+                font-size:7.5px!important;
+                font-weight:820!important;
+                line-height:1!important;
+                letter-spacing:.095em!important;
+            }
+
+            #shiftPreviewModal .preview-v16-summary strong{
+                color:var(--text-primary)!important;
+                font-size:10px!important;
+                font-weight:790!important;
+                line-height:1!important;
+                font-variant-numeric:tabular-nums!important;
+            }
+
+            #shiftPreviewModal .preview-v16-summary > i{
+                width:1px!important;
+                height:16px!important;
+                flex:0 0 1px!important;
+                background:color-mix(in srgb,var(--text-muted) 24%,transparent)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-body{
+                flex:1 1 auto!important;
+                min-height:0!important;
+                overflow:auto!important;
+                padding:14px 16px 18px!important;
+                scrollbar-width:thin!important;
+                scrollbar-color:
+                    color-mix(in srgb,var(--accent) 25%,var(--border-strong))
+                    transparent!important;
+            }
+
+            #shiftPreviewModal .preview-v16-body::-webkit-scrollbar{
+                width:7px!important;
+                height:7px!important;
+            }
+
+            #shiftPreviewModal .preview-v16-body::-webkit-scrollbar-thumb{
+                border-radius:999px!important;
+                background:color-mix(in srgb,var(--accent) 24%,var(--border-strong))!important;
+            }
+
+            #shiftPreviewModal .preview-v16-columns{
+                width:max-content!important;
+                min-width:100%!important;
+                display:flex!important;
+                align-items:flex-start!important;
+                gap:12px!important;
+            }
+
+            #shiftPreviewModal .preview-v16-column{
+                width:270px!important;
+                min-width:270px!important;
+                overflow:hidden!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:11px!important;
+                background:var(--bg-card)!important;
+                box-shadow:0 4px 14px rgba(15,23,42,.035)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-unassigned-column{
+                background:
+                    linear-gradient(145deg,rgba(var(--accent-rgb),.025),transparent 46%),
+                    var(--bg-card)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-column-header{
+                height:40px!important;
+                display:flex!important;
+                align-items:center!important;
+                gap:8px!important;
+                padding:0 10px!important;
+                border-bottom:1px solid var(--border-color)!important;
+                background:var(--bg-secondary)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-count{
+                min-width:20px!important;
+                height:20px!important;
+                display:grid!important;
+                place-items:center!important;
+                padding:0 5px!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:999px!important;
+                color:var(--text-secondary)!important;
+                background:var(--bg-card)!important;
+                font-size:8px!important;
+                line-height:1!important;
+                font-weight:800!important;
+                font-variant-numeric:tabular-nums!important;
+            }
+
+            #shiftPreviewModal .preview-v16-column-header h3{
+                min-width:0!important;
+                margin:0!important;
+                overflow:hidden!important;
+                color:var(--text-primary)!important;
+                font-size:10.5px!important;
+                line-height:1!important;
+                font-weight:820!important;
+                white-space:nowrap!important;
+                text-overflow:ellipsis!important;
+            }
+
+            #shiftPreviewModal .preview-v16-users{
+                display:grid!important;
+                gap:5px!important;
+                padding:7px!important;
+            }
+
+            #shiftPreviewModal .preview-v16-user{
+                --preview-role:var(--accent);
+                min-height:38px!important;
+                display:grid!important;
+                grid-template-columns:24px minmax(0,1fr) auto!important;
+                align-items:center!important;
+                gap:7px!important;
+                padding:5px 7px!important;
+                overflow:hidden!important;
+                border:1px solid color-mix(in srgb,var(--preview-role) 22%,var(--border-color))!important;
+                border-left:3px solid var(--preview-role)!important;
+                border-radius:8px!important;
+                background:
+                    linear-gradient(110deg,color-mix(in srgb,var(--preview-role) 8%,transparent),transparent 72%),
+                    var(--bg-card)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-user.role-csline{--preview-role:#2f9b59!important;}
+            #shiftPreviewModal .preview-v16-user.role-cs{--preview-role:#557fbd!important;}
+            #shiftPreviewModal .preview-v16-user.role-kapten{--preview-role:#b77d2e!important;}
+            #shiftPreviewModal .preview-v16-user.role-kasir{--preview-role:#795fac!important;}
+
+            #shiftPreviewModal .preview-v16-avatar{
+                width:24px!important;
+                height:24px!important;
+                display:grid!important;
+                place-items:center!important;
+                border-radius:7px!important;
+                color:color-mix(in srgb,var(--preview-role) 82%,var(--text-primary))!important;
+                background:color-mix(in srgb,var(--preview-role) 12%,var(--bg-card))!important;
+                font-size:9px!important;
+                font-weight:820!important;
+            }
+
+            #shiftPreviewModal .preview-v16-user-copy{
+                min-width:0!important;
+                display:flex!important;
+                flex-direction:column!important;
+                justify-content:center!important;
+                gap:3px!important;
+            }
+
+            #shiftPreviewModal .preview-v16-user-copy strong{
+                min-width:0!important;
+                overflow:hidden!important;
+                color:var(--text-primary)!important;
+                font-size:10px!important;
+                line-height:1.05!important;
+                font-weight:760!important;
+                white-space:nowrap!important;
+                text-overflow:ellipsis!important;
+            }
+
+            #shiftPreviewModal .preview-v16-user-copy small{
+                min-width:0!important;
+                overflow:hidden!important;
+                color:var(--text-muted)!important;
+                font-size:8px!important;
+                line-height:1.1!important;
+                font-weight:560!important;
+                white-space:nowrap!important;
+                text-overflow:ellipsis!important;
+            }
+
+            #shiftPreviewModal .preview-v16-role{
+                flex:0 0 auto!important;
+                padding:3px 6px!important;
+                border-radius:999px!important;
+                color:color-mix(in srgb,var(--preview-role) 82%,var(--text-primary))!important;
+                background:color-mix(in srgb,var(--preview-role) 12%,var(--bg-card))!important;
+                border:1px solid color-mix(in srgb,var(--preview-role) 24%,var(--border-color))!important;
+                font-size:7px!important;
+                line-height:1!important;
+                font-weight:780!important;
+                white-space:nowrap!important;
+            }
+
+            #shiftPreviewModal .preview-v16-role.role-csline{--preview-role:#2f9b59!important;}
+            #shiftPreviewModal .preview-v16-role.role-cs{--preview-role:#557fbd!important;}
+            #shiftPreviewModal .preview-v16-role.role-kapten{--preview-role:#b77d2e!important;}
+            #shiftPreviewModal .preview-v16-role.role-kasir{--preview-role:#795fac!important;}
+
+            #shiftPreviewModal .preview-v16-empty{
+                min-height:76px!important;
+                display:grid!important;
+                place-items:center!important;
+                padding:12px!important;
+                color:var(--text-muted)!important;
+                font-size:9px!important;
+                text-align:center!important;
+            }
+
+            #shiftPreviewModal .preview-v16-footer{
+                flex:0 0 auto!important;
+                min-height:52px!important;
+                display:flex!important;
+                align-items:center!important;
+                justify-content:space-between!important;
+                gap:14px!important;
+                padding:8px 16px!important;
+                border-top:1px solid var(--border-color)!important;
+                background:var(--bg-card)!important;
+            }
+
+            #shiftPreviewModal .preview-v16-generated{
+                color:var(--text-muted)!important;
+                font-size:8px!important;
+            }
+
+            /* Mecha Ivory stays clean and low-noise. */
+            html[data-mi-frozen-presentation="mecha-ivory"] #shiftPreviewModal .preview-v16-shell,
+            html[data-mi-native-presentation="mecha-ivory"] #shiftPreviewModal .preview-v16-shell{
+                background:#f4f2e9!important;
+                border-color:rgba(65,75,76,.18)!important;
+                box-shadow:0 26px 66px rgba(39,47,48,.16)!important;
+            }
+
+            html[data-mi-frozen-presentation="mecha-ivory"] #shiftPreviewModal .preview-v16-column,
+            html[data-mi-native-presentation="mecha-ivory"] #shiftPreviewModal .preview-v16-column{
+                background:#f8f6ef!important;
+                border-color:rgba(65,75,76,.16)!important;
+            }
+
+            @media (max-width:1180px){
+                #shiftPreviewModal .preview-v16-column{
+                    width:250px!important;
+                    min-width:250px!important;
+                }
+                #shiftPreviewModal .preview-v16-shell{
+                    width:97vw!important;
+                }
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    injectStylesV16();
+
+    openShiftPreview = openPreviewV16;
+    renderShiftPreview = renderPreviewV16;
+
+    window.DDTShiftCandidateV16 = Object.freeze({
+        version:'v16',
+        openPreview:openPreviewV16,
+        renderPreview:renderPreviewV16,
+        scope:'preview-only'
+    });
+})();
+</script>
+
 </body>
 </html>
