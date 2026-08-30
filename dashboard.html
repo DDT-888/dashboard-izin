@@ -98262,5 +98262,302 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 9 — label-first premium metric rail -->
+<script id="ddt-shift-active-draft-candidate-v9-summary-refinement">
+(function DDTShiftActiveDraftCandidateV9SummaryRefinement(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V9__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V9__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v9-summary-refinement';
+    const baseRenderShiftPageV9 = typeof renderShiftPage === 'function' ? renderShiftPage : null;
+    if (!baseRenderShiftPageV9) return;
+
+    function escapeHtml(value){
+        const div = document.createElement('div');
+        div.textContent = String(value ?? '');
+        return div.innerHTML;
+    }
+
+    function displayShiftNameV9(value, index){
+        let raw = String(value || `SHIFT ${index + 1}`).trim();
+        raw = raw.replace(/^SHIFT\s+/i, '').trim();
+        if (!raw) raw = `${index + 1}`;
+        return raw.toLocaleUpperCase('id-ID');
+    }
+
+    function summaryDataV9(){
+        let columns = [], available = [];
+        try { columns = Array.isArray(shiftColumns) ? shiftColumns : []; } catch (_) {}
+        try { available = Array.isArray(availableUsers) ? availableUsers : []; } catch (_) {}
+
+        const assigned = columns.reduce(
+            (sum, col) => sum + (Array.isArray(col?.users) ? col.users.length : 0),
+            0
+        );
+
+        return {
+            total: available.length + assigned,
+            available: available.length,
+            columns: columns.map((col, index) => ({
+                name: displayShiftNameV9(col?.name, index),
+                value: Array.isArray(col?.users) ? col.users.length : 0
+            }))
+        };
+    }
+
+    function metricV9(label, value, extraClass = ''){
+        return `<span class="shift-v9-summary-metric ${extraClass}">
+            <span class="shift-v9-summary-label">${escapeHtml(label)}</span>
+            <strong class="shift-v9-summary-value">${value}</strong>
+        </span>`;
+    }
+
+    function buildMetricRailV9(){
+        const data = summaryDataV9();
+        const metrics = [
+            metricV9('TOTAL', data.total, 'shift-v9-summary-total'),
+            ...data.columns.map(item => metricV9(item.name, item.value)),
+            metricV9('DATA STAFF', data.available, 'shift-v9-summary-available')
+        ].join('');
+
+        return `<div class="shift-v9-inline-summary" aria-label="Ringkasan Shift">
+            <span class="shift-v9-summary-track">${metrics}</span>
+        </div>`;
+    }
+
+    function applySummaryV9(){
+        const container = document.getElementById('shiftsContent');
+        const chrome = container?.querySelector('.shift-workspace-chrome');
+        const actions = chrome?.querySelector('.shift-header-right');
+        if (!actions) return;
+
+        actions.querySelectorAll(
+            '.shift-v3-inline-summary,.shift-v3-summary-divider,' +
+            '.shift-v4-inline-summary,.shift-v4-summary-divider,' +
+            '.shift-v5-inline-summary,.shift-v5-summary-divider,' +
+            '.shift-v6-inline-summary,.shift-v6-summary-divider,' +
+            '.shift-v7-inline-summary,.shift-v7-summary-divider,' +
+            '.shift-v8-inline-summary,.shift-v8-summary-divider,' +
+            '.shift-v9-inline-summary,.shift-v9-summary-divider'
+        ).forEach(node => node.remove());
+
+        actions.insertAdjacentHTML(
+            'afterbegin',
+            `${buildMetricRailV9()}<span class="shift-workspace-action-divider shift-v9-summary-divider" aria-hidden="true"></span>`
+        );
+    }
+
+    function injectStylesV9(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* ==========================================================
+               Candidate V9 — Summary Design Authority
+               FULL CAPS / LABEL FIRST / VALUE LAST
+               Quiet operational metric rail.
+               ========================================================== */
+            #tab-shifts .shift-v9-inline-summary{
+                min-width:0!important;
+                max-width:min(70vw,1035px)!important;
+                height:38px!important;
+                display:flex!important;
+                align-items:center!important;
+                margin:0!important;
+                padding:0!important;
+                overflow:hidden!important;
+                color:var(--text-secondary)!important;
+            }
+
+            #tab-shifts .shift-v9-summary-track{
+                min-width:0!important;
+                height:38px!important;
+                display:flex!important;
+                align-items:center!important;
+                overflow-x:auto!important;
+                overflow-y:hidden!important;
+                overscroll-behavior-x:contain!important;
+                white-space:nowrap!important;
+                scrollbar-width:none!important;
+                -ms-overflow-style:none!important;
+            }
+
+            #tab-shifts .shift-v9-summary-track::-webkit-scrollbar{
+                display:none!important;
+                width:0!important;
+                height:0!important;
+            }
+
+            #tab-shifts .shift-v9-summary-metric{
+                position:relative!important;
+                flex:0 0 auto!important;
+                min-width:max-content!important;
+                height:30px!important;
+                display:inline-flex!important;
+                align-items:center!important;
+                gap:8px!important;
+                margin:0!important;
+                padding:0 13px!important;
+                color:var(--text-secondary)!important;
+                background:transparent!important;
+                border:0!important;
+                border-radius:0!important;
+                box-shadow:none!important;
+                white-space:nowrap!important;
+            }
+
+            #tab-shifts .shift-v9-summary-metric:first-child{
+                padding-left:3px!important;
+            }
+
+            #tab-shifts .shift-v9-summary-metric:last-child{
+                padding-right:4px!important;
+            }
+
+            #tab-shifts .shift-v9-summary-metric + .shift-v9-summary-metric::before{
+                content:""!important;
+                position:absolute!important;
+                left:0!important;
+                top:50%!important;
+                width:1px!important;
+                height:16px!important;
+                transform:translateY(-50%)!important;
+                background:color-mix(in srgb,var(--text-muted) 25%,transparent)!important;
+                opacity:.82!important;
+                pointer-events:none!important;
+            }
+
+            #tab-shifts .shift-v9-summary-label{
+                color:color-mix(in srgb,var(--text-secondary) 90%,var(--text-muted) 10%)!important;
+                font-size:8.05px!important;
+                font-weight:735!important;
+                line-height:1!important;
+                letter-spacing:.048em!important;
+                text-transform:uppercase!important;
+                white-space:nowrap!important;
+            }
+
+            #tab-shifts .shift-v9-summary-value{
+                min-width:1ch!important;
+                color:var(--text-primary)!important;
+                font-size:10.65px!important;
+                font-weight:825!important;
+                line-height:1!important;
+                letter-spacing:-.018em!important;
+                text-align:right!important;
+                font-variant-numeric:tabular-nums!important;
+                white-space:nowrap!important;
+            }
+
+            #tab-shifts .shift-v9-summary-total .shift-v9-summary-label{
+                font-weight:795!important;
+            }
+
+            #tab-shifts .shift-v9-summary-total .shift-v9-summary-value{
+                color:color-mix(in srgb,var(--text-primary) 90%,var(--accent) 10%)!important;
+            }
+
+            #tab-shifts .shift-v9-summary-available .shift-v9-summary-label{
+                color:var(--text-muted)!important;
+            }
+
+            #tab-shifts .shift-v9-summary-divider{
+                height:28px!important;
+                margin:0 8px!important;
+                opacity:.62!important;
+            }
+
+            /* Mecha Ivory — clean datum language, no added card material. */
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v9-summary-label,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v9-summary-label{
+                color:#687376!important;
+            }
+
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v9-summary-value,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v9-summary-value{
+                color:#2d383c!important;
+            }
+
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v9-summary-total .shift-v9-summary-value,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v9-summary-total .shift-v9-summary-value{
+                color:#416a73!important;
+            }
+
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v9-summary-metric + .shift-v9-summary-metric::before,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v9-summary-metric + .shift-v9-summary-metric::before{
+                background:rgba(45,56,60,.19)!important;
+            }
+
+            /* Venom remains restrained: no neon blocks or per-metric glow. */
+            html[data-theme="dark"][data-theme-variant="venom"] #tab-shifts .shift-v9-summary-total .shift-v9-summary-value{
+                color:color-mix(in srgb,#f5f7f4 86%,#44d62c 14%)!important;
+            }
+
+            @media (max-width:1400px){
+                #tab-shifts .shift-v9-inline-summary{
+                    max-width:min(65vw,910px)!important;
+                }
+                #tab-shifts .shift-v9-summary-metric{
+                    padding-inline:11px!important;
+                    gap:7px!important;
+                }
+            }
+
+            @media (max-width:1180px){
+                #tab-shifts .shift-v9-inline-summary{
+                    max-width:calc(100vw - 390px)!important;
+                }
+                #tab-shifts .shift-v9-summary-metric{
+                    padding-inline:9px!important;
+                }
+            }
+
+            @media (max-width:820px){
+                #tab-shifts .shift-v9-inline-summary{
+                    max-width:100%!important;
+                    width:100%!important;
+                    flex:1 1 100%!important;
+                    order:-1!important;
+                }
+                #tab-shifts .shift-v9-summary-divider{
+                    display:none!important;
+                }
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    renderShiftPage = function candidateV9RenderShiftPage(previousCardLayout = null){
+        const result = baseRenderShiftPageV9(previousCardLayout);
+        injectStylesV9();
+        applySummaryV9();
+        return result;
+    };
+
+    injectStylesV9();
+
+    const initial = () => {
+        if (document.querySelector('#shiftsContent .shift-workspace-chrome')) {
+            applySummaryV9();
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initial, {once:true});
+    } else {
+        initial();
+    }
+
+    window.DDTShiftCandidateV9 = Object.freeze({
+        version:'v9',
+        apply:applySummaryV9
+    });
+})();
+</script>
+
 </body>
 </html>
