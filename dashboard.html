@@ -99861,5 +99861,107 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 14 — summary baseline + period tooltip lifecycle correction -->
+<script id="ddt-shift-active-draft-candidate-v14-refinement">
+(function DDTShiftActiveDraftCandidateV14Refinement(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V14__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V14__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v14-refinement';
+
+    function dismissPeriodTooltipV14(target, strip = false){
+        try {
+            if (typeof hideHistoryActionTooltip === 'function') {
+                hideHistoryActionTooltip();
+            }
+        } catch (_) {}
+
+        if (!target) return;
+        if (strip) {
+            target.classList.remove('history-tooltip-target');
+            target.removeAttribute('data-tooltip');
+            target.removeAttribute('aria-describedby');
+        }
+    }
+
+    function isPeriodEditTargetV14(target){
+        return target?.closest?.('#tab-shifts .shift-v13-period-edit-target') || null;
+    }
+
+    /* Hide the tooltip as soon as the user starts interacting with the period. */
+    document.addEventListener('pointerdown', event => {
+        const target = isPeriodEditTargetV14(event.target);
+        if (!target) return;
+        dismissPeriodTooltipV14(target, false);
+    }, true);
+
+    /*
+     * On the actual edit gesture, strip tooltip eligibility before the
+     * existing dblclick handler replaces the display with the editor.
+     * Re-render restores the tooltip automatically after edit mode closes.
+     */
+    document.addEventListener('dblclick', event => {
+        const target = isPeriodEditTargetV14(event.target);
+        if (!target) return;
+        dismissPeriodTooltipV14(target, true);
+    }, true);
+
+    function injectStylesV14(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* ==========================================================
+               Candidate V14 — Surgical visual corrections
+               1) Summary number bottom alignment
+               2) Period tooltip lifecycle on edit entry
+               ========================================================== */
+
+            /*
+             * V13 numbers were vertically centered beside the 7.5px datum label.
+             * Align each label/value pair by bottom edge instead.
+             */
+            #tab-shifts .shift-v12-summary-metric{
+                align-items:flex-end!important;
+            }
+
+            #tab-shifts .shift-v12-summary-label,
+            #tab-shifts .shift-v12-summary-value{
+                line-height:1!important;
+            }
+
+            #tab-shifts .shift-v12-summary-value{
+                transform:none!important;
+                padding-bottom:0!important;
+            }
+
+            #tab-shifts .shift-v12-summary-label{
+                padding-bottom:0!important;
+            }
+
+            /*
+             * Ensure group dot remains optically centered independently
+             * of the bottom-aligned text metrics.
+             */
+            #tab-shifts .shift-v12-summary-dot{
+                align-self:center!important;
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    injectStylesV14();
+
+    window.DDTShiftCandidateV14 = Object.freeze({
+        version:'v14',
+        dismissPeriodTooltip:dismissPeriodTooltipV14
+    });
+})();
+</script>
+
 </body>
 </html>
