@@ -97567,5 +97567,210 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+
+<!-- DDT Shift Candidate 5 — summary datum + production log restore + outside-click period -->
+<script id="ddt-shift-active-draft-candidate-v5-refinement">
+(function DDTShiftActiveDraftCandidateV5Refinement(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V5__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V5__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v5-refinement';
+    const baseRenderShiftPageV5 = typeof renderShiftPage === 'function' ? renderShiftPage : null;
+    if (!baseRenderShiftPageV5) return;
+
+    function workspaceMode(){
+        try { return window.DDTShiftCandidate?.getMode?.() === 'draft' ? 'draft' : 'active'; }
+        catch (_) { return 'active'; }
+    }
+
+    function escapeHtml(value){
+        const div = document.createElement('div');
+        div.textContent = String(value ?? '');
+        return div.innerHTML;
+    }
+
+    function summaryData(){
+        let columns = [], available = [];
+        try { columns = Array.isArray(shiftColumns) ? shiftColumns : []; } catch (_) {}
+        try { available = Array.isArray(availableUsers) ? availableUsers : []; } catch (_) {}
+        const total = available.length + columns.reduce((sum, col) => sum + (Array.isArray(col?.users) ? col.users.length : 0), 0);
+        return [
+            { kicker:'TOTAL', name:'STAFF', value:total, cls:'total' },
+            ...columns.map((col, index) => ({
+                kicker:'SHIFT',
+                name:String(col?.name || `SHIFT ${index + 1}`).toUpperCase(),
+                value:Array.isArray(col?.users) ? col.users.length : 0,
+                cls:'shift'
+            })),
+            { kicker:'DATA', name:'STAFF', value:available.length, cls:'staff' }
+        ];
+    }
+
+    function buildSingleRailTwoLineSummary(){
+        const items = summaryData().map(item => `
+            <span class="shift-v5-summary-item ${item.cls || ''}">
+                <span class="shift-v5-summary-kicker">${escapeHtml(item.kicker)}</span>
+                <span class="shift-v5-summary-detail">
+                    <span class="shift-v5-summary-name">${escapeHtml(item.name)}</span>
+                    <strong>${item.value}</strong>
+                </span>
+            </span>`).join('');
+        return `<div class="shift-v5-inline-summary" aria-label="Summary Shift">
+            <span class="shift-v5-summary-title">SUMMARY</span>
+            <span class="shift-v5-summary-track">${items}</span>
+        </div>`;
+    }
+
+    function restoreProductionLogPlacement(mode){
+        const tab = document.getElementById('tab-shifts');
+        const shiftsContent = document.getElementById('shiftsContent');
+        const log = document.getElementById('shiftLogContainer');
+        const support = document.getElementById('shiftSupportRowCandidateV2');
+        if (!tab || !shiftsContent || !log) return;
+
+        /* Production authority: #shiftLogContainer is the immediate sibling after #shiftsContent. */
+        if (shiftsContent.nextElementSibling !== log) {
+            shiftsContent.insertAdjacentElement('afterend', log);
+        }
+        if (support && support !== log) support.remove();
+
+        log.style.display = mode === 'draft' ? 'none' : 'block';
+    }
+
+    function restoreLeadingShiftIndicators(){
+        document.querySelectorAll('#tab-shifts .shift-column .column-header .title-wrap').forEach(wrap => {
+            const count = wrap.querySelector(':scope > .col-count');
+            const name = wrap.querySelector(':scope > .col-name');
+            if (!count || !name) return;
+            count.classList.add('shift-v4-leading-indicator');
+            if (wrap.firstElementChild !== count) wrap.insertBefore(count, name);
+        });
+    }
+
+    function applyPresentation(){
+        const container = document.getElementById('shiftsContent');
+        const chrome = container?.querySelector('.shift-workspace-chrome');
+        if (!container || !chrome) return;
+        const mode = workspaceMode();
+
+        const actions = chrome.querySelector('.shift-header-right');
+        if (actions) {
+            actions.querySelectorAll('.shift-v3-inline-summary,.shift-v3-summary-divider,.shift-v4-inline-summary,.shift-v4-summary-divider,.shift-v5-inline-summary,.shift-v5-summary-divider').forEach(node => node.remove());
+            actions.insertAdjacentHTML('afterbegin', `${buildSingleRailTwoLineSummary()}<span class="shift-workspace-action-divider shift-v5-summary-divider" aria-hidden="true"></span>`);
+        }
+
+        restoreLeadingShiftIndicators();
+        restoreProductionLogPlacement(mode);
+    }
+
+    function bindOutsidePeriodClose(){
+        if (document.documentElement.dataset.shiftV5OutsidePeriodBound === 'true') return;
+        document.documentElement.dataset.shiftV5OutsidePeriodBound = 'true';
+        document.addEventListener('click', event => {
+            const editor = document.querySelector('#tab-shifts .shift-v4-period-editor');
+            if (!editor) return;
+            const context = editor.closest('.shift-workspace-context');
+            if (context?.contains(event.target)) return;
+            const picker = document.getElementById('employeeDatePickerPopover');
+            if (picker?.classList.contains('show') && picker.contains(event.target)) return;
+            if (event.target.closest?.('.employee-date-picker-popover,.employee-date-picker-button')) return;
+            try { closeEmployeeDatePicker?.(); } catch (_) {}
+            renderShiftPage();
+        });
+    }
+
+    function injectStyles(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* Candidate 5: one horizontal Summary rail; each datum uses two text lines. */
+            #tab-shifts .shift-v5-inline-summary{
+                min-width:0!important;max-width:min(58vw,760px)!important;height:34px!important;
+                display:grid!important;grid-template-columns:max-content minmax(0,1fr)!important;align-items:center!important;column-gap:9px!important;
+                padding:0!important;margin:0!important;color:var(--text-secondary)!important;overflow:hidden!important;
+            }
+            #tab-shifts .shift-v5-summary-title{
+                color:var(--text-muted)!important;font-size:6.3px!important;font-weight:820!important;letter-spacing:.13em!important;line-height:1!important;white-space:nowrap!important;
+            }
+            #tab-shifts .shift-v5-summary-track{
+                min-width:0!important;height:34px!important;display:flex!important;align-items:center!important;gap:0!important;
+                overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;scrollbar-width:none!important;
+            }
+            #tab-shifts .shift-v5-summary-track::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}
+            #tab-shifts .shift-v5-summary-item{
+                position:relative!important;flex:0 0 auto!important;min-width:max-content!important;height:28px!important;
+                display:grid!important;grid-template-rows:11px 15px!important;align-content:center!important;justify-items:start!important;
+                padding:1px 10px 0!important;margin:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+            }
+            #tab-shifts .shift-v5-summary-item:first-child{padding-left:0!important;}
+            #tab-shifts .shift-v5-summary-item + .shift-v5-summary-item::before{
+                content:""!important;position:absolute!important;left:0!important;top:7px!important;width:1px!important;height:14px!important;
+                background:var(--border-color)!important;opacity:.72!important;
+            }
+            #tab-shifts .shift-v5-summary-kicker{
+                color:var(--text-muted)!important;font-size:6.15px!important;font-weight:790!important;letter-spacing:.09em!important;line-height:11px!important;text-transform:uppercase!important;white-space:nowrap!important;
+            }
+            #tab-shifts .shift-v5-summary-detail{
+                display:inline-flex!important;align-items:baseline!important;gap:4px!important;min-width:max-content!important;height:15px!important;line-height:15px!important;white-space:nowrap!important;
+            }
+            #tab-shifts .shift-v5-summary-name{
+                max-width:none!important;overflow:visible!important;text-overflow:clip!important;white-space:nowrap!important;
+                color:var(--text-secondary)!important;font-size:8.1px!important;font-weight:690!important;letter-spacing:.012em!important;
+            }
+            #tab-shifts .shift-v5-summary-detail strong{
+                color:var(--text-primary)!important;font-size:9.5px!important;font-weight:800!important;line-height:1!important;font-variant-numeric:tabular-nums!important;
+            }
+            #tab-shifts .shift-v5-summary-divider{height:28px!important;margin:0 5px 0 3px!important;opacity:.75!important;}
+
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-title,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-title,
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-kicker,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-kicker{color:#788281!important;}
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-name,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-name{color:#586467!important;}
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-detail strong,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-detail strong{color:#2d383c!important;}
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-item + .shift-v5-summary-item::before,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v5-summary-item + .shift-v5-summary-item::before{background:rgba(45,56,60,.22)!important;}
+
+            /* Restore production Log geometry/location. Candidate 3/4 support-row compression is no longer authoritative. */
+            #tab-shifts > #shiftLogContainer{
+                width:100%!important;
+            }
+
+            @media (max-width:1180px){
+                #tab-shifts .shift-v5-inline-summary{max-width:calc(100vw - 390px)!important;}
+            }
+            @media (max-width:820px){
+                #tab-shifts .shift-v5-inline-summary{max-width:100%!important;width:100%!important;flex:1 1 100%!important;order:-1!important;}
+                #tab-shifts .shift-v5-summary-divider{display:none!important;}
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    renderShiftPage = function candidateV5RenderShiftPage(previousCardLayout = null){
+        const result = baseRenderShiftPageV5(previousCardLayout);
+        injectStyles();
+        applyPresentation();
+        bindOutsidePeriodClose();
+        return result;
+    };
+
+    injectStyles();
+    bindOutsidePeriodClose();
+    const initial = () => {
+        if (document.querySelector('#shiftsContent .shift-workspace-chrome')) applyPresentation();
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initial, {once:true});
+    else initial();
+
+    window.DDTShiftCandidateV5 = Object.freeze({ version:'v5', apply:applyPresentation });
+})();
+</script>
+
 </body>
 </html>
