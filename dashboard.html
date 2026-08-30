@@ -95211,10 +95211,10 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     })();
     </script>
 
-<!-- DDT Shift Aktif / Draft Shift candidate v1 — additive runtime patch -->
-<script id="ddt-shift-active-draft-candidate-v1">
+<!-- DDT Shift Aktif / Draft Shift Candidate 2 — exact V15 production baseline -->
+<script id="ddt-shift-active-draft-candidate-v2">
 /*
- * Dashboard DDT — Shift Aktif / Draft Shift candidate runtime patch v1
+ * Dashboard DDT — Shift Aktif / Draft Shift candidate runtime patch v2
  * Target authority:
  *   dashboard_users_inactive_lifecycle_v15_candidate.html
  *   SHA-256 a2180555509e3383cd66c2840f959ba57ee569d25aa3e33f2c95a90146901398
@@ -95229,16 +95229,16 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
  * - Publish promotes Draft layout + Draft period to Shift Aktif
  * - Settings Permission Matrix and internal SHIFT table headers are untouched
  */
-(function DDTShiftActiveDraftCandidateV1() {
+(function DDTShiftActiveDraftCandidateV2() {
     'use strict';
 
-    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V1__) return;
-    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V1__ = true;
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V2__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V2__ = true;
 
-    const PATCH_ID = 'ddt-shift-active-draft-candidate-v1';
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v2';
     const DRAFT_ROW_ID = 1;
-    const DRAFT_CACHE_KEY = 'cachedNextShiftDraftCandidateV1';
-    const DRAFT_PENDING_KEY = 'pendingNextShiftDraftCandidateV1';
+    const DRAFT_CACHE_KEY = 'cachedNextShiftDraftCandidateV2';
+    const DRAFT_PENDING_KEY = 'pendingNextShiftDraftCandidateV2';
 
     const base = {
         renderShiftPage:
@@ -95274,6 +95274,8 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     let draftRealtimeFetchTimer = null;
     let workspaceSwitchBusy = false;
     let manualSaveBusy = false;
+    let draftBackendMode = 'unknown'; // unknown | server | local-candidate
+    let draftFallbackNoticeShown = false;
 
     const ICONS = {
         calendar: `
@@ -95348,21 +95350,38 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     }
 
     function formatPeriodForWorkspace(period) {
+        let normalized = null;
         try {
-            if (typeof formatShiftPeriodRange === 'function') {
-                return formatShiftPeriodRange(period);
-            }
-        } catch (_) {}
+            normalized = typeof normalizeShiftPeriod === 'function'
+                ? normalizeShiftPeriod(period)
+                : period;
+        } catch (_) {
+            normalized = period;
+        }
+        if (!normalized?.start || !normalized?.end) return null;
 
-        if (!period?.start || !period?.end) return null;
-        return {
-            ...period,
-            startText: period.start,
-            endText: period.end,
-            label: period.start === period.end
-                ? period.start
-                : `${period.start} — ${period.end}`
+        const parts = value => {
+            const [year, month, day] = String(value).split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            return {
+                day: String(day).padStart(2, '0'),
+                month: date.toLocaleDateString('id-ID', { month: 'short' }).replace('.', ''),
+                year: String(year)
+            };
         };
+        const a = parts(normalized.start);
+        const b = parts(normalized.end);
+        let label = '';
+        if (normalized.start === normalized.end) {
+            label = `${a.day} ${a.month} ${a.year}`;
+        } else if (a.year === b.year && a.month === b.month) {
+            label = `${a.day} — ${b.day} ${b.month} ${b.year}`;
+        } else if (a.year === b.year) {
+            label = `${a.day} ${a.month} — ${b.day} ${b.month} ${b.year}`;
+        } else {
+            label = `${a.day} ${a.month} ${a.year} — ${b.day} ${b.month} ${b.year}`;
+        }
+        return { ...normalized, label };
     }
 
     function currentPeriod() {
@@ -95393,6 +95412,103 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         try {
             localStorage.removeItem(key);
         } catch (_) {}
+    }
+
+
+    function isDraftBackendMissing(error) {
+        const code = String(error?.code || '').toUpperCase();
+        const message = String(error?.message || error || '').toLowerCase();
+        return (
+            code === '42P01' ||
+            code === 'PGRST202' ||
+            code === 'PGRST205' ||
+            code === '42883' ||
+            message.includes('shift_draft') ||
+            message.includes('save_shift_draft') ||
+            message.includes('copy_shift_active_to_draft') ||
+            message.includes('publish_shift_draft_to_active') ||
+            message.includes('could not find the function') ||
+            message.includes('relation') && message.includes('does not exist')
+        );
+    }
+
+    function defaultDraftPayload() {
+        const defaults = (() => {
+            try {
+                if (Array.isArray(SHIFT_DEFAULT_COLUMNS) && SHIFT_DEFAULT_COLUMNS.length) {
+                    return SHIFT_DEFAULT_COLUMNS;
+                }
+            } catch (_) {}
+            return [
+                { id: 'shift_1', name: 'SHIFT PAGI', note: '', users: [] },
+                { id: 'shift_2', name: 'SHIFT MALAM', note: '', users: [] }
+            ];
+        })();
+
+        return {
+            period: null,
+            columns: defaults.map((column, index) => ({
+                id: String(column?.id || `shift_${index + 1}`),
+                name: column?.name || `SHIFT ${index + 1}`,
+                note: column?.note || '',
+                users: []
+            }))
+        };
+    }
+
+    function normalizeLocalDraftRecord(raw) {
+        const row = normalizeRecord(raw);
+        if (!row) return null;
+        const shiftData = parseShiftPayload(row.shift_data);
+        if (!Array.isArray(shiftData?.columns)) return null;
+        const savedAt = Number(row.savedAt || 0);
+        return {
+            id: DRAFT_ROW_ID,
+            shift_data: shiftData,
+            updated_at: row.updated_at || (savedAt ? new Date(savedAt).toISOString() : new Date().toISOString()),
+            updated_by: row.updated_by || userName()
+        };
+    }
+
+    function readLocalDraftRecord() {
+        for (const key of [DRAFT_PENDING_KEY, DRAFT_CACHE_KEY]) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) continue;
+                const normalized = normalizeLocalDraftRecord(JSON.parse(raw));
+                if (normalized) return normalized;
+            } catch (_) {}
+        }
+        return null;
+    }
+
+    function writeLocalDraftRecord(payload, updatedBy = userName()) {
+        const row = {
+            id: DRAFT_ROW_ID,
+            shift_data: cloneJson(payload),
+            updated_at: new Date().toISOString(),
+            updated_by: updatedBy
+        };
+        writeCandidateDraftCache(DRAFT_CACHE_KEY, row);
+        clearCandidateDraftCache(DRAFT_PENDING_KEY);
+        draftLastUpdatedAt = new Date(row.updated_at).getTime();
+        setWorkspaceDirty(false);
+        setWorkspaceSaveQueued(false);
+        return row;
+    }
+
+    function enableLocalDraftFallback(error = null) {
+        draftBackendMode = 'local-candidate';
+        stopDraftRealtime();
+        if (!draftFallbackNoticeShown) {
+            draftFallbackNoticeShown = true;
+            toast(
+                'Draft Shift dibuka dalam mode candidate lokal. Realtime antar perangkat aktif setelah backend Draft dipasang.',
+                'info',
+                4200
+            );
+        }
+        if (error) console.warn(`[${PATCH_ID}] Draft backend belum tersedia; memakai fallback candidate lokal.`, error);
     }
 
     function cacheCurrentDraftEmergency() {
@@ -95513,25 +95629,39 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     }
 
     async function fetchDraftRecord({ force = false, animate = false } = {}) {
-        if (typeof supabaseDashboard === 'undefined' || !supabaseDashboard) {
-            throw new Error('Supabase dashboard belum tersedia.');
+        if (draftBackendMode !== 'local-candidate') {
+            try {
+                if (typeof supabaseDashboard === 'undefined' || !supabaseDashboard) {
+                    throw new Error('Supabase dashboard belum tersedia.');
+                }
+
+                const { data, error } = await supabaseDashboard
+                    .from('shift_draft')
+                    .select('id, shift_data, updated_at, updated_by')
+                    .eq('id', DRAFT_ROW_ID)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!data) throw new Error('Draft Shift belum tersedia.');
+
+                draftBackendMode = 'server';
+                const remoteUpdatedAt = new Date(data.updated_at || 0).getTime();
+                if (!force && remoteUpdatedAt > 0 && remoteUpdatedAt <= draftLastUpdatedAt) {
+                    return false;
+                }
+
+                return applyDraftRecord(data, { animate });
+            } catch (error) {
+                if (!isDraftBackendMissing(error) && draftBackendMode === 'server') throw error;
+                enableLocalDraftFallback(error);
+            }
         }
 
-        const { data, error } = await supabaseDashboard
-            .from('shift_draft')
-            .select('id, shift_data, updated_at, updated_by')
-            .eq('id', DRAFT_ROW_ID)
-            .maybeSingle();
-
-        if (error) throw error;
-        if (!data) throw new Error('Draft Shift belum tersedia.');
-
-        const remoteUpdatedAt = new Date(data.updated_at || 0).getTime();
-        if (!force && remoteUpdatedAt > 0 && remoteUpdatedAt <= draftLastUpdatedAt) {
-            return false;
+        let local = readLocalDraftRecord();
+        if (!local) {
+            local = writeLocalDraftRecord(defaultDraftPayload(), userName());
         }
-
-        return applyDraftRecord(data, { animate });
+        return applyDraftRecord(local, { animate });
     }
 
     function saveDraftToServer(changeType = 'DATA') {
@@ -95544,35 +95674,48 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         draftSaveChain = draftSaveChain
             .catch(() => true)
             .then(async () => {
-                const { data, error } = await supabaseDashboard.rpc(
-                    'save_shift_draft',
-                    {
-                        p_shift_data: payload,
-                        p_client_id: clientId(),
-                        p_change_type: String(changeType || 'DATA'),
-                        p_updated_by: userName()
-                    }
-                );
-
-                if (error) throw error;
-
-                const row = normalizeRecord(data);
-                if (row?.updated_at) {
-                    draftLastUpdatedAt = new Date(row.updated_at).getTime();
-                } else {
-                    draftLastUpdatedAt = Date.now();
+                if (draftBackendMode === 'local-candidate') {
+                    writeLocalDraftRecord(payload, userName());
+                    return true;
                 }
 
-                writeCandidateDraftCache(DRAFT_CACHE_KEY, row || {
-                    id: DRAFT_ROW_ID,
-                    shift_data: payload,
-                    updated_at: new Date().toISOString(),
-                    updated_by: userName()
-                });
-                clearCandidateDraftCache(DRAFT_PENDING_KEY);
-                setWorkspaceDirty(false);
-                setWorkspaceSaveQueued(false);
-                return true;
+                try {
+                    const { data, error } = await supabaseDashboard.rpc(
+                        'save_shift_draft',
+                        {
+                            p_shift_data: payload,
+                            p_client_id: clientId(),
+                            p_change_type: String(changeType || 'DATA'),
+                            p_updated_by: userName()
+                        }
+                    );
+
+                    if (error) throw error;
+                    draftBackendMode = 'server';
+
+                    const row = normalizeRecord(data);
+                    if (row?.updated_at) {
+                        draftLastUpdatedAt = new Date(row.updated_at).getTime();
+                    } else {
+                        draftLastUpdatedAt = Date.now();
+                    }
+
+                    writeCandidateDraftCache(DRAFT_CACHE_KEY, row || {
+                        id: DRAFT_ROW_ID,
+                        shift_data: payload,
+                        updated_at: new Date().toISOString(),
+                        updated_by: userName()
+                    });
+                    clearCandidateDraftCache(DRAFT_PENDING_KEY);
+                    setWorkspaceDirty(false);
+                    setWorkspaceSaveQueued(false);
+                    return true;
+                } catch (error) {
+                    if (!isDraftBackendMissing(error)) throw error;
+                    enableLocalDraftFallback(error);
+                    writeLocalDraftRecord(payload, userName());
+                    return true;
+                }
             })
             .catch(error => {
                 console.error(`[${PATCH_ID}] Gagal menyimpan Draft Shift:`, error);
@@ -95639,6 +95782,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     }
 
     function startDraftRealtime() {
+        if (draftBackendMode !== 'server') return;
         if (draftRealtimeChannel) return;
         if (shiftWorkspaceMode !== 'draft') return;
         if (typeof currentTab !== 'undefined' && currentTab !== 'shifts') return;
@@ -95737,10 +95881,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                 }
             } catch (_) {}
 
-            const backendHint = target === 'draft'
-                ? ' Pastikan migration Draft Shift candidate sudah dipasang pada environment uji.'
-                : '';
-            toast(`Gagal membuka ${target === 'draft' ? 'Draft Shift' : 'Shift Aktif'}: ${error.message}.${backendHint}`, 'error', 4400);
+            toast(`Gagal membuka ${target === 'draft' ? 'Draft Shift' : 'Shift Aktif'}: ${error.message}.`, 'error', 4400);
         } finally {
             workspaceSwitchBusy = false;
             renderShiftPage();
@@ -95856,16 +95997,40 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         button && (button.disabled = true);
         try {
             await draftSaveChain;
-            const { data, error } = await supabaseDashboard.rpc(
-                'copy_shift_active_to_draft',
-                {
-                    p_client_id: clientId(),
-                    p_updated_by: userName()
-                }
-            );
-            if (error) throw error;
+            const preservedPeriod = cloneJson(currentPeriod());
 
-            applyDraftRecord(normalizeRecord(data), { animate: true });
+            if (draftBackendMode !== 'local-candidate') {
+                try {
+                    const { data, error } = await supabaseDashboard.rpc(
+                        'copy_shift_active_to_draft',
+                        {
+                            p_client_id: clientId(),
+                            p_updated_by: userName()
+                        }
+                    );
+                    if (error) throw error;
+                    draftBackendMode = 'server';
+                    applyDraftRecord(normalizeRecord(data), { animate: true });
+                    toast('Shift Aktif berhasil disalin ke Draft Shift.', 'success', 2200);
+                    return;
+                } catch (error) {
+                    if (!isDraftBackendMissing(error)) throw error;
+                    enableLocalDraftFallback(error);
+                }
+            }
+
+            const { data: activeData, error: activeError } = await supabaseDashboard
+                .from('shift_active')
+                .select('id, shift_data, updated_at, updated_by')
+                .maybeSingle();
+            if (activeError) throw activeError;
+            const activePayload = parseShiftPayload(activeData?.shift_data);
+            if (!Array.isArray(activePayload?.columns)) throw new Error('Shift Aktif tidak ditemukan.');
+
+            const payload = cloneJson(activePayload);
+            payload.period = preservedPeriod || null;
+            const row = writeLocalDraftRecord(payload, userName());
+            applyDraftRecord(row, { animate: true });
             toast('Shift Aktif berhasil disalin ke Draft Shift.', 'success', 2200);
         } catch (error) {
             console.error(`[${PATCH_ID}] Copy Active gagal:`, error);
@@ -95909,31 +96074,108 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             const saved = await saveDraftToServer('PRE_PUBLISH');
             if (!saved) throw new Error('Draft Shift belum berhasil disimpan.');
 
-            const { data, error } = await supabaseDashboard.rpc(
-                'publish_shift_draft_to_active',
-                {
-                    p_client_id: clientId(),
-                    p_updated_by: userName()
+            if (draftBackendMode !== 'local-candidate') {
+                try {
+                    const { data, error } = await supabaseDashboard.rpc(
+                        'publish_shift_draft_to_active',
+                        {
+                            p_client_id: clientId(),
+                            p_updated_by: userName()
+                        }
+                    );
+                    if (error) throw error;
+                    draftBackendMode = 'server';
+
+                    stopDraftRealtime();
+                    shiftWorkspaceMode = 'active';
+                    draftLastUpdatedAt = Date.now();
+                    setWorkspaceDirty(false);
+                    setWorkspaceSaveQueued(false);
+                    await fetchActiveRecord({ force: true });
+                    base.startShiftRealtime?.();
+
+                    const published = normalizeRecord(data);
+                    const publishedPeriod = published?.period || period;
+                    toast(
+                        `Draft Shift ${publishedPeriod?.start || period.start} — ${publishedPeriod?.end || period.end} telah dipublikasikan.`,
+                        'success',
+                        3200
+                    );
+                    return;
+                } catch (error) {
+                    if (!isDraftBackendMissing(error)) throw error;
+                    enableLocalDraftFallback(error);
                 }
-            );
-            if (error) throw error;
+            }
+
+            const draftPayload = cloneJson(buildCurrentPayload());
+            const { data: activeBefore, error: activeReadError } = await supabaseDashboard
+                .from('shift_active')
+                .select('id, shift_data, updated_at, updated_by')
+                .maybeSingle();
+            if (activeReadError) throw activeReadError;
+            if (!activeBefore?.id) throw new Error('Shift Aktif tidak ditemukan.');
+
+            const oldPayload = parseShiftPayload(activeBefore.shift_data);
+            const oldPeriod = (() => {
+                try {
+                    return typeof extractShiftPeriod === 'function' ? extractShiftPeriod(oldPayload) : oldPayload?.period;
+                } catch (_) { return oldPayload?.period || null; }
+            })();
+
+            if (Array.isArray(oldPayload?.columns) && oldPeriod?.start && oldPeriod?.end) {
+                const now = new Date().toISOString();
+                const { data: historyRow, error: historyError } = await supabaseDashboard
+                    .from('shift_history')
+                    .insert({
+                        tanggal: oldPeriod.start,
+                        periode_start: oldPeriod.start,
+                        periode_end: oldPeriod.end,
+                        shift_data: JSON.stringify(oldPayload),
+                        created_at: now,
+                        updated_at: now,
+                        created_by: userName(),
+                        updated_by: userName(),
+                        notes: `Shift ${oldPeriod.start} - ${oldPeriod.end}`,
+                        is_active: false
+                    })
+                    .select('id')
+                    .maybeSingle();
+                if (historyError) throw historyError;
+                try { await publishShiftHistoryRealtime?.('INSERT', historyRow?.id || null); } catch (_) {}
+            }
+
+            const updatedAt = new Date().toISOString();
+            const { data: activeAfter, error: activeUpdateError } = await supabaseDashboard
+                .from('shift_active')
+                .update({
+                    shift_data: draftPayload,
+                    updated_at: updatedAt,
+                    updated_by: userName()
+                })
+                .eq('id', activeBefore.id)
+                .select('id, shift_data, updated_at, updated_by')
+                .maybeSingle();
+            if (activeUpdateError) throw activeUpdateError;
 
             stopDraftRealtime();
             shiftWorkspaceMode = 'active';
-            draftLastUpdatedAt = Date.now();
             setWorkspaceDirty(false);
             setWorkspaceSaveQueued(false);
-
-            await fetchActiveRecord({ force: true });
+            if (typeof applyShiftActiveRecord === 'function') {
+                applyShiftActiveRecord(activeAfter || {
+                    ...activeBefore,
+                    shift_data: draftPayload,
+                    updated_at: updatedAt,
+                    updated_by: userName()
+                }, { animate: false });
+            } else {
+                await fetchActiveRecord({ force: true });
+            }
+            try { await base.publishShiftRealtime?.('PUBLISH_DRAFT', ''); } catch (_) {}
+            try { await base.insertShiftLog?.('PUBLISH', userName(), `Publikasi Draft Shift ${period.start} — ${period.end}`); } catch (_) {}
             base.startShiftRealtime?.();
-
-            const published = normalizeRecord(data);
-            const publishedPeriod = published?.period || period;
-            toast(
-                `Draft Shift ${publishedPeriod?.start || period.start} — ${publishedPeriod?.end || period.end} telah dipublikasikan.`,
-                'success',
-                3200
-            );
+            toast(`Draft Shift ${period.start} — ${period.end} telah dipublikasikan.`, 'success', 3200);
         } catch (error) {
             console.error(`[${PATCH_ID}] Publish Draft gagal:`, error);
             toast(`Gagal mempublikasikan Draft Shift: ${error.message}`, 'error', 4200);
@@ -96009,32 +96251,34 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 
     function buildWorkspaceChrome() {
         const period = formatPeriodForWorkspace(currentPeriod());
-        const periodLabel = period?.label || 'Periode belum ditentukan';
-        const modeName = shiftWorkspaceMode === 'draft' ? 'Draft Shift' : 'Shift Aktif';
+        const periodLabel = period?.label || 'Belum ditentukan';
 
         return `
             <div class="shift-workspace-chrome" data-workspace-mode="${shiftWorkspaceMode}">
-                <div class="shift-workspace-subtabs voucher-subtabs" role="tablist" aria-label="Workspace Shift">
-                    <button
-                        type="button"
-                        class="shift-workspace-tab voucher-subtab-btn ${shiftWorkspaceMode === 'active' ? 'active' : ''}"
-                        role="tab"
-                        aria-selected="${shiftWorkspaceMode === 'active'}"
-                        data-shift-workspace="active">Shift Aktif</button>
-                    <button
-                        type="button"
-                        class="shift-workspace-tab voucher-subtab-btn ${shiftWorkspaceMode === 'draft' ? 'active' : ''}"
-                        role="tab"
-                        aria-selected="${shiftWorkspaceMode === 'draft'}"
-                        data-shift-workspace="draft">Draft Shift</button>
+                <div class="shift-workspace-left-rail">
+                    <div class="shift-workspace-subtabs voucher-subtabs" role="tablist" aria-label="Workspace Shift">
+                        <button
+                            type="button"
+                            class="shift-workspace-tab voucher-subtab-btn ${shiftWorkspaceMode === 'active' ? 'active' : ''}"
+                            role="tab"
+                            aria-selected="${shiftWorkspaceMode === 'active'}"
+                            data-shift-workspace="active">Shift Aktif</button>
+                        <button
+                            type="button"
+                            class="shift-workspace-tab voucher-subtab-btn ${shiftWorkspaceMode === 'draft' ? 'active' : ''}"
+                            role="tab"
+                            aria-selected="${shiftWorkspaceMode === 'draft'}"
+                            data-shift-workspace="draft">Draft Shift</button>
+                    </div>
+                    <div class="shift-workspace-context" aria-label="Periode ${shiftWorkspaceMode === 'draft' ? 'Draft Shift' : 'Shift Aktif'}">
+                        <span class="shift-workspace-context-icon">${ICONS.calendar}</span>
+                        <span class="shift-workspace-context-copy">
+                            <small>Periode</small>
+                            <span class="shift-workspace-period-value" data-shift-period-value>${periodLabel}</span>
+                        </span>
+                    </div>
                 </div>
-                <div class="shift-workspace-context">
-                    <span class="shift-workspace-context-icon">${ICONS.calendar}</span>
-                    <span class="shift-workspace-context-copy">
-                        <small>${modeName}</small>
-                        <span class="shift-workspace-period-value" data-shift-period-value>${periodLabel}</span>
-                    </span>
-                </div>
+                <div class="shift-workspace-toolbar-slot"></div>
             </div>`;
     }
 
@@ -96050,6 +96294,62 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                 child.classList.add('shift-workspace-hidden-label');
             }
         });
+    }
+
+    function buildSummaryPanel() {
+        const totalStaff = (availableUsers || []).length + (shiftColumns || []).reduce(
+            (sum, column) => sum + (column.users || []).length,
+            0
+        );
+        return `
+            <section class="shift-support-summary" aria-label="Summary Shift">
+                <div class="shift-support-heading">
+                    <div>
+                        <small>RINGKASAN</small>
+                        <strong>Summary</strong>
+                    </div>
+                </div>
+                <div class="shift-support-summary-body premium-shift-stats">
+                    <span class="shift-stat-card total">
+                        <span class="shift-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></span>
+                        <span class="shift-stat-copy"><small>Total</small><span><strong>${totalStaff}</strong> staff</span></span>
+                    </span>
+                    ${(shiftColumns || []).map((column, index) => `
+                        <span class="shift-stat-card assigned">
+                            <span class="shift-stat-index">${index + 1}</span>
+                            <span class="shift-stat-copy"><small>${column.name}</small><span><strong>${(column.users || []).length}</strong> staff</span></span>
+                        </span>`).join('')}
+                    <span class="shift-stat-card unset">
+                        <span class="shift-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8"/><path d="M9 3h6v3H9z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h4"/></svg></span>
+                        <span class="shift-stat-copy"><small>DATA STAFF</small><span><strong>${(availableUsers || []).length}</strong> staff</span></span>
+                    </span>
+                </div>
+            </section>`;
+    }
+
+    function ensureSupportRow() {
+        const tab = document.getElementById('tab-shifts');
+        const shiftsContent = document.getElementById('shiftsContent');
+        const logContainer = document.getElementById('shiftLogContainer');
+        if (!tab || !shiftsContent || !logContainer) return;
+
+        let supportRow = document.getElementById('shiftSupportRowCandidateV2');
+        if (!supportRow) {
+            supportRow = document.createElement('div');
+            supportRow.id = 'shiftSupportRowCandidateV2';
+            supportRow.className = 'shift-support-row';
+            shiftsContent.insertAdjacentElement('afterend', supportRow);
+        }
+
+        let summary = supportRow.querySelector('.shift-support-summary');
+        const nextSummary = document.createElement('div');
+        nextSummary.innerHTML = buildSummaryPanel().trim();
+        const nextPanel = nextSummary.firstElementChild;
+        if (summary && nextPanel) summary.replaceWith(nextPanel);
+        else if (nextPanel) supportRow.prepend(nextPanel);
+
+        if (logContainer.parentElement !== supportRow) supportRow.appendChild(logContainer);
+        logContainer.style.display = 'block';
     }
 
     function decorateShiftWorkspace() {
@@ -96076,7 +96376,11 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         });
 
         const actionWrap = pageHeader.querySelector('.shift-header-right');
-        if (!actionWrap) return;
+        const toolbarSlot = chrome?.querySelector('.shift-workspace-toolbar-slot');
+        if (!actionWrap || !toolbarSlot) return;
+
+        toolbarSlot.appendChild(actionWrap);
+        pageHeader.classList.add('shift-header-candidate-hidden');
 
         const buttons = [...actionWrap.querySelectorAll(':scope > button')];
         const previewButton = buttons.find(button => String(button.getAttribute('onclick') || '').includes('openShiftPreview'));
@@ -96085,10 +96389,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         const addButton = buttons.find(button => String(button.getAttribute('onclick') || '').includes('addShiftColumn'));
 
         makeIconOnlyButton(previewButton, 'Preview Shift');
-        makeIconOnlyButton(
-            saveButton,
-            shiftWorkspaceMode === 'draft' ? 'Simpan Draft Shift' : 'Simpan Shift Aktif'
-        );
+        makeIconOnlyButton(saveButton, shiftWorkspaceMode === 'draft' ? 'Simpan Draft Shift' : 'Simpan Shift Aktif');
         makeIconOnlyButton(resetButton, 'Reset Perubahan');
         makeIconOnlyButton(addButton, 'Tambah Shift');
 
@@ -96102,7 +96403,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             resetButton.onclick = () => resetCurrentWorkspace();
         }
 
-        actionWrap.querySelectorAll('.shift-workspace-context-action').forEach(node => node.remove());
+        actionWrap.querySelectorAll('.shift-workspace-context-action, .shift-workspace-action-divider').forEach(node => node.remove());
 
         if (shiftWorkspaceMode === 'draft') {
             const canEdit = canEditWorkspace();
@@ -96120,11 +96421,11 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                 </button>`
             );
 
-            actionWrap.querySelector('.shift-copy-active')
-                ?.addEventListener('click', event => copyActiveIntoDraft(event.currentTarget));
-            actionWrap.querySelector('.shift-publish-draft')
-                ?.addEventListener('click', event => publishDraft(event.currentTarget));
+            actionWrap.querySelector('.shift-copy-active')?.addEventListener('click', event => copyActiveIntoDraft(event.currentTarget));
+            actionWrap.querySelector('.shift-publish-draft')?.addEventListener('click', event => publishDraft(event.currentTarget));
         }
+
+        ensureSupportRow();
     }
 
     function injectCandidateStyles() {
@@ -96132,198 +96433,174 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         const style = document.createElement('style');
         style.id = `${PATCH_ID}-style`;
         style.textContent = `
-            /* Candidate v1 — intentionally scoped to Shift Kerja only. */
+            /* Candidate v2 — scoped to Shift Kerja. Internal SHIFT table headers remain locked. */
             #tab-shifts .shift-unsaved-pill { display:none !important; }
+            #tab-shifts .shift-header.shift-header-candidate-hidden { display:none !important; }
 
             #tab-shifts .shift-workspace-chrome {
+                width:100%;
+                min-height:42px;
+                margin:0 0 11px;
                 display:flex;
                 align-items:center;
                 justify-content:space-between;
-                gap:14px;
-                margin:0 0 12px;
-                min-width:0;
+                gap:16px;
+                box-sizing:border-box;
             }
 
-            /* Shift workspace tabs mirror the existing Voucher subtab architecture. */
-            #tab-shifts .shift-workspace-subtabs {
+            #tab-shifts .shift-workspace-left-rail {
+                min-width:0;
                 display:flex;
                 align-items:center;
-                gap:6px;
-                padding:3px;
-                width:max-content;
-                max-width:100%;
-                margin:0;
+                gap:20px;
+                flex:1 1 auto;
+            }
+
+            #tab-shifts .shift-workspace-subtabs {
                 flex:0 0 auto;
+                display:flex;
+                align-items:center;
+                gap:4px;
+                margin:0 !important;
+                padding:3px;
             }
 
             html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-subtabs {
                 border:1px solid var(--border-color);
-                border-radius:9px;
-                background:var(--bg-hover);
+                border-radius:10px;
+                background:color-mix(in srgb, var(--bg-card) 92%, var(--accent-soft));
             }
 
             #tab-shifts .shift-workspace-tab {
-                min-height:30px;
-                padding:0 12px;
+                min-height:31px;
+                padding:0 13px;
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
                 border:0;
-                cursor:pointer;
+                border-radius:7px;
                 font:inherit;
-                font-size:10px;
-                font-weight:680;
-                letter-spacing:.18px;
+                font-size:9px;
+                font-weight:740;
+                line-height:1;
                 white-space:nowrap;
-                transition:background .16s ease,color .16s ease,border-color .16s ease;
+                cursor:pointer;
             }
 
             html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-tab {
-                border-radius:7px;
-                background:transparent;
                 color:var(--text-muted);
+                background:transparent;
             }
-
             html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-tab:hover {
                 color:var(--text-primary);
-                background:var(--bg-card);
+                background:var(--bg-hover);
             }
-
             html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-tab.active {
                 color:var(--text-primary);
                 background:var(--bg-card);
-                box-shadow:0 1px 4px rgba(0,0,0,.08);
+                box-shadow:0 2px 8px rgba(0,0,0,.07), inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, var(--border-color));
             }
 
             html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-workspace-subtabs,
             html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-workspace-subtabs {
-                border:1px solid rgba(89,100,97,.16);
-                border-radius:2px;
-                background:rgba(205,204,197,.34);
-                clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);
+                border:1px solid rgba(45,56,60,.18);
+                border-radius:8px;
+                background:rgba(241,237,229,.34);
             }
-
             html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-workspace-tab,
             html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-workspace-tab {
-                border-radius:1px;
+                color:#788281;
                 background:transparent;
-                color:#737d7a;
             }
-
             html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-workspace-tab.active,
             html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-workspace-tab.active {
-                background:rgba(244,241,233,.82);
-                color:#394441;
-                box-shadow:inset 0 1px rgba(255,255,255,.72),0 1px 3px rgba(52,61,58,.08);
+                color:#2d383c;
+                background:#dedbd4;
+                box-shadow:inset 0 0 0 1px rgba(74,137,151,.24);
             }
 
             html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-subtabs {
-                background:linear-gradient(180deg,#111611 0%,#0d110d 100%) !important;
-                border-color:rgba(68,214,44,.18) !important;
-                box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 22px rgba(0,0,0,.16) !important;
+                border-color:rgba(68,214,44,.18);
+                background:#101210;
             }
-
-            html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-tab {
-                color:#8f9f8b !important;
-            }
-
-            html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-tab:hover {
-                color:#eaf5e7 !important;
-                background:rgba(68,214,44,.055) !important;
-            }
-
+            html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-tab { color:#91aa8d; }
             html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-tab.active {
-                color:#eef8eb !important;
-                background:linear-gradient(180deg,rgba(68,214,44,.13),rgba(68,214,44,.065)) !important;
-                box-shadow:inset 0 0 0 1px rgba(68,214,44,.18),0 1px 5px rgba(0,0,0,.16) !important;
+                color:#e9ffe5;
+                background:rgba(68,214,44,.12);
+                box-shadow:inset 0 0 0 1px rgba(68,214,44,.24);
             }
 
             #tab-shifts .shift-workspace-context {
+                min-width:0;
                 display:flex;
                 align-items:center;
-                justify-content:flex-end;
-                gap:9px;
-                min-width:0;
-                color:var(--text-secondary, #667085);
+                gap:7px;
+                flex:0 1 auto;
             }
-
             #tab-shifts .shift-workspace-context-icon {
-                width:26px;
-                height:26px;
-                display:inline-grid;
+                width:25px;
+                height:25px;
+                flex:0 0 25px;
+                display:grid;
                 place-items:center;
-                flex:0 0 auto;
-                border:1px solid var(--border-light, var(--border-color, rgba(127,127,127,.22)));
                 border-radius:7px;
-                background:var(--bg-card, rgba(255,255,255,.06));
+                color:var(--text-muted);
             }
-
+            html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-workspace-context-icon {
+                border:1px solid var(--border-color);
+                background:var(--bg-card);
+            }
             #tab-shifts .shift-workspace-context-icon svg {
-                width:14px;
-                height:14px;
+                width:13px;
+                height:13px;
                 fill:none;
                 stroke:currentColor;
                 stroke-width:1.8;
                 stroke-linecap:round;
                 stroke-linejoin:round;
             }
-
             #tab-shifts .shift-workspace-context-copy {
-                display:flex;
-                flex-direction:column;
-                align-items:flex-end;
-                gap:1px;
                 min-width:0;
-                line-height:1.1;
+                display:flex;
+                align-items:baseline;
+                gap:6px;
+                white-space:nowrap;
             }
-
             #tab-shifts .shift-workspace-context-copy > small {
-                font-size:10px;
-                font-weight:700;
+                color:var(--text-muted);
+                font-size:7.5px;
+                font-weight:760;
                 letter-spacing:.04em;
                 text-transform:uppercase;
-                color:var(--text-muted, #8a94a3);
             }
-
             #tab-shifts .shift-workspace-period-value {
-                display:block;
-                max-width:100%;
+                max-width:250px;
                 overflow:hidden;
                 text-overflow:ellipsis;
-                white-space:nowrap;
+                color:var(--text-primary);
+                font-size:9.5px;
+                font-weight:700;
                 cursor:default;
-                font-size:12px;
-                font-weight:680;
-                color:var(--text-primary, #1f2937);
                 user-select:none;
-            }
-
-            #tab-shifts .shift-workspace-period-value:hover {
-                color:var(--brand-color, var(--cyan, currentColor));
             }
 
             #tab-shifts .shift-workspace-period-editor {
                 display:inline-flex;
                 align-items:center;
-                justify-content:flex-end;
                 gap:5px;
-                max-width:100%;
             }
-
             #tab-shifts .shift-workspace-period-editor input[type="date"] {
-                width:128px;
+                width:126px;
                 min-height:29px;
                 padding:3px 6px;
-                border:1px solid var(--border-color, rgba(127,127,127,.28));
-                border-radius:6px;
-                color:var(--text-primary, #1f2937);
-                background:var(--bg-card, #fff);
+                border:1px solid var(--border-color);
+                border-radius:7px;
+                color:var(--text-primary);
+                background:var(--bg-card);
                 font:inherit;
-                font-size:11px;
+                font-size:9px;
                 outline:none;
             }
-
-            #tab-shifts .shift-workspace-period-editor input[type="date"]:focus {
-                border-color:var(--brand-color, var(--cyan, #5b7cfa));
-            }
-
             #tab-shifts .period-editor-apply,
             #tab-shifts .period-editor-cancel {
                 width:29px;
@@ -96331,80 +96608,159 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                 display:grid;
                 place-items:center;
                 padding:0;
-                border:1px solid var(--border-color, rgba(127,127,127,.28));
-                border-radius:6px;
-                background:var(--bg-card, #fff);
-                color:var(--text-primary, #1f2937);
+                border:1px solid var(--border-color);
+                border-radius:7px;
+                color:var(--text-primary);
+                background:var(--bg-card);
                 cursor:pointer;
-                font-size:15px;
-                line-height:1;
             }
 
-            #tab-shifts .period-editor-apply:hover,
-            #tab-shifts .period-editor-cancel:hover {
-                border-color:var(--brand-color, var(--cyan, #5b7cfa));
+            #tab-shifts .shift-workspace-toolbar-slot {
+                flex:0 0 auto;
+                margin-left:auto;
+                display:flex;
+                align-items:center;
+                justify-content:flex-end;
             }
-
-            #tab-shifts .shift-header-right .shift-workspace-icon-action {
-                width:36px !important;
-                min-width:36px !important;
-                padding-left:0 !important;
-                padding-right:0 !important;
+            #tab-shifts .shift-workspace-toolbar-slot .shift-header-right {
+                display:flex !important;
+                align-items:center !important;
+                justify-content:flex-end !important;
+                gap:6px !important;
+                margin:0 !important;
+            }
+            #tab-shifts .shift-workspace-toolbar-slot .btn-shift {
+                min-height:34px !important;
+                height:34px !important;
+                border-radius:8px !important;
+                font-size:9px !important;
+            }
+            #tab-shifts .shift-workspace-icon-action {
+                width:34px !important;
+                min-width:34px !important;
+                padding:0 !important;
                 justify-content:center !important;
                 gap:0 !important;
             }
-
-            #tab-shifts .shift-header-right .shift-workspace-icon-action .shift-workspace-hidden-label {
-                display:none !important;
-            }
-
-            #tab-shifts .shift-header-right .shift-workspace-icon-action .button-icon {
-                margin:0 !important;
-            }
-
-            #tab-shifts .shift-header-right .shift-workspace-action-divider {
+            #tab-shifts .shift-workspace-icon-action .shift-workspace-hidden-label { display:none !important; }
+            #tab-shifts .shift-workspace-icon-action .button-icon { margin:0 !important; }
+            #tab-shifts .shift-workspace-action-divider {
                 width:1px;
-                height:24px;
-                margin:0 2px;
+                height:22px;
+                margin:0 3px;
                 flex:0 0 auto;
-                background:var(--border-light, var(--border-color, rgba(127,127,127,.22)));
-                opacity:.78;
+                background:var(--border-color);
+                opacity:.72;
             }
-
-            #tab-shifts .shift-header-right .shift-workspace-context-action {
-                min-width:auto;
+            #tab-shifts .shift-workspace-context-action {
+                min-width:auto !important;
+                padding:0 10px !important;
                 white-space:nowrap;
             }
-
-            #tab-shifts .shift-header-right .shift-workspace-context-action .button-icon svg {
+            #tab-shifts .shift-workspace-context-action .button-icon svg {
                 fill:none;
                 stroke:currentColor;
                 stroke-width:1.8;
                 stroke-linecap:round;
                 stroke-linejoin:round;
             }
-
             #tab-shifts .shift-workspace-icon-action.is-saving .button-icon {
                 animation:ddtShiftCandidateSavePulse .85s ease-in-out infinite alternate;
             }
-
             @keyframes ddtShiftCandidateSavePulse {
                 from { opacity:.46; transform:scale(.94); }
                 to { opacity:1; transform:scale(1); }
             }
 
-            @media (max-width: 980px) {
-                #tab-shifts .shift-workspace-chrome {
-                    align-items:flex-start;
-                    flex-direction:column;
-                }
-                #tab-shifts .shift-workspace-context {
-                    width:100%;
-                    justify-content:flex-start;
-                }
-                #tab-shifts .shift-workspace-context-copy {
-                    align-items:flex-start;
-                }
+            #tab-shifts .shift-support-row {
+                width:100%;
+                margin-top:8px;
+                display:grid;
+                grid-template-columns:minmax(0, 1.16fr) minmax(300px, .84fr);
+                gap:10px;
+                align-items:stretch;
+            }
+            #tab-shifts .shift-support-summary {
+                min-width:0;
+                padding:8px 10px;
+                display:flex;
+                flex-direction:column;
+                gap:6px;
+                box-sizing:border-box;
+            }
+            html:not([data-mi-frozen-presentation="mecha-ivory"]) #tab-shifts .shift-support-summary {
+                border:1px solid var(--border-color);
+                border-radius:10px;
+                background:var(--bg-card);
+                box-shadow:var(--shadow-sm);
+            }
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-support-summary,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-support-summary {
+                border:1px solid rgba(45,56,60,.16);
+                border-radius:8px;
+                background:rgba(222,219,212,.46);
+                box-shadow:inset 0 1px 0 rgba(255,255,255,.28);
+            }
+            #tab-shifts .shift-support-heading {
+                min-height:22px;
+                display:flex;
+                align-items:center;
+                justify-content:space-between;
+            }
+            #tab-shifts .shift-support-heading > div {
+                display:flex;
+                align-items:baseline;
+                gap:7px;
+            }
+            #tab-shifts .shift-support-heading small {
+                color:var(--text-muted);
+                font-size:6.5px;
+                font-weight:800;
+                letter-spacing:.12em;
+            }
+            #tab-shifts .shift-support-heading strong {
+                color:var(--text-secondary);
+                font-size:10px;
+                font-weight:760;
+            }
+            #tab-shifts .shift-support-summary-body.premium-shift-stats {
+                width:100% !important;
+                max-width:none !important;
+                display:flex !important;
+                flex-wrap:wrap !important;
+                gap:6px !important;
+                overflow:visible !important;
+            }
+            #tab-shifts .shift-support-summary-body .shift-stat-card {
+                flex:1 1 94px !important;
+                min-width:94px !important;
+                max-width:150px !important;
+            }
+            #tab-shifts .shift-support-row .shift-log-container {
+                width:auto !important;
+                max-width:none !important;
+                min-width:0 !important;
+                max-height:none !important;
+                height:auto !important;
+                margin:0 !important;
+                align-self:stretch;
+            }
+            #tab-shifts .shift-support-row .shift-log-container .log-body {
+                height:42px !important;
+                min-height:42px !important;
+                max-height:58px !important;
+            }
+
+            @media (max-width: 1120px) {
+                #tab-shifts .shift-workspace-chrome { align-items:flex-start; }
+                #tab-shifts .shift-workspace-left-rail { gap:12px; flex-wrap:wrap; }
+                #tab-shifts .shift-support-row { grid-template-columns:1fr; }
+            }
+            @media (max-width: 780px) {
+                #tab-shifts .shift-workspace-chrome { flex-direction:column; gap:9px; }
+                #tab-shifts .shift-workspace-left-rail { width:100%; }
+                #tab-shifts .shift-workspace-toolbar-slot { width:100%; margin-left:0; justify-content:flex-end; }
+                #tab-shifts .shift-workspace-context-copy { flex-wrap:wrap; }
             }
         `;
         document.head.appendChild(style);
@@ -96485,7 +96841,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 
     // Expose only candidate-specific helpers for manual QA / rollback inspection.
     window.DDTShiftCandidate = Object.freeze({
-        version: 'v1',
+        version: 'v2',
         getMode: () => shiftWorkspaceMode,
         switchMode: switchShiftWorkspace,
         manualSave: manualSaveCurrentWorkspace,
@@ -96501,6 +96857,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         const container = document.getElementById('shiftsContent');
         if (container?.children?.length) {
             decorateShiftWorkspace();
+            ensureSupportRow();
         }
     }
 
