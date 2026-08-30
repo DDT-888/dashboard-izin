@@ -54995,10 +54995,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             const occupiedRows = users.length || 1;
             const fillerCount = Math.max(0, pageSize - occupiedRows);
-            const fillerRows = Array.from({ length: fillerCount }, () => `
-                <tr class="employee-inactive-placeholder-row" aria-hidden="true">
-                    <td class="sticky-left-one"></td><td class="sticky-left-two"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="sticky-right"></td>
-                </tr>`).join('');
+            const fillerHeight = fillerCount * 43;
+            const fillerRows = fillerCount > 0 ? `
+                <tr class="employee-inactive-geometry-spacer" aria-hidden="true">
+                    <td colspan="11" style="--employee-inactive-spacer-height:${fillerHeight}px"></td>
+                </tr>` : '';
             return dataRows + fillerRows;
         }
 
@@ -95032,5 +95033,66 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         }
     </style>
 
+
+
+    <style id="users-inactive-lifecycle-v13-pagination-footprint-surface-authority">
+        /* V13 — fixed seven-row footprint without visible empty-grid rows.
+           The missing height is represented by one non-interactive geometry spacer,
+           so the pagination footer remains anchored while no fake row lines are painted. */
+        #tab-users .employee-inactive-table tbody tr.employee-inactive-geometry-spacer{
+            height:var(--employee-inactive-spacer-height,0px)!important;
+            min-height:var(--employee-inactive-spacer-height,0px)!important;
+            background:transparent!important;
+            pointer-events:none!important;
+        }
+        #tab-users .employee-inactive-table tbody tr.employee-inactive-geometry-spacer>td{
+            height:var(--employee-inactive-spacer-height,0px)!important;
+            min-height:var(--employee-inactive-spacer-height,0px)!important;
+            padding:0!important;
+            border:0!important;
+            box-shadow:none!important;
+            background:color-mix(in srgb,#a6474d 2.6%,var(--bg-primary))!important;
+            pointer-events:none!important;
+        }
+        #tab-users .employee-inactive-table tbody tr.employee-inactive-geometry-spacer:hover>td{
+            background:color-mix(in srgb,#a6474d 2.6%,var(--bg-primary))!important;
+        }
+
+        /* Light-family + Cyber Dark: preserve the lifecycle separator/border geometry that
+           was already accepted, but remove pink fill from the pagination interior.
+           Mecha Ivory and Venom keep their own locked material authorities. */
+        html:not([data-selected-theme="venom"]):not([data-selected-theme="mecha-ivory"]) #tab-users .employee-inactive-table-footer{
+            border:1px solid color-mix(in srgb,#a6474d 18%,var(--border-color))!important;
+            border-top:0!important;
+            background:var(--bg-primary)!important;
+            box-shadow:none!important;
+        }
+        html:not([data-selected-theme="venom"]):not([data-selected-theme="mecha-ivory"]) #tab-users .employee-inactive-page-info{
+            color:var(--text-secondary)!important;
+        }
+        html:not([data-selected-theme="venom"]):not([data-selected-theme="mecha-ivory"]) #tab-users .employee-inactive-page-button{
+            border-color:color-mix(in srgb,#a6474d 22%,var(--border-color))!important;
+            background:var(--bg-primary)!important;
+            color:var(--text-secondary)!important;
+            box-shadow:none!important;
+        }
+        html:not([data-selected-theme="venom"]):not([data-selected-theme="mecha-ivory"]) #tab-users .employee-inactive-page-chip{
+            border-color:color-mix(in srgb,#a6474d 20%,var(--border-color))!important;
+            background:var(--bg-primary)!important;
+            color:var(--text-secondary)!important;
+            box-shadow:none!important;
+        }
+        html:not([data-selected-theme="venom"]):not([data-selected-theme="mecha-ivory"]) #tab-users .employee-inactive-page-button:hover:not(:disabled){
+            border-color:color-mix(in srgb,#a6474d 38%,var(--border-color))!important;
+            background:color-mix(in srgb,var(--text-primary) 3%,var(--bg-primary))!important;
+            color:color-mix(in srgb,#a6474d 72%,var(--text-primary))!important;
+        }
+
+        /* V13 deliberately does not restyle Venom pagination; V12 Venom authority remains final. */
+        html[data-selected-theme="venom"] #tab-users .employee-inactive-table tbody tr.employee-inactive-geometry-spacer>td,
+        html[data-theme="dark"][data-theme-variant="venom"] #tab-users .employee-inactive-table tbody tr.employee-inactive-geometry-spacer>td{
+            background:#111111!important;
+        }
+    </style>
 </body>
 </html>
