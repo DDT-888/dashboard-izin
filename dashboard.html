@@ -97773,17 +97773,16 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 </script>
 
 
-
-<!-- DDT Shift Candidate 6 — premium summary authority refinement -->
-<script id="ddt-shift-active-draft-candidate-v6-summary-refinement">
-(function DDTShiftActiveDraftCandidateV6SummaryRefinement(){
+<!-- DDT Shift Candidate 7 — single-line premium metric rail -->
+<script id="ddt-shift-active-draft-candidate-v7-summary-refinement">
+(function DDTShiftActiveDraftCandidateV7SummaryRefinement(){
     'use strict';
-    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V6__) return;
-    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V6__ = true;
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V7__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V7__ = true;
 
-    const PATCH_ID = 'ddt-shift-active-draft-candidate-v6-summary-refinement';
-    const baseRenderShiftPageV6 = typeof renderShiftPage === 'function' ? renderShiftPage : null;
-    if (!baseRenderShiftPageV6) return;
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v7-summary-refinement';
+    const baseRenderShiftPageV7 = typeof renderShiftPage === 'function' ? renderShiftPage : null;
+    if (!baseRenderShiftPageV7) return;
 
     function escapeHtml(value){
         const div = document.createElement('div');
@@ -97791,45 +97790,47 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         return div.innerHTML;
     }
 
-    function summaryDataV6(){
+    function displayShiftNameV7(value, index){
+        let raw = String(value || `SHIFT ${index + 1}`).trim();
+        const hadShiftPrefix = /^SHIFT(?:\s+|$)/i.test(raw);
+        raw = raw.replace(/^SHIFT\s+/i, '').trim();
+        if (!raw) raw = `Shift ${index + 1}`;
+        if (hadShiftPrefix && /^\d+$/.test(raw)) raw = `Shift ${raw}`;
+        raw = raw.replace(/^PAGI\b/i, 'Pagi');
+        raw = raw.replace(/^MALAM\b/i, 'Malam');
+        raw = raw.replace(/^CUTI\b/i, 'Cuti');
+        return raw;
+    }
+
+    function summaryDataV7(){
         let columns = [], available = [];
         try { columns = Array.isArray(shiftColumns) ? shiftColumns : []; } catch (_) {}
         try { available = Array.isArray(availableUsers) ? availableUsers : []; } catch (_) {}
-        const total = available.length + columns.reduce((sum, col) => sum + (Array.isArray(col?.users) ? col.users.length : 0), 0);
+        const assigned = columns.reduce((sum, col) => sum + (Array.isArray(col?.users) ? col.users.length : 0), 0);
         return {
-            total,
+            total: available.length + assigned,
             available: available.length,
             columns: columns.map((col, index) => ({
-                name: String(col?.name || `SHIFT ${index + 1}`).trim().toUpperCase(),
+                name: displayShiftNameV7(col?.name, index),
                 value: Array.isArray(col?.users) ? col.users.length : 0
             }))
         };
     }
 
-    function buildPremiumSummaryV6(){
-        const data = summaryDataV6();
-        const total = `
-            <span class="shift-v6-summary-item shift-v6-summary-total">
-                <span class="shift-v6-summary-name">TOTAL</span>
-                <span class="shift-v6-summary-value"><span>STAFF</span><strong>${data.total}</strong></span>
-            </span>`;
-        const shifts = data.columns.map(item => `
-            <span class="shift-v6-summary-item shift-v6-summary-shift">
-                <span class="shift-v6-summary-name">${escapeHtml(item.name)}</span>
-                <span class="shift-v6-summary-value"><strong>${item.value}</strong><span>STAFF</span></span>
-            </span>`).join('');
-        const available = `
-            <span class="shift-v6-summary-item shift-v6-summary-available">
-                <span class="shift-v6-summary-name">DATA STAFF</span>
-                <span class="shift-v6-summary-value"><strong>${data.available}</strong></span>
-            </span>`;
-        return `<div class="shift-v6-inline-summary" aria-label="Summary Shift">
-            <span class="shift-v6-summary-title">SUMMARY</span>
-            <span class="shift-v6-summary-track">${total}${shifts}${available}</span>
+    function buildMetricRailV7(){
+        const data = summaryDataV7();
+        const metrics = [
+            `<span class="shift-v7-summary-metric shift-v7-summary-total"><strong>${data.total}</strong><span>Total</span></span>`,
+            ...data.columns.map(item => `<span class="shift-v7-summary-metric"><strong>${item.value}</strong><span>${escapeHtml(item.name)}</span></span>`),
+            `<span class="shift-v7-summary-metric shift-v7-summary-available"><strong>${data.available}</strong><span>Data Staff</span></span>`
+        ].join('');
+        return `<div class="shift-v7-inline-summary" aria-label="Summary Shift">
+            <span class="shift-v7-summary-title">SUMMARY</span>
+            <span class="shift-v7-summary-track">${metrics}</span>
         </div>`;
     }
 
-    function applySummaryV6(){
+    function applySummaryV7(){
         const container = document.getElementById('shiftsContent');
         const chrome = container?.querySelector('.shift-workspace-chrome');
         const actions = chrome?.querySelector('.shift-header-right');
@@ -97839,31 +97840,30 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             '.shift-v3-inline-summary,.shift-v3-summary-divider,' +
             '.shift-v4-inline-summary,.shift-v4-summary-divider,' +
             '.shift-v5-inline-summary,.shift-v5-summary-divider,' +
-            '.shift-v6-inline-summary,.shift-v6-summary-divider'
+            '.shift-v6-inline-summary,.shift-v6-summary-divider,' +
+            '.shift-v7-inline-summary,.shift-v7-summary-divider'
         ).forEach(node => node.remove());
 
         actions.insertAdjacentHTML(
             'afterbegin',
-            `${buildPremiumSummaryV6()}<span class="shift-workspace-action-divider shift-v6-summary-divider" aria-hidden="true"></span>`
+            `${buildMetricRailV7()}<span class="shift-workspace-action-divider shift-v7-summary-divider" aria-hidden="true"></span>`
         );
     }
 
-    function injectStylesV6(){
+    function injectStylesV7(){
         if (document.getElementById(`${PATCH_ID}-style`)) return;
         const style = document.createElement('style');
         style.id = `${PATCH_ID}-style`;
         style.textContent = `
             /* ==========================================================
-               Candidate V6 — Premium Summary Design Authority
-               - one horizontal rail
-               - two-line datum per item
-               - no redundant SHIFT kicker
-               - actual shift/table name is the primary label
+               Candidate V7 — Summary Design Authority
+               Single-line instrumentation rail: number first, label second.
+               No pills, cards, icons, repeated STAFF, or repeated SHIFT prefix.
                ========================================================== */
-            #tab-shifts .shift-v6-inline-summary{
+            #tab-shifts .shift-v7-inline-summary{
                 min-width:0!important;
-                max-width:min(61vw,840px)!important;
-                height:38px!important;
+                max-width:min(64vw,900px)!important;
+                height:34px!important;
                 display:grid!important;
                 grid-template-columns:max-content minmax(0,1fr)!important;
                 align-items:center!important;
@@ -97873,22 +97873,19 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                 overflow:hidden!important;
                 color:var(--text-secondary)!important;
             }
-            #tab-shifts .shift-v6-summary-title{
-                align-self:center!important;
+            #tab-shifts .shift-v7-summary-title{
                 color:color-mix(in srgb,var(--text-muted) 88%,transparent)!important;
-                font-size:6.2px!important;
-                font-weight:800!important;
+                font-size:6.15px!important;
+                font-weight:810!important;
                 line-height:1!important;
-                letter-spacing:.14em!important;
+                letter-spacing:.145em!important;
                 white-space:nowrap!important;
             }
-            #tab-shifts .shift-v6-summary-track{
-                position:relative!important;
+            #tab-shifts .shift-v7-summary-track{
                 min-width:0!important;
-                height:38px!important;
+                height:34px!important;
                 display:flex!important;
                 align-items:center!important;
-                gap:0!important;
                 overflow-x:auto!important;
                 overflow-y:hidden!important;
                 overscroll-behavior-x:contain!important;
@@ -97896,152 +97893,123 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                 scrollbar-width:none!important;
                 -ms-overflow-style:none!important;
             }
-            #tab-shifts .shift-v6-summary-track::-webkit-scrollbar{
+            #tab-shifts .shift-v7-summary-track::-webkit-scrollbar{
                 display:none!important;width:0!important;height:0!important;
             }
-            #tab-shifts .shift-v6-summary-item{
+            #tab-shifts .shift-v7-summary-metric{
                 position:relative!important;
                 flex:0 0 auto!important;
                 min-width:max-content!important;
-                height:32px!important;
-                display:grid!important;
-                grid-template-rows:14px 15px!important;
-                align-content:center!important;
-                justify-items:start!important;
-                padding:1px 13px 0!important;
+                height:26px!important;
+                display:inline-flex!important;
+                align-items:baseline!important;
+                gap:4px!important;
+                padding:0!important;
                 margin:0!important;
+                color:var(--text-secondary)!important;
                 background:transparent!important;
                 border:0!important;
                 border-radius:0!important;
                 box-shadow:none!important;
-            }
-            #tab-shifts .shift-v6-summary-item:first-child{
-                padding-left:0!important;
-                padding-right:14px!important;
-            }
-            #tab-shifts .shift-v6-summary-item + .shift-v6-summary-item::before{
-                content:""!important;
-                position:absolute!important;
-                left:0!important;
-                top:7px!important;
-                width:1px!important;
-                height:18px!important;
-                background:color-mix(in srgb,var(--border-color) 82%,transparent)!important;
-                opacity:.72!important;
-            }
-            #tab-shifts .shift-v6-summary-name{
-                max-width:none!important;
-                overflow:visible!important;
-                text-overflow:clip!important;
-                white-space:nowrap!important;
-                color:color-mix(in srgb,var(--text-secondary) 91%,var(--text-primary) 9%)!important;
-                font-size:7px!important;
-                font-weight:725!important;
-                line-height:14px!important;
-                letter-spacing:.045em!important;
-                text-transform:uppercase!important;
-            }
-            #tab-shifts .shift-v6-summary-value{
-                min-width:max-content!important;
-                height:15px!important;
-                display:inline-flex!important;
-                align-items:baseline!important;
-                gap:4px!important;
-                color:var(--text-muted)!important;
-                font-size:6.6px!important;
-                font-weight:650!important;
-                line-height:15px!important;
-                letter-spacing:.035em!important;
-                text-transform:uppercase!important;
                 white-space:nowrap!important;
             }
-            #tab-shifts .shift-v6-summary-value strong{
-                color:var(--text-primary)!important;
-                font-size:10px!important;
-                font-weight:815!important;
+            #tab-shifts .shift-v7-summary-metric + .shift-v7-summary-metric::before{
+                content:"·"!important;
+                display:inline-block!important;
+                margin:0 9px!important;
+                color:color-mix(in srgb,var(--text-muted) 54%,transparent)!important;
+                font-size:9px!important;
+                font-weight:700!important;
                 line-height:1!important;
-                letter-spacing:0!important;
+                transform:translateY(-.2px)!important;
+            }
+            #tab-shifts .shift-v7-summary-metric strong{
+                color:var(--text-primary)!important;
+                font-size:10.25px!important;
+                font-weight:820!important;
+                line-height:1!important;
+                letter-spacing:-.015em!important;
                 font-variant-numeric:tabular-nums!important;
             }
-            #tab-shifts .shift-v6-summary-total .shift-v6-summary-value strong{
-                color:color-mix(in srgb,var(--text-primary) 88%,var(--accent) 12%)!important;
+            #tab-shifts .shift-v7-summary-metric > span{
+                color:color-mix(in srgb,var(--text-secondary) 88%,var(--text-muted) 12%)!important;
+                font-size:7.25px!important;
+                font-weight:660!important;
+                line-height:1!important;
+                letter-spacing:.012em!important;
+                text-transform:none!important;
             }
-            #tab-shifts .shift-v6-summary-available{
-                padding-right:4px!important;
+            #tab-shifts .shift-v7-summary-total strong{
+                color:color-mix(in srgb,var(--text-primary) 86%,var(--accent) 14%)!important;
             }
-            #tab-shifts .shift-v6-summary-available .shift-v6-summary-name,
-            #tab-shifts .shift-v6-summary-available .shift-v6-summary-value{
+            #tab-shifts .shift-v7-summary-available > span{
                 color:var(--text-muted)!important;
             }
-            #tab-shifts .shift-v6-summary-divider{
-                height:28px!important;
-                margin:0 5px 0 4px!important;
-                opacity:.72!important;
+            #tab-shifts .shift-v7-summary-divider{
+                height:27px!important;
+                margin:0 5px 0 5px!important;
+                opacity:.70!important;
             }
 
-            /* Mecha Ivory translation: frozen datum language, restrained material. */
-            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-title,
-            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-title{
+            /* Mecha Ivory translation — quiet datum hierarchy, no decorative material. */
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-title,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-title{
                 color:#7f8988!important;
             }
-            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-name,
-            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-name{
-                color:#586467!important;
-            }
-            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-value,
-            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-value{
-                color:#8a9391!important;
-            }
-            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-value strong,
-            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-value strong{
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-metric strong,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-metric strong{
                 color:#2d383c!important;
             }
-            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-total .shift-v6-summary-value strong,
-            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-total .shift-v6-summary-value strong{
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-total strong,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-total strong{
                 color:#416a73!important;
             }
-            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-item + .shift-v6-summary-item::before,
-            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v6-summary-item + .shift-v6-summary-item::before{
-                background:rgba(45,56,60,.20)!important;
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-metric > span,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-metric > span{
+                color:#657073!important;
+            }
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-metric + .shift-v7-summary-metric::before,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v7-summary-metric + .shift-v7-summary-metric::before{
+                color:rgba(45,56,60,.32)!important;
             }
 
-            /* Venom remains restrained: no neon chips, accent only as a tiny numeric cue. */
-            html[data-theme="dark"][data-theme-variant="venom"] #tab-shifts .shift-v6-summary-total .shift-v6-summary-value strong{
-                color:color-mix(in srgb,#f5f7f4 82%,#44d62c 18%)!important;
+            /* Venom remains restrained; only Total gets a minor identity cue. */
+            html[data-theme="dark"][data-theme-variant="venom"] #tab-shifts .shift-v7-summary-total strong{
+                color:color-mix(in srgb,#f5f7f4 84%,#44d62c 16%)!important;
             }
 
             @media (max-width:1400px){
-                #tab-shifts .shift-v6-inline-summary{max-width:min(57vw,760px)!important;}
-                #tab-shifts .shift-v6-summary-item{padding-inline:11px!important;}
+                #tab-shifts .shift-v7-inline-summary{max-width:min(60vw,800px)!important;}
+                #tab-shifts .shift-v7-summary-metric + .shift-v7-summary-metric::before{margin-inline:7px!important;}
             }
             @media (max-width:1180px){
-                #tab-shifts .shift-v6-inline-summary{max-width:calc(100vw - 390px)!important;}
+                #tab-shifts .shift-v7-inline-summary{max-width:calc(100vw - 390px)!important;}
             }
             @media (max-width:820px){
-                #tab-shifts .shift-v6-inline-summary{
+                #tab-shifts .shift-v7-inline-summary{
                     max-width:100%!important;width:100%!important;flex:1 1 100%!important;order:-1!important;
                 }
-                #tab-shifts .shift-v6-summary-divider{display:none!important;}
+                #tab-shifts .shift-v7-summary-divider{display:none!important;}
             }
         `;
         document.head.appendChild(style);
     }
 
-    renderShiftPage = function candidateV6RenderShiftPage(previousCardLayout = null){
-        const result = baseRenderShiftPageV6(previousCardLayout);
-        injectStylesV6();
-        applySummaryV6();
+    renderShiftPage = function candidateV7RenderShiftPage(previousCardLayout = null){
+        const result = baseRenderShiftPageV7(previousCardLayout);
+        injectStylesV7();
+        applySummaryV7();
         return result;
     };
 
-    injectStylesV6();
+    injectStylesV7();
     const initial = () => {
-        if (document.querySelector('#shiftsContent .shift-workspace-chrome')) applySummaryV6();
+        if (document.querySelector('#shiftsContent .shift-workspace-chrome')) applySummaryV7();
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initial, {once:true});
     else initial();
 
-    window.DDTShiftCandidateV6 = Object.freeze({ version:'v6', apply:applySummaryV6 });
+    window.DDTShiftCandidateV7 = Object.freeze({ version:'v7', apply:applySummaryV7 });
 })();
 </script>
 
