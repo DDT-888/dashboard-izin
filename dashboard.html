@@ -96880,5 +96880,350 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 
 </script>
+<!-- DDT Shift Candidate 3 — live-test presentation refinement -->
+<script id="ddt-shift-active-draft-candidate-v3-refinement">
+(function DDTShiftActiveDraftCandidateV3Refinement(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V3__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V3__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v3-refinement';
+    const baseRenderShiftPageV3 = typeof renderShiftPage === 'function' ? renderShiftPage : null;
+    if (!baseRenderShiftPageV3) return;
+
+    function workspaceMode(){
+        try { return window.DDTShiftCandidate?.getMode?.() === 'draft' ? 'draft' : 'active'; }
+        catch (_) { return 'active'; }
+    }
+
+    function canEdit(){
+        try { return typeof canEditShift === 'function' ? Boolean(canEditShift()) : false; }
+        catch (_) { return false; }
+    }
+
+    function currentPeriodV3(){
+        try { return activeShiftPeriod || null; }
+        catch (_) { return null; }
+    }
+
+    function formatPeriodV3(period){
+        let normalized = period;
+        try {
+            if (typeof normalizeShiftPeriod === 'function') normalized = normalizeShiftPeriod(period) || period;
+        } catch (_) {}
+        if (!normalized?.start || !normalized?.end) return 'Belum ditentukan';
+        const toParts = value => {
+            const [year, month, day] = String(value).split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            return {
+                day: String(day).padStart(2,'0'),
+                month: date.toLocaleDateString('id-ID',{month:'short'}).replace('.',''),
+                year: String(year)
+            };
+        };
+        const a = toParts(normalized.start), b = toParts(normalized.end);
+        if (normalized.start === normalized.end) return `${a.day} ${a.month} ${a.year}`;
+        if (a.year === b.year && a.month === b.month) return `${a.day} — ${b.day} ${b.month} ${b.year}`;
+        if (a.year === b.year) return `${a.day} ${a.month} — ${b.day} ${b.month} ${b.year}`;
+        return `${a.day} ${a.month} ${a.year} — ${b.day} ${b.month} ${b.year}`;
+    }
+
+    function dateEditorMarkup(iso, label){
+        if (typeof employeeSegmentedDateMarkup === 'function') {
+            return employeeSegmentedDateMarkup(iso || '', label);
+        }
+        const value = (() => {
+            try { return typeof employeeLifecycleDateToInput === 'function' ? employeeLifecycleDateToInput(iso || '') : ''; }
+            catch (_) { return ''; }
+        })();
+        return `<span class="employee-segmented-date-control"><input class="employee-inline-editor employee-segmented-date-value shift-v3-date-fallback" type="text" inputmode="numeric" maxlength="10" value="${value}" placeholder="DD/MM/YYYY" aria-label="${label}" /></span>`;
+    }
+
+    function readDateControl(control, label){
+        if (!control) return null;
+        const hidden = control.querySelector('.employee-segmented-date-value, .employee-inline-editor');
+        if (typeof employeeLifecycleReadDateInput === 'function') {
+            return employeeLifecycleReadDateInput(hidden, label);
+        }
+        const raw = String(hidden?.value || '').trim();
+        const match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (!match) return null;
+        const [,dd,mm,yyyy] = match;
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    async function commitPeriodV3(editor){
+        if (!editor || editor.dataset.saving === 'true') return;
+        const controls = editor.querySelectorAll('.employee-segmented-date-control');
+        const start = readDateControl(controls[0], 'Tanggal mulai periode');
+        const end = readDateControl(controls[1], 'Tanggal akhir periode');
+        if (!start || !end) return;
+        if (start > end) {
+            if (typeof showShiftToast === 'function') showShiftToast('Tanggal mulai tidak boleh melewati tanggal akhir.', 'warning', 2600);
+            return;
+        }
+
+        editor.dataset.saving = 'true';
+        const save = editor.querySelector('.shift-v3-period-save');
+        if (save) save.disabled = true;
+        try {
+            activeShiftPeriod = {
+                start,
+                end,
+                source: workspaceMode() === 'draft' ? 'draft' : 'active'
+            };
+            try { shiftIsDirty = true; shiftSaveQueued = true; } catch (_) {}
+            try { cachePendingShiftDraft?.(); } catch (_) {}
+            const saved = await updateShiftActive('PERIOD');
+            if (saved && typeof showShiftToast === 'function') showShiftToast('Periode Shift diperbarui.', 'success', 1800);
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Gagal menyimpan periode`, error);
+            if (typeof showShiftToast === 'function') showShiftToast(`Gagal menyimpan periode: ${error.message}`, 'error', 3200);
+        } finally {
+            renderShiftPage();
+        }
+    }
+
+    function openPeriodEditorV3(context){
+        if (!context || !canEdit() || context.querySelector('.shift-v3-period-editor')) return;
+        const period = currentPeriodV3();
+        context.innerHTML = `
+            <span class="shift-v3-period-editor employee-inline-cell employee-inline-cell-editing" data-shift-period-editor="true">
+                <span class="shift-v3-period-control shift-v3-period-start">${dateEditorMarkup(period?.start || '', 'Tanggal mulai periode')}</span>
+                <span class="shift-v3-period-range" aria-hidden="true">—</span>
+                <span class="shift-v3-period-control shift-v3-period-end">${dateEditorMarkup(period?.end || '', 'Tanggal akhir periode')}</span>
+                <span class="employee-inline-edit-actions shift-v3-period-actions">
+                    <button class="save shift-v3-period-save" type="button" aria-label="Simpan periode">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                    </button>
+                </span>
+            </span>`;
+
+        const editor = context.querySelector('.shift-v3-period-editor');
+        const save = editor?.querySelector('.shift-v3-period-save');
+        save?.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            commitPeriodV3(editor);
+        });
+        editor?.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                renderShiftPage();
+                return;
+            }
+            if (event.key === 'Enter' && !event.target.closest?.('.employee-date-picker-button')) {
+                event.preventDefault();
+                commitPeriodV3(editor);
+            }
+        });
+        const firstDay = editor?.querySelector('.shift-v3-period-start .employee-date-segment-day, .shift-v3-period-start .shift-v3-date-fallback');
+        firstDay?.focus?.();
+        firstDay?.select?.();
+    }
+
+    function buildInlineSummaryV3(){
+        let columns = [];
+        let available = [];
+        try { columns = Array.isArray(shiftColumns) ? shiftColumns : []; } catch (_) {}
+        try { available = Array.isArray(availableUsers) ? availableUsers : []; } catch (_) {}
+        const total = available.length + columns.reduce((sum,col) => sum + (Array.isArray(col?.users) ? col.users.length : 0), 0);
+        const items = [
+            `<span class="shift-v3-summary-item total"><small>TOTAL</small><strong>${total}</strong></span>`,
+            ...columns.map((col,index) => `<span class="shift-v3-summary-item"><small>${String(col?.name || `SHIFT ${index+1}`).toUpperCase()}</small><strong>${Array.isArray(col?.users) ? col.users.length : 0}</strong></span>`),
+            `<span class="shift-v3-summary-item staff"><small>DATA STAFF</small><strong>${available.length}</strong></span>`
+        ];
+        return `<div class="shift-v3-inline-summary" aria-label="Summary Shift"><span class="shift-v3-summary-title">SUMMARY</span>${items.join('<span class="shift-v3-summary-dot" aria-hidden="true"></span>')}</div>`;
+    }
+
+    function applyV3Presentation(){
+        const container = document.getElementById('shiftsContent');
+        const chrome = container?.querySelector('.shift-workspace-chrome');
+        if (!container || !chrome) return;
+        const mode = workspaceMode();
+
+        const context = chrome.querySelector('.shift-workspace-context');
+        if (context && !context.querySelector('.shift-v3-period-editor')) {
+            context.classList.add('shift-v3-period-context');
+            context.innerHTML = `
+                <span class="shift-v3-period-title">${mode === 'draft' ? 'DRAFT SHIFT' : 'SHIFT AKTIF'}</span>
+                <span class="shift-workspace-period-value shift-v3-period-value" data-shift-v3-period-value>${formatPeriodV3(currentPeriodV3())}</span>`;
+            context.querySelector('[data-shift-v3-period-value]')?.addEventListener('dblclick', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                openPeriodEditorV3(context);
+            });
+        }
+
+        const actions = chrome.querySelector('.shift-header-right');
+        if (actions) {
+            actions.querySelectorAll('.shift-v3-inline-summary, .shift-v3-summary-divider').forEach(node => node.remove());
+            const utilities = [...actions.querySelectorAll('.shift-workspace-icon-action')].slice(0,4);
+            utilities.forEach(button => {
+                button.classList.remove('action-primary','action-danger','action-neutral');
+                button.classList.add('shift-v3-utility-action');
+            });
+            actions.insertAdjacentHTML('afterbegin', `${buildInlineSummaryV3()}<span class="shift-workspace-action-divider shift-v3-summary-divider" aria-hidden="true"></span>`);
+        }
+
+        const support = document.getElementById('shiftSupportRowCandidateV2');
+        const log = document.getElementById('shiftLogContainer');
+        support?.querySelector('.shift-support-summary')?.remove();
+        if (support) {
+            support.classList.add('shift-v3-log-only');
+            support.classList.toggle('shift-v3-draft-no-log', mode === 'draft');
+        }
+        if (log) log.style.display = mode === 'draft' ? 'none' : 'block';
+    }
+
+    function injectV3Styles(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* Candidate 3 refinement — presentation only; SHIFT table headers remain untouched. */
+            #tab-shifts .shift-workspace-left-rail{gap:18px!important;}
+            #tab-shifts .shift-workspace-context.shift-v3-period-context{
+                display:inline-flex!important;align-items:baseline!important;gap:8px!important;min-width:0!important;
+                padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;
+            }
+            #tab-shifts .shift-v3-period-title{
+                color:var(--text-muted);font-size:7.5px;font-weight:820;letter-spacing:.095em;line-height:1;
+                white-space:nowrap;text-transform:uppercase;
+            }
+            #tab-shifts .shift-v3-period-value{
+                color:var(--text-primary);font-size:9.6px;font-weight:720;line-height:1.15;letter-spacing:.005em;
+                white-space:nowrap;cursor:default;user-select:none;
+            }
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v3-period-title,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v3-period-title{color:#788281;}
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v3-period-value,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v3-period-value{color:#2d383c;}
+
+            #tab-shifts .shift-v3-period-editor{
+                display:inline-flex!important;align-items:center!important;gap:5px!important;min-width:0!important;
+                padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;
+            }
+            #tab-shifts .shift-v3-period-control{display:inline-flex;align-items:center;min-width:0;}
+            #tab-shifts .shift-v3-period-editor .employee-segmented-date-control{
+                grid-template-columns:max-content 22px!important;gap:2px!important;width:max-content!important;min-width:0!important;justify-content:start!important;
+            }
+            #tab-shifts .shift-v3-period-editor .employee-date-segments{
+                display:grid!important;grid-template-columns:22px 7px 22px 7px 42px!important;gap:0!important;width:max-content!important;
+                min-width:0!important;height:28px!important;padding:0 4px!important;border:1px solid var(--border-color)!important;border-radius:7px!important;
+                background:var(--bg-card)!important;box-shadow:none!important;overflow:visible!important;
+            }
+            #tab-shifts .shift-v3-period-editor .employee-date-segment{
+                width:100%!important;height:26px!important;min-width:0!important;margin:0!important;padding:0!important;border:0!important;
+                border-radius:0!important;background:transparent!important;box-shadow:none!important;outline:0!important;color:var(--text-primary)!important;
+                text-align:center!important;font:inherit!important;font-size:10px!important;font-weight:700!important;line-height:26px!important;letter-spacing:0!important;
+            }
+            #tab-shifts .shift-v3-period-editor .employee-date-separator{width:7px!important;min-width:7px!important;text-align:center!important;color:var(--text-muted)!important;font-size:10px!important;}
+            #tab-shifts .shift-v3-period-editor .employee-date-picker-button{
+                position:static!important;transform:none!important;width:22px!important;height:28px!important;min-width:22px!important;padding:0!important;
+                border:1px solid var(--border-color)!important;border-radius:7px!important;background:var(--bg-card)!important;color:var(--text-muted)!important;box-shadow:none!important;
+            }
+            #tab-shifts .shift-v3-period-editor .employee-date-picker-button:hover{color:var(--text-primary)!important;border-color:color-mix(in srgb,var(--accent) 30%,var(--border-color))!important;}
+            #tab-shifts .shift-v3-period-editor .employee-date-picker-button svg{width:11px!important;height:11px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;}
+            #tab-shifts .shift-v3-period-range{color:var(--text-muted);font-size:10px;font-weight:650;}
+            #tab-shifts .shift-v3-period-actions{display:inline-flex!important;align-items:center!important;margin:0 0 0 1px!important;}
+            #tab-shifts .shift-v3-period-save{
+                width:28px!important;height:28px!important;display:grid!important;place-items:center!important;padding:0!important;border:1px solid var(--border-color)!important;
+                border-radius:7px!important;background:var(--bg-card)!important;color:var(--text-secondary)!important;box-shadow:none!important;cursor:pointer!important;
+            }
+            #tab-shifts .shift-v3-period-save:hover:not(:disabled){color:var(--accent)!important;border-color:color-mix(in srgb,var(--accent) 38%,var(--border-color))!important;background:color-mix(in srgb,var(--accent-soft) 18%,var(--bg-card))!important;}
+            #tab-shifts .shift-v3-period-save svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+            /* Four utility buttons use one restrained neutral language. */
+            #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action{
+                color:var(--text-secondary)!important;background:color-mix(in srgb,var(--bg-card) 96%,var(--accent-soft))!important;
+                background-image:none!important;border:1px solid var(--border-color)!important;box-shadow:none!important;filter:none!important;
+            }
+            #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action:hover:not(:disabled){
+                color:var(--text-primary)!important;background:color-mix(in srgb,var(--accent-soft) 25%,var(--bg-card))!important;
+                border-color:color-mix(in srgb,var(--accent) 32%,var(--border-color))!important;box-shadow:none!important;filter:none!important;transform:translateY(-1px)!important;
+            }
+            #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action:disabled{opacity:.42!important;transform:none!important;}
+            html[data-theme="dark"][data-theme-variant="venom"] #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action{
+                color:#b7c2b4!important;background:#131613!important;border-color:#293329!important;box-shadow:none!important;
+            }
+            html[data-theme="dark"][data-theme-variant="venom"] #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action:hover:not(:disabled){
+                color:#e7f2e4!important;background:#171d17!important;border-color:#365238!important;
+            }
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action{
+                color:#5f696a!important;background:rgba(241,237,229,.40)!important;border-color:rgba(45,56,60,.16)!important;box-shadow:none!important;
+            }
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action:hover:not(:disabled),
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-workspace-toolbar-slot .btn-shift.shift-workspace-icon-action.shift-v3-utility-action:hover:not(:disabled){
+                color:#2d383c!important;background:rgba(222,219,212,.64)!important;border-color:rgba(74,137,151,.26)!important;
+            }
+
+            /* Compact inline summary: Mecha-inspired datum rhythm, no card clutter. */
+            #tab-shifts .shift-v3-inline-summary{
+                min-width:0;max-width:min(45vw,520px);height:34px;display:flex;align-items:center;gap:7px;overflow-x:auto;overflow-y:hidden;
+                white-space:nowrap;scrollbar-width:none;color:var(--text-secondary);padding:0 1px;
+            }
+            #tab-shifts .shift-v3-inline-summary::-webkit-scrollbar{display:none;width:0;height:0;}
+            #tab-shifts .shift-v3-summary-title{font-size:6.4px;font-weight:820;letter-spacing:.13em;color:var(--text-muted);}
+            #tab-shifts .shift-v3-summary-item{display:inline-flex;align-items:baseline;gap:3px;min-width:0;}
+            #tab-shifts .shift-v3-summary-item small{max-width:88px;overflow:hidden;text-overflow:ellipsis;font-size:6.8px;font-weight:730;letter-spacing:.035em;color:var(--text-muted);}
+            #tab-shifts .shift-v3-summary-item strong{font-size:9.7px;font-weight:790;line-height:1;color:var(--text-primary);font-variant-numeric:tabular-nums;}
+            #tab-shifts .shift-v3-summary-dot{width:2px;height:2px;flex:0 0 2px;border-radius:50%;background:var(--border-color);}
+            #tab-shifts .shift-v3-summary-divider{height:22px!important;margin:0 4px 0 2px!important;opacity:.78!important;}
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v3-summary-title,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v3-summary-title{color:#788281;}
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v3-summary-item small,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v3-summary-item small{color:#788281;}
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v3-summary-item strong,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v3-summary-item strong{color:#2d383c;}
+            html[data-mi-frozen-presentation="mecha-ivory"] #tab-shifts .shift-v3-summary-dot,
+            html[data-mi-native-presentation="mecha-ivory"] #tab-shifts .shift-v3-summary-dot{background:rgba(45,56,60,.24);}
+
+            #tab-shifts #shiftSupportRowCandidateV2.shift-v3-log-only{display:block!important;width:100%!important;margin-top:8px!important;}
+            #tab-shifts #shiftSupportRowCandidateV2.shift-v3-log-only .shift-log-container{width:100%!important;margin:0!important;}
+            #tab-shifts #shiftSupportRowCandidateV2.shift-v3-draft-no-log{display:none!important;margin:0!important;}
+
+            @media (max-width:1180px){
+                #tab-shifts .shift-workspace-chrome{flex-wrap:wrap!important;}
+                #tab-shifts .shift-workspace-toolbar-slot{flex:1 1 100%!important;width:100%!important;}
+                #tab-shifts .shift-workspace-toolbar-slot .shift-header-right{width:100%!important;}
+                #tab-shifts .shift-v3-inline-summary{max-width:calc(100% - 220px);margin-right:auto;}
+            }
+            @media (max-width:760px){
+                #tab-shifts .shift-workspace-left-rail{gap:10px!important;}
+                #tab-shifts .shift-workspace-context.shift-v3-period-context{width:100%;}
+                #tab-shifts .shift-v3-inline-summary{max-width:100%;flex:1 1 100%;order:-1;height:auto;min-height:28px;}
+                #tab-shifts .shift-v3-summary-divider{display:none!important;}
+                #tab-shifts .shift-workspace-toolbar-slot .shift-header-right{flex-wrap:wrap!important;}
+                #tab-shifts .shift-v3-period-editor{flex-wrap:wrap!important;}
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    renderShiftPage = function candidateV3RenderShiftPage(previousCardLayout = null){
+        const result = baseRenderShiftPageV3(previousCardLayout);
+        injectV3Styles();
+        applyV3Presentation();
+        return result;
+    };
+
+    injectV3Styles();
+    const initial = () => {
+        if (document.querySelector('#shiftsContent .shift-workspace-chrome')) applyV3Presentation();
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initial, {once:true});
+    else initial();
+
+    window.DDTShiftCandidateV3 = Object.freeze({
+        version:'v3',
+        apply:applyV3Presentation,
+        editPeriod:openPeriodEditorV3
+    });
+})();
+</script>
+
 </body>
 </html>
