@@ -101963,5 +101963,262 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 21 — History role visual parity + quiet same-column no-op -->
+<script id="ddt-shift-active-draft-candidate-v21-refinement">
+(function DDTShiftActiveDraftCandidateV21Refinement(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V21__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V21__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v21-refinement';
+
+    /* ================================================================
+       SHIFT KERJA — QUIET SAME-COLUMN NO-OP
+       Suppress only the exact informational toast requested by authority.
+       Error/warning/duplicate-data feedback remains untouched.
+       ================================================================ */
+    if (typeof showShiftToast === 'function' && !window.__DDT_SHIFT_SAME_COLUMN_TOAST_V21__) {
+        window.__DDT_SHIFT_SAME_COLUMN_TOAST_V21__ = true;
+        const baseShowShiftToastV21 = showShiftToast;
+
+        showShiftToast = function candidateV21ShowShiftToast(message, type='info', duration=2000){
+            const clean = String(message || '')
+                .replace(/^\s*[✅❌⚠️ℹ️🔄]+\s*/u, '')
+                .trim();
+
+            if (
+                String(type || '').toLowerCase() === 'info' &&
+                /^Staff sudah berada di kolom ini$/i.test(clean)
+            ) {
+                return;
+            }
+
+            return baseShowShiftToastV21(message, type, duration);
+        };
+    }
+
+    /* ================================================================
+       RIWAYAT SHIFT READ ONLY — ROLE VISUAL PARITY
+       Reuse the exact Shift Kerja role language:
+       CS Line  #e65100 / orange
+       CS       #1565c0 / blue
+       Kapten   #6a1b9a / purple
+       Kasir    #00838f / teal
+       Card pastel/dark surfaces mirror Shift Kerja.
+       ================================================================ */
+    function decorateHistoryRoleCardsV21(root=document){
+        root.querySelectorAll?.('.history-detail-v19-user').forEach(card => {
+            card.classList.remove(
+                'history-role-csline',
+                'history-role-cs',
+                'history-role-kapten',
+                'history-role-kasir'
+            );
+
+            const badge = card.querySelector('.history-detail-v19-role');
+            if (!badge) return;
+
+            const role = ['csline','cs','kapten','kasir'].find(
+                value => badge.classList.contains(`role-${value}`)
+            );
+            if (!role) return;
+
+            card.classList.add(`history-role-${role}`);
+        });
+    }
+
+    const baseOpenShiftFromHistoryV21 =
+        typeof openShiftFromHistory === 'function' ? openShiftFromHistory : null;
+
+    if (baseOpenShiftFromHistoryV21) {
+        openShiftFromHistory = async function candidateV21OpenShiftFromHistory(historyId){
+            const result = await baseOpenShiftFromHistoryV21(historyId);
+
+            requestAnimationFrame(() => {
+                decorateHistoryRoleCardsV21(
+                    document.getElementById('shiftHistoryDetailModalV19') || document
+                );
+            });
+
+            window.setTimeout(() => {
+                decorateHistoryRoleCardsV21(
+                    document.getElementById('shiftHistoryDetailModalV19') || document
+                );
+            }, 60);
+
+            return result;
+        };
+        window.openShiftFromHistory = openShiftFromHistory;
+    }
+
+    const observerV21 = new MutationObserver(mutations => {
+        let relevant = false;
+        for (const mutation of mutations) {
+            if (
+                mutation.target?.id === 'shiftHistoryDetailContentV19' ||
+                mutation.target?.closest?.('#shiftHistoryDetailModalV19')
+            ) {
+                relevant = true;
+                break;
+            }
+        }
+        if (relevant) {
+            decorateHistoryRoleCardsV21(
+                document.getElementById('shiftHistoryDetailModalV19') || document
+            );
+        }
+    });
+
+    function startObserverV21(){
+        const modal = document.getElementById('shiftHistoryDetailModalV19');
+        if (modal) {
+            observerV21.observe(modal, {childList:true, subtree:true});
+            decorateHistoryRoleCardsV21(modal);
+            return;
+        }
+
+        const bodyObserver = new MutationObserver(() => {
+            const found = document.getElementById('shiftHistoryDetailModalV19');
+            if (!found) return;
+            bodyObserver.disconnect();
+            observerV21.observe(found, {childList:true, subtree:true});
+            decorateHistoryRoleCardsV21(found);
+        });
+        bodyObserver.observe(document.body, {childList:true, subtree:false});
+    }
+
+    function injectStylesV21(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* ==========================================================
+               V21 — History Detail role visual parity with Shift Kerja
+               ========================================================== */
+
+            /* Role badge = exact Shift Kerja role colors. */
+            #shiftHistoryDetailModalV19 .history-detail-v19-role{
+                color:#fff!important;
+                border-color:transparent!important;
+                font-weight:600!important;
+                text-transform:uppercase!important;
+                letter-spacing:.3px!important;
+            }
+
+            #shiftHistoryDetailModalV19 .history-detail-v19-role.role-csline{
+                background:#e65100!important;
+            }
+            #shiftHistoryDetailModalV19 .history-detail-v19-role.role-cs{
+                background:#1565c0!important;
+            }
+            #shiftHistoryDetailModalV19 .history-detail-v19-role.role-kapten{
+                background:#6a1b9a!important;
+            }
+            #shiftHistoryDetailModalV19 .history-detail-v19-role.role-kasir{
+                background:#00838f!important;
+            }
+
+            /* Light / Legacy role cards mirror Shift Kerja pastel cards. */
+            html:not([data-mi-frozen-presentation="mecha-ivory"])
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-csline{
+                background:linear-gradient(135deg,#fff3e0,#ffe0b2)!important;
+                border-color:#e65100!important;
+            }
+
+            html:not([data-mi-frozen-presentation="mecha-ivory"])
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-cs{
+                background:linear-gradient(135deg,#e3f2fd,#bbdefb)!important;
+                border-color:#1565c0!important;
+            }
+
+            html:not([data-mi-frozen-presentation="mecha-ivory"])
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kapten{
+                background:linear-gradient(135deg,#f3e5f5,#ce93d8)!important;
+                border-color:#6a1b9a!important;
+            }
+
+            html:not([data-mi-frozen-presentation="mecha-ivory"])
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kasir{
+                background:linear-gradient(135deg,#e0f7fa,#80deea)!important;
+                border-color:#00838f!important;
+            }
+
+            /* Dark/Cyber mirrors the existing Shift Kerja dark role surfaces. */
+            html:not([data-mi-frozen-presentation="mecha-ivory"])
+            [data-theme="dark"]
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-csline{
+                background:linear-gradient(135deg,#3a2a1a,#4a3a2a)!important;
+                border-color:#e65100!important;
+            }
+
+            html:not([data-mi-frozen-presentation="mecha-ivory"])
+            [data-theme="dark"]
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-cs{
+                background:linear-gradient(135deg,#1a2a3a,#1a3a4a)!important;
+                border-color:#1565c0!important;
+            }
+
+            html:not([data-mi-frozen-presentation="mecha-ivory"])
+            [data-theme="dark"]
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kapten{
+                background:linear-gradient(135deg,#2a1a3a,#3a1a4a)!important;
+                border-color:#6a1b9a!important;
+            }
+
+            html:not([data-mi-frozen-presentation="mecha-ivory"])
+            [data-theme="dark"]
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kasir{
+                background:linear-gradient(135deg,#1a3a3a,#1a4a4a)!important;
+                border-color:#00838f!important;
+            }
+
+            /*
+             * Mecha Ivory keeps its material surface restrained while the
+             * badge itself remains the exact role color authority.
+             */
+            html[data-mi-frozen-presentation="mecha-ivory"]
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-csline{
+                border-color:rgba(230,81,0,.36)!important;
+                background:linear-gradient(135deg,rgba(230,81,0,.06),rgba(248,246,239,.96))!important;
+            }
+            html[data-mi-frozen-presentation="mecha-ivory"]
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-cs{
+                border-color:rgba(21,101,192,.34)!important;
+                background:linear-gradient(135deg,rgba(21,101,192,.055),rgba(248,246,239,.96))!important;
+            }
+            html[data-mi-frozen-presentation="mecha-ivory"]
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kapten{
+                border-color:rgba(106,27,154,.32)!important;
+                background:linear-gradient(135deg,rgba(106,27,154,.05),rgba(248,246,239,.96))!important;
+            }
+            html[data-mi-frozen-presentation="mecha-ivory"]
+            #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kasir{
+                border-color:rgba(0,131,143,.34)!important;
+                background:linear-gradient(135deg,rgba(0,131,143,.055),rgba(248,246,239,.96))!important;
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    injectStylesV21();
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserverV21, {once:true});
+    } else {
+        startObserverV21();
+    }
+
+    window.DDTShiftCandidateV21 = Object.freeze({
+        version:'v21',
+        scope:'history-role-visual + same-column-toast-only',
+        preview:'untouched',
+        decorateHistoryRoleCards:decorateHistoryRoleCardsV21
+    });
+})();
+</script>
+
 </body>
 </html>
