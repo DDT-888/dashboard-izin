@@ -100321,5 +100321,905 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 18 — Save confirmation authority -->
+<script id="ddt-shift-active-draft-candidate-v18-save-confirmation">
+(function DDTShiftActiveDraftCandidateV18SaveConfirmation(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V18__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V18__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v18-save-confirmation';
+    const baseRenderShiftPageV18 =
+        typeof renderShiftPage === 'function' ? renderShiftPage : null;
+
+    let confirmationBusyV18 = false;
+
+    function workspaceModeV18(){
+        try {
+            return window.DDTShiftCandidate?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    async function confirmAndSaveV18(button){
+        if (confirmationBusyV18) return;
+
+        const mode = workspaceModeV18();
+        const isDraft = mode === 'draft';
+        const label = isDraft ? 'Draft Shift' : 'Shift Aktif';
+
+        confirmationBusyV18 = true;
+
+        try {
+            const confirmed = await requestPremiumConfirmation({
+                title: `Simpan ${label}`,
+                message:
+                    `Simpan kondisi ${label} terbaru sebagai snapshot baru di Riwayat Shift?`,
+                note:
+                    isDraft
+                        ? 'Draft tetap realtime dan tidak memengaruhi Shift Aktif. Periode yang sama tetap akan dibuat sebagai riwayat baru.'
+                        : 'Shift Aktif tetap realtime. Periode yang sama tetap akan dibuat sebagai riwayat baru.',
+                confirmText: 'Ya, Simpan',
+                variant: 'primary'
+            });
+
+            if (!confirmed) return;
+
+            if (!window.DDTShiftCandidateV17?.saveWorkspaceToHistory) {
+                throw new Error('Authority Simpan V17 tidak tersedia.');
+            }
+
+            await window.DDTShiftCandidateV17.saveWorkspaceToHistory(button);
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Confirmation/save gagal:`, error);
+            try {
+                showShiftToast(
+                    `Gagal menyimpan ${label}: ${error.message}`,
+                    'error',
+                    3600
+                );
+            } catch (_) {}
+        } finally {
+            confirmationBusyV18 = false;
+        }
+    }
+
+    function bindSaveConfirmationV18(){
+        const saveButton = document.querySelector(
+            '#tab-shifts .shift-workspace-toolbar-slot ' +
+            'button[data-tooltip="Simpan Shift Aktif"],' +
+            '#tab-shifts .shift-workspace-toolbar-slot ' +
+            'button[data-tooltip="Simpan Draft Shift"]'
+        );
+
+        if (!saveButton) return;
+
+        saveButton.onclick = event => {
+            event.preventDefault();
+            event.stopPropagation();
+            return confirmAndSaveV18(event.currentTarget);
+        };
+
+        saveButton.dataset.v18SaveAuthority = 'confirm-before-history-snapshot';
+    }
+
+    if (baseRenderShiftPageV18) {
+        renderShiftPage = function candidateV18RenderShiftPage(previousCardLayout = null){
+            const result = baseRenderShiftPageV18(previousCardLayout);
+            bindSaveConfirmationV18();
+            return result;
+        };
+    }
+
+    function initialV18(){
+        bindSaveConfirmationV18();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialV18, { once:true });
+    } else {
+        initialV18();
+    }
+
+    window.DDTShiftCandidateV18 = Object.freeze({
+        version:'v18',
+        authority:'Save button requires confirmation before history snapshot',
+        confirmAndSave:confirmAndSaveV18
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 19 — History Detail + Safe Load -->
+<script id="ddt-shift-active-draft-candidate-v19-history-detail">
+(function DDTShiftActiveDraftCandidateV19HistoryDetail(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V19__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V19__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v19-history-detail';
+    const baseRenderShiftHistoryV19 =
+        typeof renderShiftHistory === 'function' ? renderShiftHistory : null;
+
+    let historyDetailRecordV19 = null;
+    let historyDetailPayloadV19 = null;
+    let historyLoadBusyV19 = false;
+
+    function escapeV19(value){
+        const div = document.createElement('div');
+        div.textContent = String(value ?? '');
+        return div.innerHTML;
+    }
+
+    function userNameV19(){
+        try {
+            return (typeof getCurrentUserName === 'function' && getCurrentUserName()) || 'System';
+        } catch (_) {
+            return 'System';
+        }
+    }
+
+    function clientIdV19(){
+        try {
+            return String(shiftClientSessionId || 'candidate-v19');
+        } catch (_) {
+            return 'candidate-v19';
+        }
+    }
+
+    function canEditV19(){
+        try {
+            return typeof canEditShift === 'function' && Boolean(canEditShift());
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function roleLabelV19(role){
+        return {
+            csline:'CS Line',
+            cs:'CS',
+            kapten:'Kapten',
+            kasir:'Kasir'
+        }[String(role || 'cs').toLowerCase()] || String(role || 'CS');
+    }
+
+    function roleClassV19(role){
+        const value = String(role || 'cs').toLowerCase();
+        return ['csline','cs','kapten','kasir'].includes(value) ? value : 'cs';
+    }
+
+    function normalizePeriodV19(record, payload){
+        const embedded = payload?.period;
+        if (embedded?.start && embedded?.end) {
+            return { start:String(embedded.start), end:String(embedded.end) };
+        }
+        return {
+            start:String(record?.periode_start || record?.tanggal || ''),
+            end:String(record?.periode_end || record?.periode_start || record?.tanggal || '')
+        };
+    }
+
+    function longPeriodV19(record, payload){
+        const period = normalizePeriodV19(record, payload);
+        if (!period.start || !period.end) return 'Periode belum ditentukan';
+
+        const part = value => {
+            const [y,m,d] = value.split('-').map(Number);
+            const date = new Date(y, m - 1, d);
+            return {
+                day:String(d).padStart(2,'0'),
+                month:date.toLocaleDateString('id-ID',{month:'long'}),
+                year:String(y)
+            };
+        };
+        const a = part(period.start);
+        const b = part(period.end);
+
+        if (period.start === period.end) return `${a.day} ${a.month} ${a.year}`;
+        if (a.year === b.year && a.month === b.month) {
+            return `${a.day} — ${b.day} ${b.month} ${b.year}`;
+        }
+        if (a.year === b.year) {
+            return `${a.day} ${a.month} — ${b.day} ${b.month} ${b.year}`;
+        }
+        return `${a.day} ${a.month} ${a.year} — ${b.day} ${b.month} ${b.year}`;
+    }
+
+    async function getHistoryRecordV19(historyId){
+        let item = Array.isArray(shiftHistoryData)
+            ? shiftHistoryData.find(row => String(row.id) === String(historyId))
+            : null;
+
+        if (item?.shift_data) return item;
+
+        const { data, error } = await supabaseDashboard
+            .from('shift_history')
+            .select('id,tanggal,periode_start,periode_end,shift_data,created_at,created_by,updated_by,notes')
+            .eq('id', historyId)
+            .maybeSingle();
+
+        if (error) throw error;
+        if (!data) throw new Error('Data Riwayat Shift tidak ditemukan.');
+        return data;
+    }
+
+    function parseHistoryPayloadV19(record){
+        if (typeof parseShiftHistoryPayload === 'function') {
+            return parseShiftHistoryPayload(record.shift_data);
+        }
+        let parsed = record.shift_data;
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        if (!Array.isArray(parsed?.columns)) {
+            throw new Error('Payload Riwayat Shift tidak valid.');
+        }
+        return parsed;
+    }
+
+    function currentEligibleUsersV19(){
+        try {
+            const allowed = new Set(['csline','cs','kapten','kasir']);
+            return (Array.isArray(listUsers) ? listUsers : [])
+                .filter(user =>
+                    String(user?.status || 'active').toLowerCase() === 'active' &&
+                    allowed.has(String(user?.role || '').toLowerCase())
+                )
+                .map(user => ({...user, note:''}));
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function deriveDataStaffV19(payload){
+        const assigned = new Set();
+        (payload?.columns || []).forEach(column => {
+            (column.users || []).forEach(user => assigned.add(String(user.id)));
+        });
+        return currentEligibleUsersV19()
+            .filter(user => !assigned.has(String(user.id)))
+            .sort((a,b) => String(a.name || '').localeCompare(String(b.name || ''), 'id'));
+    }
+
+    function staffRowV19(user){
+        const role = roleClassV19(user?.role);
+        const note = String(user?.note || '').trim();
+        const name = String(user?.name || 'USER');
+
+        return `
+            <div class="history-detail-v19-user">
+                <div class="history-detail-v19-user-main">
+                    <strong title="${escapeV19(name)}">${escapeV19(name)}</strong>
+                    ${note ? `<small title="${escapeV19(note)}">${escapeV19(note)}</small>` : ''}
+                </div>
+                <span class="history-detail-v19-role role-${role}">
+                    ${escapeV19(roleLabelV19(role))}
+                </span>
+            </div>
+        `;
+    }
+
+    function columnV19(column, index){
+        const users = Array.isArray(column?.users) ? column.users : [];
+        return `
+            <section class="history-detail-v19-column">
+                <header class="history-detail-v19-column-head">
+                    <span class="history-detail-v19-count">${users.length}</span>
+                    <strong title="${escapeV19(column?.name || `SHIFT ${index + 1}`)}">
+                        ${escapeV19(column?.name || `SHIFT ${index + 1}`)}
+                    </strong>
+                </header>
+                <div class="history-detail-v19-list">
+                    ${users.length
+                        ? users.map(staffRowV19).join('')
+                        : '<div class="history-detail-v19-empty">Belum ada staff</div>'
+                    }
+                </div>
+            </section>
+        `;
+    }
+
+    function dataStaffColumnV19(users){
+        return `
+            <section class="history-detail-v19-column history-detail-v19-data-staff">
+                <header class="history-detail-v19-column-head">
+                    <span class="history-detail-v19-count">${users.length}</span>
+                    <strong>DATA STAFF</strong>
+                </header>
+                <div class="history-detail-v19-list">
+                    ${users.length
+                        ? users.map(staffRowV19).join('')
+                        : '<div class="history-detail-v19-empty">Semua staff sudah ditempatkan</div>'
+                    }
+                </div>
+            </section>
+        `;
+    }
+
+    function ensureModalV19(){
+        let modal = document.getElementById('shiftHistoryDetailModalV19');
+        if (modal) return modal;
+
+        modal = document.createElement('div');
+        modal.id = 'shiftHistoryDetailModalV19';
+        modal.className = 'history-detail-v19-overlay';
+        modal.innerHTML = `
+            <div class="history-detail-v19-shell" role="dialog" aria-modal="true">
+                <div id="shiftHistoryDetailContentV19"></div>
+            </div>
+            <div class="history-load-v19-choice" id="shiftHistoryLoadChoiceV19" aria-hidden="true">
+                <div class="history-load-v19-choice-card">
+                    <span class="history-load-v19-kicker">LOAD DATA</span>
+                    <h3>Load data Riwayat ke</h3>
+                    <p>Pilih workspace tujuan. Data tidak berubah sebelum Anda mengonfirmasi pilihan.</p>
+                    <div class="history-load-v19-choice-actions">
+                        <button type="button" class="history-load-v19-target active-target" onclick="loadHistoryChoiceV19('active')">
+                            <strong>Shift Aktif</strong>
+                            <small>Backup Active saat ini, lalu ganti dengan Riwayat</small>
+                        </button>
+                        <button type="button" class="history-load-v19-target draft-target" onclick="loadHistoryChoiceV19('draft')">
+                            <strong>Draft Shift</strong>
+                            <small>Ganti Draft saja, Shift Aktif tidak berubah</small>
+                        </button>
+                    </div>
+                    <button type="button" class="history-load-v19-cancel" onclick="closeHistoryLoadChoiceV19()">Batal</button>
+                </div>
+            </div>
+        `;
+        modal.addEventListener('mousedown', event => {
+            if (event.target === modal) closeHistoryDetailV19();
+        });
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    function renderDetailV19(record, payload){
+        const modal = ensureModalV19();
+        const content = modal.querySelector('#shiftHistoryDetailContentV19');
+        const columns = Array.isArray(payload?.columns) ? payload.columns : [];
+        const dataStaff = deriveDataStaffV19(payload);
+        const assigned = columns.reduce((sum,col) => sum + (col.users?.length || 0), 0);
+        const total = assigned + dataStaff.length;
+        const period = longPeriodV19(record, payload);
+
+        content.innerHTML = `
+            <header class="history-detail-v19-top">
+                <div class="history-detail-v19-context">
+                    <span class="history-detail-v19-kicker">RIWAYAT SHIFT · READ ONLY</span>
+                    <strong>${escapeV19(period)}</strong>
+                    <small>Snapshot #${escapeV19(record.id)} · ${escapeV19(record.updated_by || record.created_by || 'System')}</small>
+                </div>
+
+                <div class="history-detail-v19-summary">
+                    <span><small>TOTAL STAFF</small><strong>${total}</strong></span>
+                    ${columns.map(col => `<i></i><span><small>${escapeV19(String(col.name || 'SHIFT').replace(/^SHIFT\s+/i,''))}</small><strong>${col.users?.length || 0}</strong></span>`).join('')}
+                    <i></i><span><small>UNASSIGNED</small><strong>${dataStaff.length}</strong></span>
+                </div>
+
+                <div class="history-detail-v19-actions">
+                    ${canEditV19() ? '<button type="button" class="btn-shift action-primary history-detail-v19-load" onclick="openHistoryLoadChoiceV19()">Load</button>' : ''}
+                    <button type="button" class="btn-shift action-neutral" onclick="closeHistoryDetailV19()">Tutup</button>
+                </div>
+            </header>
+
+            <div class="history-detail-v19-body">
+                <div class="history-detail-v19-columns">
+                    ${dataStaffColumnV19(dataStaff)}
+                    ${columns.map(columnV19).join('')}
+                </div>
+            </div>
+
+            <footer class="history-detail-v19-footer">
+                <span>Mode Read Only — membuka data ini tidak mengubah Shift Aktif maupun Draft Shift.</span>
+            </footer>
+        `;
+
+        modal.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    async function openDetailV19(historyId){
+        try { hideHistoryActionTooltip?.(); } catch (_) {}
+
+        try {
+            const record = await getHistoryRecordV19(historyId);
+            const payload = parseHistoryPayloadV19(record);
+
+            historyDetailRecordV19 = record;
+            historyDetailPayloadV19 = payload;
+            renderDetailV19(record, payload);
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Gagal membuka History Detail:`, error);
+            showShiftToast(`Gagal membuka data Shift: ${error.message}`, 'error', 3600);
+        }
+    }
+
+    function closeDetailV19(){
+        const modal = document.getElementById('shiftHistoryDetailModalV19');
+        if (!modal) return;
+        closeLoadChoiceV19();
+        modal.classList.remove('is-open');
+        document.body.style.overflow = '';
+        historyDetailRecordV19 = null;
+        historyDetailPayloadV19 = null;
+    }
+
+    function openLoadChoiceV19(){
+        if (!historyDetailRecordV19 || historyLoadBusyV19) return;
+        const choice = document.getElementById('shiftHistoryLoadChoiceV19');
+        if (!choice) return;
+        choice.classList.add('is-open');
+        choice.setAttribute('aria-hidden','false');
+    }
+
+    function closeLoadChoiceV19(){
+        const choice = document.getElementById('shiftHistoryLoadChoiceV19');
+        if (!choice) return;
+        choice.classList.remove('is-open');
+        choice.setAttribute('aria-hidden','true');
+    }
+
+    async function navigateToLoadedWorkspaceV19(target){
+        closeDetailV19();
+        try {
+            if (typeof clearPendingShiftDraft === 'function') clearPendingShiftDraft();
+        } catch (_) {}
+
+        switchTab('shifts');
+
+        if (!window.DDTShiftCandidate) {
+            if (target === 'active' && typeof loadShiftActiveData === 'function') {
+                await loadShiftActiveData();
+            }
+            return;
+        }
+
+        const currentMode = window.DDTShiftCandidate.getMode?.() || 'active';
+
+        if (target === 'draft') {
+            if (currentMode !== 'draft') {
+                await window.DDTShiftCandidate.switchMode('draft');
+            } else {
+                await window.DDTShiftCandidate.fetchDraft?.();
+                renderShiftPage();
+            }
+        } else {
+            if (currentMode !== 'active') {
+                await window.DDTShiftCandidate.switchMode('active');
+            } else if (typeof loadShiftActiveData === 'function') {
+                await loadShiftActiveData();
+            } else {
+                renderShiftPage();
+            }
+        }
+    }
+
+    async function executeLoadV19(target){
+        if (!historyDetailRecordV19 || historyLoadBusyV19 || !canEditV19()) return;
+
+        const record = historyDetailRecordV19;
+        const period = longPeriodV19(record, historyDetailPayloadV19);
+        closeLoadChoiceV19();
+
+        const isActive = target === 'active';
+        const confirmed = await requestPremiumConfirmation({
+            title: isActive ? 'Load ke Shift Aktif' : 'Load ke Draft Shift',
+            message: isActive
+                ? `Load Riwayat Shift periode ${period} ke Shift Aktif?`
+                : `Load Riwayat Shift periode ${period} ke Draft Shift?`,
+            note: isActive
+                ? 'Shift Aktif saat ini akan dibuatkan snapshot Riwayat terlebih dahulu, lalu diganti dengan data ini.'
+                : 'Draft Shift yang sedang dikerjakan akan diganti. Shift Aktif tidak akan berubah.',
+            confirmText: 'Ya, Load',
+            variant: isActive ? 'danger' : 'primary'
+        });
+
+        if (!confirmed) return;
+
+        historyLoadBusyV19 = true;
+        try {
+            const rpc = isActive
+                ? 'load_shift_history_to_active'
+                : 'load_shift_history_to_draft';
+
+            const { data, error } = await supabaseDashboard.rpc(rpc, {
+                p_history_id: Number(record.id),
+                p_client_id: clientIdV19(),
+                p_updated_by: userNameV19()
+            });
+
+            if (error) throw error;
+
+            await navigateToLoadedWorkspaceV19(target);
+
+            showShiftToast(
+                isActive
+                    ? 'Data Riwayat berhasil dimuat ke Shift Aktif.'
+                    : 'Data Riwayat berhasil dimuat ke Draft Shift.',
+                'success',
+                2600
+            );
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Load history gagal:`, error);
+            showShiftToast(`Gagal load data Riwayat: ${error.message}`, 'error', 4000);
+        } finally {
+            historyLoadBusyV19 = false;
+        }
+    }
+
+    function decorateHistoryV19(){
+        document.querySelectorAll(
+            '#tab-historyshift button[onclick*="openShiftFromHistory"]'
+        ).forEach(button => {
+            button.setAttribute('data-tooltip','Buka Data Shift');
+            button.setAttribute('aria-label','Buka Data Shift');
+            button.dataset.historyReadOnly = 'detail';
+        });
+    }
+
+    function injectStylesV19(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            .history-detail-v19-overlay{
+                position:fixed!important;
+                inset:0!important;
+                z-index:10080!important;
+                display:none!important;
+                align-items:center!important;
+                justify-content:center!important;
+                padding:18px!important;
+                background:rgba(7,12,22,.52)!important;
+                backdrop-filter:blur(5px)!important;
+            }
+            .history-detail-v19-overlay.is-open{display:flex!important;}
+
+            .history-detail-v19-shell{
+                width:min(1580px,97vw)!important;
+                height:min(900px,94vh)!important;
+                display:flex!important;
+                flex-direction:column!important;
+                overflow:hidden!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:14px!important;
+                background:var(--bg-card)!important;
+                box-shadow:0 30px 80px rgba(6,12,24,.30)!important;
+            }
+            #shiftHistoryDetailContentV19{
+                height:100%!important;
+                min-height:0!important;
+                display:flex!important;
+                flex-direction:column!important;
+            }
+            .history-detail-v19-top{
+                flex:0 0 auto!important;
+                min-height:76px!important;
+                display:grid!important;
+                grid-template-columns:minmax(220px,.8fr) minmax(480px,1.6fr) auto!important;
+                align-items:center!important;
+                gap:18px!important;
+                padding:12px 16px!important;
+                border-bottom:1px solid var(--border-color)!important;
+                background:var(--bg-card)!important;
+            }
+            .history-detail-v19-context{min-width:0!important;}
+            .history-detail-v19-kicker{
+                display:block!important;
+                margin-bottom:5px!important;
+                color:var(--text-muted)!important;
+                font-size:7.5px!important;
+                font-weight:820!important;
+                line-height:1!important;
+                letter-spacing:.095em!important;
+            }
+            .history-detail-v19-context>strong{
+                display:block!important;
+                overflow:hidden!important;
+                color:var(--text-primary)!important;
+                font-size:12px!important;
+                line-height:1.15!important;
+                font-weight:800!important;
+                white-space:nowrap!important;
+                text-overflow:ellipsis!important;
+            }
+            .history-detail-v19-context>small{
+                display:block!important;
+                margin-top:5px!important;
+                color:var(--text-muted)!important;
+                font-size:8px!important;
+            }
+            .history-detail-v19-summary{
+                min-width:0!important;
+                display:flex!important;
+                align-items:center!important;
+                justify-content:flex-end!important;
+                gap:9px!important;
+                overflow-x:auto!important;
+                white-space:nowrap!important;
+                scrollbar-width:none!important;
+            }
+            .history-detail-v19-summary::-webkit-scrollbar{display:none!important;}
+            .history-detail-v19-summary span{
+                display:inline-flex!important;
+                align-items:baseline!important;
+                gap:7px!important;
+            }
+            .history-detail-v19-summary small{
+                color:var(--text-muted)!important;
+                font-size:7.5px!important;
+                font-weight:820!important;
+                line-height:1!important;
+                letter-spacing:.075em!important;
+                text-transform:uppercase!important;
+            }
+            .history-detail-v19-summary strong{
+                color:var(--text-primary)!important;
+                font-size:9px!important;
+                font-weight:790!important;
+                line-height:1!important;
+                font-variant-numeric:tabular-nums!important;
+            }
+            .history-detail-v19-summary i{
+                width:2.5px!important;
+                height:2.5px!important;
+                flex:0 0 2.5px!important;
+                border-radius:50%!important;
+                background:color-mix(in srgb,var(--text-muted) 44%,transparent)!important;
+            }
+            .history-detail-v19-actions{
+                display:flex!important;
+                align-items:center!important;
+                gap:7px!important;
+            }
+            .history-detail-v19-body{
+                flex:1 1 auto!important;
+                min-height:0!important;
+                overflow:auto!important;
+                padding:12px!important;
+                background:var(--bg-secondary)!important;
+            }
+            .history-detail-v19-columns{
+                width:max-content!important;
+                min-width:100%!important;
+                display:flex!important;
+                align-items:flex-start!important;
+                gap:8px!important;
+            }
+            .history-detail-v19-column{
+                width:245px!important;
+                min-width:245px!important;
+                overflow:hidden!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:10px!important;
+                background:var(--bg-card)!important;
+            }
+            .history-detail-v19-column-head{
+                height:38px!important;
+                display:flex!important;
+                align-items:center!important;
+                gap:7px!important;
+                padding:0 8px!important;
+                border-bottom:1px solid var(--border-color)!important;
+                background:var(--bg-secondary)!important;
+            }
+            .history-detail-v19-count{
+                min-width:20px!important;
+                height:20px!important;
+                display:grid!important;
+                place-items:center!important;
+                padding:0 5px!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:999px!important;
+                color:var(--text-secondary)!important;
+                background:var(--bg-card)!important;
+                font-size:8px!important;
+                font-weight:800!important;
+            }
+            .history-detail-v19-column-head>strong{
+                min-width:0!important;
+                overflow:hidden!important;
+                color:var(--text-primary)!important;
+                font-size:10px!important;
+                font-weight:820!important;
+                white-space:nowrap!important;
+                text-overflow:ellipsis!important;
+            }
+            .history-detail-v19-list{
+                display:grid!important;
+                gap:4px!important;
+                padding:6px!important;
+            }
+            .history-detail-v19-user{
+                min-height:34px!important;
+                display:flex!important;
+                align-items:center!important;
+                gap:7px!important;
+                padding:5px 6px 5px 8px!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:7px!important;
+                background:var(--bg-card)!important;
+            }
+            .history-detail-v19-user-main{
+                min-width:0!important;
+                flex:1 1 auto!important;
+                display:flex!important;
+                flex-direction:column!important;
+                gap:2px!important;
+            }
+            .history-detail-v19-user-main strong{
+                min-width:0!important;
+                overflow:hidden!important;
+                color:var(--text-primary)!important;
+                font-size:9px!important;
+                font-weight:720!important;
+                white-space:nowrap!important;
+                text-overflow:ellipsis!important;
+            }
+            .history-detail-v19-user-main small{
+                min-width:0!important;
+                overflow:hidden!important;
+                color:var(--text-muted)!important;
+                font-size:7.5px!important;
+                white-space:nowrap!important;
+                text-overflow:ellipsis!important;
+            }
+            .history-detail-v19-role{
+                flex:0 0 auto!important;
+                padding:3px 5px!important;
+                border-radius:999px!important;
+                font-size:6.8px!important;
+                line-height:1!important;
+                font-weight:780!important;
+                white-space:nowrap!important;
+            }
+            .history-detail-v19-role.role-csline{color:#26794a!important;background:rgba(47,155,89,.11)!important;border:1px solid rgba(47,155,89,.22)!important;}
+            .history-detail-v19-role.role-cs{color:#456b9e!important;background:rgba(85,127,189,.11)!important;border:1px solid rgba(85,127,189,.22)!important;}
+            .history-detail-v19-role.role-kapten{color:#92621f!important;background:rgba(183,125,46,.11)!important;border:1px solid rgba(183,125,46,.22)!important;}
+            .history-detail-v19-role.role-kasir{color:#654c98!important;background:rgba(121,95,172,.11)!important;border:1px solid rgba(121,95,172,.22)!important;}
+            .history-detail-v19-empty{
+                min-height:60px!important;
+                display:grid!important;
+                place-items:center!important;
+                color:var(--text-muted)!important;
+                font-size:8px!important;
+                text-align:center!important;
+            }
+            .history-detail-v19-footer{
+                flex:0 0 auto!important;
+                min-height:34px!important;
+                display:flex!important;
+                align-items:center!important;
+                padding:0 14px!important;
+                border-top:1px solid var(--border-color)!important;
+                color:var(--text-muted)!important;
+                background:var(--bg-card)!important;
+                font-size:8px!important;
+            }
+
+            .history-load-v19-choice{
+                position:absolute!important;
+                inset:0!important;
+                z-index:2!important;
+                display:none!important;
+                align-items:center!important;
+                justify-content:center!important;
+                padding:20px!important;
+                background:rgba(7,12,22,.36)!important;
+                backdrop-filter:blur(3px)!important;
+            }
+            .history-load-v19-choice.is-open{display:flex!important;}
+            .history-load-v19-choice-card{
+                width:min(480px,92vw)!important;
+                padding:18px!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:13px!important;
+                background:var(--bg-card)!important;
+                box-shadow:0 22px 58px rgba(6,12,24,.25)!important;
+            }
+            .history-load-v19-choice-card h3{
+                margin:0!important;
+                color:var(--text-primary)!important;
+                font-size:15px!important;
+                font-weight:820!important;
+            }
+            .history-load-v19-choice-card>p{
+                margin:7px 0 14px!important;
+                color:var(--text-secondary)!important;
+                font-size:9px!important;
+                line-height:1.45!important;
+            }
+            .history-load-v19-choice-actions{
+                display:grid!important;
+                grid-template-columns:1fr 1fr!important;
+                gap:9px!important;
+            }
+            .history-load-v19-target{
+                min-height:78px!important;
+                display:flex!important;
+                flex-direction:column!important;
+                align-items:flex-start!important;
+                justify-content:center!important;
+                gap:6px!important;
+                padding:11px!important;
+                cursor:pointer!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:9px!important;
+                color:var(--text-primary)!important;
+                background:var(--bg-secondary)!important;
+                text-align:left!important;
+            }
+            .history-load-v19-target:hover{
+                border-color:color-mix(in srgb,var(--accent) 38%,var(--border-color))!important;
+                background:color-mix(in srgb,var(--bg-secondary) 92%,var(--accent) 8%)!important;
+            }
+            .history-load-v19-target strong{font-size:10px!important;font-weight:800!important;}
+            .history-load-v19-target small{color:var(--text-muted)!important;font-size:8px!important;line-height:1.35!important;}
+            .history-load-v19-cancel{
+                width:100%!important;
+                margin-top:9px!important;
+                padding:8px!important;
+                cursor:pointer!important;
+                border:1px solid var(--border-color)!important;
+                border-radius:8px!important;
+                color:var(--text-secondary)!important;
+                background:var(--bg-card)!important;
+                font-size:9px!important;
+                font-weight:700!important;
+            }
+
+            @media(max-width:1180px){
+                .history-detail-v19-top{
+                    grid-template-columns:minmax(200px,.7fr) minmax(360px,1.2fr) auto!important;
+                }
+                .history-detail-v19-column{width:225px!important;min-width:225px!important;}
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    openShiftFromHistory = openDetailV19;
+    window.openShiftFromHistory = openDetailV19;
+    window.closeHistoryDetailV19 = closeDetailV19;
+    window.openHistoryLoadChoiceV19 = openLoadChoiceV19;
+    window.closeHistoryLoadChoiceV19 = closeLoadChoiceV19;
+    window.loadHistoryChoiceV19 = executeLoadV19;
+
+    if (baseRenderShiftHistoryV19) {
+        renderShiftHistory = function candidateV19RenderShiftHistory(){
+            const result = baseRenderShiftHistoryV19.apply(this, arguments);
+            decorateHistoryV19();
+            return result;
+        };
+        window.renderShiftHistory = renderShiftHistory;
+    }
+
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        const choice = document.getElementById('shiftHistoryLoadChoiceV19');
+        if (choice?.classList.contains('is-open')) {
+            closeLoadChoiceV19();
+            return;
+        }
+        const modal = document.getElementById('shiftHistoryDetailModalV19');
+        if (modal?.classList.contains('is-open')) closeDetailV19();
+    });
+
+    injectStylesV19();
+    decorateHistoryV19();
+
+    window.DDTShiftCandidateV19 = Object.freeze({
+        version:'v19',
+        historyDetail:'read-only Shift Kerja-like',
+        loadActive:'server backup current Active -> replace Active -> realtime',
+        loadDraft:'replace Draft only -> realtime',
+        preview:'untouched'
+    });
+})();
+</script>
+
 </body>
 </html>
