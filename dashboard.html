@@ -104953,5 +104953,1344 @@ html:is(
 })();
 </script>
 
+
+<!-- ================================================================
+     DDT Shift Candidate 32 — Preview P1 / Operational Shift Roster
+     Design Authority:
+     document-like + spreadsheet readability + dashboard polish
+     ================================================================ -->
+<style id="ddt-shift-preview-p1-v32-style">
+#shiftPreviewModal.shift-preview-modal{
+    padding:22px !important;
+}
+
+#shiftPreviewModal .preview-roster-document{
+    width:min(1180px,96vw) !important;
+    max-height:92vh !important;
+    display:flex !important;
+    flex-direction:column !important;
+    overflow:hidden !important;
+    color:var(--text-primary) !important;
+    background:
+        linear-gradient(
+            180deg,
+            color-mix(in srgb,var(--accent) 2.5%,var(--bg-card)) 0%,
+            var(--bg-card) 190px
+        ) !important;
+    border:1px solid var(--border-color) !important;
+    border-radius:16px !important;
+    box-shadow:0 28px 76px rgba(6,12,24,.24) !important;
+}
+
+#shiftPreviewModal .preview-roster-header{
+    flex:0 0 auto;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto;
+    align-items:center;
+    gap:20px;
+    padding:22px 24px 18px;
+    border-bottom:1px solid var(--border-color);
+}
+
+#shiftPreviewModal .preview-roster-heading{
+    min-width:0;
+}
+
+#shiftPreviewModal .preview-roster-kicker{
+    display:block;
+    margin:0 0 3px;
+    color:var(--accent-strong);
+    font-size:8px;
+    line-height:1;
+    font-weight:850;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+}
+
+#shiftPreviewModal .preview-roster-heading h2{
+    margin:0;
+    color:var(--text-primary);
+    font-size:21px;
+    line-height:1.12;
+    font-weight:820;
+    letter-spacing:-.025em;
+}
+
+#shiftPreviewModal .preview-roster-heading p{
+    margin:5px 0 0;
+    color:var(--text-muted);
+    font-size:10px;
+    line-height:1.35;
+}
+
+#shiftPreviewModal .preview-roster-period{
+    min-width:210px;
+    text-align:right;
+}
+
+#shiftPreviewModal .preview-roster-period small{
+    display:block;
+    margin-bottom:5px;
+    color:var(--text-muted);
+    font-size:7px;
+    font-weight:820;
+    letter-spacing:.095em;
+    text-transform:uppercase;
+}
+
+#shiftPreviewModal .preview-roster-period strong{
+    display:block;
+    color:var(--text-primary);
+    font-size:12px;
+    line-height:1.25;
+    font-weight:760;
+    white-space:nowrap;
+}
+
+#shiftPreviewModal .preview-roster-close{
+    width:30px;
+    height:30px;
+    display:grid;
+    place-items:center;
+    padding:0;
+    color:var(--text-muted);
+    background:transparent;
+    border:1px solid var(--border-color);
+    border-radius:8px;
+    cursor:pointer;
+}
+
+#shiftPreviewModal .preview-roster-close:hover{
+    color:var(--text-primary);
+    background:var(--bg-hover);
+}
+
+#shiftPreviewModal .preview-roster-close svg{
+    width:14px;
+    height:14px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.8;
+    stroke-linecap:round;
+}
+
+#shiftPreviewModal .preview-roster-summary{
+    flex:0 0 auto;
+    min-height:52px;
+    display:flex;
+    align-items:stretch;
+    padding:0 24px;
+    border-bottom:1px solid var(--border-color);
+}
+
+#shiftPreviewModal .preview-roster-metric{
+    min-width:112px;
+    display:flex;
+    align-items:baseline;
+    gap:7px;
+    padding:16px 18px 14px 0;
+}
+
+#shiftPreviewModal .preview-roster-metric + .preview-roster-metric{
+    position:relative;
+    padding-left:18px;
+}
+
+#shiftPreviewModal .preview-roster-metric + .preview-roster-metric::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:15px;
+    bottom:15px;
+    width:1px;
+    background:var(--border-color);
+}
+
+#shiftPreviewModal .preview-roster-metric small{
+    color:var(--text-muted);
+    font-size:7px;
+    line-height:1;
+    font-weight:800;
+    letter-spacing:.075em;
+    text-transform:uppercase;
+}
+
+#shiftPreviewModal .preview-roster-metric strong{
+    color:var(--text-primary);
+    font-size:13px;
+    line-height:1;
+    font-weight:820;
+    font-variant-numeric:tabular-nums;
+}
+
+#shiftPreviewModal .preview-roster-metric.is-unassigned.has-value strong{
+    color:var(--accent-strong);
+}
+
+#shiftPreviewModal .preview-roster-scroll{
+    flex:1 1 auto;
+    min-height:0;
+    overflow:auto;
+    padding:18px 24px 22px;
+    scrollbar-width:thin;
+    scrollbar-color:
+        color-mix(in srgb,var(--accent) 28%,var(--border-strong))
+        transparent;
+}
+
+#shiftPreviewModal .preview-roster-scroll::-webkit-scrollbar{
+    width:6px;
+}
+
+#shiftPreviewModal .preview-roster-scroll::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+#shiftPreviewModal .preview-roster-scroll::-webkit-scrollbar-thumb{
+    background:color-mix(in srgb,var(--accent) 26%,var(--border-strong));
+    border-radius:999px;
+}
+
+#shiftPreviewModal .preview-roster-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px 28px;
+    align-items:start;
+}
+
+#shiftPreviewModal .preview-roster-section{
+    min-width:0;
+    background:transparent;
+    border-top:2px solid
+        color-mix(in srgb,var(--accent) 30%,var(--border-color));
+}
+
+#shiftPreviewModal .preview-roster-section.is-wide{
+    grid-column:1 / -1;
+}
+
+#shiftPreviewModal .preview-roster-section-head{
+    min-height:48px;
+    display:grid;
+    grid-template-columns:28px minmax(0,1fr) auto;
+    align-items:center;
+    gap:9px;
+    padding:10px 2px 8px;
+    border-bottom:1px solid var(--border-color);
+}
+
+#shiftPreviewModal .preview-roster-section-index{
+    color:var(--accent-strong);
+    font-size:8px;
+    font-weight:850;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.04em;
+}
+
+#shiftPreviewModal .preview-roster-section-title{
+    min-width:0;
+}
+
+#shiftPreviewModal .preview-roster-section-title h3{
+    margin:0;
+    color:var(--text-primary);
+    font-size:11px;
+    line-height:1.25;
+    font-weight:820;
+    letter-spacing:.015em;
+    text-transform:uppercase;
+}
+
+#shiftPreviewModal .preview-roster-section-title p{
+    margin:2px 0 0;
+    color:var(--text-muted);
+    font-size:7px;
+}
+
+#shiftPreviewModal .preview-roster-section-count{
+    color:var(--text-secondary);
+    font-size:8px;
+    line-height:1;
+    font-weight:760;
+    white-space:nowrap;
+}
+
+#shiftPreviewModal .preview-roster-columns{
+    display:grid;
+    grid-template-columns:28px minmax(160px,1fr) 78px minmax(105px,.78fr);
+    gap:8px;
+    align-items:center;
+    padding:7px 4px 6px;
+    color:var(--text-muted);
+    border-bottom:1px solid
+        color-mix(in srgb,var(--border-color) 72%,transparent);
+    font-size:6.5px;
+    line-height:1;
+    font-weight:820;
+    letter-spacing:.075em;
+    text-transform:uppercase;
+}
+
+#shiftPreviewModal .preview-roster-row{
+    display:grid;
+    grid-template-columns:28px minmax(160px,1fr) 78px minmax(105px,.78fr);
+    gap:8px;
+    align-items:center;
+    min-height:34px;
+    padding:6px 4px;
+    border-bottom:1px solid
+        color-mix(in srgb,var(--border-color) 62%,transparent);
+}
+
+#shiftPreviewModal .preview-roster-row:last-child{
+    border-bottom-color:transparent;
+}
+
+#shiftPreviewModal .preview-roster-no{
+    color:var(--text-muted);
+    font-size:7px;
+    font-weight:720;
+    font-variant-numeric:tabular-nums;
+}
+
+#shiftPreviewModal .preview-roster-name{
+    min-width:0;
+    color:var(--text-primary);
+    font-size:9px;
+    line-height:1.28;
+    font-weight:700;
+    overflow-wrap:anywhere;
+}
+
+#shiftPreviewModal .preview-roster-role{
+    --roster-role:var(--accent-strong);
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    width:max-content;
+    max-width:100%;
+    color:var(--roster-role);
+    font-size:7px;
+    line-height:1;
+    font-weight:820;
+    letter-spacing:.035em;
+    text-transform:uppercase;
+    white-space:nowrap;
+}
+
+#shiftPreviewModal .preview-roster-role::before{
+    content:"";
+    width:4px;
+    height:4px;
+    flex:0 0 4px;
+    border-radius:50%;
+    background:currentColor;
+    opacity:.72;
+}
+
+#shiftPreviewModal .preview-roster-role.role-csline{--roster-role:#e65100;}
+#shiftPreviewModal .preview-roster-role.role-cs{--roster-role:#1565c0;}
+#shiftPreviewModal .preview-roster-role.role-kapten{--roster-role:#6a1b9a;}
+#shiftPreviewModal .preview-roster-role.role-kasir{--roster-role:#00838f;}
+
+#shiftPreviewModal .preview-roster-note{
+    min-width:0;
+    color:var(--text-muted);
+    font-size:7.5px;
+    line-height:1.25;
+    overflow-wrap:anywhere;
+}
+
+#shiftPreviewModal .preview-roster-note.is-empty{
+    opacity:.55;
+}
+
+#shiftPreviewModal .preview-roster-empty{
+    padding:18px 4px 15px;
+    color:var(--text-muted);
+    font-size:8px;
+    font-style:italic;
+}
+
+#shiftPreviewModal .preview-roster-footer{
+    flex:0 0 auto;
+    min-height:54px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+    padding:11px 24px;
+    border-top:1px solid var(--border-color);
+}
+
+#shiftPreviewModal .preview-roster-generated{
+    min-width:0;
+    color:var(--text-muted);
+    font-size:8px;
+    line-height:1.3;
+}
+
+#shiftPreviewModal .preview-roster-generated strong{
+    color:var(--text-secondary);
+    font-weight:700;
+}
+
+#shiftPreviewModal .preview-roster-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+/* Dark/Cyber document remains neutral and restrained. */
+html[data-theme="dark"]:not([data-theme-variant="venom"])
+#shiftPreviewModal .preview-roster-document{
+    background:
+        linear-gradient(
+            180deg,
+            color-mix(in srgb,var(--accent) 3%,#151e2a) 0%,
+            #131b26 190px
+        ) !important;
+}
+
+/* Venom: graphite sheet + fine green datum, no neon wall. */
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal.shift-preview-modal{
+    background:rgba(2,4,2,.80) !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-document{
+    color:#d7ddd5 !important;
+    background:
+        radial-gradient(circle at 10% 0%,rgba(68,214,44,.035),transparent 25%),
+        linear-gradient(180deg,#111511,#0b0e0b) !important;
+    border-color:#303930 !important;
+    box-shadow:0 30px 82px rgba(0,0,0,.60) !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal :is(
+    .preview-roster-header,
+    .preview-roster-summary,
+    .preview-roster-footer
+){
+    border-color:#2d352d !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-heading h2,
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-period strong,
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-metric strong,
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-section-title h3,
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-name{
+    color:#d7ddd5 !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal :is(
+    .preview-roster-heading p,
+    .preview-roster-period small,
+    .preview-roster-metric small,
+    .preview-roster-section-title p,
+    .preview-roster-columns,
+    .preview-roster-no,
+    .preview-roster-note,
+    .preview-roster-generated
+){
+    color:#879185 !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal :is(
+    .preview-roster-kicker,
+    .preview-roster-section-index,
+    .preview-roster-metric.is-unassigned.has-value strong
+){
+    color:#69bd5e !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-section{
+    border-top-color:rgba(68,214,44,.28) !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal :is(
+    .preview-roster-section-head,
+    .preview-roster-columns,
+    .preview-roster-row
+){
+    border-bottom-color:#283028 !important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-metric + .preview-roster-metric::before{
+    background:#2d352d !important;
+}
+
+@media(max-width:860px){
+    #shiftPreviewModal.shift-preview-modal{
+        padding:10px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-document{
+        width:min(98vw,680px) !important;
+        max-height:94vh !important;
+        border-radius:12px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-header{
+        grid-template-columns:minmax(0,1fr) auto;
+        gap:12px;
+        padding:16px 15px 13px;
+    }
+
+    #shiftPreviewModal .preview-roster-period{
+        grid-column:1 / -1;
+        grid-row:2;
+        min-width:0;
+        text-align:left;
+    }
+
+    #shiftPreviewModal .preview-roster-close{
+        grid-column:2;
+        grid-row:1;
+    }
+
+    #shiftPreviewModal .preview-roster-summary{
+        overflow-x:auto;
+        padding:0 15px;
+    }
+
+    #shiftPreviewModal .preview-roster-scroll{
+        padding:14px 15px 18px;
+    }
+
+    #shiftPreviewModal .preview-roster-grid{
+        grid-template-columns:1fr;
+        gap:16px;
+    }
+
+    #shiftPreviewModal .preview-roster-section.is-wide{
+        grid-column:auto;
+    }
+
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row{
+        grid-template-columns:24px minmax(125px,1fr) 67px minmax(88px,.72fr);
+        gap:6px;
+    }
+
+    #shiftPreviewModal .preview-roster-footer{
+        padding:10px 15px;
+    }
+}
+</style>
+
+<script id="ddt-shift-preview-p1-v32">
+(function DDTShiftPreviewP1V32(){
+    'use strict';
+    if (window.__DDT_SHIFT_PREVIEW_P1_V32__) return;
+    window.__DDT_SHIFT_PREVIEW_P1_V32__ = true;
+
+    const PATCH_ID = 'ddt-shift-preview-p1-v32';
+    const ROLE_ORDER = ['csline','cs','kapten','kasir'];
+    const ROLE_LABELS = {
+        csline:'CS Line',
+        cs:'CS',
+        kapten:'Kapten',
+        kasir:'Kasir'
+    };
+    const ROLE_COLORS = {
+        csline:'#e65100',
+        cs:'#1565c0',
+        kapten:'#6a1b9a',
+        kasir:'#00838f'
+    };
+
+    function escV32(value){
+        if (typeof escapeShiftPreviewText === 'function') {
+            return escapeShiftPreviewText(value);
+        }
+        return String(value ?? '')
+            .replaceAll('&','&amp;')
+            .replaceAll('<','&lt;')
+            .replaceAll('>','&gt;')
+            .replaceAll('"','&quot;')
+            .replaceAll("'","&#039;");
+    }
+
+    function workspaceV32(){
+        try {
+            return window.DDTShiftCandidate?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    function periodV32(){
+        try {
+            return typeof formatShiftPeriodRange === 'function'
+                ? formatShiftPeriodRange(activeShiftPeriod)
+                : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function cloneUsersV32(users){
+        return (Array.isArray(users) ? users : []).map(user => ({
+            ...user,
+            note:String(user?.note || '')
+        }));
+    }
+
+    function cutiCountV32(columns){
+        return (Array.isArray(columns) ? columns : [])
+            .filter(column => /\bcuti\b/i.test(String(column?.name || '')))
+            .reduce(
+                (sum,column) => sum + (Array.isArray(column?.users) ? column.users.length : 0),
+                0
+            );
+    }
+
+    function openShiftPreviewV32(){
+        const columns = (Array.isArray(shiftColumns) ? shiftColumns : []).map(
+            column => ({
+                ...column,
+                users:cloneUsersV32(column.users)
+            })
+        );
+        const unassignedUsers = cloneUsersV32(
+            Array.isArray(availableUsers) ? availableUsers : []
+        );
+        const assigned = columns.reduce(
+            (sum,column) => sum + column.users.length,
+            0
+        );
+        const period = periodV32();
+        const mode = workspaceV32();
+
+        previewData = {
+            columns,
+            unassignedUsers,
+            totalStaff:assigned + unassignedUsers.length,
+            shiftCount:columns.length,
+            cutiCount:cutiCountV32(columns),
+            createdBy:
+                (typeof getCurrentUserName === 'function' && getCurrentUserName())
+                || 'System',
+            createdAt:new Date().toLocaleString('id-ID'),
+            periodeStart:period?.startText || '',
+            periodeEnd:period?.endText || '',
+            periodLabel:period?.label || 'Periode belum ditentukan',
+            periodSource:activeShiftPeriod?.source || mode,
+            workspaceMode:mode,
+            workspaceLabel:mode === 'draft' ? 'DRAFT SHIFT' : 'SHIFT AKTIF'
+        };
+
+        renderShiftPreviewV32();
+    }
+
+    function roleV32(user){
+        const value = String(user?.role || 'cs').toLowerCase();
+        return ROLE_ORDER.includes(value) ? value : 'cs';
+    }
+
+    function sortUsersV32(users){
+        const roleRank = Object.fromEntries(
+            ROLE_ORDER.map((role,index) => [role,index])
+        );
+        return cloneUsersV32(users).sort((a,b) => {
+            const ar = roleRank[roleV32(a)] ?? 99;
+            const br = roleRank[roleV32(b)] ?? 99;
+            if (ar !== br) return ar - br;
+            return String(a?.name || '').localeCompare(
+                String(b?.name || ''),
+                'id',
+                {sensitivity:'base'}
+            );
+        });
+    }
+
+    function rowHtmlV32(user,index){
+        const role = roleV32(user);
+        const note = String(user?.note || '').trim();
+
+        return `
+            <div class="preview-roster-row">
+                <span class="preview-roster-no">${String(index + 1).padStart(2,'0')}</span>
+                <span class="preview-roster-name">${escV32(user?.name || 'User')}</span>
+                <span class="preview-roster-role role-${role}">
+                    ${escV32(ROLE_LABELS[role] || role)}
+                </span>
+                <span class="preview-roster-note ${note ? '' : 'is-empty'}">
+                    ${note ? escV32(note) : '—'}
+                </span>
+            </div>
+        `;
+    }
+
+    function sectionHtmlV32(section,index,{wide=false,unassigned=false}={}){
+        const users = sortUsersV32(section.users || []);
+        const countLabel = `${users.length} STAFF`;
+
+        return `
+            <section class="preview-roster-section ${wide ? 'is-wide' : ''} ${unassigned ? 'is-unassigned' : ''}">
+                <header class="preview-roster-section-head">
+                    <span class="preview-roster-section-index">
+                        ${unassigned ? '—' : String(index + 1).padStart(2,'0')}
+                    </span>
+                    <div class="preview-roster-section-title">
+                        <h3>${escV32(section.name)}</h3>
+                        <p>${unassigned ? 'Belum ditempatkan ke Shift' : 'Penempatan Staff'}</p>
+                    </div>
+                    <span class="preview-roster-section-count">${countLabel}</span>
+                </header>
+
+                <div class="preview-roster-columns" aria-hidden="true">
+                    <span>No</span>
+                    <span>Nama</span>
+                    <span>Role</span>
+                    <span>Catatan</span>
+                </div>
+
+                <div class="preview-roster-rows">
+                    ${
+                        users.length
+                            ? users.map(rowHtmlV32).join('')
+                            : `<div class="preview-roster-empty">Belum ada staff.</div>`
+                    }
+                </div>
+            </section>
+        `;
+    }
+
+    function renderShiftPreviewV32(){
+        const modal = document.getElementById('shiftPreviewModal');
+        if (!modal || !previewData) return;
+
+        const columns = Array.isArray(previewData.columns)
+            ? previewData.columns
+            : [];
+        const unassignedUsers = Array.isArray(previewData.unassignedUsers)
+            ? previewData.unassignedUsers
+            : [];
+
+        const periodText =
+            previewData.periodLabel ||
+            (
+                previewData.periodeStart && previewData.periodeEnd
+                    ? `${previewData.periodeStart} — ${previewData.periodeEnd}`
+                    : 'Periode belum ditentukan'
+            );
+
+        const cutiCount = Number(
+            previewData.cutiCount ?? cutiCountV32(columns)
+        );
+        const shiftCount = Number(
+            previewData.shiftCount ?? columns.length
+        );
+        const totalStaff = Number(
+            previewData.totalStaff ??
+            columns.reduce((sum,column) => sum + (column.users || []).length,0) +
+            unassignedUsers.length
+        );
+
+        const columnSections = columns.map((column,index) => {
+            const isLastOdd =
+                columns.length % 2 === 1 &&
+                index === columns.length - 1;
+            return sectionHtmlV32(
+                column,
+                index,
+                {wide:isLastOdd}
+            );
+        }).join('');
+
+        const unassignedSection = unassignedUsers.length
+            ? sectionHtmlV32(
+                {
+                    name:'UNASSIGNED',
+                    users:unassignedUsers
+                },
+                columns.length,
+                {wide:true,unassigned:true}
+            )
+            : '';
+
+        const workspaceLabel =
+            previewData.workspaceLabel ||
+            (
+                previewData.periodSource === 'history'
+                    ? 'RIWAYAT SHIFT'
+                    : workspaceV32() === 'draft'
+                        ? 'DRAFT SHIFT'
+                        : 'SHIFT AKTIF'
+            );
+
+        modal.style.display = 'flex';
+        modal.classList.remove('show');
+
+        modal.innerHTML = `
+            <article class="preview-roster-document" aria-label="Preview Shift Kerja">
+                <header class="preview-roster-header">
+                    <div class="preview-roster-heading">
+                        <span class="preview-roster-kicker">SHIFT KERJA</span>
+                        <h2>Jadwal Penempatan Staff</h2>
+                        <p>Roster operasional untuk pengecekan dan distribusi jadwal.</p>
+                    </div>
+
+                    <div class="preview-roster-period">
+                        <small>${escV32(workspaceLabel)}</small>
+                        <strong>${escV32(periodText)}</strong>
+                    </div>
+
+                    <button
+                        class="preview-roster-close"
+                        type="button"
+                        onclick="closeShiftPreview()"
+                        aria-label="Tutup Preview"
+                        title="Tutup"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m6 6 12 12M18 6 6 18"/>
+                        </svg>
+                    </button>
+                </header>
+
+                <div class="preview-roster-summary">
+                    <span class="preview-roster-metric">
+                        <small>Total Staff</small>
+                        <strong>${totalStaff}</strong>
+                    </span>
+                    <span class="preview-roster-metric">
+                        <small>Shift</small>
+                        <strong>${shiftCount}</strong>
+                    </span>
+                    <span class="preview-roster-metric">
+                        <small>Cuti</small>
+                        <strong>${cutiCount}</strong>
+                    </span>
+                    <span class="preview-roster-metric is-unassigned ${unassignedUsers.length ? 'has-value' : ''}">
+                        <small>Unassigned</small>
+                        <strong>${unassignedUsers.length}</strong>
+                    </span>
+                </div>
+
+                <div class="preview-roster-scroll">
+                    <main class="preview-roster-grid">
+                        ${columnSections}
+                        ${unassignedSection}
+                    </main>
+                </div>
+
+                <footer class="preview-roster-footer">
+                    <span class="preview-roster-generated">
+                        Diperbarui <strong>${escV32(previewData.createdAt || '-')}</strong>
+                        · ${escV32(previewData.createdBy || 'System')}
+                    </span>
+
+                    <div class="preview-roster-actions">
+                        <button
+                            class="btn-shift action-neutral"
+                            type="button"
+                            onclick="closeShiftPreview()"
+                        >
+                            <span>Tutup</span>
+                        </button>
+
+                        <button
+                            class="btn-shift action-primary"
+                            type="button"
+                            id="shiftScreenshotButton"
+                            onclick="captureShiftScreenshot()"
+                        >
+                            <span class="button-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M8 5l1-2h6l1 2"/>
+                                </svg>
+                            </span>
+                            <span>Screenshot</span>
+                        </button>
+                    </div>
+                </footer>
+            </article>
+        `;
+
+        requestAnimationFrame(() => {
+            modal.classList.add('show');
+        });
+    }
+
+    function cssV32(name,fallback){
+        const value = getComputedStyle(document.documentElement)
+            .getPropertyValue(name)
+            .trim();
+        return value || fallback;
+    }
+
+    function paletteV32(){
+        const root = document.documentElement;
+        const venom =
+            root.dataset.theme === 'dark' &&
+            root.dataset.themeVariant === 'venom';
+
+        if (venom) {
+            return {
+                outer:'#070907',
+                paper:'#0f130f',
+                paperAlt:'#111511',
+                border:'#303930',
+                borderSoft:'#283028',
+                text:'#d7ddd5',
+                muted:'#879185',
+                secondary:'#a7b0a4',
+                accent:'#69bd5e'
+            };
+        }
+
+        return {
+            outer:cssV32('--bg-secondary','#f3f6fa'),
+            paper:cssV32('--bg-card','#ffffff'),
+            paperAlt:cssV32('--bg-secondary','#f7f9fc'),
+            border:cssV32('--border-color','#dfe5ed'),
+            borderSoft:cssV32('--border-color','#e7ebf0'),
+            text:cssV32('--text-primary','#172033'),
+            muted:cssV32('--text-muted','#758195'),
+            secondary:cssV32('--text-secondary','#475569'),
+            accent:cssV32('--accent-strong',cssV32('--accent','#527fa8'))
+        };
+    }
+
+    function roundRectV32(ctx,x,y,w,h,r){
+        const radius = Math.min(r,w/2,h/2);
+        ctx.beginPath();
+        ctx.moveTo(x+radius,y);
+        ctx.arcTo(x+w,y,x+w,y+h,radius);
+        ctx.arcTo(x+w,y+h,x,y+h,radius);
+        ctx.arcTo(x,y+h,x,y,radius);
+        ctx.arcTo(x,y,x+w,y,radius);
+        ctx.closePath();
+    }
+
+    function truncateV32(ctx,text,maxWidth){
+        const source = String(text || '');
+        if (ctx.measureText(source).width <= maxWidth) return source;
+        let out = source;
+        while (
+            out.length > 1 &&
+            ctx.measureText(`${out}…`).width > maxWidth
+        ) out = out.slice(0,-1);
+        return `${out}…`;
+    }
+
+    function buildCanvasSectionsV32(){
+        const columns = (previewData?.columns || []).map(column => ({
+            name:column.name,
+            users:sortUsersV32(column.users || []),
+            unassigned:false
+        }));
+        const unassigned = Array.isArray(previewData?.unassignedUsers)
+            ? sortUsersV32(previewData.unassignedUsers)
+            : [];
+
+        if (unassigned.length) {
+            columns.push({
+                name:'UNASSIGNED',
+                users:unassigned,
+                unassigned:true
+            });
+        }
+
+        return columns;
+    }
+
+    async function captureShiftScreenshotV32(){
+        const button = document.getElementById('shiftScreenshotButton');
+        if (!previewData?.columns?.length) {
+            showShiftToast('Preview Shift belum tersedia.','warning');
+            return;
+        }
+
+        const original = button?.innerHTML || '';
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<span>Memproses</span>';
+        }
+
+        try {
+            const palette = paletteV32();
+            const sections = buildCanvasSectionsV32();
+            const regularSections = sections.filter(section => !section.unassigned);
+            const unassignedSection = sections.find(section => section.unassigned) || null;
+
+            const canvasWidth = 1180;
+            const padding = 42;
+            const gap = 34;
+            const colWidth = (canvasWidth - padding*2 - gap) / 2;
+            const headerHeight = 112;
+            const summaryHeight = 62;
+            const sectionHead = 48;
+            const columnsHead = 28;
+            const rowHeight = 31;
+            const sectionGap = 22;
+            const footerHeight = 52;
+
+            const heightOf = section =>
+                sectionHead +
+                columnsHead +
+                Math.max(1,section.users.length) * rowHeight +
+                4;
+
+            const pairedRows = [];
+            for (let i=0;i<regularSections.length;i+=2) {
+                const left = regularSections[i];
+                const right = regularSections[i+1] || null;
+                pairedRows.push({
+                    left,
+                    right,
+                    height:Math.max(
+                        heightOf(left),
+                        right ? heightOf(right) : 0
+                    )
+                });
+            }
+
+            let bodyHeight = pairedRows.reduce(
+                (sum,row) => sum + row.height + sectionGap,
+                0
+            );
+
+            if (unassignedSection) {
+                bodyHeight += heightOf(unassignedSection) + sectionGap;
+            }
+
+            const canvasHeight =
+                padding +
+                headerHeight +
+                summaryHeight +
+                18 +
+                bodyHeight +
+                footerHeight +
+                padding;
+
+            const scale = Math.min(
+                2,
+                Math.max(1.25,window.devicePixelRatio || 1)
+            );
+
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(canvasWidth * scale);
+            canvas.height = Math.round(canvasHeight * scale);
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Canvas tidak tersedia.');
+
+            ctx.scale(scale,scale);
+            ctx.textBaseline = 'middle';
+
+            ctx.fillStyle = palette.outer;
+            ctx.fillRect(0,0,canvasWidth,canvasHeight);
+
+            roundRectV32(ctx,16,16,canvasWidth-32,canvasHeight-32,18);
+            ctx.fillStyle = palette.paper;
+            ctx.fill();
+            ctx.strokeStyle = palette.border;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            const x0 = padding;
+            let y = padding;
+
+            ctx.fillStyle = palette.accent;
+            ctx.font = '800 10px Segoe UI, Arial, sans-serif';
+            ctx.fillText('SHIFT KERJA',x0,y+10);
+
+            ctx.fillStyle = palette.text;
+            ctx.font = '800 25px Segoe UI, Arial, sans-serif';
+            ctx.fillText('Jadwal Penempatan Staff',x0,y+39);
+
+            ctx.fillStyle = palette.muted;
+            ctx.font = '400 10px Segoe UI, Arial, sans-serif';
+            ctx.fillText(
+                'Roster operasional untuk pengecekan dan distribusi jadwal.',
+                x0,
+                y+66
+            );
+
+            const period = previewData.periodLabel || 'Periode belum ditentukan';
+            const workspace =
+                previewData.workspaceLabel ||
+                (workspaceV32()==='draft' ? 'DRAFT SHIFT' : 'SHIFT AKTIF');
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = palette.muted;
+            ctx.font = '800 8px Segoe UI, Arial, sans-serif';
+            ctx.fillText(workspace.toUpperCase(),canvasWidth-padding,y+20);
+
+            ctx.fillStyle = palette.text;
+            ctx.font = '700 13px Segoe UI, Arial, sans-serif';
+            ctx.fillText(
+                truncateV32(ctx,period,330),
+                canvasWidth-padding,
+                y+43
+            );
+            ctx.textAlign = 'left';
+
+            y += headerHeight;
+
+            ctx.strokeStyle = palette.border;
+            ctx.beginPath();
+            ctx.moveTo(padding,y);
+            ctx.lineTo(canvasWidth-padding,y);
+            ctx.stroke();
+
+            const summary = [
+                ['TOTAL STAFF',String(previewData.totalStaff || 0)],
+                ['SHIFT',String(previewData.shiftCount ?? previewData.columns.length)],
+                ['CUTI',String(previewData.cutiCount ?? cutiCountV32(previewData.columns))],
+                ['UNASSIGNED',String((previewData.unassignedUsers || []).length)]
+            ];
+            const metricWidth = 150;
+            summary.forEach(([label,value],index) => {
+                const mx = padding + index * metricWidth;
+                if (index > 0) {
+                    ctx.strokeStyle = palette.borderSoft;
+                    ctx.beginPath();
+                    ctx.moveTo(mx-14,y+16);
+                    ctx.lineTo(mx-14,y+46);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = palette.muted;
+                ctx.font = '800 8px Segoe UI, Arial, sans-serif';
+                ctx.fillText(label,mx,y+25);
+
+                ctx.fillStyle =
+                    label === 'UNASSIGNED' && Number(value) > 0
+                        ? palette.accent
+                        : palette.text;
+                ctx.font = '800 15px Segoe UI, Arial, sans-serif';
+                ctx.fillText(value,mx+88,y+25);
+            });
+
+            y += summaryHeight + 18;
+
+            function drawSection(section,x,top,width,height){
+                ctx.strokeStyle = palette.accent;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x,top);
+                ctx.lineTo(x+width,top);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+
+                ctx.fillStyle = palette.accent;
+                ctx.font = '800 9px Segoe UI, Arial, sans-serif';
+                ctx.fillText(
+                    section.unassigned ? '—' : String(regularSections.indexOf(section)+1).padStart(2,'0'),
+                    x,
+                    top+20
+                );
+
+                ctx.fillStyle = palette.text;
+                ctx.font = '800 12px Segoe UI, Arial, sans-serif';
+                ctx.fillText(
+                    truncateV32(ctx,section.name || 'SHIFT',width-150),
+                    x+34,
+                    top+17
+                );
+
+                ctx.textAlign = 'right';
+                ctx.fillStyle = palette.secondary;
+                ctx.font = '700 9px Segoe UI, Arial, sans-serif';
+                ctx.fillText(
+                    `${section.users.length} STAFF`,
+                    x+width,
+                    top+18
+                );
+                ctx.textAlign = 'left';
+
+                ctx.strokeStyle = palette.border;
+                ctx.beginPath();
+                ctx.moveTo(x,top+sectionHead);
+                ctx.lineTo(x+width,top+sectionHead);
+                ctx.stroke();
+
+                const gridY = top+sectionHead;
+
+                const noW = 34;
+                const roleW = 84;
+                const noteW = 132;
+                const nameW = width - noW - roleW - noteW - 28;
+
+                ctx.fillStyle = palette.muted;
+                ctx.font = '800 7px Segoe UI, Arial, sans-serif';
+                ctx.fillText('NO',x+3,gridY+14);
+                ctx.fillText('NAMA',x+noW,gridY+14);
+                ctx.fillText('ROLE',x+noW+nameW+8,gridY+14);
+                ctx.fillText('CATATAN',x+noW+nameW+roleW+14,gridY+14);
+
+                ctx.strokeStyle = palette.borderSoft;
+                ctx.beginPath();
+                ctx.moveTo(x,gridY+columnsHead);
+                ctx.lineTo(x+width,gridY+columnsHead);
+                ctx.stroke();
+
+                const users = section.users.length
+                    ? section.users
+                    : [{name:'Belum ada staff',role:'',note:'',empty:true}];
+
+                users.forEach((user,index) => {
+                    const rowY =
+                        gridY +
+                        columnsHead +
+                        index*rowHeight;
+
+                    ctx.strokeStyle = palette.borderSoft;
+                    ctx.beginPath();
+                    ctx.moveTo(x,rowY+rowHeight);
+                    ctx.lineTo(x+width,rowY+rowHeight);
+                    ctx.stroke();
+
+                    if (user.empty) {
+                        ctx.fillStyle = palette.muted;
+                        ctx.font = 'italic 400 9px Segoe UI, Arial, sans-serif';
+                        ctx.fillText(user.name,x+3,rowY+rowHeight/2);
+                        return;
+                    }
+
+                    const role = roleV32(user);
+                    ctx.fillStyle = palette.muted;
+                    ctx.font = '700 8px Segoe UI, Arial, sans-serif';
+                    ctx.fillText(
+                        String(index+1).padStart(2,'0'),
+                        x+3,
+                        rowY+rowHeight/2
+                    );
+
+                    ctx.fillStyle = palette.text;
+                    ctx.font = '700 9.5px Segoe UI, Arial, sans-serif';
+                    ctx.fillText(
+                        truncateV32(ctx,user.name || 'User',nameW-8),
+                        x+noW,
+                        rowY+rowHeight/2
+                    );
+
+                    ctx.fillStyle = ROLE_COLORS[role] || palette.accent;
+                    ctx.font = '800 8px Segoe UI, Arial, sans-serif';
+                    ctx.fillText(
+                        (ROLE_LABELS[role] || role).toUpperCase(),
+                        x+noW+nameW+8,
+                        rowY+rowHeight/2
+                    );
+
+                    ctx.fillStyle = palette.muted;
+                    ctx.font = '400 8.5px Segoe UI, Arial, sans-serif';
+                    ctx.fillText(
+                        truncateV32(
+                            ctx,
+                            String(user.note || '').trim() || '—',
+                            noteW-8
+                        ),
+                        x+noW+nameW+roleW+14,
+                        rowY+rowHeight/2
+                    );
+                });
+            }
+
+            pairedRows.forEach(pair => {
+                drawSection(pair.left,padding,y,colWidth,pair.height);
+                if (pair.right) {
+                    drawSection(
+                        pair.right,
+                        padding+colWidth+gap,
+                        y,
+                        colWidth,
+                        pair.height
+                    );
+                }
+                y += pair.height + sectionGap;
+            });
+
+            if (unassignedSection) {
+                drawSection(
+                    unassignedSection,
+                    padding,
+                    y,
+                    canvasWidth-padding*2,
+                    heightOf(unassignedSection)
+                );
+                y += heightOf(unassignedSection) + sectionGap;
+            }
+
+            ctx.strokeStyle = palette.border;
+            ctx.beginPath();
+            ctx.moveTo(padding,canvasHeight-padding-footerHeight);
+            ctx.lineTo(canvasWidth-padding,canvasHeight-padding-footerHeight);
+            ctx.stroke();
+
+            ctx.fillStyle = palette.muted;
+            ctx.font = '400 9px Segoe UI, Arial, sans-serif';
+            ctx.fillText(
+                `Diperbarui ${previewData.createdAt || '-'} · ${previewData.createdBy || 'System'}`,
+                padding,
+                canvasHeight-padding-18
+            );
+
+            if (typeof downloadCanvasAsPng !== 'function') {
+                throw new Error('Fungsi download screenshot tidak tersedia.');
+            }
+
+            await downloadCanvasAsPng(
+                canvas,
+                `shift-kerja-${new Date().toISOString().split('T')[0]}.png`
+            );
+
+            showShiftToast('Screenshot Shift berhasil dibuat.','success');
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Screenshot gagal:`,error);
+            showShiftToast(
+                'Screenshot gagal dibuat oleh browser ini.',
+                'error',
+                3500
+            );
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = original;
+            }
+        }
+    }
+
+    window.openShiftPreview = openShiftPreviewV32;
+    window.renderShiftPreview = renderShiftPreviewV32;
+    window.captureShiftScreenshot = captureShiftScreenshotV32;
+
+    try { openShiftPreview = openShiftPreviewV32; } catch (_) {}
+    try { renderShiftPreview = renderShiftPreviewV32; } catch (_) {}
+    try { captureShiftScreenshot = captureShiftScreenshotV32; } catch (_) {}
+
+    window.DDTShiftPreviewV32 = Object.freeze({
+        version:'v32-preview-p1',
+        designAuthority:'Operational Shift Roster',
+        visibleTitle:'SHIFT KERJA',
+        layout:'two-column document roster',
+        screenshot:'matched roster presentation',
+        backend:'unchanged',
+        functionalAuthority:'V31 locked'
+    });
+})();
+</script>
+
 </body>
 </html>
