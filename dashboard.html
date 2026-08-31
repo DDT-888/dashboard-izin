@@ -104768,5 +104768,86 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 30 — Workspace Tab Theme-State Refinement -->
+<style id="ddt-shift-active-draft-candidate-v30-tab-theme-state">
+/* =====================================================================
+   V30 — Shift Aktif / Draft Shift tab state
+   Legacy light themes use their own existing accent authority.
+   Dark/Cyber is intentionally untouched.
+   Mecha Ivory is intentionally untouched.
+   ===================================================================== */
+
+/* Light Legacy — clearer inactive hover without becoming selected. */
+html[data-theme="light"]
+:not([data-mi-frozen-presentation="mecha-ivory"])
+:not([data-mi-native-presentation="mecha-ivory"])
+#tab-shifts .shift-workspace-tab:not(.active):hover {
+    color: color-mix(in srgb, var(--accent-strong) 76%, var(--text-primary)) !important;
+    background:
+        color-mix(in srgb, var(--accent-soft) 42%, var(--bg-card)) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--accent) 14%, var(--border-color)) !important;
+}
+
+/* Light Legacy — selected tab now visibly belongs to the current theme. */
+html[data-theme="light"]
+:not([data-mi-frozen-presentation="mecha-ivory"])
+:not([data-mi-native-presentation="mecha-ivory"])
+#tab-shifts .shift-workspace-tab.active {
+    color:
+        color-mix(in srgb, var(--accent-strong) 88%, var(--text-primary)) !important;
+    background:
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--accent) 13%, var(--bg-card)) 0%,
+            color-mix(in srgb, var(--accent-soft) 56%, var(--bg-card)) 100%
+        ) !important;
+    box-shadow:
+        0 3px 9px rgba(0,0,0,.065),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, var(--border-color)),
+        inset 0 1px 0 rgba(255,255,255,.48) !important;
+}
+
+/* Venom Green — inactive hover must stay in Venom material language,
+   never fall through to generic Dark/Cyber hover. */
+html[data-theme="dark"][data-theme-variant="venom"]
+:not([data-mi-frozen-presentation="mecha-ivory"])
+:not([data-mi-native-presentation="mecha-ivory"])
+#tab-shifts .shift-workspace-tab:not(.active):hover {
+    color:#dff5db !important;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(68,214,44,.095) 0%,
+            rgba(68,214,44,.055) 100%
+        ) !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(68,214,44,.18),
+        inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+</style>
+
+<script id="ddt-shift-active-draft-candidate-v30-marker">
+(function DDTShiftActiveDraftCandidateV30Marker(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V30__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V30__ = true;
+
+    window.DDTShiftCandidateV30 = Object.freeze({
+        version:'v30',
+        scope:'workspace-tab-theme-state-only',
+        backend:'unchanged from V27 hardening',
+        functionalAuthority:'locked',
+        preview:'untouched',
+        changes:Object.freeze({
+            lightLegacyActive:'current theme accent-based selected state',
+            lightLegacyHover:'quiet theme accent hover',
+            venomInactiveHover:'Venom-specific green material'
+        })
+    });
+})();
+</script>
+
 </body>
 </html>
