@@ -102220,5 +102220,688 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 22 — R5 Complete Revision Authority -->
+<script id="ddt-shift-active-draft-candidate-v22-r5-completion">
+(function DDTShiftActiveDraftCandidateV22R5Completion(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V22__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V22__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v22-r5-completion';
+
+    const legacyCandidateV22 = window.DDTShiftCandidate || null;
+    const legacySwitchModeV22 =
+        typeof legacyCandidateV22?.switchMode === 'function'
+            ? legacyCandidateV22.switchMode.bind(legacyCandidateV22)
+            : null;
+    const legacyFetchDraftV22 =
+        typeof legacyCandidateV22?.fetchDraft === 'function'
+            ? legacyCandidateV22.fetchDraft.bind(legacyCandidateV22)
+            : null;
+    const baseSwitchTabV22 =
+        typeof window.switchTab === 'function'
+            ? window.switchTab
+            : (typeof switchTab === 'function' ? switchTab : null);
+
+    let historyIdV22 = null;
+    let operationBusyV22 = false;
+    let routeSwitchBusyV22 = false;
+
+    function modeV22(){
+        try {
+            return legacyCandidateV22?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    function userNameV22(){
+        try {
+            return (typeof getCurrentUserName === 'function' && getCurrentUserName()) || 'System';
+        } catch (_) {
+            return 'System';
+        }
+    }
+
+    function clientIdV22(){
+        try {
+            return String(shiftClientSessionId || 'candidate-v22');
+        } catch (_) {
+            return 'candidate-v22';
+        }
+    }
+
+    function canEditV22(){
+        try {
+            return typeof canEditShift === 'function' && Boolean(canEditShift());
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function canViewHistoryV22(){
+        try {
+            return Boolean(getPermission(currentUserRole, 'historyshift_view'));
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function canLoadHistoryV22(){
+        return canViewHistoryV22() && canEditV22();
+    }
+
+    function isConflictV22(error){
+        return (
+            String(error?.code || '') === '40001' ||
+            String(error?.message || '').includes('SHIFT_CONFLICT')
+        );
+    }
+
+    function currentDirtyV22(){
+        try {
+            return Boolean(shiftIsDirty || shiftSaveQueued);
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function clearDirtyV22(){
+        try {
+            shiftIsDirty = false;
+            shiftSaveQueued = false;
+            clearPendingShiftDraft?.();
+        } catch (_) {}
+    }
+
+    async function syncRevisionV22(target, apply=false){
+        if (!window.DDTShiftCandidateV20?.syncWorkspace) return true;
+        return window.DDTShiftCandidateV20.syncWorkspace(
+            target,
+            { apply:Boolean(apply) }
+        );
+    }
+
+    async function getFreshRevisionV22(target){
+        await syncRevisionV22(target, false);
+        const revisions = window.DDTShiftCandidateV20?.getRevisions?.() || {};
+        const value = Number(
+            target === 'draft' ? revisions.draft : revisions.active
+        );
+        if (!Number.isFinite(value)) {
+            throw new Error(`Revision ${target === 'draft' ? 'Draft Shift' : 'Shift Aktif'} belum tersedia.`);
+        }
+        return value;
+    }
+
+    async function revisionedFlushV22(changeType='TAB_SWITCH'){
+        if (!canEditV22()) return true;
+
+        /*
+         * Clean workspace = no write, no artificial revision bump.
+         * Dirty/queued workspace = V20 is the sole normal payload writer.
+         * If a previous autosave is in-flight, V20 queues this flush behind it
+         * and uses the latest expected_revision.
+         */
+        if (!currentDirtyV22()) {
+            await syncRevisionV22(modeV22(), false);
+            return true;
+        }
+
+        const ok = await updateShiftActive(changeType);
+        if (!ok) return false;
+
+        await syncRevisionV22(modeV22(), false);
+        clearDirtyV22();
+        return true;
+    }
+
+    async function handleConflictV22(error, target, context){
+        console.warn(`[${PATCH_ID}] ${context} conflict:`, error);
+
+        try {
+            await syncRevisionV22(target, modeV22() === target);
+        } catch (_) {}
+
+        showShiftToast(
+            `Data ${target === 'draft' ? 'Draft Shift' : 'Shift Aktif'} berubah dari editor lain. Data terbaru sudah dimuat; silakan ulangi ${context.toLowerCase()}.`,
+            'warning',
+            4400
+        );
+    }
+
+    /*
+     * Safe workspace switch:
+     * 1) revisioned flush through V20
+     * 2) clear dirty flags
+     * 3) call legacy switch ONLY as presentation/loader transition.
+     *
+     * The legacy closure still calls flushCurrentWorkspace(), but because
+     * dirty/queued are already false its old saveDraftToServer/base writer
+     * branches are unreachable.
+     */
+    async function safeSwitchModeV22(nextMode, options={}){
+        const target = nextMode === 'draft' ? 'draft' : 'active';
+        const current = modeV22();
+
+        if (target === current) {
+            if (options.reload) {
+                await syncRevisionV22(target, true);
+            }
+            return true;
+        }
+
+        if (!legacySwitchModeV22) {
+            throw new Error('Workspace switch authority tidak tersedia.');
+        }
+
+        if (!options.skipFlush) {
+            const flushed = await revisionedFlushV22(
+                options.changeType || 'TAB_SWITCH'
+            );
+            if (!flushed) {
+                showShiftToast(
+                    'Perubahan belum berhasil disimpan. Perpindahan tab dibatalkan.',
+                    'warning',
+                    3200
+                );
+                return false;
+            }
+        } else {
+            clearDirtyV22();
+        }
+
+        await legacySwitchModeV22(target);
+        await syncRevisionV22(target, false);
+        return modeV22() === target;
+    }
+
+    async function safeCopyActiveV22(button){
+        if (modeV22() !== 'draft' || !canEditV22() || operationBusyV22) return;
+
+        let confirmed = true;
+        if (typeof requestPremiumConfirmation === 'function') {
+            confirmed = await requestPremiumConfirmation({
+                title:'Salin Shift Aktif',
+                message:'Susunan Shift Aktif akan disalin ke Draft Shift sebagai basis periode berikutnya.',
+                note:'Periode Draft Shift yang sudah ditentukan tetap dipertahankan.',
+                confirmText:'Salin Shift Aktif',
+                variant:'info'
+            });
+        }
+        if (!confirmed) return;
+
+        operationBusyV22 = true;
+        if (button) button.disabled = true;
+
+        try {
+            const flushed = await revisionedFlushV22('PRE_COPY_ACTIVE');
+            if (!flushed) return;
+
+            const expectedDraft = await getFreshRevisionV22('draft');
+
+            const { data, error } = await supabaseDashboard.rpc(
+                'copy_shift_active_to_draft_guarded',
+                {
+                    p_expected_draft_revision: expectedDraft,
+                    p_client_id: clientIdV22(),
+                    p_updated_by: userNameV22()
+                }
+            );
+
+            if (error) throw error;
+
+            if (legacyFetchDraftV22) {
+                await legacyFetchDraftV22();
+            }
+            await syncRevisionV22('draft', true);
+
+            showShiftToast(
+                'Shift Aktif berhasil disalin ke Draft Shift.',
+                'success',
+                2200
+            );
+        } catch (error) {
+            if (isConflictV22(error)) {
+                await handleConflictV22(error, 'draft', 'Salin Shift Aktif');
+                return;
+            }
+            console.error(`[${PATCH_ID}] Copy Active gagal:`, error);
+            showShiftToast(
+                `Gagal menyalin Shift Aktif: ${error.message}`,
+                'error',
+                3800
+            );
+        } finally {
+            operationBusyV22 = false;
+            if (button) button.disabled = !canEditV22();
+        }
+    }
+
+    async function safePublishDraftV22(button){
+        if (modeV22() !== 'draft' || !canEditV22() || operationBusyV22) return;
+
+        let period = null;
+        try {
+            period = typeof normalizeShiftPeriod === 'function'
+                ? normalizeShiftPeriod(activeShiftPeriod)
+                : activeShiftPeriod;
+        } catch (_) {
+            period = activeShiftPeriod;
+        }
+
+        if (!period?.start || !period?.end) {
+            showShiftToast(
+                'Tentukan periode Draft Shift terlebih dahulu.',
+                'warning',
+                2800
+            );
+            return;
+        }
+
+        let confirmed = true;
+        if (typeof requestPremiumConfirmation === 'function') {
+            confirmed = await requestPremiumConfirmation({
+                title:'Publikasikan Draft Shift',
+                message:`Draft Shift periode ${period.start} — ${period.end} akan menjadi Shift Aktif.`,
+                note:'Susunan dan periode Shift Aktif akan diganti oleh Draft Shift.',
+                confirmText:'Publikasikan',
+                variant:'warning'
+            });
+        }
+        if (!confirmed) return;
+
+        operationBusyV22 = true;
+        if (button) button.disabled = true;
+
+        try {
+            const flushed = await revisionedFlushV22('PRE_PUBLISH');
+            if (!flushed) {
+                throw new Error('Draft Shift belum berhasil disimpan.');
+            }
+
+            const expectedDraft = await getFreshRevisionV22('draft');
+            const expectedActive = await getFreshRevisionV22('active');
+
+            const { data, error } = await supabaseDashboard.rpc(
+                'publish_shift_draft_to_active_guarded',
+                {
+                    p_expected_draft_revision: expectedDraft,
+                    p_expected_active_revision: expectedActive,
+                    p_client_id: clientIdV22(),
+                    p_updated_by: userNameV22()
+                }
+            );
+
+            if (error) throw error;
+
+            /*
+             * Server has already:
+             * - promoted Draft to Active
+             * - reset Draft
+             * - advanced both revisions
+             *
+             * Never flush old local Draft again here.
+             */
+            clearDirtyV22();
+
+            const switched = await safeSwitchModeV22(
+                'active',
+                { skipFlush:true, reload:true }
+            );
+            if (!switched) {
+                throw new Error('Shift Aktif berhasil dipublikasikan tetapi UI gagal berpindah.');
+            }
+
+            await syncRevisionV22('active', true);
+            await syncRevisionV22('draft', false);
+
+            const result = Array.isArray(data) ? data[0] : data;
+            const publishedPeriod = result?.period || period;
+
+            showShiftToast(
+                `Draft Shift ${publishedPeriod?.start || period.start} — ${publishedPeriod?.end || period.end} telah dipublikasikan.`,
+                'success',
+                3200
+            );
+        } catch (error) {
+            if (isConflictV22(error)) {
+                const target = String(error?.message || '').includes('|active|')
+                    ? 'active'
+                    : 'draft';
+                await handleConflictV22(error, target, 'Publikasikan Draft');
+                return;
+            }
+
+            console.error(`[${PATCH_ID}] Publish gagal:`, error);
+            showShiftToast(
+                `Gagal mempublikasikan Draft Shift: ${error.message}`,
+                'error',
+                4000
+            );
+        } finally {
+            operationBusyV22 = false;
+            if (button) button.disabled = !canEditV22();
+        }
+    }
+
+    function historyRowV22(historyId){
+        try {
+            return Array.isArray(shiftHistoryData)
+                ? shiftHistoryData.find(row => String(row.id) === String(historyId))
+                : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function periodLabelV22(row){
+        const start = String(row?.periode_start || row?.tanggal || '');
+        const end = String(row?.periode_end || row?.periode_start || row?.tanggal || '');
+        if (!start || !end) return 'periode tersimpan';
+
+        const monthNames = [
+            'Januari','Februari','Maret','April','Mei','Juni',
+            'Juli','Agustus','September','Oktober','November','Desember'
+        ];
+        const parse = value => {
+            const [y,m,d] = value.split('-').map(Number);
+            return { y, m, d };
+        };
+        const a = parse(start);
+        const b = parse(end);
+
+        if (start === end) {
+            return `${String(a.d).padStart(2,'0')} ${monthNames[a.m-1]} ${a.y}`;
+        }
+        if (a.y === b.y && a.m === b.m) {
+            return `${String(a.d).padStart(2,'0')} — ${String(b.d).padStart(2,'0')} ${monthNames[b.m-1]} ${b.y}`;
+        }
+        return `${String(a.d).padStart(2,'0')} ${monthNames[a.m-1]} ${a.y} — ${String(b.d).padStart(2,'0')} ${monthNames[b.m-1]} ${b.y}`;
+    }
+
+    async function inspectHistoryV22(historyId){
+        const { data, error } = await supabaseDashboard.rpc(
+            'inspect_shift_history_load',
+            { p_history_id:Number(historyId) }
+        );
+        if (error) throw error;
+        return Array.isArray(data) ? data[0] : data;
+    }
+
+    async function safeLoadHistoryV22(target){
+        if (!historyIdV22 || !canLoadHistoryV22() || operationBusyV22) return;
+
+        const workspace = target === 'draft' ? 'draft' : 'active';
+        const row = historyRowV22(historyIdV22);
+        const period = periodLabelV22(row);
+
+        try {
+            const inspection = await inspectHistoryV22(historyIdV22);
+            const count = Number(inspection?.ineligible_count || 0);
+            const users = Array.isArray(inspection?.ineligible_users)
+                ? inspection.ineligible_users
+                : [];
+
+            if (count > 0) {
+                const names = users
+                    .slice(0,4)
+                    .map(user => user.name || 'USER')
+                    .join(', ');
+                const extra = count > 4 ? ` +${count - 4} lainnya` : '';
+
+                const proceed = await requestPremiumConfirmation({
+                    title:'Staff Tidak Aktif Ditemukan',
+                    message:`${count} staff pada snapshot ini sudah tidak aktif / tidak eligible.`,
+                    note:`${names}${extra}. Staff tersebut tidak akan dimuat ke workspace tujuan.`,
+                    confirmText:'Lanjutkan',
+                    variant:'danger'
+                });
+
+                if (!proceed) return;
+            }
+
+            const isActive = workspace === 'active';
+            const confirmed = await requestPremiumConfirmation({
+                title:isActive ? 'Load ke Shift Aktif' : 'Load ke Draft Shift',
+                message:isActive
+                    ? `Load Riwayat Shift periode ${period} ke Shift Aktif?`
+                    : `Load Riwayat Shift periode ${period} ke Draft Shift?`,
+                note:isActive
+                    ? 'Shift Aktif saat ini akan dibuatkan snapshot Riwayat terlebih dahulu, lalu diganti dengan data ini.'
+                    : 'Draft Shift yang sedang dikerjakan akan diganti. Shift Aktif tidak akan berubah.',
+                confirmText:'Ya, Load',
+                variant:isActive ? 'danger' : 'primary'
+            });
+
+            if (!confirmed) return;
+
+            operationBusyV22 = true;
+            closeHistoryLoadChoiceV19?.();
+
+            /*
+             * Preserve any local pending workspace first, even while the user
+             * is viewing the History route.
+             */
+            if (currentDirtyV22()) {
+                const flushed = await revisionedFlushV22('PRE_HISTORY_LOAD');
+                if (!flushed) {
+                    throw new Error('Perubahan workspace saat ini belum berhasil disimpan.');
+                }
+            }
+
+            const expected = await getFreshRevisionV22(workspace);
+
+            const rpc = isActive
+                ? 'load_shift_history_to_active_guarded'
+                : 'load_shift_history_to_draft_guarded';
+
+            const params = isActive
+                ? {
+                    p_history_id:Number(historyIdV22),
+                    p_expected_active_revision:expected,
+                    p_client_id:clientIdV22(),
+                    p_updated_by:userNameV22()
+                }
+                : {
+                    p_history_id:Number(historyIdV22),
+                    p_expected_draft_revision:expected,
+                    p_client_id:clientIdV22(),
+                    p_updated_by:userNameV22()
+                };
+
+            const { data, error } = await supabaseDashboard.rpc(rpc, params);
+            if (error) throw error;
+
+            closeHistoryDetailV19?.();
+            clearDirtyV22();
+
+            if (baseSwitchTabV22) {
+                baseSwitchTabV22('shifts');
+            }
+
+            if (modeV22() !== workspace) {
+                const switched = await safeSwitchModeV22(
+                    workspace,
+                    { skipFlush:true, reload:true }
+                );
+                if (!switched) throw new Error('Workspace tujuan gagal dibuka.');
+            }
+
+            await syncRevisionV22(workspace, true);
+
+            const result = Array.isArray(data) ? data[0] : data;
+            const skipped = Number(result?.skipped_count || 0);
+
+            showShiftToast(
+                isActive
+                    ? `Data Riwayat berhasil dimuat ke Shift Aktif.${skipped ? ` ${skipped} staff nonaktif dilewati.` : ''}`
+                    : `Data Riwayat berhasil dimuat ke Draft Shift.${skipped ? ` ${skipped} staff nonaktif dilewati.` : ''}`,
+                'success',
+                3000
+            );
+        } catch (error) {
+            if (isConflictV22(error)) {
+                await handleConflictV22(error, workspace, 'Load Riwayat Shift');
+                return;
+            }
+
+            console.error(`[${PATCH_ID}] Load History gagal:`, error);
+            showShiftToast(
+                `Gagal load data Riwayat: ${error.message}`,
+                'error',
+                4000
+            );
+        } finally {
+            operationBusyV22 = false;
+        }
+    }
+
+    // Track the History snapshot currently opened.
+    const baseOpenHistoryV22 =
+        typeof window.openShiftFromHistory === 'function'
+            ? window.openShiftFromHistory
+            : null;
+
+    if (baseOpenHistoryV22) {
+        window.openShiftFromHistory = async function candidateV22OpenHistory(historyId){
+            historyIdV22 = String(historyId);
+            return baseOpenHistoryV22(historyId);
+        };
+        try { openShiftFromHistory = window.openShiftFromHistory; } catch (_) {}
+    }
+
+    /*
+     * Inline History Detail Load buttons resolve this global name at click
+     * time, so this fully replaces V19/V21's unguarded Load path.
+     */
+    window.loadHistoryChoiceV19 = safeLoadHistoryV22;
+
+    /*
+     * Replace programmatic workspace API used by History navigation.
+     * Legacy closure remains only as UI state transition after a safe flush.
+     */
+    if (legacyCandidateV22) {
+        window.DDTShiftCandidate = Object.freeze({
+            ...legacyCandidateV22,
+            switchMode:safeSwitchModeV22,
+            copyActive:safeCopyActiveV22,
+            publishDraft:safePublishDraftV22,
+            manualSave:
+                window.DDTShiftCandidateV18?.confirmAndSave ||
+                legacyCandidateV22.manualSave
+        });
+    }
+
+    /*
+     * Existing V2 workspace buttons use addEventListener and hold closure
+     * references to legacy writers. Capture-phase interception prevents those
+     * listeners from executing and routes the operation to V22.
+     */
+    document.addEventListener('click', event => {
+        const tabButton = event.target?.closest?.(
+            '#tab-shifts .shift-workspace-tab[data-shift-workspace]'
+        );
+        if (tabButton) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            safeSwitchModeV22(tabButton.dataset.shiftWorkspace).catch(error => {
+                console.error(`[${PATCH_ID}] Workspace switch gagal:`, error);
+                showShiftToast(
+                    `Gagal berpindah workspace: ${error.message}`,
+                    'error',
+                    3600
+                );
+            });
+            return;
+        }
+
+        const copyButton = event.target?.closest?.(
+            '#tab-shifts .shift-copy-active'
+        );
+        if (copyButton) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            safeCopyActiveV22(copyButton);
+            return;
+        }
+
+        const publishButton = event.target?.closest?.(
+            '#tab-shifts .shift-publish-draft'
+        );
+        if (publishButton) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            safePublishDraftV22(publishButton);
+        }
+    }, true);
+
+    /*
+     * Leaving Shift Kerja must not race an in-flight/stale save.
+     * The route transition waits for the same revisioned persistence authority.
+     */
+    if (baseSwitchTabV22) {
+        window.switchTab = function candidateV22SwitchTab(tab){
+            const target = String(tab || '');
+            let current = '';
+            try { current = String(currentTab || ''); } catch (_) {}
+
+            if (
+                current === 'shifts' &&
+                target !== 'shifts' &&
+                currentDirtyV22() &&
+                !routeSwitchBusyV22
+            ) {
+                routeSwitchBusyV22 = true;
+
+                revisionedFlushV22('ROUTE_SWITCH')
+                    .then(ok => {
+                        if (!ok) {
+                            showShiftToast(
+                                'Perubahan Shift belum berhasil disimpan. Perpindahan menu dibatalkan.',
+                                'warning',
+                                3400
+                            );
+                            return;
+                        }
+                        baseSwitchTabV22.apply(this, arguments);
+                    })
+                    .catch(error => {
+                        console.error(`[${PATCH_ID}] Route flush gagal:`, error);
+                        showShiftToast(
+                            `Gagal menyimpan perubahan Shift: ${error.message}`,
+                            'error',
+                            3800
+                        );
+                    })
+                    .finally(() => {
+                        routeSwitchBusyV22 = false;
+                    });
+
+                return false;
+            }
+
+            return baseSwitchTabV22.apply(this, arguments);
+        };
+        try { switchTab = window.switchTab; } catch (_) {}
+    }
+
+    window.DDTShiftCandidateV22 = Object.freeze({
+        version:'v22',
+        scope:'R5 complete revision authority',
+        preview:'untouched',
+        switchMode:safeSwitchModeV22,
+        flush:revisionedFlushV22,
+        copyActive:safeCopyActiveV22,
+        publishDraft:safePublishDraftV22,
+        loadHistory:safeLoadHistoryV22,
+        getHistoryId:() => historyIdV22
+    });
+})();
+</script>
+
 </body>
 </html>
