@@ -105949,9 +105949,9 @@ html[data-theme="dark"][data-theme-variant="venom"]
             const regularSections = sections.filter(section => !section.unassigned);
             const unassignedSection = sections.find(section => section.unassigned) || null;
 
-            const canvasWidth = 1180;
-            const padding = 42;
-            const gap = 34;
+            const canvasWidth = 980;
+            const padding = 34;
+            const gap = 22;
             const colWidth = (canvasWidth - padding*2 - gap) / 2;
             const headerHeight = 112;
             const summaryHeight = 62;
@@ -106131,9 +106131,9 @@ html[data-theme="dark"][data-theme-variant="venom"]
 
                 const gridY = top+sectionHead;
 
-                const noW = 34;
-                const roleW = 84;
-                const noteW = 132;
+                const noW = 26;
+                const roleW = 70;
+                const noteW = 90;
                 const nameW = width - noW - roleW - noteW - 28;
 
                 ctx.fillStyle = palette.muted;
@@ -106683,6 +106683,167 @@ html[data-theme="dark"][data-theme-variant="venom"]
             note:'max 112px',
             trailingSpace:'absorbs unused section width'
         }),
+        backend:'unchanged',
+        functionalAuthority:'locked'
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 35 — Preview P4 Content-Driven Width -->
+<style id="ddt-shift-preview-p4-v35-style">
+/* =====================================================================
+   P4 — CONTENT-DRIVEN DOCUMENT WIDTH
+   V34 compacted the data tracks, but the document itself still occupied
+   1180px / almost the entire viewport. P4 makes the sheet follow the
+   actual two-column roster footprint instead.
+   ===================================================================== */
+
+#shiftPreviewModal.shift-preview-modal{
+    padding:18px !important;
+}
+
+#shiftPreviewModal .preview-roster-document{
+    width:min(980px, calc(100vw - 36px)) !important;
+    max-width:980px !important;
+}
+
+/* Keep the two roster columns close to their information footprint. */
+#shiftPreviewModal .preview-roster-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    column-gap:18px !important;
+    row-gap:14px !important;
+}
+
+#shiftPreviewModal .preview-roster-columns,
+#shiftPreviewModal .preview-roster-row{
+    grid-template-columns:
+        22px
+        minmax(170px,210px)
+        62px
+        minmax(68px,90px) !important;
+    column-gap:5px !important;
+    justify-content:start !important;
+}
+
+/* Remove the V34 elastic trailing track: the popup itself now absorbs
+   the width reduction, so information tracks do not need a fake spacer. */
+#shiftPreviewModal .preview-roster-columns > :nth-child(1),
+#shiftPreviewModal .preview-roster-row > :nth-child(1){
+    grid-column:1 !important;
+}
+
+#shiftPreviewModal .preview-roster-columns > :nth-child(2),
+#shiftPreviewModal .preview-roster-row > :nth-child(2){
+    grid-column:2 !important;
+}
+
+#shiftPreviewModal .preview-roster-columns > :nth-child(3),
+#shiftPreviewModal .preview-roster-row > :nth-child(3){
+    grid-column:3 !important;
+}
+
+#shiftPreviewModal .preview-roster-columns > :nth-child(4),
+#shiftPreviewModal .preview-roster-row > :nth-child(4){
+    grid-column:4 !important;
+}
+
+#shiftPreviewModal .preview-roster-name{
+    max-width:210px !important;
+}
+
+#shiftPreviewModal .preview-roster-note{
+    max-width:90px !important;
+}
+
+#shiftPreviewModal .preview-roster-header{
+    padding-left:18px !important;
+    padding-right:18px !important;
+}
+
+#shiftPreviewModal .preview-roster-summary{
+    padding-left:18px !important;
+    padding-right:18px !important;
+}
+
+#shiftPreviewModal .preview-roster-scroll{
+    padding-left:18px !important;
+    padding-right:18px !important;
+}
+
+#shiftPreviewModal .preview-roster-footer{
+    padding-left:18px !important;
+    padding-right:18px !important;
+}
+
+@media(max-width:1040px){
+    #shiftPreviewModal .preview-roster-document{
+        width:min(920px, calc(100vw - 28px)) !important;
+    }
+
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row{
+        grid-template-columns:
+            22px
+            minmax(155px,195px)
+            60px
+            minmax(66px,84px) !important;
+    }
+
+    #shiftPreviewModal .preview-roster-name{
+        max-width:195px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-note{
+        max-width:84px !important;
+    }
+}
+
+@media(max-width:860px){
+    #shiftPreviewModal.shift-preview-modal{
+        padding:10px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-document{
+        width:min(680px, calc(100vw - 20px)) !important;
+        max-width:680px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-grid{
+        grid-template-columns:1fr !important;
+        row-gap:13px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row{
+        grid-template-columns:
+            22px
+            minmax(118px,1fr)
+            62px
+            minmax(70px,.62fr) !important;
+        column-gap:5px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-name,
+    #shiftPreviewModal .preview-roster-note{
+        max-width:none !important;
+    }
+}
+</style>
+
+<script id="ddt-shift-preview-p4-v35-marker">
+(function DDTShiftPreviewP4V35Marker(){
+    'use strict';
+    if (window.__DDT_SHIFT_PREVIEW_P4_V35__) return;
+    window.__DDT_SHIFT_PREVIEW_P4_V35__ = true;
+
+    window.DDTShiftPreviewV35 = Object.freeze({
+        version:'v35-preview-p4',
+        scope:'content-driven-width',
+        desktopDocumentWidth:'980px max',
+        screenshotWidth:'980px',
+        layout:'two-column roster retained',
+        roleParity:'V34 retained',
         backend:'unchanged',
         functionalAuthority:'locked'
     });
