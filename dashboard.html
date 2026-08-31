@@ -103423,6 +103423,11 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         preview:'untouched',
         getPeriodHistoryId:() => periodHistoryIdV23,
         getRemotePending:() => ({...remotePendingV23}),
+        clearDeferredRemote:(target) => {
+            const key = target === 'draft' ? 'draft' : 'active';
+            remotePendingV23[key] = false;
+            return true;
+        },
         applyDeferredRemote:applyDeferredRemoteV23,
         authorities:Object.freeze({
             r1:'owned period editor state + canonical RPC',
@@ -103671,6 +103676,8 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] =
             Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 0) + 1;
 
+        let releasedEarlyV25 = false;
+
         try {
             const { data, error } = await supabaseDashboard.rpc(
                 'move_shift_staff_atomic',
@@ -103687,6 +103694,53 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             if (error) throw error;
 
             const result = Array.isArray(data) ? data[0] : data;
+
+            if (result?.conflict === true) {
+                /*
+                 * Consume the remote winner signal and release the move lock
+                 * BEFORE the authoritative reload. This prevents the V23/V24
+                 * deferred-reconcile layer from racing a second fetch against
+                 * this conflict recovery.
+                 */
+                window.DDTShiftCandidateV23?.clearDeferredRemote?.(targetWorkspace);
+
+                busyUsersV24.delete(busyKey);
+                window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] =
+                    Math.max(
+                        0,
+                        Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 1) - 1
+                    );
+                releasedEarlyV25 = true;
+
+                await window.DDTShiftCandidateV20?.syncWorkspace?.(
+                    targetWorkspace,
+                    {apply:true}
+                );
+
+                const staffName =
+                    result?.user?.name ||
+                    fallbackUser?.name ||
+                    'Staff';
+                const currentLabel =
+                    result?.current_label ||
+                    'posisi terbaru';
+
+                window.setTimeout(() => {
+                    window.__DDT_V25_HIGHLIGHT_MOVE__?.(
+                        result?.user_id || userId,
+                        'conflict'
+                    );
+
+                    showShiftToast(
+                        `${staffName} sudah dipindahkan pengguna lain ke ${currentLabel}. Posisi terbaru sudah dimuat.`,
+                        'warning',
+                        6000
+                    );
+                }, 60);
+
+                return false;
+            }
+
             if (!result?.ok) {
                 throw new Error('Atomic move tidak menghasilkan respons yang valid.');
             }
@@ -103726,6 +103780,13 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                 applyDurableLogV24(result.log);
             }
 
+            window.setTimeout(() => {
+                window.__DDT_V25_HIGHLIGHT_MOVE__?.(
+                    result?.user_id || userId,
+                    'success'
+                );
+            }, 30);
+
             return true;
         } catch (error) {
             if (isUserConflictV24(error)) {
@@ -103757,19 +103818,21 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             );
             return false;
         } finally {
-            busyUsersV24.delete(busyKey);
-            window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] =
-                Math.max(
-                    0,
-                    Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 1) - 1
-                );
+            if (!releasedEarlyV25) {
+                busyUsersV24.delete(busyKey);
+                window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] =
+                    Math.max(
+                        0,
+                        Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 1) - 1
+                    );
 
-            if (
-                Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 0) === 0
-            ) {
-                window.setTimeout(() => {
-                    convergeDeferredRemoteV24(targetWorkspace);
-                }, 80);
+                if (
+                    Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 0) === 0
+                ) {
+                    window.setTimeout(() => {
+                        convergeDeferredRemoteV24(targetWorkspace);
+                    }, 80);
+                }
             }
         }
     }
@@ -103920,6 +103983,350 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             rpcResponse:'small delta only; no full shift_data',
             realtime:'existing debounce/coalescing retained',
             globalRevision:'retained for structural/destructive operations'
+        })
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 25 — Conflict UX Closure + Venom Green Reconciliation -->
+<script id="ddt-shift-active-draft-candidate-v25-conflict-venom">
+(function DDTShiftActiveDraftCandidateV25ConflictVenom(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V25__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V25__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v25-conflict-venom';
+
+    function highlightMoveV25(userId, state='success'){
+        const selector = `.user-card-shift[data-user-id="${CSS.escape(String(userId))}"]`;
+        const card = document.querySelector(`#tab-shifts ${selector}`);
+        if (!card) return;
+
+        card.classList.remove(
+            'shift-v25-move-confirmed',
+            'shift-v25-move-conflict'
+        );
+        void card.offsetWidth;
+
+        card.classList.add(
+            state === 'conflict'
+                ? 'shift-v25-move-conflict'
+                : 'shift-v25-move-confirmed'
+        );
+
+        window.setTimeout(() => {
+            card.classList.remove(
+                'shift-v25-move-confirmed',
+                'shift-v25-move-conflict'
+            );
+        }, state === 'conflict' ? 1800 : 950);
+    }
+
+    window.__DDT_V25_HIGHLIGHT_MOVE__ = highlightMoveV25;
+
+    function injectStylesV25(){
+        if (document.getElementById(`${PATCH_ID}-style`)) return;
+
+        const style = document.createElement('style');
+        style.id = `${PATCH_ID}-style`;
+        style.textContent = `
+            /* ==========================================================
+               R5 — unmistakable but quiet move outcome
+               No success toast is reintroduced.
+               ========================================================== */
+            #tab-shifts .user-card-shift.shift-v25-move-confirmed{
+                outline:1px solid color-mix(in srgb,var(--accent) 48%,transparent)!important;
+                outline-offset:1px!important;
+                box-shadow:
+                    0 0 0 2px color-mix(in srgb,var(--accent) 8%,transparent),
+                    var(--shadow-sm)!important;
+            }
+
+            #tab-shifts .user-card-shift.shift-v25-move-conflict{
+                outline:1px solid rgba(230,150,40,.72)!important;
+                outline-offset:1px!important;
+                box-shadow:
+                    0 0 0 2px rgba(230,150,40,.10),
+                    var(--shadow-sm)!important;
+            }
+
+            /* ==========================================================
+               VENOM GREEN — SHIFT WORKSPACE TOP DATUM
+               Period / Summary / semantic vertical separators
+               ========================================================== */
+            html[data-selected-theme="venom"] body #tab-shifts .shift-workspace-context,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-workspace-context{
+                color:#b3c4af!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v4-period-title,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v4-period-title{
+                color:#86a581!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v13-period-edit-target,
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v4-period-value,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v13-period-edit-target,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v4-period-value{
+                color:#e7f3e4!important;
+                text-decoration-color:rgba(68,214,44,.34)!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-inline-summary,
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-summary-metric,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-inline-summary,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-summary-metric{
+                color:#a8bca4!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-summary-label,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-summary-label{
+                color:#8fa98a!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-summary-value,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-summary-value{
+                color:#e5f1e2!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-summary-total .shift-v12-summary-value,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-summary-total .shift-v12-summary-value{
+                color:color-mix(in srgb,#eef7ec 88%,#44d62c 12%)!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-summary-unassigned.is-zero .shift-v12-summary-label,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-summary-unassigned.is-zero .shift-v12-summary-label{
+                color:#778c74!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-summary-unassigned.is-zero .shift-v12-summary-value,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-summary-unassigned.is-zero .shift-v12-summary-value{
+                color:#9caf99!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-summary-dot,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-summary-dot{
+                background:rgba(68,214,44,.34)!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-v12-summary-group-divider,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-v12-summary-group-divider{
+                background:rgba(68,214,44,.20)!important;
+            }
+
+            html[data-selected-theme="venom"] body #tab-shifts .shift-workspace-action-divider.shift-v12-summary-divider,
+            html[data-theme="dark"][data-theme-variant="venom"] body #tab-shifts .shift-workspace-action-divider.shift-v12-summary-divider{
+                width:1px!important;
+                min-width:1px!important;
+                border:0!important;
+                background:rgba(68,214,44,.24)!important;
+                opacity:.86!important;
+            }
+
+            /* ==========================================================
+               VENOM GREEN — HISTORY DETAIL / BUKA DATA SHIFT
+               Replace inherited Cyber Dark surfaces with Venom material.
+               Role badges keep the exact role colors from V21.
+               ========================================================== */
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19{
+                background:rgba(3,7,3,.68)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-shell,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-shell{
+                background:#0e110e!important;
+                border-color:#283528!important;
+                box-shadow:0 30px 80px rgba(0,0,0,.46)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-top,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-top{
+                background:#111511!important;
+                border-bottom-color:#273427!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-kicker,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-kicker{
+                color:#7f9c7b!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-context>strong,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-context>strong{
+                color:#e7f2e4!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-context>small,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-context>small{
+                color:#82947f!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-summary small,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-summary small{
+                color:#89a184!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-summary strong,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-summary strong{
+                color:#e7f3e4!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-summary i,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-summary i{
+                background:rgba(68,214,44,.34)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-body,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-body{
+                background:#090c09!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-column,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-column{
+                background:#101410!important;
+                border-color:#263226!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-column-head,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-column-head{
+                background:#141914!important;
+                border-bottom-color:#293729!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-column-head>strong,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-column-head>strong{
+                color:#dcebd9!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-count,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-count{
+                color:#b5c9b1!important;
+                background:#0e120e!important;
+                border-color:#304030!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user{
+                background:#111511!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-csline,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-csline{
+                background:linear-gradient(135deg,rgba(230,81,0,.095),#111511 36%)!important;
+                border-color:rgba(230,81,0,.68)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-cs,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-cs{
+                background:linear-gradient(135deg,rgba(21,101,192,.095),#111511 36%)!important;
+                border-color:rgba(21,101,192,.70)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kapten,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kapten{
+                background:linear-gradient(135deg,rgba(106,27,154,.10),#111511 36%)!important;
+                border-color:rgba(106,27,154,.72)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kasir,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user.history-role-kasir{
+                background:linear-gradient(135deg,rgba(0,131,143,.10),#111511 36%)!important;
+                border-color:rgba(0,131,143,.72)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user-main strong,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user-main strong{
+                color:#e4f0e1!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user-main small,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-user-main small{
+                color:#7f947c!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-empty,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-empty{
+                color:#71836f!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-footer,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-footer{
+                color:#788d75!important;
+                background:#0f130f!important;
+                border-top-color:#273427!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-choice,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-choice{
+                background:rgba(3,7,3,.60)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-choice-card,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-choice-card{
+                background:#111511!important;
+                border-color:#2a382a!important;
+                box-shadow:0 22px 58px rgba(0,0,0,.42)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-choice-card h3,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-choice-card h3{
+                color:#e6f2e3!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-choice-card>p,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-choice-card>p{
+                color:#91a58d!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-target,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-target{
+                color:#dcebd9!important;
+                background:#141914!important;
+                border-color:#2c3a2c!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-target:hover,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-target:hover{
+                background:#172017!important;
+                border-color:rgba(68,214,44,.36)!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-target small,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-target small{
+                color:#82967f!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-cancel,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-load-v19-cancel{
+                color:#a9bda5!important;
+                background:#0f130f!important;
+                border-color:#2b382b!important;
+            }
+
+            html[data-selected-theme="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-load,
+            html[data-theme="dark"][data-theme-variant="venom"] body #shiftHistoryDetailModalV19 .history-detail-v19-load{
+                color:#dff6da!important;
+                background:rgba(68,214,44,.10)!important;
+                border-color:rgba(68,214,44,.34)!important;
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    injectStylesV25();
+
+    window.DDTShiftCandidateV25 = Object.freeze({
+        version:'v25',
+        scope:'same-user-conflict-ux + venom-reconciliation',
+        preview:'untouched',
+        highlightMove:highlightMoveV25,
+        authorities:Object.freeze({
+            conflict:'structured RPC result + single authoritative reload',
+            loserFeedback:'warning after latest state render',
+            winnerFeedback:'brief card confirmation highlight; no success toast',
+            venom:'History Detail + Shift period/summary/divider only'
         })
     });
 })();
