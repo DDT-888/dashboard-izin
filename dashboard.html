@@ -101988,6 +101988,13 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         scope:'functional-hardening-no-preview',
         canViewShiftHistory:canViewShiftHistoryV20,
         syncWorkspace:syncWorkspaceV20,
+        acceptRevision:(target, revision) => {
+            const value = Number(revision);
+            if (!Number.isFinite(value)) return false;
+            if (target === 'draft') draftRevisionV20 = value;
+            else activeRevisionV20 = value;
+            return true;
+        },
         getRevisions:() => ({
             active:activeRevisionV20,
             draft:draftRevisionV20
@@ -103017,7 +103024,8 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             return Boolean(
                 shiftIsDirty ||
                 shiftSaveQueued ||
-                window.__DDT_V20_SAVE_IN_FLIGHT__
+                window.__DDT_V20_SAVE_IN_FLIGHT__ ||
+                Number(window.__DDT_V24_MOVE_IN_FLIGHT__?.[target] || 0) > 0
             );
         } catch (_) {
             return false;
@@ -103415,11 +103423,503 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         preview:'untouched',
         getPeriodHistoryId:() => periodHistoryIdV23,
         getRemotePending:() => ({...remotePendingV23}),
+        applyDeferredRemote:applyDeferredRemoteV23,
         authorities:Object.freeze({
             r1:'owned period editor state + canonical RPC',
             r2:'MOVE_USER log awaited direct database insert',
             r5:'dirty local edit defers remote reconcile until revision conflict/save settles',
             deleteHistory:'server-confirmed delete + affected-row verification'
+        })
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 24 — User-Level Concurrent Move Authority -->
+<script id="ddt-shift-active-draft-candidate-v24-user-level-move">
+(function DDTShiftActiveDraftCandidateV24UserLevelMove(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V24__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V24__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v24-user-level-move';
+    const DATA_STAFF = '__DATA_STAFF__';
+
+    window.__DDT_V24_MOVE_IN_FLIGHT__ =
+        window.__DDT_V24_MOVE_IN_FLIGHT__ || {active:0, draft:0};
+
+    const busyUsersV24 = new Set();
+
+    function modeV24(){
+        try {
+            return window.DDTShiftCandidate?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    function canEditV24(){
+        try {
+            return typeof canEditShift === 'function' && Boolean(canEditShift());
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function clientIdV24(){
+        try {
+            return String(shiftClientSessionId || 'candidate-v24');
+        } catch (_) {
+            return 'candidate-v24';
+        }
+    }
+
+    function userNameV24(){
+        try {
+            return (typeof getCurrentUserName === 'function' && getCurrentUserName()) || 'System';
+        } catch (_) {
+            return 'System';
+        }
+    }
+
+    function isUserConflictV24(error){
+        return (
+            String(error?.code || '') === '40001' &&
+            String(error?.message || '').includes('SHIFT_USER_CONFLICT')
+        );
+    }
+
+    function localUserSnapshotV24(userId){
+        const key = String(userId);
+
+        for (const column of (Array.isArray(shiftColumns) ? shiftColumns : [])) {
+            const found = (column.users || []).find(
+                user => String(user.id) === key
+            );
+            if (found) return JSON.parse(JSON.stringify(found));
+        }
+
+        const available = (Array.isArray(availableUsers) ? availableUsers : [])
+            .find(user => String(user.id) === key);
+        if (available) return JSON.parse(JSON.stringify(available));
+
+        const roster = (Array.isArray(listUsers) ? listUsers : [])
+            .find(user => String(user.id) === key);
+        if (roster) {
+            return {
+                id:roster.id,
+                name:roster.name,
+                role:roster.role,
+                note:''
+            };
+        }
+
+        return {
+            id:userId,
+            name:'Staff',
+            role:'',
+            note:''
+        };
+    }
+
+    function removeLocalUserV24(userId){
+        const key = String(userId);
+
+        shiftColumns.forEach(column => {
+            column.users = (column.users || []).filter(
+                user => String(user.id) !== key
+            );
+        });
+
+        availableUsers = (availableUsers || []).filter(
+            user => String(user.id) !== key
+        );
+    }
+
+    function applyLocalMoveV24(result, fallbackUser, previousLayout){
+        const user = result?.user
+            ? JSON.parse(JSON.stringify(result.user))
+            : JSON.parse(JSON.stringify(fallbackUser));
+
+        removeLocalUserV24(user.id);
+
+        const target = String(result?.to_source || DATA_STAFF);
+
+        if (target === DATA_STAFF) {
+            availableUsers.push(user);
+            sortAvailableUsers();
+        } else {
+            const column = shiftColumns.find(
+                item => String(item.id) === target
+            );
+
+            if (!column) {
+                return false;
+            }
+
+            column.users = column.users || [];
+            column.users.push(user);
+            sortColumnUsers(column);
+        }
+
+        shiftIsDirty = false;
+        shiftSaveQueued = false;
+        clearPendingShiftDraft?.();
+        renderShiftPage(previousLayout);
+
+        if (modeV24() === 'active') {
+            try {
+                const updatedAt = new Date().toISOString();
+                lastShiftDataUpdatedAt = Date.now();
+
+                localStorage.setItem(
+                    'cachedShiftData',
+                    JSON.stringify({
+                        id:shiftActiveId || 1,
+                        shift_data:
+                            typeof buildShiftActiveData === 'function'
+                                ? buildShiftActiveData()
+                                : {
+                                    period:activeShiftPeriod || null,
+                                    columns:shiftColumns
+                                },
+                        updated_at:updatedAt,
+                        updated_by:userNameV24()
+                    })
+                );
+            } catch (_) {}
+        }
+
+        return true;
+    }
+
+    function applyDurableLogV24(log){
+        if (!log?.id || modeV24() !== 'active') return;
+
+        shiftLogs = [
+            log,
+            ...(Array.isArray(shiftLogs) ? shiftLogs : [])
+                .filter(item => String(item.id) !== String(log.id))
+                .filter(item => item.action === 'MOVE_USER')
+        ].slice(
+            0,
+            typeof SHIFT_LOG_LIMIT === 'number'
+                ? SHIFT_LOG_LIMIT
+                : 100
+        );
+
+        renderShiftLogs();
+    }
+
+    async function flushExistingDirtyV24(){
+        const dirty = Boolean(
+            shiftIsDirty ||
+            shiftSaveQueued ||
+            window.__DDT_V20_SAVE_IN_FLIGHT__
+        );
+
+        if (!dirty) return true;
+
+        if (window.DDTShiftCandidateV22?.flush) {
+            return Boolean(
+                await window.DDTShiftCandidateV22.flush('PRE_ATOMIC_MOVE')
+            );
+        }
+
+        return Boolean(await updateShiftActive('PRE_ATOMIC_MOVE'));
+    }
+
+    async function convergeDeferredRemoteV24(target){
+        if (
+            Number(window.__DDT_V24_MOVE_IN_FLIGHT__?.[target] || 0) > 0
+        ) {
+            return;
+        }
+
+        try {
+            await window.DDTShiftCandidateV23?.applyDeferredRemote?.(target);
+        } catch (error) {
+            console.warn(`[${PATCH_ID}] Deferred convergence gagal:`, error);
+        }
+    }
+
+    async function atomicMoveV24({
+        userId,
+        expectedSource,
+        targetSource,
+        previousLayout,
+        fallbackUser
+    }){
+        const targetWorkspace = modeV24();
+        const busyKey = `${targetWorkspace}:${String(userId)}`;
+
+        if (busyUsersV24.has(busyKey)) return false;
+
+        const flushed = await flushExistingDirtyV24();
+        if (!flushed) {
+            showShiftToast(
+                'Perubahan Shift sebelumnya belum berhasil disimpan.',
+                'warning',
+                3000
+            );
+            return false;
+        }
+
+        busyUsersV24.add(busyKey);
+        window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] =
+            Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 0) + 1;
+
+        try {
+            const { data, error } = await supabaseDashboard.rpc(
+                'move_shift_staff_atomic',
+                {
+                    p_workspace:targetWorkspace,
+                    p_user_id:Number(userId),
+                    p_expected_source:String(expectedSource || DATA_STAFF),
+                    p_target_source:String(targetSource || DATA_STAFF),
+                    p_client_id:clientIdV24(),
+                    p_updated_by:userNameV24()
+                }
+            );
+
+            if (error) throw error;
+
+            const result = Array.isArray(data) ? data[0] : data;
+            if (!result?.ok) {
+                throw new Error('Atomic move tidak menghasilkan respons yang valid.');
+            }
+
+            if (result.no_op) return true;
+
+            /*
+             * Keep V20/V22 global structural revision authority current
+             * WITHOUT an extra database SELECT.
+             */
+            window.DDTShiftCandidateV20?.acceptRevision?.(
+                targetWorkspace,
+                result.revision
+            );
+
+            const applied = applyLocalMoveV24(
+                result,
+                fallbackUser,
+                previousLayout
+            );
+
+            if (!applied) {
+                // Rare structural mismatch: one full convergence fetch is
+                // safer than guessing. This is not the normal move path.
+                await window.DDTShiftCandidateV20?.syncWorkspace?.(
+                    targetWorkspace,
+                    {apply:true}
+                );
+            }
+
+            /*
+             * R2 stays stronger than V23:
+             * Active log was already committed in the SAME transaction as
+             * the movement before this RPC returned.
+             */
+            if (targetWorkspace === 'active' && result.log) {
+                applyDurableLogV24(result.log);
+            }
+
+            return true;
+        } catch (error) {
+            if (isUserConflictV24(error)) {
+                await window.DDTShiftCandidateV20?.syncWorkspace?.(
+                    targetWorkspace,
+                    {apply:true}
+                );
+
+                const staffName = fallbackUser?.name || 'Staff';
+                showShiftToast(
+                    `${staffName} telah dipindahkan oleh pengguna lain. Data Shift terbaru sudah dimuat.`,
+                    'warning',
+                    4400
+                );
+                return false;
+            }
+
+            console.error(`[${PATCH_ID}] Atomic MOVE_USER gagal:`, error);
+
+            await window.DDTShiftCandidateV20?.syncWorkspace?.(
+                targetWorkspace,
+                {apply:true}
+            ).catch(()=>{});
+
+            showShiftToast(
+                `Gagal memindahkan staff: ${error.message}`,
+                'error',
+                4000
+            );
+            return false;
+        } finally {
+            busyUsersV24.delete(busyKey);
+            window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] =
+                Math.max(
+                    0,
+                    Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 1) - 1
+                );
+
+            if (
+                Number(window.__DDT_V24_MOVE_IN_FLIGHT__[targetWorkspace] || 0) === 0
+            ) {
+                window.setTimeout(() => {
+                    convergeDeferredRemoteV24(targetWorkspace);
+                }, 80);
+            }
+        }
+    }
+
+    // ================================================================
+    // Shift/Data Staff -> Shift
+    // Different user IDs may succeed concurrently.
+    // Same user changed from expected source => server conflict.
+    // ================================================================
+    onStaffDrop = async function candidateV24AtomicStaffDrop(e, targetColumnId){
+        e.preventDefault();
+
+        document.querySelectorAll('.shift-column-wrapper.drag-over-col')
+            .forEach(el => el.classList.remove('drag-over-col'));
+        document.querySelectorAll('.shift-column-dropzone.drag-over')
+            .forEach(el => el.classList.remove('drag-over'));
+        document.querySelectorAll('.shift-available-dropzone.drag-over')
+            .forEach(el => el.classList.remove('drag-over'));
+        document.querySelectorAll('.empty-drop.drag-over')
+            .forEach(el => el.classList.remove('drag-over'));
+
+        if (!canEditV24()) {
+            showShiftToast(
+                'Anda tidak memiliki izin untuk mengatur shift!',
+                'error'
+            );
+            return;
+        }
+
+        try {
+            const rawData =
+                e.dataTransfer.getData('staff-drag') ||
+                e.dataTransfer.getData('text/plain');
+
+            if (!rawData) {
+                showShiftToast('Data staff tidak valid', 'error');
+                return;
+            }
+
+            const data = JSON.parse(rawData);
+            const userId = data.userId;
+            const expectedSource =
+                data.sourceType === 'available'
+                    ? DATA_STAFF
+                    : String(data.columnId || DATA_STAFF);
+
+            const targetSource = String(targetColumnId || '');
+
+            if (!targetSource) {
+                showShiftToast('Kolom tujuan tidak ditemukan', 'error');
+                return;
+            }
+
+            // Keep V21 authority: same-column no-op is silent.
+            if (expectedSource === targetSource) return;
+
+            const fallbackUser = localUserSnapshotV24(userId);
+            const previousLayout = captureShiftCardLayout();
+
+            await atomicMoveV24({
+                userId,
+                expectedSource,
+                targetSource,
+                previousLayout,
+                fallbackUser
+            });
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Drop Shift gagal:`, error);
+            showShiftToast('Gagal memindahkan staff', 'error');
+        }
+    };
+    window.onStaffDrop = onStaffDrop;
+
+    // ================================================================
+    // Shift -> DATA STAFF
+    // ================================================================
+    onAvailableDrop = async function candidateV24AtomicAvailableDrop(e){
+        e.preventDefault();
+        e.currentTarget?.classList?.remove('drag-over');
+
+        if (!canEditV24()) {
+            showShiftToast(
+                'Anda tidak memiliki izin untuk mengatur shift!',
+                'error'
+            );
+            return;
+        }
+
+        try {
+            const rawData =
+                e.dataTransfer.getData('staff-drag') ||
+                e.dataTransfer.getData('text/plain');
+
+            if (!rawData) {
+                showShiftToast('Data staff tidak valid', 'error');
+                return;
+            }
+
+            const data = JSON.parse(rawData);
+
+            if (data.sourceType === 'available') {
+                showShiftToast(
+                    'Staff sudah berada di DATA STAFF',
+                    'info',
+                    1500
+                );
+                return;
+            }
+
+            const userId = data.userId;
+            const expectedSource = String(data.columnId || '');
+            if (!expectedSource) {
+                showShiftToast('Kolom sumber tidak ditemukan', 'error');
+                return;
+            }
+
+            const fallbackUser = localUserSnapshotV24(userId);
+            const previousLayout = captureShiftCardLayout();
+
+            await atomicMoveV24({
+                userId,
+                expectedSource,
+                targetSource:DATA_STAFF,
+                previousLayout,
+                fallbackUser
+            });
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Drop DATA STAFF gagal:`, error);
+            showShiftToast('Gagal mengembalikan staff', 'error');
+        }
+    };
+    window.onAvailableDrop = onAvailableDrop;
+
+    window.DDTShiftCandidateV24 = Object.freeze({
+        version:'v24',
+        scope:'user-level-concurrent-move-egress-safe',
+        preview:'untouched',
+        move:atomicMoveV24,
+        getMoveInFlight:() => ({
+            active:Number(window.__DDT_V24_MOVE_IN_FLIGHT__.active || 0),
+            draft:Number(window.__DDT_V24_MOVE_IN_FLIGHT__.draft || 0)
+        }),
+        authority:Object.freeze({
+            differentUserIds:'concurrent allowed',
+            sameUserId:'expected-source conflict',
+            activeLog:'same-transaction durable MOVE_USER',
+            draftLog:'suppressed',
+            rpcResponse:'small delta only; no full shift_data',
+            realtime:'existing debounce/coalescing retained',
+            globalRevision:'retained for structural/destructive operations'
         })
     });
 })();
