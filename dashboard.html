@@ -52247,8 +52247,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             if (revision <= shiftRealtimeRevision) return;
 
             shiftRealtimeRevision = revision;
-            applyOpenShiftNoteState(row.open_note_column_id, { animate: true });
 
+            /*
+             * V36: never let another client's realtime UI metadata control
+             * this browser's currently open Note panel.
+             */
             if (String(row.client_id || '') === String(shiftClientSessionId)) {
                 return;
             }
@@ -52280,8 +52283,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
                 const revision = Number(data.revision) || 0;
                 shiftRealtimeRevision = Math.max(shiftRealtimeRevision, revision);
-                applyOpenShiftNoteState(data.open_note_column_id, { animate: false });
 
+                /*
+                 * V36: server realtime state may contain legacy
+                 * open_note_column_id metadata, but panel visibility is local.
+                 */
                 if (
                     !baseline &&
                     revision > previousRevision &&
@@ -57698,11 +57704,12 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 nextOpenIds.add(normalizedId);
             }
 
+            /*
+             * V36 authority:
+             * Note panel visibility is local UI state. Do not broadcast
+             * open/close to other clients; only Note DATA remains realtime.
+             */
             applyOpenShiftNoteState(nextOpenIds, { animate: true });
-            publishShiftRealtime(
-                'NOTE_UI',
-                serializeShiftOpenNoteIds(nextOpenIds)
-            );
         }
 
         // ============================================================
@@ -58522,7 +58529,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const { userId, sourceType, columnId: sourceColumnId } = data;
 
                 if (sourceType === 'available') {
-                    showShiftToast('ℹ️ Staff sudah berada di DATA STAFF', 'info', 1500);
+                    // V36: DATA STAFF -> DATA STAFF is an intentional silent no-op.
                     return;
                 }
 
@@ -101665,7 +101672,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             const { userId, sourceType, columnId: sourceColumnId } = data;
 
             if (sourceType === 'available') {
-                showShiftToast('Staff sudah berada di DATA STAFF', 'info', 1500);
+                // V36: DATA STAFF -> DATA STAFF is an intentional silent no-op.
                 return;
             }
 
@@ -103965,11 +103972,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             const data = JSON.parse(rawData);
 
             if (data.sourceType === 'available') {
-                showShiftToast(
-                    'Staff sudah berada di DATA STAFF',
-                    'info',
-                    1500
-                );
+                // V36: DATA STAFF -> DATA STAFF is an intentional silent no-op.
                 return;
             }
 
@@ -105632,7 +105635,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                     ${escV32(ROLE_LABELS[role] || role)}
                 </span>
                 <span class="preview-roster-note ${note ? '' : 'is-empty'}">
-                    ${note ? escV32(note) : '—'}
+                    ${note ? escV32(note) : ''}
                 </span>
             </div>
         `;
@@ -105949,9 +105952,9 @@ html[data-theme="dark"][data-theme-variant="venom"]
             const regularSections = sections.filter(section => !section.unassigned);
             const unassignedSection = sections.find(section => section.unassigned) || null;
 
-            const canvasWidth = 980;
-            const padding = 34;
-            const gap = 22;
+            const canvasWidth = 860;
+            const padding = 30;
+            const gap = 18;
             const colWidth = (canvasWidth - padding*2 - gap) / 2;
             const headerHeight = 112;
             const summaryHeight = 62;
@@ -106132,9 +106135,12 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 const gridY = top+sectionHead;
 
                 const noW = 26;
-                const roleW = 70;
-                const noteW = 90;
-                const nameW = width - noW - roleW - noteW - 28;
+                const roleW = 64;
+                const noteW = 63;
+                const nameW = Math.min(
+                    148,
+                    Math.max(118, width - noW - roleW - noteW - 22)
+                );
 
                 ctx.fillStyle = palette.muted;
                 ctx.font = '800 7px Segoe UI, Arial, sans-serif';
@@ -106205,7 +106211,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                     ctx.fillText(
                         truncateV32(
                             ctx,
-                            String(user.note || '').trim() || '—',
+                            String(user.note || '').trim(),
                             noteW-8
                         ),
                         x+noW+nameW+roleW+14,
@@ -106844,6 +106850,147 @@ html[data-theme="dark"][data-theme-variant="venom"]
         screenshotWidth:'980px',
         layout:'two-column roster retained',
         roleParity:'V34 retained',
+        backend:'unchanged',
+        functionalAuthority:'locked'
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 36 — Preview P5 + Urgent Shift UX Closure -->
+<style id="ddt-shift-preview-p5-v36-style">
+/* =====================================================================
+   PREVIEW P5
+   Name intentionally truncates on one line.
+   Role follows immediately after the bounded Name track.
+   Catatan is ~30% narrower than P4 and empty notes render blank.
+   ===================================================================== */
+
+#shiftPreviewModal .preview-roster-document{
+    width:min(860px, calc(100vw - 36px)) !important;
+    max-width:860px !important;
+}
+
+#shiftPreviewModal .preview-roster-grid{
+    column-gap:16px !important;
+}
+
+#shiftPreviewModal .preview-roster-columns,
+#shiftPreviewModal .preview-roster-row{
+    grid-template-columns:
+        22px
+        148px
+        62px
+        63px !important;
+    column-gap:5px !important;
+    justify-content:start !important;
+}
+
+#shiftPreviewModal .preview-roster-name{
+    width:148px !important;
+    max-width:148px !important;
+    min-width:0 !important;
+    display:block !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+}
+
+#shiftPreviewModal .preview-roster-role{
+    width:max-content !important;
+    max-width:62px !important;
+    margin-left:0 !important;
+}
+
+#shiftPreviewModal .preview-roster-note{
+    width:63px !important;
+    max-width:63px !important;
+    min-width:0 !important;
+    display:block !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+}
+
+#shiftPreviewModal .preview-roster-note.is-empty{
+    opacity:1 !important;
+}
+
+@media(max-width:920px){
+    #shiftPreviewModal .preview-roster-document{
+        width:min(820px, calc(100vw - 28px)) !important;
+        max-width:820px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row{
+        grid-template-columns:
+            22px
+            140px
+            60px
+            60px !important;
+        column-gap:5px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-name{
+        width:140px !important;
+        max-width:140px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-note{
+        width:60px !important;
+        max-width:60px !important;
+    }
+}
+
+@media(max-width:860px){
+    #shiftPreviewModal .preview-roster-document{
+        width:min(680px, calc(100vw - 20px)) !important;
+        max-width:680px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row{
+        grid-template-columns:
+            22px
+            minmax(112px,1fr)
+            60px
+            minmax(48px,60px) !important;
+        column-gap:5px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-name{
+        width:auto !important;
+        max-width:none !important;
+    }
+
+    #shiftPreviewModal .preview-roster-note{
+        width:auto !important;
+        max-width:60px !important;
+    }
+}
+</style>
+
+<script id="ddt-shift-preview-p5-v36-marker">
+(function DDTShiftPreviewP5V36Marker(){
+    'use strict';
+    if (window.__DDT_SHIFT_PREVIEW_P5_V36__) return;
+    window.__DDT_SHIFT_PREVIEW_P5_V36__ = true;
+
+    window.DDTShiftPreviewV36 = Object.freeze({
+        version:'v36-preview-p5-urgent',
+        preview:Object.freeze({
+            documentWidth:'860px max',
+            name:'148px single-line ellipsis',
+            role:'62px immediately after Name',
+            note:'63px / ~30% narrower than P4',
+            emptyNote:'blank'
+        }),
+        shiftUrgent:Object.freeze({
+            dataStaffNoOpToast:'removed',
+            notePanelVisibility:'local browser UI state',
+            noteDataPersistence:'unchanged realtime/auto-save'
+        }),
         backend:'unchanged',
         functionalAuthority:'locked'
     });
