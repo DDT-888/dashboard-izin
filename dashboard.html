@@ -105289,10 +105289,10 @@ html:is(
     opacity:.72;
 }
 
-#shiftPreviewModal .preview-roster-role.role-csline{--roster-role:#e65100;}
-#shiftPreviewModal .preview-roster-role.role-cs{--roster-role:#1565c0;}
-#shiftPreviewModal .preview-roster-role.role-kapten{--roster-role:#6a1b9a;}
-#shiftPreviewModal .preview-roster-role.role-kasir{--roster-role:#00838f;}
+#shiftPreviewModal .preview-roster-role.role-csline{--roster-role:var(--preview-role-csline,#168247);}
+#shiftPreviewModal .preview-roster-role.role-cs{--roster-role:var(--preview-role-cs,#3568b5);}
+#shiftPreviewModal .preview-roster-role.role-kapten{--roster-role:var(--preview-role-kapten,#9a621a);}
+#shiftPreviewModal .preview-roster-role.role-kasir{--roster-role:var(--preview-role-kasir,#7251b5);}
 
 #shiftPreviewModal .preview-roster-note{
     min-width:0;
@@ -105826,6 +105826,17 @@ html[data-theme="dark"][data-theme-variant="venom"]
             </article>
         `;
 
+        /*
+         * V34 role-authority gate:
+         * copy the CURRENT Shift Kerja role-tag computed colors before
+         * Preview becomes visible, so Preview never owns a second palette.
+         */
+        try {
+            syncPreviewRoleAuthorityV34(modal);
+        } catch (error) {
+            console.warn('[V34] Preview role parity sync gagal:', error);
+        }
+
         requestAnimationFrame(() => {
             modal.classList.add('show');
         });
@@ -105928,6 +105939,11 @@ html[data-theme="dark"][data-theme-variant="venom"]
         }
 
         try {
+            try {
+                syncPreviewRoleAuthorityV34(
+                    document.getElementById('shiftPreviewModal')
+                );
+            } catch (_) {}
             const palette = paletteV32();
             const sections = buildCanvasSectionsV32();
             const regularSections = sections.filter(section => !section.unassigned);
@@ -106173,7 +106189,10 @@ html[data-theme="dark"][data-theme-variant="venom"]
                         rowY+rowHeight/2
                     );
 
-                    ctx.fillStyle = ROLE_COLORS[role] || palette.accent;
+                    ctx.fillStyle =
+                        window.__DDT_PREVIEW_ROLE_COLORS_V34__?.[role]
+                        || ROLE_COLORS[role]
+                        || palette.accent;
                     ctx.font = '800 8px Segoe UI, Arial, sans-serif';
                     ctx.fillText(
                         (ROLE_LABELS[role] || role).toUpperCase(),
@@ -106443,6 +106462,229 @@ html[data-theme="dark"][data-theme-variant="venom"]
         ]),
         backend:'unchanged',
         functionalAuthority:'V31 locked'
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 34 — Preview P3 Role Parity + Column Compaction -->
+<style id="ddt-shift-preview-p3-v34-style">
+/* =====================================================================
+   P3 COLUMN COMPACTION
+   Information stays left-weighted instead of stretching to fill each
+   half-page. The fifth track is intentionally empty and absorbs the
+   remaining width, while row separators continue across the full section.
+   ===================================================================== */
+#shiftPreviewModal .preview-roster-columns,
+#shiftPreviewModal .preview-roster-row{
+    grid-template-columns:
+        24px
+        minmax(180px,235px)
+        68px
+        minmax(72px,112px)
+        minmax(0,1fr) !important;
+    column-gap:6px !important;
+}
+
+#shiftPreviewModal .preview-roster-columns > :nth-child(1),
+#shiftPreviewModal .preview-roster-row > :nth-child(1){
+    grid-column:1;
+}
+
+#shiftPreviewModal .preview-roster-columns > :nth-child(2),
+#shiftPreviewModal .preview-roster-row > :nth-child(2){
+    grid-column:2;
+}
+
+#shiftPreviewModal .preview-roster-columns > :nth-child(3),
+#shiftPreviewModal .preview-roster-row > :nth-child(3){
+    grid-column:3;
+}
+
+#shiftPreviewModal .preview-roster-columns > :nth-child(4),
+#shiftPreviewModal .preview-roster-row > :nth-child(4){
+    grid-column:4;
+}
+
+#shiftPreviewModal .preview-roster-name{
+    max-width:235px !important;
+}
+
+#shiftPreviewModal .preview-roster-role{
+    justify-self:start !important;
+}
+
+#shiftPreviewModal .preview-roster-note{
+    max-width:112px !important;
+}
+
+@media(max-width:1180px){
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row{
+        grid-template-columns:
+            22px
+            minmax(155px,210px)
+            66px
+            minmax(68px,100px)
+            minmax(0,1fr) !important;
+        column-gap:5px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-name{
+        max-width:210px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-note{
+        max-width:100px !important;
+    }
+}
+
+@media(max-width:860px){
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row{
+        grid-template-columns:
+            22px
+            minmax(118px,1fr)
+            62px
+            minmax(70px,.62fr) !important;
+        column-gap:5px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-name,
+    #shiftPreviewModal .preview-roster-note{
+        max-width:none !important;
+    }
+}
+</style>
+
+<script id="ddt-shift-preview-p3-v34">
+(function DDTShiftPreviewP3V34(){
+    'use strict';
+    if (window.__DDT_SHIFT_PREVIEW_P3_V34__) return;
+    window.__DDT_SHIFT_PREVIEW_P3_V34__ = true;
+
+    const ROLES_V34 = ['csline','cs','kapten','kasir'];
+    let probeV34 = null;
+
+    function ensurePreviewRoleProbeV34(){
+        if (probeV34?.isConnected) return probeV34;
+
+        const shiftHost = document.getElementById('tab-shifts');
+        if (!shiftHost) return null;
+
+        const host = document.createElement('div');
+        host.id = 'shift-preview-v34-role-probe';
+        host.setAttribute('aria-hidden','true');
+        host.style.cssText = [
+            'position:fixed!important',
+            'left:-100000px!important',
+            'top:-100000px!important',
+            'width:240px!important',
+            'height:1px!important',
+            'overflow:hidden!important',
+            'visibility:hidden!important',
+            'opacity:0!important',
+            'pointer-events:none!important',
+            'z-index:-2147483647!important',
+            'contain:layout style paint!important'
+        ].join(';');
+
+        host.innerHTML = ROLES_V34.map(role => `
+            <div class="user-card-shift role-${role}">
+                <span class="avatar">A</span>
+                <span class="user-info">
+                    <span class="user-name">ROLE AUTHORITY</span>
+                </span>
+                <span class="role-tag-shift ${role}">${role}</span>
+            </div>
+        `).join('');
+
+        shiftHost.appendChild(host);
+        probeV34 = host;
+        return host;
+    }
+
+    function syncPreviewRoleAuthorityV34(modal){
+        const targetModal =
+            modal || document.getElementById('shiftPreviewModal');
+        const probe = ensurePreviewRoleProbeV34();
+        if (!targetModal || !probe) return;
+
+        const colors = {};
+
+        ROLES_V34.forEach(role => {
+            const tag = probe.querySelector(
+                `.user-card-shift.role-${role} .role-tag-shift.${role}`
+            );
+            if (!tag) return;
+
+            const computed = getComputedStyle(tag);
+            const color = computed.color;
+
+            if (color) {
+                targetModal.style.setProperty(
+                    `--preview-role-${role}`,
+                    color
+                );
+                colors[role] = color;
+            }
+        });
+
+        window.__DDT_PREVIEW_ROLE_COLORS_V34__ =
+            Object.freeze({...colors});
+    }
+
+    window.syncPreviewRoleAuthorityV34 = syncPreviewRoleAuthorityV34;
+
+    const themeObserverV34 = new MutationObserver(() => {
+        probeV34?.remove();
+        probeV34 = null;
+
+        const modal = document.getElementById('shiftPreviewModal');
+        if (
+            modal &&
+            (
+                modal.classList.contains('show') ||
+                modal.style.display === 'flex'
+            )
+        ) {
+            requestAnimationFrame(() => {
+                syncPreviewRoleAuthorityV34(modal);
+            });
+        }
+    });
+
+    function startV34(){
+        themeObserverV34.observe(document.documentElement,{
+            attributes:true,
+            attributeFilter:[
+                'data-theme',
+                'data-theme-variant',
+                'data-selected-theme',
+                'data-mi-frozen-presentation',
+                'data-mi-native-presentation'
+            ]
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded',startV34,{once:true});
+    } else {
+        startV34();
+    }
+
+    window.DDTShiftPreviewV34 = Object.freeze({
+        version:'v34-preview-p3',
+        scope:'role-parity + column-compaction',
+        roleAuthority:'computed Shift Kerja role-tag-shift',
+        columns:Object.freeze({
+            name:'max 235px desktop',
+            role:'68px',
+            note:'max 112px',
+            trailingSpace:'absorbs unused section width'
+        }),
+        backend:'unchanged',
+        functionalAuthority:'locked'
     });
 })();
 </script>
