@@ -105921,9 +105921,9 @@ html[data-theme="dark"][data-theme-variant="venom"]
             const sections = buildCanvasSectionsV32();
             const regularSections = sections;
 
-            const canvasWidth = 780;
-            const padding = 26;
-            const gap = 16;
+            const canvasWidth = 650;
+            const padding = 21;
+            const gap = 14;
             const colWidth = (canvasWidth - padding*2 - gap) / 2;
             const headerHeight = 88;
             const summaryHeight = 0;
@@ -106055,11 +106055,13 @@ html[data-theme="dark"][data-theme-variant="venom"]
             y += 16;
 
             function drawSection(section,x,top,width,height){
+                const sectionWidth = Math.min(297,width);
+
                 ctx.strokeStyle = palette.accent;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(x,top);
-                ctx.lineTo(x+width,top);
+                ctx.lineTo(x+sectionWidth,top);
                 ctx.stroke();
                 ctx.lineWidth = 1;
 
@@ -106074,7 +106076,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 ctx.fillStyle = palette.text;
                 ctx.font = '800 12px Segoe UI, Arial, sans-serif';
                 ctx.fillText(
-                    truncateV32(ctx,section.name || 'SHIFT',width-150),
+                    truncateV32(ctx,section.name || 'SHIFT',sectionWidth-118),
                     x+34,
                     top+17
                 );
@@ -106084,7 +106086,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 ctx.font = '700 9px Segoe UI, Arial, sans-serif';
                 ctx.fillText(
                     `${section.users.length} STAFF`,
-                    x+width,
+                    x+sectionWidth,
                     top+18
                 );
                 ctx.textAlign = 'left';
@@ -106092,7 +106094,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 ctx.strokeStyle = palette.border;
                 ctx.beginPath();
                 ctx.moveTo(x,top+sectionHead);
-                ctx.lineTo(x+width,top+sectionHead);
+                ctx.lineTo(x+sectionWidth,top+sectionHead);
                 ctx.stroke();
 
                 const gridY = top+sectionHead;
@@ -106100,10 +106102,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 const noW = 26;
                 const roleW = 64;
                 const noteW = 44;
-                const nameW = Math.min(
-                    148,
-                    Math.max(118, width - noW - roleW - noteW - 22)
-                );
+                const nameW = 148;
 
                 ctx.fillStyle = palette.muted;
                 ctx.font = '800 7px Segoe UI, Arial, sans-serif';
@@ -106115,7 +106114,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 ctx.strokeStyle = palette.borderSoft;
                 ctx.beginPath();
                 ctx.moveTo(x,gridY+columnsHead);
-                ctx.lineTo(x+width,gridY+columnsHead);
+                ctx.lineTo(x+sectionWidth,gridY+columnsHead);
                 ctx.stroke();
 
                 const users = section.users.length
@@ -106131,7 +106130,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                     ctx.strokeStyle = palette.borderSoft;
                     ctx.beginPath();
                     ctx.moveTo(x,rowY+rowHeight);
-                    ctx.lineTo(x+width,rowY+rowHeight);
+                    ctx.lineTo(x+sectionWidth,rowY+rowHeight);
                     ctx.stroke();
 
                     if (user.empty) {
@@ -107401,6 +107400,146 @@ html[data-theme="dark"][data-theme-variant="venom"]
             sectionHeader:'full-width retained'
         }),
         documentWidth:'780px max',
+        backend:'unchanged',
+        functionalAuthority:'locked'
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 39 — Preview P8 Unified Roster Footprint -->
+<style id="ddt-shift-preview-p8-v39-style">
+/* =====================================================================
+   P8 GEOMETRY AUTHORITY
+   One Shift section uses ONE horizontal footprint:
+   cyan rule -> section title -> staff count -> column labels -> rows.
+   ===================================================================== */
+
+#shiftPreviewModal .preview-roster-document{
+    width:min(650px, calc(100vw - 28px)) !important;
+    max-width:650px !important;
+}
+
+#shiftPreviewModal .preview-roster-scroll{
+    padding-left:14px !important;
+    padding-right:14px !important;
+}
+
+#shiftPreviewModal .preview-roster-grid{
+    grid-template-columns:repeat(2,297px) !important;
+    justify-content:center !important;
+    column-gap:14px !important;
+    row-gap:13px !important;
+}
+
+/* The section itself is no longer allowed to stretch wider than its table. */
+#shiftPreviewModal .preview-roster-section{
+    width:297px !important;
+    max-width:297px !important;
+    min-width:297px !important;
+    justify-self:start !important;
+}
+
+/* Odd/final section spans the grid but keeps the SAME 297px footprint. */
+#shiftPreviewModal .preview-roster-section.is-wide{
+    grid-column:1 / -1 !important;
+    width:297px !important;
+    max-width:297px !important;
+    min-width:297px !important;
+    justify-self:center !important;
+}
+
+/* Critical V39 correction:
+   SHIFT title + x STAFF now end exactly where CATATAN ends. */
+#shiftPreviewModal .preview-roster-section-head{
+    width:297px !important;
+    max-width:297px !important;
+    min-width:297px !important;
+    box-sizing:border-box !important;
+}
+
+#shiftPreviewModal .preview-roster-columns,
+#shiftPreviewModal .preview-roster-row,
+#shiftPreviewModal .preview-roster-rows{
+    width:297px !important;
+    max-width:297px !important;
+    min-width:297px !important;
+}
+
+/* Keep the established P7 data tracks unchanged. */
+#shiftPreviewModal .preview-roster-columns,
+#shiftPreviewModal .preview-roster-row{
+    grid-template-columns:
+        22px
+        148px
+        62px
+        44px !important;
+    column-gap:5px !important;
+}
+
+/* Slightly reduce outer body breathing now that geometry is exact. */
+#shiftPreviewModal .preview-roster-header{
+    padding-left:14px !important;
+    padding-right:14px !important;
+}
+
+#shiftPreviewModal .preview-roster-footer{
+    padding-left:14px !important;
+    padding-right:14px !important;
+}
+
+@media(max-width:680px){
+    #shiftPreviewModal .preview-roster-document{
+        width:min(640px, calc(100vw - 20px)) !important;
+        max-width:640px !important;
+    }
+
+    #shiftPreviewModal .preview-roster-grid{
+        grid-template-columns:1fr !important;
+        justify-content:stretch !important;
+    }
+
+    #shiftPreviewModal .preview-roster-section,
+    #shiftPreviewModal .preview-roster-section.is-wide,
+    #shiftPreviewModal .preview-roster-section-head,
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row,
+    #shiftPreviewModal .preview-roster-rows{
+        width:100% !important;
+        max-width:none !important;
+        min-width:0 !important;
+        grid-column:auto !important;
+        justify-self:stretch !important;
+    }
+
+    #shiftPreviewModal .preview-roster-columns,
+    #shiftPreviewModal .preview-roster-row{
+        grid-template-columns:
+            22px
+            minmax(112px,1fr)
+            60px
+            42px !important;
+    }
+}
+</style>
+
+<script id="ddt-shift-preview-p8-v39-marker">
+(function DDTShiftPreviewP8V39Marker(){
+    'use strict';
+    if (window.__DDT_SHIFT_PREVIEW_P8_V39__) return;
+    window.__DDT_SHIFT_PREVIEW_P8_V39__ = true;
+
+    window.DDTShiftPreviewV39 = Object.freeze({
+        version:'v39-preview-p8',
+        geometry:Object.freeze({
+            section:'297px',
+            sectionHeader:'297px',
+            table:'297px',
+            twoColumnGrid:'297px + 14px + 297px',
+            document:'650px max'
+        }),
+        rule:'staff count aligns to Catatan table edge',
+        screenshot:'same intrinsic geometry',
         backend:'unchanged',
         functionalAuthority:'locked'
     });
