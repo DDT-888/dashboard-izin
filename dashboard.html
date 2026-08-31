@@ -104423,5 +104423,273 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 }
 </style>
 
+
+<!-- DDT Shift Candidate 27 — Legacy History Card Computed-Style Parity -->
+<script id="ddt-shift-active-draft-candidate-v27-history-card-parity">
+(function DDTShiftActiveDraftCandidateV27HistoryCardParity(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V27__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V27__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v27-history-card-parity';
+    const ROLES = ['csline','cs','kapten','kasir'];
+
+    const CARD_PROPS = [
+        'background',
+        'background-color',
+        'background-image',
+        'background-position',
+        'background-size',
+        'border-top-color',
+        'border-right-color',
+        'border-bottom-color',
+        'border-left-color',
+        'border-top-width',
+        'border-right-width',
+        'border-bottom-width',
+        'border-left-width',
+        'border-top-style',
+        'border-right-style',
+        'border-bottom-style',
+        'border-left-style',
+        'border-radius',
+        'box-shadow',
+        'filter'
+    ];
+
+    const BADGE_PROPS = [
+        'background',
+        'background-color',
+        'background-image',
+        'color',
+        'border-top-color',
+        'border-right-color',
+        'border-bottom-color',
+        'border-left-color',
+        'border-top-width',
+        'border-right-width',
+        'border-bottom-width',
+        'border-left-width',
+        'border-top-style',
+        'border-right-style',
+        'border-bottom-style',
+        'border-left-style',
+        'border-radius',
+        'box-shadow',
+        'font-weight',
+        'letter-spacing',
+        'text-transform'
+    ];
+
+    let probeV27 = null;
+    let syncTimerV27 = null;
+
+    function isLegacyV27(){
+        const root = document.documentElement;
+        return (
+            root.getAttribute('data-mi-frozen-presentation') !== 'mecha-ivory' &&
+            root.getAttribute('data-mi-native-presentation') !== 'mecha-ivory'
+        );
+    }
+
+    function ensureProbeV27(){
+        if (probeV27?.isConnected) return probeV27;
+
+        const shiftsTab = document.getElementById('tab-shifts');
+        if (!shiftsTab) return null;
+
+        const host = document.createElement('div');
+        host.id = 'shift-v27-style-probe';
+        host.className = 'shift-column';
+        host.setAttribute('aria-hidden','true');
+        host.style.setProperty('position','fixed','important');
+        host.style.setProperty('left','-100000px','important');
+        host.style.setProperty('top','-100000px','important');
+        host.style.setProperty('width','240px','important');
+        host.style.setProperty('height','1px','important');
+        host.style.setProperty('overflow','hidden','important');
+        host.style.setProperty('visibility','hidden','important');
+        host.style.setProperty('opacity','0','important');
+        host.style.setProperty('pointer-events','none','important');
+        host.style.setProperty('z-index','-2147483647','important');
+        host.style.setProperty('contain','layout style paint','important');
+
+        host.innerHTML = ROLES.map(role => `
+            <div class="user-card-shift role-${role}" data-v27-probe-role="${role}">
+                <span class="avatar">A</span>
+                <span class="user-info">
+                    <span class="user-name">STYLE PROBE</span>
+                </span>
+                <span class="role-tag-shift ${role}">${role}</span>
+            </div>
+        `).join('');
+
+        shiftsTab.appendChild(host);
+        probeV27 = host;
+        return host;
+    }
+
+    function copyComputedV27(source, target, props){
+        if (!source || !target) return;
+
+        const computed = getComputedStyle(source);
+        props.forEach(prop => {
+            const value = computed.getPropertyValue(prop);
+            if (value) {
+                target.style.setProperty(prop, value, 'important');
+            }
+        });
+    }
+
+    function clearMirrorV27(root=document){
+        root.querySelectorAll?.(
+            '#shiftHistoryDetailModalV19 [data-v27-role-mirror]'
+        ).forEach(node => {
+            [...CARD_PROPS, ...BADGE_PROPS].forEach(prop => {
+                node.style.removeProperty(prop);
+            });
+            node.removeAttribute('data-v27-role-mirror');
+        });
+    }
+
+    function syncHistoryRoleCardsV27(){
+        const modal = document.getElementById('shiftHistoryDetailModalV19');
+        if (!modal) return;
+
+        if (!isLegacyV27()) {
+            clearMirrorV27(modal);
+            return;
+        }
+
+        const probe = ensureProbeV27();
+        if (!probe) return;
+
+        ROLES.forEach(role => {
+            const sourceCard = probe.querySelector(
+                `[data-v27-probe-role="${role}"]`
+            );
+            const sourceBadge = sourceCard?.querySelector(
+                `.role-tag-shift.${role}`
+            );
+
+            modal.querySelectorAll(
+                `.history-detail-v19-user.history-role-${role}`
+            ).forEach(card => {
+                copyComputedV27(sourceCard, card, CARD_PROPS);
+                card.dataset.v27RoleMirror = role;
+
+                const badge = card.querySelector(
+                    `.history-detail-v19-role.role-${role}`
+                );
+                if (badge && sourceBadge) {
+                    copyComputedV27(sourceBadge, badge, BADGE_PROPS);
+                    badge.dataset.v27RoleMirror = role;
+                }
+            });
+        });
+    }
+
+    function scheduleSyncV27(delay=0){
+        clearTimeout(syncTimerV27);
+        syncTimerV27 = window.setTimeout(() => {
+            syncTimerV27 = null;
+            syncHistoryRoleCardsV27();
+        }, delay);
+    }
+
+    const baseOpenHistoryV27 =
+        typeof window.openShiftFromHistory === 'function'
+            ? window.openShiftFromHistory
+            : null;
+
+    if (baseOpenHistoryV27) {
+        window.openShiftFromHistory = async function candidateV27OpenShiftFromHistory(historyId){
+            const result = await baseOpenHistoryV27(historyId);
+            requestAnimationFrame(() => scheduleSyncV27(0));
+            window.setTimeout(() => scheduleSyncV27(0), 80);
+            return result;
+        };
+        try { openShiftFromHistory = window.openShiftFromHistory; } catch (_) {}
+    }
+
+    const bodyObserverV27 = new MutationObserver(mutations => {
+        let relevant = false;
+
+        for (const mutation of mutations) {
+            const target = mutation.target;
+            if (
+                target?.id === 'shiftHistoryDetailModalV19' ||
+                target?.closest?.('#shiftHistoryDetailModalV19') ||
+                [...(mutation.addedNodes || [])].some(
+                    node =>
+                        node?.nodeType === 1 &&
+                        (
+                            node.id === 'shiftHistoryDetailModalV19' ||
+                            node.matches?.('.history-detail-v19-user') ||
+                            node.querySelector?.('.history-detail-v19-user')
+                        )
+                )
+            ) {
+                relevant = true;
+                break;
+            }
+        }
+
+        if (relevant) scheduleSyncV27(0);
+    });
+
+    const themeObserverV27 = new MutationObserver(mutations => {
+        if (!mutations.length) return;
+
+        /*
+         * Recreate the probe so computed styles are recalculated from the
+         * CURRENT Legacy theme cascade, then mirror again.
+         */
+        probeV27?.remove();
+        probeV27 = null;
+        scheduleSyncV27(30);
+    });
+
+    function startV27(){
+        bodyObserverV27.observe(document.body, {
+            childList:true,
+            subtree:true
+        });
+
+        themeObserverV27.observe(document.documentElement, {
+            attributes:true,
+            attributeFilter:[
+                'data-theme',
+                'data-theme-variant',
+                'data-selected-theme',
+                'data-mi-frozen-presentation',
+                'data-mi-native-presentation'
+            ]
+        });
+
+        scheduleSyncV27(0);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startV27, {once:true});
+    } else {
+        startV27();
+    }
+
+    window.DDTShiftCandidateV27 = Object.freeze({
+        version:'v27',
+        scope:'legacy-history-card-computed-parity + backend-hardening',
+        preview:'untouched',
+        syncHistoryRoleCards:syncHistoryRoleCardsV27,
+        authority:Object.freeze({
+            roleCardSource:'computed Shift Kerja user-card-shift in current Legacy theme',
+            roleBadgeSource:'computed Shift Kerja role-tag-shift in current Legacy theme',
+            themes:'all Legacy themes including Venom Green',
+            mecha:'not overridden'
+        })
+    });
+})();
+</script>
+
 </body>
 </html>
