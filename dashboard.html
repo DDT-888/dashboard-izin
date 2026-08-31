@@ -105584,7 +105584,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
         previewData = {
             columns,
             unassignedUsers,
-            totalStaff:assigned + unassignedUsers.length,
+            totalStaff:assigned,
             shiftCount:columns.length,
             cutiCount:cutiCountV32(columns),
             createdBy:
@@ -105634,9 +105634,10 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 <span class="preview-roster-role role-${role}">
                     ${escV32(ROLE_LABELS[role] || role)}
                 </span>
-                <span class="preview-roster-note ${note ? '' : 'is-empty'}">
-                    ${note ? escV32(note) : ''}
-                </span>
+                <span
+                    class="preview-roster-note ${note ? '' : 'is-empty'}"
+                    data-note-text="${escV32(note)}"
+                >${note ? escV32(note) : ''}</span>
             </div>
         `;
     }
@@ -105718,26 +105719,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
             );
         }).join('');
 
-        const unassignedSection = unassignedUsers.length
-            ? sectionHtmlV32(
-                {
-                    name:'UNASSIGNED',
-                    users:unassignedUsers
-                },
-                columns.length,
-                {wide:true,unassigned:true}
-            )
-            : '';
-
-        const workspaceLabel =
-            previewData.workspaceLabel ||
-            (
-                previewData.periodSource === 'history'
-                    ? 'RIWAYAT SHIFT'
-                    : workspaceV32() === 'draft'
-                        ? 'DRAFT SHIFT'
-                        : 'SHIFT AKTIF'
-            );
+        const unassignedSection = '';
 
         modal.style.display = 'flex';
         modal.classList.remove('show');
@@ -105747,12 +105729,10 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 <header class="preview-roster-header">
                     <div class="preview-roster-heading">
                         <span class="preview-roster-kicker">SHIFT KERJA</span>
-                        
-                    </div>
-
-                    <div class="preview-roster-period">
-                        <small>${escV32(workspaceLabel)}</small>
-                        <strong>${escV32(periodText)}</strong>
+                        <div class="preview-roster-period-inline">
+                            <span>PERIODE</span>
+                            <strong>${escV32(periodText)}</strong>
+                        </div>
                     </div>
 
                     <button
@@ -105781,16 +105761,12 @@ html[data-theme="dark"][data-theme-variant="venom"]
                         <small>Cuti</small>
                         <strong>${cutiCount}</strong>
                     </span>
-                    <span class="preview-roster-metric is-unassigned ${unassignedUsers.length ? 'has-value' : ''}">
-                        <small>Unassigned</small>
-                        <strong>${unassignedUsers.length}</strong>
-                    </span>
+
                 </div>
 
                 <div class="preview-roster-scroll">
                     <main class="preview-roster-grid">
                         ${columnSections}
-                        ${unassignedSection}
                     </main>
                 </div>
 
@@ -105838,6 +105814,12 @@ html[data-theme="dark"][data-theme-variant="venom"]
             syncPreviewRoleAuthorityV34(modal);
         } catch (error) {
             console.warn('[V34] Preview role parity sync gagal:', error);
+        }
+
+        try {
+            fitPreviewNotesV37(modal);
+        } catch (error) {
+            console.warn('[V37] Preview note fit gagal:', error);
         }
 
         requestAnimationFrame(() => {
@@ -105908,24 +105890,11 @@ html[data-theme="dark"][data-theme-variant="venom"]
     }
 
     function buildCanvasSectionsV32(){
-        const columns = (previewData?.columns || []).map(column => ({
+        return (previewData?.columns || []).map(column => ({
             name:column.name,
             users:sortUsersV32(column.users || []),
             unassigned:false
         }));
-        const unassigned = Array.isArray(previewData?.unassignedUsers)
-            ? sortUsersV32(previewData.unassignedUsers)
-            : [];
-
-        if (unassigned.length) {
-            columns.push({
-                name:'UNASSIGNED',
-                users:unassigned,
-                unassigned:true
-            });
-        }
-
-        return columns;
     }
 
     async function captureShiftScreenshotV32(){
@@ -105949,8 +105918,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
             } catch (_) {}
             const palette = paletteV32();
             const sections = buildCanvasSectionsV32();
-            const regularSections = sections.filter(section => !section.unassigned);
-            const unassignedSection = sections.find(section => section.unassigned) || null;
+            const regularSections = sections;
 
             const canvasWidth = 860;
             const padding = 30;
@@ -105960,7 +105928,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
             const summaryHeight = 62;
             const sectionHead = 48;
             const columnsHead = 28;
-            const rowHeight = 31;
+            const rowHeight = 30;
             const sectionGap = 22;
             const footerHeight = 52;
 
@@ -105988,10 +105956,6 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 (sum,row) => sum + row.height + sectionGap,
                 0
             );
-
-            if (unassignedSection) {
-                bodyHeight += heightOf(unassignedSection) + sectionGap;
-            }
 
             const canvasHeight =
                 padding +
@@ -106030,27 +105994,22 @@ html[data-theme="dark"][data-theme-variant="venom"]
             let y = padding;
 
             ctx.fillStyle = palette.text;
-            ctx.font = '800 24px Segoe UI, Arial, sans-serif';
-            ctx.fillText('SHIFT KERJA',x0,y+38);
+            ctx.font = '800 22px Segoe UI, Arial, sans-serif';
+            ctx.fillText('SHIFT KERJA',x0,y+28);
 
             const period = previewData.periodLabel || 'Periode belum ditentukan';
-            const workspace =
-                previewData.workspaceLabel ||
-                (workspaceV32()==='draft' ? 'DRAFT SHIFT' : 'SHIFT AKTIF');
 
-            ctx.textAlign = 'right';
             ctx.fillStyle = palette.muted;
             ctx.font = '800 8px Segoe UI, Arial, sans-serif';
-            ctx.fillText(workspace.toUpperCase(),canvasWidth-padding,y+20);
+            ctx.fillText('PERIODE :',x0,y+55);
 
             ctx.fillStyle = palette.text;
-            ctx.font = '700 13px Segoe UI, Arial, sans-serif';
+            ctx.font = '700 11px Segoe UI, Arial, sans-serif';
             ctx.fillText(
-                truncateV32(ctx,period,330),
-                canvasWidth-padding,
-                y+43
+                truncateV32(ctx,period,360),
+                x0+62,
+                y+55
             );
-            ctx.textAlign = 'left';
 
             y += headerHeight;
 
@@ -106063,8 +106022,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
             const summary = [
                 ['TOTAL STAFF',String(previewData.totalStaff || 0)],
                 ['SHIFT',String(previewData.shiftCount ?? previewData.columns.length)],
-                ['CUTI',String(previewData.cutiCount ?? cutiCountV32(previewData.columns))],
-                ['UNASSIGNED',String((previewData.unassignedUsers || []).length)]
+                ['CUTI',String(previewData.cutiCount ?? cutiCountV32(previewData.columns))]
             ];
             const metricWidth = 150;
             summary.forEach(([label,value],index) => {
@@ -106081,10 +106039,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 ctx.font = '800 8px Segoe UI, Arial, sans-serif';
                 ctx.fillText(label,mx,y+25);
 
-                ctx.fillStyle =
-                    label === 'UNASSIGNED' && Number(value) > 0
-                        ? palette.accent
-                        : palette.text;
+                ctx.fillStyle = palette.text;
                 ctx.font = '800 15px Segoe UI, Arial, sans-serif';
                 ctx.fillText(value,mx+88,y+25);
             });
@@ -106136,7 +106091,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
 
                 const noW = 26;
                 const roleW = 64;
-                const noteW = 63;
+                const noteW = 44;
                 const nameW = Math.min(
                     148,
                     Math.max(118, width - noW - roleW - noteW - 22)
@@ -106206,17 +106161,65 @@ html[data-theme="dark"][data-theme-variant="venom"]
                         rowY+rowHeight/2
                     );
 
-                    ctx.fillStyle = palette.muted;
-                    ctx.font = '400 8.5px Segoe UI, Arial, sans-serif';
-                    ctx.fillText(
-                        truncateV32(
-                            ctx,
-                            String(user.note || '').trim(),
-                            noteW-8
-                        ),
-                        x+noW+nameW+roleW+14,
-                        rowY+rowHeight/2
-                    );
+                    const noteText = String(user.note || '').trim();
+                    if (noteText) {
+                        const noteX = x+noW+nameW+roleW+14;
+                        const noteMax = Math.max(16,noteW-4);
+                        let noteSize = 8.0;
+                        const singleMin = 5.8;
+
+                        ctx.fillStyle = palette.muted;
+                        while (noteSize > singleMin) {
+                            ctx.font = `400 ${noteSize.toFixed(1)}px Segoe UI, Arial, sans-serif`;
+                            if (ctx.measureText(noteText).width <= noteMax) break;
+                            noteSize -= 0.35;
+                        }
+
+                        ctx.font = `400 ${Math.max(noteSize,singleMin)}px Segoe UI, Arial, sans-serif`;
+
+                        if (ctx.measureText(noteText).width <= noteMax) {
+                            ctx.fillText(noteText,noteX,rowY+rowHeight/2);
+                        } else {
+                            let twoSize = singleMin;
+                            const twoMin = 4.6;
+                            let lines = null;
+
+                            function splitTwoLines(text){
+                                const words = text.split(/\s+/).filter(Boolean);
+                                if (words.length < 2) {
+                                    const mid = Math.ceil(text.length/2);
+                                    return [text.slice(0,mid),text.slice(mid)];
+                                }
+                                let best = [words[0],words.slice(1).join(' ')];
+                                let bestDelta = Infinity;
+                                for (let cut=1;cut<words.length;cut++) {
+                                    const a = words.slice(0,cut).join(' ');
+                                    const b = words.slice(cut).join(' ');
+                                    const delta = Math.abs(ctx.measureText(a).width-ctx.measureText(b).width);
+                                    if (delta < bestDelta) {
+                                        best = [a,b];
+                                        bestDelta = delta;
+                                    }
+                                }
+                                return best;
+                            }
+
+                            while (twoSize >= twoMin) {
+                                ctx.font = `400 ${twoSize.toFixed(1)}px Segoe UI, Arial, sans-serif`;
+                                const candidate = splitTwoLines(noteText);
+                                if (candidate.every(line => ctx.measureText(line).width <= noteMax)) {
+                                    lines = candidate;
+                                    break;
+                                }
+                                twoSize -= 0.3;
+                            }
+
+                            ctx.font = `400 ${Math.max(twoSize,twoMin).toFixed(1)}px Segoe UI, Arial, sans-serif`;
+                            lines = lines || splitTwoLines(noteText);
+                            ctx.fillText(lines[0],noteX,rowY+rowHeight/2-3.2);
+                            ctx.fillText(lines[1],noteX,rowY+rowHeight/2+3.2);
+                        }
+                    }
                 });
             }
 
@@ -106233,17 +106236,6 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 }
                 y += pair.height + sectionGap;
             });
-
-            if (unassignedSection) {
-                drawSection(
-                    unassignedSection,
-                    padding,
-                    y,
-                    canvasWidth-padding*2,
-                    heightOf(unassignedSection)
-                );
-                y += heightOf(unassignedSection) + sectionGap;
-            }
 
             ctx.strokeStyle = palette.border;
             ctx.beginPath();
@@ -106991,6 +106983,146 @@ html[data-theme="dark"][data-theme-variant="venom"]
             notePanelVisibility:'local browser UI state',
             noteDataPersistence:'unchanged realtime/auto-save'
         }),
+        backend:'unchanged',
+        functionalAuthority:'locked'
+    });
+})();
+</script>
+
+\n<!-- DDT Shift Candidate 37 — Preview P6 Header + Adaptive Note Fit -->
+<style id="ddt-shift-preview-p6-v37-style">
+#shiftPreviewModal .preview-roster-header{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    align-items:center !important;
+    gap:14px !important;
+    padding:15px 18px 13px !important;
+}
+#shiftPreviewModal .preview-roster-heading{display:block !important;min-width:0 !important;}
+#shiftPreviewModal .preview-roster-kicker{
+    display:block !important;
+    margin:0 0 7px !important;
+    color:var(--accent-strong) !important;
+    font-size:15px !important;
+    line-height:1 !important;
+    font-weight:860 !important;
+    letter-spacing:.035em !important;
+}
+#shiftPreviewModal .preview-roster-period-inline{
+    display:flex !important;align-items:baseline !important;gap:7px !important;min-width:0 !important;
+}
+#shiftPreviewModal .preview-roster-period-inline>span{
+    color:var(--text-muted) !important;font-size:6.8px !important;line-height:1 !important;
+    font-weight:840 !important;letter-spacing:.095em !important;text-transform:uppercase !important;
+}
+#shiftPreviewModal .preview-roster-period-inline>span::after{content:" :";}
+#shiftPreviewModal .preview-roster-period-inline>strong{
+    color:var(--text-primary) !important;font-size:10px !important;line-height:1.2 !important;
+    font-weight:720 !important;letter-spacing:-.01em !important;white-space:nowrap !important;
+}
+#shiftPreviewModal .preview-roster-close{align-self:start !important;}
+#shiftPreviewModal .preview-roster-period{display:none !important;}
+#shiftPreviewModal .preview-roster-summary{min-height:42px !important;}
+#shiftPreviewModal .preview-roster-metric{min-width:100px !important;}
+
+/* Normal row is 1px shorter than V36. Two-line notes may grow their own row. */
+#shiftPreviewModal .preview-roster-row{min-height:28px !important;padding-top:3px !important;padding-bottom:3px !important;}
+
+/* Catatan 44px = ~30% narrower than V36 63px. */
+#shiftPreviewModal .preview-roster-columns,
+#shiftPreviewModal .preview-roster-row{
+    grid-template-columns:22px 148px 62px 44px !important;
+    column-gap:5px !important;
+}
+#shiftPreviewModal .preview-roster-note{
+    width:44px !important;max-width:44px !important;min-width:0 !important;display:block !important;
+    overflow:visible !important;text-overflow:clip !important;white-space:nowrap !important;
+    font-size:7.1px !important;line-height:1.05 !important;
+}
+#shiftPreviewModal .preview-roster-note.is-empty{min-height:1px !important;opacity:1 !important;}
+#shiftPreviewModal .preview-roster-note.is-fit-two{
+    white-space:normal !important;overflow-wrap:anywhere !important;word-break:break-word !important;
+}
+@media(max-width:920px){
+    #shiftPreviewModal .preview-roster-columns,#shiftPreviewModal .preview-roster-row{
+        grid-template-columns:22px 140px 60px 42px !important;
+    }
+    #shiftPreviewModal .preview-roster-note{width:42px !important;max-width:42px !important;}
+}
+@media(max-width:860px){
+    #shiftPreviewModal .preview-roster-period-inline>strong{white-space:normal !important;}
+    #shiftPreviewModal .preview-roster-columns,#shiftPreviewModal .preview-roster-row{
+        grid-template-columns:22px minmax(112px,1fr) 60px 42px !important;
+    }
+    #shiftPreviewModal .preview-roster-note{width:42px !important;max-width:42px !important;}
+}
+</style>
+<script id="ddt-shift-preview-p6-v37">
+(function DDTShiftPreviewP6V37(){
+    'use strict';
+    if (window.__DDT_SHIFT_PREVIEW_P6_V37__) return;
+    window.__DDT_SHIFT_PREVIEW_P6_V37__ = true;
+
+    function fitOneNoteV37(note){
+        if (!note) return;
+        const text = String(note.dataset.noteText || note.textContent || '').trim();
+        note.classList.remove('is-fit-single','is-fit-two');
+        note.style.removeProperty('font-size');
+        note.style.removeProperty('white-space');
+        note.style.removeProperty('line-height');
+        if (!text) { note.textContent=''; return; }
+        note.textContent=text;
+
+        const maxWidth=Math.max(1,note.clientWidth);
+        let size=7.1;
+        const minSingle=5.8;
+        note.style.setProperty('white-space','nowrap','important');
+        while (size>minSingle){
+            note.style.setProperty('font-size',`${size.toFixed(1)}px`,'important');
+            if (note.scrollWidth<=maxWidth+0.5){note.classList.add('is-fit-single');return;}
+            size-=0.3;
+        }
+        note.style.setProperty('font-size',`${minSingle}px`,'important');
+        if (note.scrollWidth<=maxWidth+0.5){note.classList.add('is-fit-single');return;}
+
+        /* Two-line phase: shrink only as much as needed to keep full text in two lines. */
+        note.classList.add('is-fit-two');
+        note.style.setProperty('white-space','normal','important');
+        let twoSize=minSingle;
+        const minTwo=4.6;
+        while (twoSize>=minTwo){
+            note.style.setProperty('font-size',`${twoSize.toFixed(1)}px`,'important');
+            const cs=getComputedStyle(note);
+            const lineHeight=parseFloat(cs.lineHeight)||twoSize*1.05;
+            if (note.scrollHeight<=lineHeight*2.15) return;
+            twoSize-=0.25;
+        }
+        /* Preserve content rather than truncate even for an exceptional note. */
+        note.style.setProperty('font-size',`${minTwo}px`,'important');
+    }
+
+    function fitPreviewNotesV37(root){
+        const host=root||document.getElementById('shiftPreviewModal')||document;
+        host.querySelectorAll?.('.preview-roster-note').forEach(fitOneNoteV37);
+    }
+    window.fitPreviewNotesV37=fitPreviewNotesV37;
+
+    let resizeTimer=null;
+    window.addEventListener('resize',()=>{
+        clearTimeout(resizeTimer);
+        resizeTimer=setTimeout(()=>{
+            const modal=document.getElementById('shiftPreviewModal');
+            if(modal?.classList.contains('show')) fitPreviewNotesV37(modal);
+        },80);
+    },{passive:true});
+
+    window.DDTShiftPreviewV37=Object.freeze({
+        version:'v37-preview-p6',
+        header:'SHIFT KERJA + PERIODE left aligned',
+        sourceContextLabel:'removed',
+        unassigned:'removed from Preview entirely',
+        totalStaff:'displayed roster staff only',
+        note:Object.freeze({width:'44px desktop',strategy:'shrink one line, then two lines',truncation:'never'}),
+        row:'normal row reduced 1px',
         backend:'unchanged',
         functionalAuthority:'locked'
     });
