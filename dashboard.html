@@ -95281,7 +95281,16 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         return;
     }
 
-    let shiftWorkspaceMode = 'active';
+    const SHIFT_WORKSPACE_SESSION_KEY_V28 = 'dashboard_shift_workspace_mode_v28';
+    let shiftWorkspaceMode = (() => {
+        try {
+            return sessionStorage.getItem(SHIFT_WORKSPACE_SESSION_KEY_V28) === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    })();
     let draftSaveChain = Promise.resolve(true);
     let draftLastUpdatedAt = 0;
     let draftRealtimeChannel = null;
@@ -100743,6 +100752,18 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             </footer>
         `;
 
+        /*
+         * V28 pre-paint gate:
+         * V27 role-card parity is applied synchronously while the modal is
+         * still closed. The browser therefore never paints the old History
+         * role-card palette for a frame before the Shift Kerja material lands.
+         */
+        try {
+            window.DDTShiftCandidateV27?.syncHistoryRoleCards?.();
+        } catch (error) {
+            console.warn('[V28] History role-card pre-paint sync gagal:', error);
+        }
+
         modal.classList.add('is-open');
         document.body.style.overflow = 'hidden';
     }
@@ -102463,6 +102484,16 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 
         await legacySwitchModeV22(target);
         await syncRevisionV22(target, false);
+
+        if (modeV22() === target) {
+            try {
+                sessionStorage.setItem(
+                    'dashboard_shift_workspace_mode_v28',
+                    target
+                );
+            } catch (_) {}
+        }
+
         return modeV22() === target;
     }
 
@@ -104687,6 +104718,28 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
             themes:'all Legacy themes including Venom Green',
             mecha:'not overridden'
         })
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 28 — Post-Lock Micro Refinement -->
+<script id="ddt-shift-active-draft-candidate-v28-post-lock">
+(function DDTShiftActiveDraftCandidateV28PostLock(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V28__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V28__ = true;
+
+    window.DDTShiftCandidateV28 = Object.freeze({
+        version:'v28',
+        scope:'post-lock micro refinement',
+        backend:'unchanged from V27',
+        functionalAuthority:'locked',
+        refinements:Object.freeze({
+            historyCardFlash:'pre-paint V27 computed-style sync',
+            workspaceRefresh:'session-scoped Active/Draft mode persistence'
+        }),
+        preview:'untouched'
     });
 })();
 </script>
