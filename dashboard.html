@@ -101221,5 +101221,747 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
 })();
 </script>
 
+
+<!-- DDT Shift Candidate 20 — Functional Hardening Authority -->
+<script id="ddt-shift-active-draft-candidate-v20-functional-hardening">
+(function DDTShiftActiveDraftCandidateV20FunctionalHardening(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V20__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V20__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v20-functional-hardening';
+    const baseRenderShiftHistoryV20 =
+        typeof renderShiftHistory === 'function' ? renderShiftHistory : null;
+    const baseCanOpenHistoryV20 =
+        typeof canOpenHistory === 'function' ? canOpenHistory : null;
+    const baseOpenHistoryV20 =
+        typeof openShiftFromHistory === 'function' ? openShiftFromHistory : null;
+    const baseDeleteHistoryV20 =
+        typeof deleteShiftHistory === 'function' ? deleteShiftHistory : null;
+    const baseLoadHistoryChoiceV20 =
+        typeof window.loadHistoryChoiceV19 === 'function'
+            ? window.loadHistoryChoiceV19
+            : null;
+
+    let selectedHistoryIdV20 = null;
+    let activeRevisionV20 = null;
+    let draftRevisionV20 = null;
+    let v20ActiveChannel = null;
+    let v20DraftChannel = null;
+    let v20InitPromise = null;
+    let v20ConflictReloading = false;
+
+    const queueV20 = {
+        active: Promise.resolve(true),
+        draft: Promise.resolve(true)
+    };
+    const seqV20 = { active:0, draft:0 };
+
+    function modeV20(){
+        try {
+            return window.DDTShiftCandidate?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    function clientIdV20(){
+        try { return String(shiftClientSessionId || 'candidate-v20'); }
+        catch (_) { return 'candidate-v20'; }
+    }
+
+    function userNameV20(){
+        try {
+            return (typeof getCurrentUserName === 'function' && getCurrentUserName()) || 'System';
+        } catch (_) {
+            return 'System';
+        }
+    }
+
+    function canEditV20(){
+        try { return typeof canEditShift === 'function' && Boolean(canEditShift()); }
+        catch (_) { return false; }
+    }
+
+    function canViewShiftHistoryV20(){
+        try {
+            if (typeof getPermission === 'function') {
+                return Boolean(getPermission(currentUserRole, 'historyshift_view'));
+            }
+            return Boolean(canAccessTab?.('historyshift'));
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function canLoadShiftHistoryV20(){
+        return canViewShiftHistoryV20() && canEditV20();
+    }
+
+    function cloneV20(value){
+        return value == null ? value : JSON.parse(JSON.stringify(value));
+    }
+
+    function currentPayloadV20(){
+        if (typeof buildShiftActiveData === 'function') {
+            return cloneV20(buildShiftActiveData());
+        }
+        return {
+            period: cloneV20(activeShiftPeriod || null),
+            columns: cloneV20(shiftColumns || [])
+        };
+    }
+
+    function isConflictV20(error){
+        return (
+            String(error?.code || '') === '40001' ||
+            String(error?.message || '').includes('SHIFT_CONFLICT')
+        );
+    }
+
+    async function readRevisionV20(target){
+        const table = target === 'draft' ? 'shift_draft' : 'shift_active';
+        let query = supabaseDashboard
+            .from(table)
+            .select('id,revision,updated_at');
+        query = target === 'draft'
+            ? query.eq('id',1)
+            : query.eq('singleton',true);
+        const { data, error } = await query.maybeSingle();
+        if (error) throw error;
+        const revision = Number(data?.revision ?? 0);
+        if (target === 'draft') draftRevisionV20 = revision;
+        else activeRevisionV20 = revision;
+        return revision;
+    }
+
+    async function syncWorkspaceV20(target, {apply=true} = {}){
+        if (v20ConflictReloading) return false;
+        v20ConflictReloading = true;
+        try {
+            if (apply && modeV20() === target) {
+                if (target === 'draft') {
+                    await window.DDTShiftCandidate?.fetchDraft?.();
+                } else if (typeof loadShiftActiveData === 'function') {
+                    await loadShiftActiveData();
+                }
+            }
+            await readRevisionV20(target);
+            return true;
+        } finally {
+            v20ConflictReloading = false;
+        }
+    }
+
+    async function ensureRevisionV20(target){
+        let value = target === 'draft' ? draftRevisionV20 : activeRevisionV20;
+        if (Number.isFinite(value)) return value;
+        if (!v20InitPromise) {
+            v20InitPromise = syncWorkspaceV20(modeV20(), {apply:true})
+                .catch(error => {
+                    console.error(`[${PATCH_ID}] Init revision gagal:`, error);
+                    return false;
+                });
+        }
+        await v20InitPromise;
+        value = target === 'draft' ? draftRevisionV20 : activeRevisionV20;
+        if (!Number.isFinite(value)) {
+            value = await readRevisionV20(target);
+        }
+        return value;
+    }
+
+    async function persistRevisionedV20(target, payload, changeType, localSeq){
+        const expected = await ensureRevisionV20(target);
+
+        const { data, error } = await supabaseDashboard.rpc(
+            'save_shift_workspace_revisioned',
+            {
+                p_workspace: target,
+                p_shift_data: payload,
+                p_expected_revision: expected,
+                p_client_id: clientIdV20(),
+                p_change_type: String(changeType || 'DATA'),
+                p_updated_by: userNameV20()
+            }
+        );
+
+        if (error) throw error;
+
+        const result = Array.isArray(data) ? data[0] : data;
+        const revision = Number(result?.revision ?? result?.row?.revision);
+        if (target === 'draft') draftRevisionV20 = revision;
+        else activeRevisionV20 = revision;
+
+        const row = result?.row || null;
+        const updatedAt = row?.updated_at || new Date().toISOString();
+
+        if (target === 'active') {
+            try {
+                lastShiftDataUpdatedAt = new Date(updatedAt).getTime();
+                localStorage.setItem('cachedShiftData', JSON.stringify({
+                    id: row?.id || shiftActiveId || 1,
+                    shift_data: payload,
+                    updated_at: updatedAt,
+                    updated_by: userNameV20()
+                }));
+            } catch (_) {}
+        }
+
+        if (localSeq === seqV20[target]) {
+            try {
+                shiftIsDirty = false;
+                shiftSaveQueued = false;
+                clearPendingShiftDraft?.();
+            } catch (_) {}
+        }
+
+        return true;
+    }
+
+    updateShiftActive = function candidateV20RevisionedSave(changeType='DATA'){
+        if (!canEditV20()) return Promise.resolve(false);
+
+        const target = modeV20();
+        const payload = currentPayloadV20();
+        const localSeq = ++seqV20[target];
+
+        try {
+            shiftIsDirty = true;
+            shiftSaveQueued = true;
+            cachePendingShiftDraft?.();
+        } catch (_) {}
+
+        queueV20[target] = queueV20[target]
+            .catch(() => true)
+            .then(async () => {
+                window.__DDT_V20_LAST_SAVE_CONFLICT__ = false;
+                try {
+                    return await persistRevisionedV20(
+                        target,
+                        payload,
+                        changeType,
+                        localSeq
+                    );
+                } catch (error) {
+                    if (isConflictV20(error)) {
+                        window.__DDT_V20_LAST_SAVE_CONFLICT__ = true;
+                        console.warn(`[${PATCH_ID}] Concurrent edit conflict:`, error);
+                        await syncWorkspaceV20(target, {apply:true});
+                        showShiftToast(
+                            'Perubahan dari editor lain terdeteksi. Data terbaru sudah dimuat; silakan ulangi perubahan Anda.',
+                            'warning',
+                            4200
+                        );
+                        return false;
+                    }
+
+                    console.error(`[${PATCH_ID}] Save gagal:`, error);
+                    try {
+                        shiftIsDirty = true;
+                        shiftSaveQueued = false;
+                        cachePendingShiftDraft?.();
+                    } catch (_) {}
+                    showShiftToast(
+                        `Gagal menyimpan perubahan Shift: ${error.message}`,
+                        'error',
+                        3800
+                    );
+                    return false;
+                }
+            });
+
+        return queueV20[target];
+    };
+
+    // -----------------------------------------------------------------
+    // R2 — MOVE_USER log is written only after persistence succeeds.
+    // -----------------------------------------------------------------
+    onStaffDrop = async function candidateV20StaffDropToShift(e, targetColumnId){
+        e.preventDefault();
+
+        document.querySelectorAll('.shift-column-wrapper.drag-over-col').forEach(el => el.classList.remove('drag-over-col'));
+        document.querySelectorAll('.shift-column-dropzone.drag-over').forEach(el => el.classList.remove('drag-over'));
+        document.querySelectorAll('.shift-available-dropzone.drag-over').forEach(el => el.classList.remove('drag-over'));
+        document.querySelectorAll('.empty-drop.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+        if (!canEditV20()) {
+            showShiftToast('Anda tidak memiliki izin untuk mengatur shift!', 'error');
+            return;
+        }
+
+        try {
+            const previousCardLayout = captureShiftCardLayout();
+            let rawData = e.dataTransfer.getData('staff-drag') ||
+                          e.dataTransfer.getData('text/plain');
+            if (!rawData) {
+                showShiftToast('Data staff tidak valid', 'error');
+                return;
+            }
+
+            const data = JSON.parse(rawData);
+            const { userId, sourceType, columnId: sourceColumnId } = data;
+
+            if (sourceType === 'column' && sourceColumnId === targetColumnId) {
+                showShiftToast('Staff sudah berada di kolom ini', 'info', 1500);
+                return;
+            }
+
+            const beforeColumns = cloneV20(shiftColumns);
+            const beforeAvailable = cloneV20(availableUsers);
+
+            let user = null;
+            let userNote = '';
+
+            if (sourceType === 'available') {
+                const idx = availableUsers.findIndex(
+                    u => String(u.id) === String(userId)
+                );
+                if (idx === -1) {
+                    showShiftToast('User tidak ditemukan di DATA STAFF', 'error');
+                    return;
+                }
+                user = availableUsers.splice(idx,1)[0];
+            } else {
+                const sourceColumn = shiftColumns.find(c => c.id === sourceColumnId);
+                if (!sourceColumn) {
+                    showShiftToast('Kolom sumber tidak ditemukan', 'error');
+                    return;
+                }
+                const idx = sourceColumn.users.findIndex(
+                    u => String(u.id) === String(userId)
+                );
+                if (idx === -1) {
+                    showShiftToast('User tidak ditemukan di kolom sumber', 'error');
+                    return;
+                }
+                user = sourceColumn.users.splice(idx,1)[0];
+                userNote = user.note || '';
+            }
+
+            const targetCol = shiftColumns.find(c => c.id === targetColumnId);
+            if (!targetCol) {
+                shiftColumns = beforeColumns;
+                availableUsers = beforeAvailable;
+                renderShiftPage(previousCardLayout);
+                showShiftToast('Kolom tujuan tidak ditemukan', 'error');
+                return;
+            }
+
+            if (targetCol.users.some(u => String(u.id) === String(user.id))) {
+                shiftColumns = beforeColumns;
+                availableUsers = beforeAvailable;
+                renderShiftPage(previousCardLayout);
+                showShiftToast(`${user.name} sudah ada di kolom ini`, 'info', 1500);
+                return;
+            }
+
+            user.note = userNote;
+            targetCol.users.push(user);
+            sortColumnUsers(targetCol);
+
+            shiftIsDirty = true;
+            shiftSaveQueued = true;
+            cachePendingShiftDraft?.();
+            renderShiftPage(previousCardLayout);
+
+            const fromLabel = sourceType === 'available'
+                ? 'DATA STAFF'
+                : (beforeColumns.find(c => c.id === sourceColumnId)?.name || 'kolom lain');
+            const toLabel = targetCol.name;
+
+            const saved = await updateShiftActive('MOVE_USER');
+            if (!saved) {
+                if (!window.__DDT_V20_LAST_SAVE_CONFLICT__) {
+                    shiftColumns = beforeColumns;
+                    availableUsers = beforeAvailable;
+                    shiftIsDirty = false;
+                    shiftSaveQueued = false;
+                    clearPendingShiftDraft?.();
+                    renderShiftPage(previousCardLayout);
+                }
+                return;
+            }
+
+            await insertShiftLog(
+                'MOVE_USER',
+                getCurrentUserName(),
+                `${user.name} dari ${fromLabel} ke ${toLabel}`
+            );
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Drop Shift gagal:`, error);
+            showShiftToast('Gagal memindahkan staff', 'error');
+        }
+    };
+
+    onAvailableDrop = async function candidateV20StaffDropToAvailable(e){
+        e.preventDefault();
+        e.currentTarget?.classList?.remove('drag-over');
+
+        if (!canEditV20()) {
+            showShiftToast('Anda tidak memiliki izin untuk mengatur shift!', 'error');
+            return;
+        }
+
+        try {
+            const previousCardLayout = captureShiftCardLayout();
+            let rawData = e.dataTransfer.getData('staff-drag') ||
+                          e.dataTransfer.getData('text/plain');
+            if (!rawData) {
+                showShiftToast('Data staff tidak valid', 'error');
+                return;
+            }
+
+            const data = JSON.parse(rawData);
+            const { userId, sourceType, columnId: sourceColumnId } = data;
+
+            if (sourceType === 'available') {
+                showShiftToast('Staff sudah berada di DATA STAFF', 'info', 1500);
+                return;
+            }
+
+            const sourceColumn = shiftColumns.find(c => c.id === sourceColumnId);
+            if (!sourceColumn) {
+                showShiftToast('Kolom sumber tidak ditemukan', 'error');
+                return;
+            }
+
+            const idx = sourceColumn.users.findIndex(
+                u => String(u.id) === String(userId)
+            );
+            if (idx === -1) {
+                showShiftToast('User tidak ditemukan di kolom sumber', 'error');
+                return;
+            }
+
+            const beforeColumns = cloneV20(shiftColumns);
+            const beforeAvailable = cloneV20(availableUsers);
+            const user = sourceColumn.users.splice(idx,1)[0];
+
+            if (!availableUsers.some(u => String(u.id) === String(user.id))) {
+                availableUsers.push(user);
+            }
+            sortAvailableUsers();
+
+            shiftIsDirty = true;
+            shiftSaveQueued = true;
+            cachePendingShiftDraft?.();
+            renderShiftPage(previousCardLayout);
+
+            const saved = await updateShiftActive('MOVE_USER');
+            if (!saved) {
+                if (!window.__DDT_V20_LAST_SAVE_CONFLICT__) {
+                    shiftColumns = beforeColumns;
+                    availableUsers = beforeAvailable;
+                    shiftIsDirty = false;
+                    shiftSaveQueued = false;
+                    clearPendingShiftDraft?.();
+                    renderShiftPage(previousCardLayout);
+                }
+                return;
+            }
+
+            await insertShiftLog(
+                'MOVE_USER',
+                getCurrentUserName(),
+                `${user.name} dari ${sourceColumn.name} ke DATA STAFF`
+            );
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Drop DATA STAFF gagal:`, error);
+            showShiftToast('Gagal mengembalikan staff', 'error');
+        }
+    };
+
+    // -----------------------------------------------------------------
+    // R1 — History period edit through canonical atomic RPC.
+    // -----------------------------------------------------------------
+    window.saveShiftPeriodEdit = async function candidateV20SaveHistoryPeriod(){
+        if (!editingShiftHistoryId) return;
+        if (!canViewShiftHistoryV20() || !canEditV20()) {
+            showShiftToast('Anda tidak memiliki izin Edit Riwayat Shift.', 'error');
+            return;
+        }
+
+        const start = document.getElementById('shiftPeriodEditStart')?.value;
+        const end = document.getElementById('shiftPeriodEditEnd')?.value;
+        if (!start || !end) {
+            showShiftToast('Tanggal mulai dan selesai wajib diisi.', 'warning');
+            return;
+        }
+        if (end < start) {
+            showShiftToast('Tanggal selesai tidak boleh lebih awal dari tanggal mulai.', 'warning');
+            return;
+        }
+
+        const button = document.getElementById('shiftPeriodEditSave');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Menyimpan...';
+        }
+
+        try {
+            const { data, error } = await supabaseDashboard.rpc(
+                'update_shift_history_period',
+                {
+                    p_history_id: Number(editingShiftHistoryId),
+                    p_start: start,
+                    p_end: end,
+                    p_client_id: clientIdV20(),
+                    p_updated_by: userNameV20()
+                }
+            );
+            if (error) throw error;
+
+            const row = Array.isArray(data) ? data[0] : data;
+            const idx = shiftHistoryData.findIndex(
+                item => String(item.id) === String(editingShiftHistoryId)
+            );
+            if (idx >= 0 && row) {
+                shiftHistoryData[idx] = { ...shiftHistoryData[idx], ...row };
+            }
+
+            closeShiftPeriodEditor();
+            renderShiftHistory();
+            showShiftToast(
+                `Periode Shift berhasil diperbarui menjadi ${start} — ${end}.`,
+                'success',
+                2600
+            );
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Edit periode history gagal:`, error);
+            showShiftToast(
+                `Gagal mengubah periode: ${error.message}`,
+                'error',
+                3600
+            );
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Simpan Periode';
+            }
+        }
+    };
+
+    // -----------------------------------------------------------------
+    // R3 — Shift History permission semantics use historyshift_view.
+    // -----------------------------------------------------------------
+    if (baseRenderShiftHistoryV20) {
+        renderShiftHistory = function candidateV20RenderShiftHistory(){
+            const currentCanOpen = canOpenHistory;
+            try {
+                canOpenHistory = () => canViewShiftHistoryV20();
+                return baseRenderShiftHistoryV20.apply(this, arguments);
+            } finally {
+                canOpenHistory = currentCanOpen;
+            }
+        };
+        window.renderShiftHistory = renderShiftHistory;
+    }
+
+    if (baseOpenHistoryV20) {
+        openShiftFromHistory = async function candidateV20OpenHistory(historyId){
+            if (!canViewShiftHistoryV20()) {
+                showShiftToast(
+                    'Anda tidak memiliki izin untuk membuka Riwayat Shift.',
+                    'error'
+                );
+                return;
+            }
+            selectedHistoryIdV20 = String(historyId);
+            return baseOpenHistoryV20(historyId);
+        };
+        window.openShiftFromHistory = openShiftFromHistory;
+    }
+
+    if (baseDeleteHistoryV20) {
+        deleteShiftHistory = async function candidateV20DeleteHistory(historyId){
+            let canDelete = false;
+            try {
+                canDelete = canViewShiftHistoryV20() &&
+                    Boolean(getPermission(currentUserRole, 'history_delete'));
+            } catch (_) {}
+            if (!canDelete) {
+                showShiftToast(
+                    'Anda tidak memiliki izin untuk menghapus Riwayat Shift.',
+                    'error'
+                );
+                return;
+            }
+            return baseDeleteHistoryV20(historyId);
+        };
+        window.deleteShiftHistory = deleteShiftHistory;
+    }
+
+    // -----------------------------------------------------------------
+    // R4 — Warn before Load when historical assigned users are no longer
+    // eligible. Server also filters them, so they can never re-enter target.
+    // -----------------------------------------------------------------
+    if (baseLoadHistoryChoiceV20) {
+        window.loadHistoryChoiceV19 = async function candidateV20LoadChoice(target){
+            if (!canLoadShiftHistoryV20()) {
+                showShiftToast(
+                    'Anda tidak memiliki izin untuk Load Riwayat Shift.',
+                    'error'
+                );
+                return;
+            }
+
+            if (selectedHistoryIdV20) {
+                try {
+                    const { data, error } = await supabaseDashboard.rpc(
+                        'inspect_shift_history_load',
+                        { p_history_id: Number(selectedHistoryIdV20) }
+                    );
+                    if (error) throw error;
+
+                    const inspection = Array.isArray(data) ? data[0] : data;
+                    const count = Number(inspection?.ineligible_count || 0);
+                    const users = Array.isArray(inspection?.ineligible_users)
+                        ? inspection.ineligible_users
+                        : [];
+
+                    if (count > 0) {
+                        const names = users.slice(0,4)
+                            .map(user => user.name || 'USER')
+                            .join(', ');
+                        const extra = count > 4 ? ` +${count - 4} lainnya` : '';
+
+                        const proceed = await requestPremiumConfirmation({
+                            title: 'Staff Tidak Aktif Ditemukan',
+                            message:
+                                `${count} staff pada snapshot ini sudah tidak aktif / tidak eligible.`,
+                            note:
+                                `${names}${extra}. Staff tersebut tidak akan dimuat ke workspace tujuan.`,
+                            confirmText: 'Lanjutkan',
+                            variant: 'danger'
+                        });
+
+                        if (!proceed) return;
+                    }
+                } catch (error) {
+                    console.error(`[${PATCH_ID}] Inspect load gagal:`, error);
+                    showShiftToast(
+                        `Gagal memvalidasi Riwayat Shift: ${error.message}`,
+                        'error',
+                        3600
+                    );
+                    return;
+                }
+            }
+
+            return baseLoadHistoryChoiceV20(target);
+        };
+    }
+
+    // -----------------------------------------------------------------
+    // R5 — Realtime revision synchronization.
+    // Existing realtime still paints UI; V20 keeps revision clock aligned.
+    // -----------------------------------------------------------------
+    function startRevisionRealtimeV20(){
+        try {
+            if (v20ActiveChannel) supabaseDashboard.removeChannel(v20ActiveChannel);
+            if (v20DraftChannel) supabaseDashboard.removeChannel(v20DraftChannel);
+
+            v20ActiveChannel = supabaseDashboard
+                .channel(`shift-v20-active-revision-${clientIdV20()}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event:'UPDATE',
+                        schema:'public',
+                        table:'shift_realtime_state',
+                        filter:'id=eq.1'
+                    },
+                    payload => {
+                        const row = payload?.new || {};
+                        window.setTimeout(async () => {
+                            if (String(row.client_id || '') === clientIdV20()) {
+                                await readRevisionV20('active').catch(()=>{});
+                                return;
+                            }
+                            if (modeV20() === 'active') {
+                                await syncWorkspaceV20('active',{apply:true}).catch(()=>{});
+                            }
+                        }, 100);
+                    }
+                )
+                .subscribe();
+
+            v20DraftChannel = supabaseDashboard
+                .channel(`shift-v20-draft-revision-${clientIdV20()}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event:'UPDATE',
+                        schema:'public',
+                        table:'shift_draft_realtime_state',
+                        filter:'id=eq.1'
+                    },
+                    payload => {
+                        const row = payload?.new || {};
+                        window.setTimeout(async () => {
+                            if (String(row.client_id || '') === clientIdV20()) {
+                                await readRevisionV20('draft').catch(()=>{});
+                                return;
+                            }
+                            if (modeV20() === 'draft') {
+                                await syncWorkspaceV20('draft',{apply:true}).catch(()=>{});
+                            }
+                        }, 100);
+                    }
+                )
+                .subscribe();
+        } catch (error) {
+            console.warn(`[${PATCH_ID}] Revision realtime init gagal:`, error);
+        }
+    }
+
+    document.addEventListener('click', event => {
+        const tab = event.target?.closest?.(
+            '#tab-shifts .shift-workspace-tab[data-shift-workspace-mode]'
+        );
+        if (!tab) return;
+        window.setTimeout(() => {
+            syncWorkspaceV20(modeV20(), {apply:true}).catch(()=>{});
+        }, 180);
+    }, true);
+
+    function initialV20(){
+        v20InitPromise = syncWorkspaceV20(modeV20(), {apply:true})
+            .catch(error => {
+                console.error(`[${PATCH_ID}] Initial sync gagal:`, error);
+                return false;
+            });
+        startRevisionRealtimeV20();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialV20, {once:true});
+    } else {
+        initialV20();
+    }
+
+    window.DDTShiftCandidateV20 = Object.freeze({
+        version:'v20',
+        scope:'functional-hardening-no-preview',
+        canViewShiftHistory:canViewShiftHistoryV20,
+        syncWorkspace:syncWorkspaceV20,
+        getRevisions:() => ({
+            active:activeRevisionV20,
+            draft:draftRevisionV20
+        }),
+        authorities:Object.freeze({
+            historyPeriod:'periode_start/periode_end canonical + embedded sync',
+            moveLog:'after successful persistence only',
+            permission:'historyshift_view aligned frontend/backend',
+            historyLoad:'warn + filter inactive/noneligible users',
+            concurrency:'optimistic revision; stale writer rejected'
+        })
+    });
+})();
+</script>
+
 </body>
 </html>
