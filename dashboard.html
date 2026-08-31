@@ -52034,6 +52034,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             shiftRealtimeNeedsSync = true;
 
             if (
+                window.__DDT_V23_SHOULD_DEFER_REMOTE__?.('active')
+            ) {
+                window.__DDT_V23_MARK_REMOTE_PENDING__?.('active', reason);
+                return;
+            }
+
+            if (
                 currentTab !== 'shifts' ||
                 document.visibilityState !== 'visible'
             ) {
@@ -52043,6 +52050,14 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             clearTimeout(shiftRealtimeFetchTimer);
             shiftRealtimeFetchTimer = window.setTimeout(async () => {
                 shiftRealtimeFetchTimer = null;
+
+                if (
+                    window.__DDT_V23_SHOULD_DEFER_REMOTE__?.('active')
+                ) {
+                    window.__DDT_V23_MARK_REMOTE_PENDING__?.('active', reason);
+                    return;
+                }
+
                 await fetchShiftActiveSnapshot(reason);
             }, SHIFT_REALTIME_FETCH_DEBOUNCE_MS);
         }
@@ -95769,10 +95784,21 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         if (typeof currentTab !== 'undefined' && currentTab !== 'shifts') return;
         if (document.visibilityState !== 'visible') return;
 
+        if (window.__DDT_V23_SHOULD_DEFER_REMOTE__?.('draft')) {
+            window.__DDT_V23_MARK_REMOTE_PENDING__?.('draft', 'draft-realtime');
+            return;
+        }
+
         clearTimeout(draftRealtimeFetchTimer);
         draftRealtimeFetchTimer = window.setTimeout(async () => {
             draftRealtimeFetchTimer = null;
-            if (shiftWorkspaceMode !== 'draft' || shiftIsDirty) return;
+            if (
+                shiftWorkspaceMode !== 'draft' ||
+                window.__DDT_V23_SHOULD_DEFER_REMOTE__?.('draft')
+            ) {
+                window.__DDT_V23_MARK_REMOTE_PENDING__?.('draft', 'draft-realtime');
+                return;
+            }
             try {
                 await fetchDraftRecord({ force: false, animate: true });
             } catch (error) {
@@ -101882,6 +101908,13 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                                 return;
                             }
                             if (modeV20() === 'active') {
+                                if (window.__DDT_V23_SHOULD_DEFER_REMOTE__?.('active')) {
+                                    window.__DDT_V23_MARK_REMOTE_PENDING__?.(
+                                        'active',
+                                        `revision-${row.change_type || 'data'}`
+                                    );
+                                    return;
+                                }
                                 await syncWorkspaceV20('active',{apply:true}).catch(()=>{});
                             }
                         }, 100);
@@ -101907,6 +101940,13 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                                 return;
                             }
                             if (modeV20() === 'draft') {
+                                if (window.__DDT_V23_SHOULD_DEFER_REMOTE__?.('draft')) {
+                                    window.__DDT_V23_MARK_REMOTE_PENDING__?.(
+                                        'draft',
+                                        `revision-${row.change_type || 'data'}`
+                                    );
+                                    return;
+                                }
                                 await syncWorkspaceV20('draft',{apply:true}).catch(()=>{});
                             }
                         }, 100);
@@ -102899,6 +102939,488 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         publishDraft:safePublishDraftV22,
         loadHistory:safeLoadHistoryV22,
         getHistoryId:() => historyIdV22
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate 23 — Functional Closure -->
+<script id="ddt-shift-active-draft-candidate-v23-functional-closure">
+(function DDTShiftActiveDraftCandidateV23FunctionalClosure(){
+    'use strict';
+    if (window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V23__) return;
+    window.__DDT_SHIFT_ACTIVE_DRAFT_CANDIDATE_V23__ = true;
+
+    const PATCH_ID = 'ddt-shift-active-draft-candidate-v23-functional-closure';
+
+    let periodHistoryIdV23 = null;
+    let historyDeleteBusyV23 = false;
+    const remotePendingV23 = {
+        active:false,
+        draft:false
+    };
+
+    function modeV23(){
+        try {
+            return window.DDTShiftCandidate?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    function clientIdV23(){
+        try {
+            return String(shiftClientSessionId || 'candidate-v23');
+        } catch (_) {
+            return 'candidate-v23';
+        }
+    }
+
+    function userNameV23(){
+        try {
+            return (typeof getCurrentUserName === 'function' && getCurrentUserName()) || 'System';
+        } catch (_) {
+            return 'System';
+        }
+    }
+
+    function canEditV23(){
+        try {
+            return typeof canEditShift === 'function' && Boolean(canEditShift());
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function canViewHistoryV23(){
+        try {
+            return Boolean(getPermission(currentUserRole, 'historyshift_view'));
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function canDeleteHistoryV23(){
+        try {
+            return canViewHistoryV23() &&
+                Boolean(getPermission(currentUserRole, 'history_delete'));
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function localPendingV23(target){
+        if (modeV23() !== target) return false;
+        try {
+            return Boolean(
+                shiftIsDirty ||
+                shiftSaveQueued ||
+                window.__DDT_V20_SAVE_IN_FLIGHT__
+            );
+        } catch (_) {
+            return false;
+        }
+    }
+
+    /*
+     * Called by the surgically-patched base/V20 realtime handlers.
+     * The key rule is: remote realtime must not replace an unsaved local edit.
+     * Keeping the local revision stale allows save_shift_workspace_revisioned
+     * to produce the real SHIFT_CONFLICT.
+     */
+    window.__DDT_V23_SHOULD_DEFER_REMOTE__ = function(target){
+        return localPendingV23(target === 'draft' ? 'draft' : 'active');
+    };
+
+    window.__DDT_V23_MARK_REMOTE_PENDING__ = function(target, reason='remote'){
+        const key = target === 'draft' ? 'draft' : 'active';
+        remotePendingV23[key] = true;
+        window.__DDT_V23_LAST_REMOTE_REASON__ = String(reason || 'remote');
+    };
+
+    async function applyDeferredRemoteV23(target){
+        const key = target === 'draft' ? 'draft' : 'active';
+        if (!remotePendingV23[key]) return;
+        if (localPendingV23(key)) return;
+
+        remotePendingV23[key] = false;
+
+        try {
+            if (window.DDTShiftCandidateV20?.syncWorkspace) {
+                await window.DDTShiftCandidateV20.syncWorkspace(
+                    key,
+                    { apply: modeV23() === key }
+                );
+            }
+        } catch (error) {
+            console.warn(`[${PATCH_ID}] Deferred remote sync gagal:`, error);
+        }
+    }
+
+    /* ================================================================
+       R1 — OWN HISTORY PERIOD EDIT STATE
+       ================================================================ */
+    window.openShiftPeriodEditor = function candidateV23OpenShiftPeriodEditor(historyId){
+        if (!canViewHistoryV23() || !canEditV23()) {
+            showShiftToast('Anda tidak memiliki izin Edit Riwayat Shift.', 'error');
+            return;
+        }
+
+        const item = Array.isArray(shiftHistoryData)
+            ? shiftHistoryData.find(row => String(row.id) === String(historyId))
+            : null;
+
+        if (!item) {
+            showShiftToast('Data Riwayat Shift tidak ditemukan.', 'error');
+            return;
+        }
+
+        periodHistoryIdV23 = String(historyId);
+
+        const startInput = document.getElementById('shiftPeriodEditStart');
+        const endInput = document.getElementById('shiftPeriodEditEnd');
+        const overlay = document.getElementById('shiftPeriodEditOverlay');
+
+        if (!startInput || !endInput || !overlay) {
+            periodHistoryIdV23 = null;
+            showShiftToast('Editor Periode Shift tidak tersedia.', 'error');
+            return;
+        }
+
+        startInput.value = String(
+            item.periode_start || item.tanggal || ''
+        ).slice(0,10);
+
+        endInput.value = String(
+            item.periode_end ||
+            item.periode_start ||
+            item.tanggal ||
+            ''
+        ).slice(0,10);
+
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden','false');
+    };
+
+    window.closeShiftPeriodEditor = function candidateV23CloseShiftPeriodEditor(){
+        periodHistoryIdV23 = null;
+        const overlay = document.getElementById('shiftPeriodEditOverlay');
+        overlay?.classList.remove('show');
+        overlay?.setAttribute('aria-hidden','true');
+    };
+
+    window.saveShiftPeriodEdit = async function candidateV23SaveShiftPeriodEdit(){
+        const historyId = periodHistoryIdV23;
+        if (!historyId) {
+            showShiftToast(
+                'Data Riwayat Shift untuk editor periode tidak ditemukan. Tutup lalu buka kembali editor.',
+                'warning',
+                3000
+            );
+            return;
+        }
+
+        if (!canViewHistoryV23() || !canEditV23()) {
+            showShiftToast('Anda tidak memiliki izin Edit Riwayat Shift.', 'error');
+            return;
+        }
+
+        const start = document.getElementById('shiftPeriodEditStart')?.value;
+        const end = document.getElementById('shiftPeriodEditEnd')?.value;
+
+        if (!start || !end) {
+            showShiftToast('Tanggal mulai dan selesai wajib diisi.', 'warning');
+            return;
+        }
+        if (end < start) {
+            showShiftToast(
+                'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
+                'warning'
+            );
+            return;
+        }
+
+        const button = document.getElementById('shiftPeriodEditSave');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Menyimpan...';
+        }
+
+        try {
+            const { data, error } = await supabaseDashboard.rpc(
+                'update_shift_history_period',
+                {
+                    p_history_id:Number(historyId),
+                    p_start:start,
+                    p_end:end,
+                    p_client_id:clientIdV23(),
+                    p_updated_by:userNameV23()
+                }
+            );
+            if (error) throw error;
+
+            const row = Array.isArray(data) ? data[0] : data;
+            const idx = shiftHistoryData.findIndex(
+                item => String(item.id) === String(historyId)
+            );
+            if (idx >= 0 && row) {
+                shiftHistoryData[idx] = {
+                    ...shiftHistoryData[idx],
+                    ...row
+                };
+            }
+
+            window.closeShiftPeriodEditor();
+            renderShiftHistory();
+
+            showShiftToast(
+                `Periode Shift berhasil diperbarui menjadi ${start} — ${end}.`,
+                'success',
+                2600
+            );
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Save period gagal:`, error);
+            showShiftToast(
+                `Gagal mengubah periode: ${error.message}`,
+                'error',
+                3800
+            );
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Simpan Periode';
+            }
+        }
+    };
+
+    /* ================================================================
+       R2 — DURABLE MOVE_USER LOG
+       No local optimistic row and no 900 ms batch for MOVE_USER.
+       The log becomes visible only after database INSERT succeeds.
+       ================================================================ */
+    insertShiftLog = async function candidateV23DurableShiftLog(
+        action,
+        userName,
+        details
+    ){
+        if (action !== 'MOVE_USER') return false;
+
+        // Draft is planning only. Never pollute Active movement log.
+        if (modeV23() === 'draft') return false;
+
+        const payload = {
+            action:'MOVE_USER',
+            user_name:userName || 'System',
+            details:details || 'Memindahkan staff',
+            created_at:new Date().toISOString()
+        };
+
+        try {
+            const { data, error } = await supabaseDashboard
+                .from('shift_logs')
+                .insert(payload)
+                .select('id,action,user_name,details,created_at')
+                .single();
+
+            if (error) throw error;
+
+            if (data) {
+                shiftLogs = [
+                    data,
+                    ...(Array.isArray(shiftLogs) ? shiftLogs : [])
+                        .filter(log => String(log.id) !== String(data.id))
+                        .filter(log => log.action === 'MOVE_USER')
+                ].slice(
+                    0,
+                    typeof SHIFT_LOG_LIMIT === 'number'
+                        ? SHIFT_LOG_LIMIT
+                        : 100
+                );
+
+                renderShiftLogs();
+            }
+
+            return true;
+        } catch (error) {
+            console.error(`[${PATCH_ID}] MOVE_USER log gagal:`, error);
+            showShiftToast(
+                'Perpindahan staff sudah tersimpan, tetapi Log Perpindahan gagal dicatat. Silakan coba Refresh Log.',
+                'warning',
+                4200
+            );
+            return false;
+        }
+    };
+    window.insertShiftLog = insertShiftLog;
+
+    /* ================================================================
+       R5 — Conflict warning completion
+       V20 already rejects stale revision. V23 prevents remote reconciliation
+       from silently erasing the local pending move first.
+
+       After a save settles, any remote signal deferred while clean is applied.
+       ================================================================ */
+    const baseUpdateShiftActiveV23 =
+        typeof updateShiftActive === 'function'
+            ? updateShiftActive
+            : null;
+
+    if (baseUpdateShiftActiveV23) {
+        updateShiftActive = function candidateV23TrackedSave(changeType='DATA'){
+            const target = modeV23();
+            window.__DDT_V20_SAVE_IN_FLIGHT__ = true;
+
+            return Promise.resolve(
+                baseUpdateShiftActiveV23(changeType)
+            ).finally(() => {
+                window.__DDT_V20_SAVE_IN_FLIGHT__ = false;
+                window.setTimeout(() => {
+                    applyDeferredRemoteV23(target);
+                }, 80);
+            });
+        };
+        window.updateShiftActive = updateShiftActive;
+    }
+
+    /* ================================================================
+       DELETE HISTORY — SERVER-CONFIRMED / SINGLE REQUEST
+       ================================================================ */
+    deleteShiftHistory = async function candidateV23DeleteShiftHistory(historyId){
+        if (historyDeleteBusyV23) return;
+
+        if (!canDeleteHistoryV23()) {
+            showShiftToast(
+                'Anda tidak memiliki izin untuk menghapus Riwayat Shift.',
+                'error'
+            );
+            return;
+        }
+
+        const idx = Array.isArray(shiftHistoryData)
+            ? shiftHistoryData.findIndex(
+                item => String(item.id) === String(historyId)
+            )
+            : -1;
+
+        const item = idx >= 0 ? shiftHistoryData[idx] : null;
+
+        if (!item) {
+            showShiftToast(
+                'Data tidak ditemukan di Riwayat Shift. Daftar akan dimuat ulang.',
+                'warning',
+                2800
+            );
+            try { await loadShiftHistory(true); } catch (_) {}
+            return;
+        }
+
+        const confirmed = await requestDeleteConfirmation({
+            title:'Hapus Riwayat Shift',
+            message:
+                `Riwayat Shift periode ${
+                    item.periode_start || item.tanggal
+                } — ${
+                    item.periode_end || item.tanggal
+                } akan dihapus permanen.`
+        });
+
+        if (!confirmed) return;
+
+        historyDeleteBusyV23 = true;
+
+        const buttons = document.querySelectorAll(
+            `button[onclick*="deleteShiftHistory(${historyId})"],` +
+            `button[onclick*="deleteShiftHistory('${historyId}')"]`
+        );
+        buttons.forEach(button => {
+            button.disabled = true;
+            button.setAttribute('aria-busy','true');
+        });
+
+        try {
+            /*
+             * .select('id').maybeSingle() makes affected-row verification
+             * deterministic. UI is NOT removed before this succeeds.
+             */
+            const { data, error } = await supabaseDashboard
+                .from('shift_history')
+                .delete()
+                .eq('id', historyId)
+                .select('id')
+                .maybeSingle();
+
+            if (error) throw error;
+
+            if (!data?.id) {
+                /*
+                 * The row may already have been deleted by another client.
+                 * Reconcile instead of asking the user to delete twice.
+                 */
+                await loadShiftHistory(true);
+                showShiftToast(
+                    'Riwayat Shift sudah tidak tersedia. Daftar telah diperbarui.',
+                    'info',
+                    2600
+                );
+                return;
+            }
+
+            shiftHistoryData = shiftHistoryData.filter(
+                row => String(row.id) !== String(data.id)
+            );
+            renderShiftHistory();
+
+            await publishShiftHistoryRealtime(
+                'DELETE',
+                data.id
+            );
+
+            showShiftToast(
+                'Riwayat Shift berhasil dihapus.',
+                'success',
+                2200
+            );
+        } catch (error) {
+            console.error(`[${PATCH_ID}] Delete History gagal:`, error);
+            showShiftToast(
+                `Gagal menghapus Riwayat Shift: ${error.message}`,
+                'error',
+                3800
+            );
+
+            try {
+                await loadShiftHistory(true);
+            } catch (_) {}
+        } finally {
+            historyDeleteBusyV23 = false;
+            buttons.forEach(button => {
+                button.disabled = false;
+                button.removeAttribute('aria-busy');
+            });
+        }
+    };
+    window.deleteShiftHistory = deleteShiftHistory;
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        applyDeferredRemoteV23('active');
+        applyDeferredRemoteV23('draft');
+    });
+
+    window.DDTShiftCandidateV23 = Object.freeze({
+        version:'v23',
+        scope:'functional-closure-no-preview',
+        preview:'untouched',
+        getPeriodHistoryId:() => periodHistoryIdV23,
+        getRemotePending:() => ({...remotePendingV23}),
+        authorities:Object.freeze({
+            r1:'owned period editor state + canonical RPC',
+            r2:'MOVE_USER log awaited direct database insert',
+            r5:'dirty local edit defers remote reconcile until revision conflict/save settles',
+            deleteHistory:'server-confirmed delete + affected-row verification'
+        })
     });
 })();
 </script>
