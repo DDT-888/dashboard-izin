@@ -110326,12 +110326,17 @@ html[data-theme="dark"][data-theme-variant="venom"]
             return;
         }
 
+        /*
+         * V52 authority:
+         * V49 remains the session-state fallback only.
+         * Focus/cursor restoration belongs exclusively to V51/V52 so two
+         * different resume systems never fight over the active textarea.
+         */
         bindNoteObserverV49();
-        scheduleRestoreV49({focus:true});
     });
 
     window.addEventListener('focus',() => {
-        scheduleRestoreV49({focus:true});
+        /* V52: intentionally no V49 focus restore. */
     });
 
     /* ================================================================
@@ -111204,7 +111209,7 @@ html.shift-note-resume-still-v51
         }
     }
 
-    function captureEditorV51(textarea){
+    function captureEditorV51(textarea,{withSignature=false}={}){
         const node = noteTextareaV51(textarea);
         if (!node) return null;
 
@@ -111233,7 +111238,9 @@ html.shift-note-resume-still-v51
             columnsScrollLeft:Number(columnsWrapper?.scrollLeft || 0),
             pageX:Number(window.scrollX || 0),
             pageY:Number(window.scrollY || 0),
-            signature:structuralSignatureV51(),
+            signature:withSignature
+                ? structuralSignatureV51()
+                : String(lastEditorV51?.signature || ''),
             mode:currentModeV51(),
             capturedAt:Date.now()
         };
@@ -111370,14 +111377,20 @@ html.shift-note-resume-still-v51
         );
     }
 
+    function cancelGuardV51(){
+        clearTimeout(releaseTimerV51);
+        releaseTimerV51 = null;
+        guardV51 = null;
+        document.documentElement.classList.remove(
+            'shift-note-resume-still-v51'
+        );
+    }
+
     function releaseGuardV51(delay=900){
         clearTimeout(releaseTimerV51);
 
         releaseTimerV51 = window.setTimeout(() => {
-            guardV51 = null;
-            document.documentElement.classList.remove(
-                'shift-note-resume-still-v51'
-            );
+            cancelGuardV51();
         },delay);
     }
 
@@ -111444,39 +111457,80 @@ html.shift-note-resume-still-v51
     function captureCurrentV51(){
         const active = currentNoteTextareaV51();
         if (active) {
-            return captureEditorV51(active);
+            return captureEditorV51(active,{withSignature:true});
         }
 
         if (
             lastEditorV51?.node instanceof HTMLTextAreaElement &&
             lastEditorV51.node.isConnected
         ) {
-            /* Refresh selection if the browser still reports the node. */
-            return captureEditorV51(lastEditorV51.node);
+            /* Guard start requires one fresh structural signature only. */
+            return captureEditorV51(
+                lastEditorV51.node,
+                {withSignature:true}
+            );
         }
 
-        return lastEditorV51;
+        if (lastEditorV51) {
+            return {
+                ...lastEditorV51,
+                signature:structuralSignatureV51(),
+                mode:currentModeV51()
+            };
+        }
+
+        return null;
     }
+
+    /*
+     * V52 explicit-interaction authority:
+     * once the user intentionally clicks anywhere after returning, the
+     * Alt+Tab resume guard must stop immediately. This prevents a delayed
+     * restore from stealing focus back from a newly clicked Note textarea
+     * and guarantees Shift Aktif / Draft Shift clicks are never suppressed.
+     */
+    document.addEventListener('pointerdown',event => {
+        if (!guardV51?.active) return;
+
+        const target = event.target instanceof Element
+            ? event.target
+            : null;
+        if (!target) return;
+
+        if (
+            target.closest('#tab-shifts') ||
+            target.closest('.shift-workspace-tab')
+        ) {
+            cancelGuardV51();
+        }
+    },true);
 
     document.addEventListener('focusin',event => {
         const textarea = noteTextareaV51(event.target);
         if (!textarea) return;
 
-        captureEditorV51(textarea);
+        captureEditorV51(textarea,{withSignature:false});
     },true);
 
-    document.addEventListener('selectionchange',() => {
-        const textarea = currentNoteTextareaV51();
+    document.addEventListener('keyup',event => {
+        const textarea = noteTextareaV51(event.target);
         if (!textarea) return;
 
-        captureEditorV51(textarea);
+        captureEditorV51(textarea,{withSignature:false});
+    },true);
+
+    document.addEventListener('pointerup',event => {
+        const textarea = noteTextareaV51(event.target);
+        if (!textarea) return;
+
+        captureEditorV51(textarea,{withSignature:false});
     },true);
 
     document.addEventListener('input',event => {
         const textarea = noteTextareaV51(event.target);
         if (!textarea) return;
 
-        captureEditorV51(textarea);
+        captureEditorV51(textarea,{withSignature:false});
     },true);
 
     window.addEventListener('blur',() => {
@@ -111499,16 +111553,10 @@ html.shift-note-resume-still-v51
          */
         window.requestAnimationFrame(() => {
             window.requestAnimationFrame(() => {
+                if (!guardV51?.active) return;
+
                 restoreEditorV51(guardV51);
-
-                /* Repeat scroll/caret datum once after browser focus settles. */
-                window.setTimeout(() => {
-                    if (guardV51?.active) {
-                        restoreEditorV51(guardV51);
-                    }
-                },70);
-
-                releaseGuardV51(1000);
+                releaseGuardV51(240);
             });
         });
     },true);
@@ -111517,15 +111565,10 @@ html.shift-note-resume-still-v51
         if (!guardV51?.active) return;
 
         window.requestAnimationFrame(() => {
+            if (!guardV51?.active) return;
+
             restoreEditorV51(guardV51);
-
-            window.setTimeout(() => {
-                if (guardV51?.active) {
-                    restoreEditorV51(guardV51);
-                }
-            },70);
-
-            releaseGuardV51(1000);
+            releaseGuardV51(240);
         });
     },true);
 
@@ -111544,6 +111587,45 @@ html.shift-note-resume-still-v51
             minScale:'4.5x safety floor',
             png:'lossless'
         }),
+        backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate V52 — Note Interaction + Workspace Tab Reliability -->
+<script id="ddt-shift-v52-marker">
+(function DDTShiftV52Marker(){
+    'use strict';
+    if (window.__DDT_SHIFT_V52__) return;
+    window.__DDT_SHIFT_V52__ = true;
+
+    document.addEventListener('pointerdown',event => {
+        const tab = event.target?.closest?.(
+            '#tab-shifts .shift-workspace-tab[data-shift-workspace]'
+        );
+        if (!tab) return;
+
+        /* Defensive presentation cleanup before V22 safeSwitchMode handles click. */
+        document.documentElement.classList.remove(
+            'shift-note-resume-still-v51'
+        );
+    },true);
+
+    window.DDTShiftCandidateV52 = Object.freeze({
+        version:'v52',
+        note:Object.freeze({
+            resumeAuthority:'V51/V52 only',
+            v49FocusRestore:'disabled',
+            selectionchangeListener:'removed',
+            structuralSignature:'guard-start only',
+            explicitPointerInteraction:'cancels resume guard',
+            delayedRefocus:'removed'
+        }),
+        workspaceTabs:Object.freeze({
+            activeDraft:'resume guard cannot block explicit click'
+        }),
+        screenshot:'V51 Ultra-HD retained',
         backend:'unchanged'
     });
 })();
