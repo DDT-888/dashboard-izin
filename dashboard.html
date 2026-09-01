@@ -108777,5 +108777,263 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 })();
 </script>
 
+
+<!-- DDT Shift Candidate V47 — Preview Section Accent + DATA STAFF Role Material -->
+<style id="ddt-shift-v47-section-datastaff">
+/* =====================================================================
+   PREVIEW — slightly stronger section differentiation.
+   Keep the quiet V45/V46 geometry; add only a low-alpha themed band.
+   ===================================================================== */
+#shiftPreviewModal .preview-roster-section-head{
+    background:
+        linear-gradient(
+            90deg,
+            color-mix(in srgb,var(--accent) 8%,var(--bg-card)) 0%,
+            color-mix(in srgb,var(--accent) 3.2%,var(--bg-card)) 56%,
+            color-mix(in srgb,var(--accent) 1.3%,var(--bg-card)) 100%
+        ) !important;
+    border-bottom:
+        1px solid color-mix(in srgb,var(--accent) 12%,var(--border-color)) !important;
+}
+
+/* Keep Venom restrained. */
+html[data-theme="dark"][data-theme-variant="venom"]
+#shiftPreviewModal .preview-roster-section-head{
+    background:
+        linear-gradient(
+            90deg,
+            rgba(68,214,44,.060) 0%,
+            rgba(68,214,44,.024) 58%,
+            rgba(68,214,44,.008) 100%
+        ) !important;
+    border-bottom-color:#293229 !important;
+}
+
+/* DATA STAFF mirrored cards retain readable hover/lift even though the
+   base material is injected inline from the Shift Kerja authority probe. */
+#tab-shifts .shift-available .user-card-shift[data-v47-role-material]{
+    transition:
+        transform .14s ease,
+        filter .14s ease,
+        box-shadow .14s ease !important;
+}
+
+#tab-shifts .shift-available .user-card-shift[data-v47-role-material]:hover{
+    transform:translateY(-1px) !important;
+    filter:brightness(1.035) saturate(1.025) !important;
+}
+</style>
+
+<script id="ddt-shift-v47-section-datastaff-script">
+(function DDTShiftV47SectionDataStaff(){
+    'use strict';
+    if (window.__DDT_SHIFT_V47_SECTION_DATASTAFF__) return;
+    window.__DDT_SHIFT_V47_SECTION_DATASTAFF__ = true;
+
+    const ROLES_V47 = ['csline','cs','kapten','kasir'];
+    const CARD_PROPS_V47 = [
+        'background-color',
+        'background-image',
+        'background-position',
+        'background-size',
+        'background-repeat',
+        'border-top-color',
+        'border-right-color',
+        'border-bottom-color',
+        'border-left-color',
+        'border-top-width',
+        'border-right-width',
+        'border-bottom-width',
+        'border-left-width',
+        'border-top-style',
+        'border-right-style',
+        'border-bottom-style',
+        'border-left-style',
+        'border-radius',
+        'box-shadow'
+    ];
+
+    let probeV47 = null;
+    let bodyObserverV47 = null;
+    let syncTimerV47 = null;
+
+    function isManagedThemeV47(){
+        const root = document.documentElement;
+        const selected = String(root.dataset.selectedTheme || '');
+        const variant = String(root.dataset.themeVariant || '');
+        const frozen = String(root.getAttribute('data-mi-frozen-presentation') || '');
+        const nativePresentation = String(root.getAttribute('data-mi-native-presentation') || '');
+
+        if (selected === 'mecha-ivory') return false;
+        if (frozen === 'mecha-ivory' || nativePresentation === 'mecha-ivory') return false;
+        if (variant === 'venom') return false;
+        return true;
+    }
+
+    function ensureProbeV47(){
+        if (probeV47?.isConnected) return probeV47;
+
+        const tab = document.getElementById('tab-shifts');
+        if (!tab) return null;
+
+        const host = document.createElement('div');
+        host.id = 'shift-v47-role-material-probe';
+        host.className = 'shift-column';
+        host.setAttribute('aria-hidden','true');
+        host.style.setProperty('position','fixed','important');
+        host.style.setProperty('left','-100000px','important');
+        host.style.setProperty('top','-100000px','important');
+        host.style.setProperty('width','260px','important');
+        host.style.setProperty('height','1px','important');
+        host.style.setProperty('overflow','hidden','important');
+        host.style.setProperty('visibility','hidden','important');
+        host.style.setProperty('opacity','0','important');
+        host.style.setProperty('pointer-events','none','important');
+        host.style.setProperty('z-index','-2147483647','important');
+        host.style.setProperty('contain','layout style paint','important');
+
+        host.innerHTML = ROLES_V47.map(role => `
+            <div class="user-card-shift role-${role}" data-v47-probe-role="${role}">
+                <div class="avatar">A</div>
+                <div class="user-info">
+                    <div class="user-name">ROLE MATERIAL</div>
+                </div>
+                <span class="role-tag-shift ${role}">${role}</span>
+            </div>
+        `).join('');
+
+        tab.appendChild(host);
+        probeV47 = host;
+        return host;
+    }
+
+    function copyCardMaterialV47(source,target){
+        if (!source || !target) return;
+        const computed = getComputedStyle(source);
+
+        CARD_PROPS_V47.forEach(prop => {
+            const value = computed.getPropertyValue(prop);
+            if (value) target.style.setProperty(prop,value,'important');
+        });
+
+        target.dataset.v47RoleMaterial = 'true';
+    }
+
+    function clearInlineMaterialV47(){
+        document.querySelectorAll(
+            '#tab-shifts .shift-available .user-card-shift[data-v47-role-material]'
+        ).forEach(card => {
+            CARD_PROPS_V47.forEach(prop => card.style.removeProperty(prop));
+            card.removeAttribute('data-v47-role-material');
+        });
+    }
+
+    function syncDataStaffRoleMaterialV47(){
+        if (!isManagedThemeV47()) {
+            clearInlineMaterialV47();
+            return;
+        }
+
+        const probe = ensureProbeV47();
+        if (!probe) return;
+
+        document.querySelectorAll(
+            '#tab-shifts .shift-available .user-card-shift'
+        ).forEach(card => {
+            const role =
+                ROLES_V47.find(value => card.classList.contains(`role-${value}`))
+                || null;
+            if (!role) return;
+
+            const source = probe.querySelector(
+                `[data-v47-probe-role="${role}"]`
+            );
+            copyCardMaterialV47(source,card);
+        });
+    }
+
+    function scheduleSyncV47(delay=0){
+        clearTimeout(syncTimerV47);
+        syncTimerV47 = window.setTimeout(() => {
+            syncTimerV47 = null;
+            syncDataStaffRoleMaterialV47();
+        },delay);
+    }
+
+    function bindAvailableObserverV47(){
+        bodyObserverV47?.disconnect();
+
+        const availableBody =
+            document.getElementById('shiftAvailableBody')
+            || document.querySelector('#tab-shifts .shift-available .body');
+
+        if (!availableBody) return;
+
+        bodyObserverV47 = new MutationObserver(() => scheduleSyncV47(0));
+        bodyObserverV47.observe(availableBody,{
+            childList:true,
+            subtree:true,
+            attributes:true,
+            attributeFilter:['class']
+        });
+    }
+
+    const tabObserverV47 = new MutationObserver(() => {
+        bindAvailableObserverV47();
+        scheduleSyncV47(0);
+    });
+
+    const themeObserverV47 = new MutationObserver(() => {
+        probeV47?.remove();
+        probeV47 = null;
+        scheduleSyncV47(20);
+    });
+
+    function startV47(){
+        const tab = document.getElementById('tab-shifts');
+        if (tab) {
+            tabObserverV47.observe(tab,{
+                childList:true,
+                subtree:true
+            });
+        }
+
+        themeObserverV47.observe(document.documentElement,{
+            attributes:true,
+            attributeFilter:[
+                'data-theme',
+                'data-theme-variant',
+                'data-selected-theme',
+                'data-mi-frozen-presentation',
+                'data-mi-native-presentation'
+            ]
+        });
+
+        bindAvailableObserverV47();
+        scheduleSyncV47(0);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded',startV47,{once:true});
+    } else {
+        startV47();
+    }
+
+    window.DDTShiftCandidateV47 = Object.freeze({
+        version:'v47',
+        scope:'preview-section-accent + data-staff-role-material',
+        preview:Object.freeze({
+            sectionHeader:'slightly stronger theme accent band'
+        }),
+        dataStaff:Object.freeze({
+            lightCyber:'computed Shift Kerja card material mirror',
+            venom:'unchanged / previously accepted',
+            mecha:'untouched'
+        }),
+        backend:'unchanged'
+    });
+})();
+</script>
+
 </body>
 </html>
