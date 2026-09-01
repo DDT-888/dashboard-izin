@@ -51768,20 +51768,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 shiftActiveId = shiftData.id;
                 lastShiftDataUpdatedAt = new Date(shiftData.updated_at || 0).getTime();
 
-                // Pulihkan draft lokal bila refresh terjadi sebelum save jaringan selesai.
-                const pendingShiftDraft = readPendingShiftDraft();
-                const databaseUpdatedAt = new Date(shiftData.updated_at || 0).getTime();
-
-                if (
-                    pendingShiftDraft &&
-                    String(pendingShiftDraft.id) === String(shiftActiveId) &&
-                    Number(pendingShiftDraft.savedAt || 0) > databaseUpdatedAt &&
-                    pendingShiftDraft.shift_data?.columns
-                ) {
-                    parsedData = pendingShiftDraft.shift_data;
-                    shiftIsDirty = true;
-                    shiftSaveQueued = true;
-                }
+                /*
+                 * V53 WORKSPACE ISOLATION:
+                 * Never promote a browser-local legacy `pendingShiftDraft`
+                 * payload back into Shift Aktif.
+                 *
+                 * V20+ already owns revisioned persistence. The old recovery
+                 * path can replay stale / wrong-workspace full payloads and
+                 * was observed server-side as change_type=RECOVER_DRAFT.
+                 */
+                const pendingShiftDraft = null;
 
                 activeShiftPeriod = extractShiftPeriod(parsedData);
 
@@ -51846,9 +51842,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     });
                 }
 
-                if (shiftSaveQueued) {
-                    updateShiftActive('RECOVER_DRAFT');
-                }
+                /* V53: legacy RECOVER_DRAFT write-back is intentionally disabled. */
 
                 return { shiftColumns, availableUsers };
 
@@ -95796,6 +95790,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     }
 
     function scheduleDraftRealtimeFetch() {
+        if (window.__DDT_SHIFT_V53_WORKSPACE_AUTHORITY__) return;
         if (shiftWorkspaceMode !== 'draft') return;
         if (typeof currentTab !== 'undefined' && currentTab !== 'shifts') return;
         if (document.visibilityState !== 'visible') return;
@@ -95824,6 +95819,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
     }
 
     function startDraftRealtime() {
+        if (window.__DDT_SHIFT_V53_WORKSPACE_AUTHORITY__) return;
         if (draftBackendMode !== 'server') return;
         if (draftRealtimeChannel) return;
         if (shiftWorkspaceMode !== 'draft') return;
@@ -110239,6 +110235,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
         if (!content) return;
 
         noteObserverV49 = new MutationObserver(mutations => {
+            if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
             let structural = false;
             let openStateChanged = false;
 
@@ -110280,6 +110277,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
     }
 
     document.addEventListener('focusin',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const textarea = event.target instanceof HTMLTextAreaElement
             ? event.target
             : null;
@@ -110291,6 +110289,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
     },true);
 
     document.addEventListener('keyup',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const textarea = event.target instanceof HTMLTextAreaElement
             ? event.target
             : null;
@@ -110299,6 +110298,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
     },true);
 
     document.addEventListener('mouseup',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const textarea = event.target instanceof HTMLTextAreaElement
             ? event.target
             : null;
@@ -110307,6 +110307,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
     },true);
 
     document.addEventListener('focusout',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const textarea = event.target instanceof HTMLTextAreaElement
             ? event.target
             : null;
@@ -110317,10 +110318,12 @@ html[data-theme="dark"][data-theme-variant="venom"]
     },true);
 
     window.addEventListener('blur',() => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         writeNoteStateV49({preserveFocus:true});
     },true);
 
     document.addEventListener('visibilitychange',() => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         if (document.visibilityState === 'hidden') {
             writeNoteStateV49({preserveFocus:true});
             return;
@@ -110336,6 +110339,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
     });
 
     window.addEventListener('focus',() => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         /* V52: intentionally no V49 focus restore. */
     });
 
@@ -111048,6 +111052,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
     } catch (_) {}
 
     function startV49(){
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         bindNoteObserverV49();
 
         /* If the browser restored the page after an inactive period, reapply
@@ -111431,6 +111436,10 @@ html.shift-note-resume-still-v51
     renderShiftPage = function candidateV51RenderShiftPage(
         previousCardLayout = null
     ){
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) {
+            return baseRenderShiftPageV51(previousCardLayout);
+        }
+
         if (
             guardV51?.active &&
             structureUnchangedV51() &&
@@ -111490,6 +111499,7 @@ html.shift-note-resume-still-v51
      * and guarantees Shift Aktif / Draft Shift clicks are never suppressed.
      */
     document.addEventListener('pointerdown',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         if (!guardV51?.active) return;
 
         const target = event.target instanceof Element
@@ -111506,6 +111516,7 @@ html.shift-note-resume-still-v51
     },true);
 
     document.addEventListener('focusin',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const textarea = noteTextareaV51(event.target);
         if (!textarea) return;
 
@@ -111513,6 +111524,7 @@ html.shift-note-resume-still-v51
     },true);
 
     document.addEventListener('keyup',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const textarea = noteTextareaV51(event.target);
         if (!textarea) return;
 
@@ -111520,6 +111532,7 @@ html.shift-note-resume-still-v51
     },true);
 
     document.addEventListener('pointerup',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const textarea = noteTextareaV51(event.target);
         if (!textarea) return;
 
@@ -111527,6 +111540,7 @@ html.shift-note-resume-still-v51
     },true);
 
     document.addEventListener('input',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const textarea = noteTextareaV51(event.target);
         if (!textarea) return;
 
@@ -111534,11 +111548,13 @@ html.shift-note-resume-still-v51
     },true);
 
     window.addEventListener('blur',() => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const snapshot = captureCurrentV51();
         if (snapshot) beginGuardV51(snapshot);
     },true);
 
     document.addEventListener('visibilitychange',() => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         if (document.visibilityState === 'hidden') {
             const snapshot = captureCurrentV51();
             if (snapshot) beginGuardV51(snapshot);
@@ -111562,6 +111578,7 @@ html.shift-note-resume-still-v51
     },true);
 
     window.addEventListener('focus',() => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         if (!guardV51?.active) return;
 
         window.requestAnimationFrame(() => {
@@ -111601,6 +111618,7 @@ html.shift-note-resume-still-v51
     window.__DDT_SHIFT_V52__ = true;
 
     document.addEventListener('pointerdown',event => {
+        if (window.__DDT_SHIFT_V53_NOTE_AUTHORITY__) return;
         const tab = event.target?.closest?.(
             '#tab-shifts .shift-workspace-tab[data-shift-workspace]'
         );
@@ -111627,6 +111645,243 @@ html.shift-note-resume-still-v51
         }),
         screenshot:'V51 Ultra-HD retained',
         backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- ================================================================
+     DDT Shift Candidate V53
+     NOTE + WORKSPACE ISOLATION ROOT-CAUSE CORRECTION
+     ================================================================ -->
+<script id="ddt-shift-v53-note-workspace-isolation">
+(function DDTShiftV53NoteWorkspaceIsolation(){
+    'use strict';
+    if (window.__DDT_SHIFT_V53_NOTE_WORKSPACE_ISOLATION__) return;
+    window.__DDT_SHIFT_V53_NOTE_WORKSPACE_ISOLATION__ = true;
+
+    window.__DDT_SHIFT_V53_NOTE_AUTHORITY__ = true;
+    window.__DDT_SHIFT_V53_WORKSPACE_AUTHORITY__ = true;
+
+    const OPEN_KEY_V53='ddt_shift_note_open_v53_';
+    const NOTE_DEBOUNCE_V53=500;
+    const openByWorkspaceV53={active:new Set(),draft:new Set()};
+    const noteTimersV53=new Map();
+    const notePendingV53=new Map();
+    const noteQueuesV53=new Map();
+    const noteVersionV53=new Map();
+    let noteEditingV53=null;
+
+    function modeV53(){
+        try{return window.DDTShiftCandidate?.getMode?.()==='draft'?'draft':'active';}
+        catch(_){return 'active';}
+    }
+    function canEditV53(){
+        try{return typeof canEditShift==='function'&&Boolean(canEditShift());}
+        catch(_){return false;}
+    }
+    function clientIdV53(){
+        try{return String(shiftClientSessionId||'candidate-v53');}
+        catch(_){return 'candidate-v53';}
+    }
+    function actorV53(){
+        try{return (typeof getCurrentUserName==='function'&&getCurrentUserName())||'System';}
+        catch(_){return 'System';}
+    }
+    function openKeyV53(workspace){return OPEN_KEY_V53+(workspace==='draft'?'draft':'active');}
+    function readOpenV53(workspace){
+        try{
+            const parsed=JSON.parse(sessionStorage.getItem(openKeyV53(workspace))||'[]');
+            return new Set((Array.isArray(parsed)?parsed:[]).map(String).filter(Boolean));
+        }catch(_){return new Set();}
+    }
+    function writeOpenV53(workspace){
+        const w=workspace==='draft'?'draft':'active';
+        try{sessionStorage.setItem(openKeyV53(w),JSON.stringify([...openByWorkspaceV53[w]]));}catch(_){}
+    }
+    openByWorkspaceV53.active=readOpenV53('active');
+    openByWorkspaceV53.draft=readOpenV53('draft');
+
+    function validColumnIdsV53(){
+        try{return new Set((Array.isArray(shiftColumns)?shiftColumns:[]).map(c=>String(c?.id||'')).filter(Boolean));}
+        catch(_){return new Set();}
+    }
+    function currentOpenSetV53(){
+        const w=modeV53(),valid=validColumnIdsV53();
+        const clean=new Set([...openByWorkspaceV53[w]].filter(id=>valid.has(String(id))));
+        openByWorkspaceV53[w]=clean;
+        return clean;
+    }
+    function installCurrentOpenSetV53({animate=false}={}){
+        const ids=currentOpenSetV53();
+        try{openShiftNoteColumnIds=new Set(ids);}catch(_){}
+        try{applyOpenShiftNoteState?.(ids,{animate:Boolean(animate)});}catch(error){console.warn('[V53] Note UI apply gagal:',error);}
+        return ids;
+    }
+
+    toggleNotePanel=function candidateV53ToggleNotePanel(columnId){
+        const w=modeV53(),id=String(columnId||''); if(!id)return;
+        const next=new Set(openByWorkspaceV53[w]);
+        next.has(id)?next.delete(id):next.add(id);
+        openByWorkspaceV53[w]=next; writeOpenV53(w);
+        try{openShiftNoteColumnIds=new Set(next);}catch(_){}
+        applyOpenShiftNoteState(next,{animate:true});
+    };
+    window.toggleNotePanel=toggleNotePanel;
+
+    const baseRenderV53=typeof renderShiftPage==='function'?renderShiftPage:null;
+    if(baseRenderV53){
+        renderShiftPage=function candidateV53RenderShiftPage(previousCardLayout=null){
+            const w=modeV53(),valid=validColumnIdsV53();
+            openByWorkspaceV53[w]=new Set([...openByWorkspaceV53[w]].filter(id=>valid.has(String(id))));
+            try{openShiftNoteColumnIds=new Set(openByWorkspaceV53[w]);}catch(_){}
+            const result=baseRenderV53(previousCardLayout);
+            requestAnimationFrame(()=>{if(modeV53()===w)installCurrentOpenSetV53({animate:false});});
+            return result;
+        };
+        window.renderShiftPage=renderShiftPage;
+    }
+
+    const baseBuildPayloadV53=typeof buildShiftActiveData==='function'?buildShiftActiveData:null;
+    if(baseBuildPayloadV53){
+        buildShiftActiveData=function candidateV53BuildShiftData(){
+            const payload=baseBuildPayloadV53();
+            if(payload?.period)payload.period={...payload.period,source:modeV53()};
+            return payload;
+        };
+        window.buildShiftActiveData=buildShiftActiveData;
+    }
+
+    try{localStorage.removeItem('pendingShiftDraft');}catch(_){}
+    try{
+        readPendingShiftDraft=function candidateV53NoLegacyRecovery(){return null;};
+        window.readPendingShiftDraft=readPendingShiftDraft;
+    }catch(_){}
+    try{Object.keys(noteDebounceTimers||{}).forEach(k=>{clearTimeout(noteDebounceTimers[k]);delete noteDebounceTimers[k];});}catch(_){}
+
+    function noteKeyV53(workspace,userId){return `${workspace}:${String(userId)}`;}
+    function localUserV53(userId){
+        try{for(const column of (shiftColumns||[])){const user=(column.users||[]).find(x=>String(x.id)===String(userId));if(user)return{column,user};}}catch(_){}
+        return{column:null,user:null};
+    }
+    function textareaContextV53(textarea){
+        if(!(textarea instanceof HTMLTextAreaElement))return null;
+        const wrapper=textarea.closest('.shift-column-wrapper[data-column-id]');
+        const item=textarea.closest('.note-user-item[data-user-id]');
+        if(!wrapper||!item)return null;
+        return{workspace:modeV53(),columnId:String(wrapper.dataset.columnId||''),userId:String(item.dataset.userId||''),textarea};
+    }
+    async function atomicNoteRpcV53(record){
+        const {data,error}=await supabaseDashboard.rpc('update_shift_staff_note_atomic',{
+            p_workspace:record.workspace,p_user_id:Number(record.userId),p_note:String(record.value??''),p_client_id:clientIdV53(),p_updated_by:actorV53()
+        });
+        if(error)throw error;
+        return Array.isArray(data)?data[0]:data;
+    }
+    function markNoteSavedV53(record){
+        const t=record.textarea;
+        if(t instanceof HTMLTextAreaElement&&t.isConnected&&String(t.value??'')===String(record.value??''))setNoteSaveState?.(t,'saved');
+    }
+    function markNoteErrorV53(record){
+        const t=record.textarea;
+        if(t instanceof HTMLTextAreaElement&&t.isConnected)setNoteSaveState?.(t,'error');
+    }
+    function queueAtomicNoteV53(record){
+        const key=noteKeyV53(record.workspace,record.userId);
+        const queue=noteQueuesV53.get(key)||Promise.resolve(true);
+        const next=queue.catch(()=>true).then(async()=>{
+            const result=await atomicNoteRpcV53(record);
+            if(result?.conflict===true)throw new Error(result.conflict_type==='staff_not_assigned'?'Staff sudah tidak berada pada tabel Shift; Note belum dapat disimpan.':'Konflik Note Shift.');
+            if(!result?.ok)throw new Error('Server tidak mengonfirmasi penyimpanan Note.');
+            window.DDTShiftCandidateV20?.acceptRevision?.(record.workspace,result.revision);
+            const latest=notePendingV53.get(key);
+            if(latest&&latest.version===record.version&&String(latest.value)===String(record.value)){
+                notePendingV53.delete(key); markNoteSavedV53(record);
+            }
+            return true;
+        }).catch(error=>{
+            console.error('[V53] Note atomic gagal:',error);
+            const latest=notePendingV53.get(key);
+            if(latest&&latest.version===record.version)markNoteErrorV53(record);
+            return false;
+        });
+        noteQueuesV53.set(key,next); return next;
+    }
+    function flushNoteKeyV53(key){
+        const timer=noteTimersV53.get(key);if(timer){clearTimeout(timer);noteTimersV53.delete(key);}
+        const record=notePendingV53.get(key);if(!record)return Promise.resolve(true);
+        return queueAtomicNoteV53({...record});
+    }
+    function stageNoteV53(workspace,columnId,userId,value,textarea,{immediate=false}={}){
+        const key=noteKeyV53(workspace,userId),version=Number(noteVersionV53.get(key)||0)+1;
+        noteVersionV53.set(key,version);
+        const record={workspace,columnId:String(columnId||''),userId:String(userId||''),value:String(value??''),textarea,version,stagedAt:Date.now()};
+        notePendingV53.set(key,record);
+        const old=noteTimersV53.get(key);if(old)clearTimeout(old);
+        if(immediate){noteTimersV53.delete(key);return flushNoteKeyV53(key);}
+        const timer=setTimeout(()=>{noteTimersV53.delete(key);flushNoteKeyV53(key);},NOTE_DEBOUNCE_V53);
+        noteTimersV53.set(key,timer);return Promise.resolve(true);
+    }
+
+    onNoteInput=function candidateV53NoteInput(columnId,userId,textarea){
+        if(!canEditV53()){showShiftToast('Anda tidak memiliki izin untuk mengedit note.','warning');return;}
+        const context=textareaContextV53(textarea),workspace=context?.workspace||modeV53(),value=String(textarea?.value??'');
+        if(workspace===modeV53()){
+            const {user}=localUserV53(userId);if(user)user.note=value;
+            try{updateNoteIndicators(columnId,userId,value);updateNoteAlignment(textarea);}catch(_){}
+        }
+        setNoteSaveState?.(textarea,'saving');
+        noteEditingV53={workspace,userId:String(userId),columnId:String(columnId),textarea};
+        stageNoteV53(workspace,columnId,userId,value,textarea,{immediate:false});
+    };
+    window.onNoteInput=onNoteInput;
+
+    onNoteBlur=async function candidateV53NoteBlur(columnId,userId,textarea){
+        if(!canEditV53())return;
+        const context=textareaContextV53(textarea),workspace=context?.workspace||noteEditingV53?.workspace||modeV53(),value=String(textarea?.value??'');
+        if(workspace===modeV53()){
+            const {user}=localUserV53(userId);if(user)user.note=value;
+            try{updateNoteIndicators(columnId,userId,value);}catch(_){}
+        }
+        await stageNoteV53(workspace,columnId,userId,value,textarea,{immediate:true});
+        if(noteEditingV53&&noteEditingV53.workspace===workspace&&String(noteEditingV53.userId)===String(userId))noteEditingV53=null;
+        try{await window.DDTShiftCandidateV23?.applyDeferredRemote?.(workspace);}catch(_){}
+    };
+    window.onNoteBlur=onNoteBlur;
+
+    const baseShouldDeferV53=typeof window.__DDT_V23_SHOULD_DEFER_REMOTE__==='function'?window.__DDT_V23_SHOULD_DEFER_REMOTE__:null;
+    window.__DDT_V23_SHOULD_DEFER_REMOTE__=function candidateV53ShouldDefer(target){
+        const workspace=target==='draft'?'draft':'active';
+        const base=baseShouldDeferV53?Boolean(baseShouldDeferV53(workspace)):false;
+        const editing=Boolean(noteEditingV53&&noteEditingV53.workspace===workspace&&noteEditingV53.textarea instanceof HTMLTextAreaElement&&noteEditingV53.textarea.isConnected&&document.activeElement===noteEditingV53.textarea);
+        return base||editing;
+    };
+
+    document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState!=='hidden')return;
+        for(const key of [...notePendingV53.keys()])flushNoteKeyV53(key);
+    });
+    document.addEventListener('focusin',event=>{
+        const context=textareaContextV53(event.target);if(!context)return;
+        noteEditingV53={workspace:context.workspace,userId:context.userId,columnId:context.columnId,textarea:context.textarea};
+    },true);
+    document.addEventListener('pointerdown',event=>{
+        const tab=event.target?.closest?.('#tab-shifts .shift-workspace-tab[data-shift-workspace]');
+        if(!tab)return;
+        const leaving=modeV53();
+        for(const [key,record] of notePendingV53.entries())if(record.workspace===leaving)flushNoteKeyV53(key);
+        const ids=new Set(Array.from(document.querySelectorAll('#shiftsContent .shift-column-wrapper.has-note-open[data-column-id]')).map(n=>String(n.dataset.columnId||'')).filter(Boolean));
+        openByWorkspaceV53[leaving]=ids;writeOpenV53(leaving);
+    },true);
+
+    installCurrentOpenSetV53({animate:false});
+
+    window.DDTShiftCandidateV53=Object.freeze({
+        version:'v53',scope:'note-workspace-isolation-root-cause',
+        note:Object.freeze({persistence:'atomic user-level RPC',debounceMs:NOTE_DEBOUNCE_V53,workspaceCapturedAtInput:true,fullWorkspaceDirty:false,caret:'browser native only'}),
+        noteUi:Object.freeze({activeDraft:'separate session state'}),
+        workspace:Object.freeze({legacyRecoverDraft:'disabled',legacyDraftRealtime:'disabled',revisionAuthority:'V20/V23'}),
+        backend:Object.freeze({rpc:'update_shift_staff_note_atomic',migration:'shift_note_workspace_isolation_v53'})
     });
 })();
 </script>
