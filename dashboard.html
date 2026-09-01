@@ -105564,6 +105564,12 @@ html[data-theme="dark"][data-theme-variant="venom"]
             );
     }
 
+    function operationalShiftCountV46(columns){
+        return (Array.isArray(columns) ? columns : [])
+            .filter(column => !/\bcuti\b/i.test(String(column?.name || '')))
+            .length;
+    }
+
     function openShiftPreviewV32(){
         const columns = (Array.isArray(shiftColumns) ? shiftColumns : []).map(
             column => ({
@@ -105585,7 +105591,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
             columns,
             unassignedUsers,
             totalStaff:assigned,
-            shiftCount:columns.length,
+            shiftCount:operationalShiftCountV46(columns),
             cutiCount:cutiCountV32(columns),
             createdBy:
                 (typeof getCurrentUserName === 'function' && getCurrentUserName())
@@ -105702,7 +105708,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
             previewData.cutiCount ?? cutiCountV32(columns)
         );
         const shiftCount = Number(
-            previewData.shiftCount ?? columns.length
+            previewData.shiftCount ?? operationalShiftCountV46(columns)
         );
         const totalStaff = Number(
             previewData.totalStaff ??
@@ -106016,7 +106022,7 @@ html[data-theme="dark"][data-theme-variant="venom"]
 
             const summary = [
                 ['TOTAL STAFF',String(previewData.totalStaff || 0)],
-                ['SHIFT',String(previewData.shiftCount ?? previewData.columns.length)],
+                ['SHIFT',String(previewData.shiftCount ?? operationalShiftCountV46(previewData.columns))],
                 ['CUTI',String(previewData.cutiCount ?? cutiCountV32(previewData.columns))]
             ];
 
@@ -108722,6 +108728,50 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
         mainHeader:'left anchored / vertically centered',
         sectionHeader:'identity group + count group',
         bodyGeometry:'unchanged',
+        backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate V46 — Preview Summary Semantics + Catatan Alignment -->
+<style id="ddt-shift-preview-v46-summary-note-align">
+/* CATATAN is a secondary terminal column.
+   Its header and values align to the table's right edge, matching x STAFF. */
+#shiftPreviewModal .preview-roster-columns > :nth-child(4){
+    justify-self:end !important;
+    text-align:right !important;
+    width:44px !important;
+}
+
+#shiftPreviewModal .preview-roster-note{
+    justify-self:end !important;
+    text-align:right !important;
+    width:44px !important;
+    max-width:44px !important;
+}
+
+/* Preserve right alignment even when adaptive note fitting enters two lines. */
+#shiftPreviewModal .preview-roster-note.is-fit-two{
+    text-align:right !important;
+}
+</style>
+
+<script id="ddt-shift-preview-v46-marker">
+(function DDTShiftPreviewV46Marker(){
+    'use strict';
+    if (window.__DDT_SHIFT_PREVIEW_V46__) return;
+    window.__DDT_SHIFT_PREVIEW_V46__ = true;
+
+    window.DDTShiftPreviewV46 = Object.freeze({
+        version:'v46',
+        summary:Object.freeze({
+            shift:'excludes columns whose title contains CUTI',
+            cuti:'staff count in CUTI sections',
+            totalStaff:'unchanged'
+        }),
+        catatan:'right aligned to roster edge',
+        geometry:'V45 retained',
         backend:'unchanged'
     });
 })();
