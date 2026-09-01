@@ -56027,37 +56027,123 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const formattedEmail = formatEmail(email);
             const formattedName = formatName(name);
 
-            if (listUsers.some(u => u.email === formattedEmail)) {
-                showToast(`Email "${formattedEmail}" sudah terdaftar!`, 'warning');
+            const localDirectory =
+                employeeUserDirectory.length
+                    ? employeeUserDirectory
+                    : listUsers;
+
+            const localExistingUser = localDirectory.find(user =>
+                formatEmail(user?.email || '') === formattedEmail
+            );
+
+            if (localExistingUser) {
+                const existingStatus =
+                    String(localExistingUser.status || 'active').toLowerCase();
+
+                if (existingStatus === 'inactive') {
+                    showToast(
+                        `Email "${formattedEmail}" sudah terdaftar sebagai User Nonaktif. Aktifkan kembali dari tabel User Nonaktif.`,
+                        'warning'
+                    );
+                } else {
+                    showToast(
+                        `Email "${formattedEmail}" sudah terdaftar!`,
+                        'warning'
+                    );
+                }
                 return;
             }
 
+            let insertedUser = null;
+
             if (!TEST_MODE) {
                 try {
-                    const { error } = await supabaseDashboard
-                        .from('users')
-                        .upsert({
-                            email: formattedEmail,
-                            name: formattedName,
-                            role: role
-                        }, { onConflict: 'email' });
+                    /*
+                     * V56 registration authority:
+                     * Always check the complete Users table because listUsers
+                     * intentionally contains active users only.
+                     */
+                    const { data: existingUser, error: lookupError } =
+                        await supabaseDashboard
+                            .from('users')
+                            .select('id, email, name, role, status, inactive_at')
+                            .eq('email', formattedEmail)
+                            .maybeSingle();
 
-                    if (error) {
-                        showToast('Gagal tambah user: ' + error.message, 'error');
+                    if (lookupError) {
+                        showToast(
+                            'Gagal memeriksa user: ' + lookupError.message,
+                            'error'
+                        );
                         return;
                     }
+
+                    if (existingUser) {
+                        const existingStatus =
+                            String(existingUser.status || 'active').toLowerCase();
+
+                        if (existingStatus === 'inactive') {
+                            showToast(
+                                `Email "${formattedEmail}" sudah terdaftar sebagai User Nonaktif. Aktifkan kembali dari tabel User Nonaktif.`,
+                                'warning'
+                            );
+                        } else {
+                            showToast(
+                                `Email "${formattedEmail}" sudah terdaftar!`,
+                                'warning'
+                            );
+                        }
+                        return;
+                    }
+
+                    /*
+                     * INSERT, not UPSERT.
+                     * The database UNIQUE(email) remains the final race guard.
+                     */
+                    const { data, error } = await supabaseDashboard
+                        .from('users')
+                        .insert({
+                            email: formattedEmail,
+                            name: formattedName,
+                            role: role,
+                            status: 'active'
+                        })
+                        .select('id, email, name, role, status, created_at')
+                        .single();
+
+                    if (error) {
+                        if (String(error.code || '') === '23505') {
+                            showToast(
+                                `Email atau nama user sudah terdaftar.`,
+                                'warning'
+                            );
+                            return;
+                        }
+
+                        showToast(
+                            'Gagal tambah user: ' + error.message,
+                            'error'
+                        );
+                        return;
+                    }
+
+                    insertedUser = data;
                 } catch (err) {
-                    showToast('Gagal tambah user: ' + err.message, 'error');
+                    showToast(
+                        'Gagal tambah user: ' + err.message,
+                        'error'
+                    );
                     return;
                 }
             }
 
             listUsers.unshift({
-                id: Date.now(),
-                name: formattedName,
-                email: formattedEmail,
-                role: role,
-                created_at: new Date().toISOString()
+                id: insertedUser?.id || Date.now(),
+                name: insertedUser?.name || formattedName,
+                email: insertedUser?.email || formattedEmail,
+                role: insertedUser?.role || role,
+                status: insertedUser?.status || 'active',
+                created_at: insertedUser?.created_at || new Date().toISOString()
             });
 
             if (!daftarAnggota.includes(formattedName)) {
@@ -62012,12 +62098,59 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             ) >= employeeMonitoringSettings.trainingMonths;
         }
 
+        function employeeAlertFlags(profile) {
+            const passport =
+                employeePassportMonthsRemaining(
+                    profile?.passport_expiry_date
+                );
+
+            const visa =
+                employeeDaysRemaining(
+                    profile?.visa_expiry_date
+                );
+
+            return {
+                passport: Boolean(
+                    profile?.passport_expiry_date &&
+                    passport <= employeeMonitoringSettings.passportMonths
+                ),
+                visa: Boolean(
+                    profile?.visa_expiry_date &&
+                    visa <= employeeMonitoringSettings.visaDays
+                ),
+                training: Boolean(
+                    employeeTrainingDue(profile)
+                )
+            };
+        }
+
+        function employeeMatchesAlertFilter(profile, filterValue) {
+            const filter = String(filterValue || 'all');
+
+            if (filter === 'all') {
+                return true;
+            }
+
+            const flags = employeeAlertFlags(profile);
+
+            if (filter === 'none') {
+                return !flags.passport &&
+                    !flags.visa &&
+                    !flags.training;
+            }
+
+            return Boolean(flags[filter]);
+        }
+
+        /*
+         * Legacy single-label helper retained only for compatibility.
+         * Filtering no longer depends on this exclusive classification.
+         */
         function employeeAlertType(user, profile) {
-            const passport = employeePassportMonthsRemaining(profile?.passport_expiry_date);
-            const visa = employeeDaysRemaining(profile?.visa_expiry_date);
-            if (profile?.passport_expiry_date && passport <= employeeMonitoringSettings.passportMonths) return 'passport';
-            if (profile?.visa_expiry_date && visa <= employeeMonitoringSettings.visaDays) return 'visa';
-            if (employeeTrainingDue(profile)) return 'training';
+            const flags = employeeAlertFlags(profile);
+            if (flags.passport) return 'passport';
+            if (flags.visa) return 'visa';
+            if (flags.training) return 'training';
             return 'none';
         }
 
@@ -62332,45 +62465,126 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             `;
         }
 
+        function employeeMatchesUserFilters(
+            user,
+            { inactive = false } = {}
+        ) {
+            const profile =
+                employeeProfileFor(user.id);
+
+            const rankEnd =
+                inactive
+                    ? (user.inactive_at || employeeToday())
+                    : employeeToday();
+
+            const rank =
+                employeeRankFor(
+                    user,
+                    profile,
+                    rankEnd
+                ).key;
+
+            const query =
+                String(employeeUserFilters.search || '')
+                    .toLowerCase()
+                    .trim();
+
+            const haystack =
+                `${user.name || ''} ${user.email || ''} ${profile.passport_number || ''}`
+                    .toLowerCase();
+
+            const matchSearch =
+                !query ||
+                haystack.includes(query);
+
+            const matchRole =
+                employeeUserFilters.role === 'all' ||
+                user.role === employeeUserFilters.role;
+
+            const matchRank =
+                employeeUserFilters.rank === 'all' ||
+                rank === employeeUserFilters.rank;
+
+            /*
+             * Monitoring filters are independent.
+             * A user may match Passport AND Visa at the same time.
+             */
+            const matchAlert =
+                employeeMatchesAlertFilter(
+                    profile,
+                    employeeUserFilters.alert
+                );
+
+            return (
+                matchSearch &&
+                matchRole &&
+                matchRank &&
+                matchAlert
+            );
+        }
+
         function employeeFilteredUsers() {
-            const source = employeeUserDirectory.length ? employeeUserDirectory : listUsers;
-            return source.filter(user => {
-                if (String(user.status || 'active').toLowerCase() !== 'active') return false;
-                const profile = employeeProfileFor(user.id);
-                const rank = employeeRankFor(user, profile).key;
-                const alert = employeeAlertType(user, profile);
-                const query = employeeUserFilters.search.toLowerCase().trim();
-                const matchSearch = !query || `${user.name} ${user.email} ${profile.passport_number || ''}`.toLowerCase().includes(query);
-                const matchRole = employeeUserFilters.role === 'all' || user.role === employeeUserFilters.role;
-                const matchRank = employeeUserFilters.rank === 'all' || rank === employeeUserFilters.rank;
-                const matchAlert = employeeUserFilters.alert === 'all' || alert === employeeUserFilters.alert;
-                return matchSearch && matchRole && matchRank && matchAlert;
-            }).sort((a, b) => {
-                // Pertahankan kelompok role yang sudah berlaku.
-                const orderA = ROLE_ORDER_SORT[a.role] ?? 99;
-                const orderB = ROLE_ORDER_SORT[b.role] ?? 99;
-                if (orderA !== orderB) return orderA - orderB;
+            const source =
+                employeeUserDirectory.length
+                    ? employeeUserDirectory
+                    : listUsers;
 
-                // Di dalam role yang sama: masa kerja paling lama berada di atas.
-                // JOIN SMB adalah dasar perhitungan masa kerja dan rank.
-                const profileA = employeeProfileFor(a.id);
-                const profileB = employeeProfileFor(b.id);
-                const joinA = employeeDateFromISO(profileA?.join_smb_date);
-                const joinB = employeeDateFromISO(profileB?.join_smb_date);
-                const timeA = joinA ? joinA.getTime() : Number.POSITIVE_INFINITY;
-                const timeB = joinB ? joinB.getTime() : Number.POSITIVE_INFINITY;
+            return source
+                .filter(user => {
+                    if (
+                        String(user.status || 'active').toLowerCase() !==
+                        'active'
+                    ) {
+                        return false;
+                    }
 
-                if (timeA !== timeB) return timeA - timeB;
+                    return employeeMatchesUserFilters(
+                        user,
+                        { inactive: false }
+                    );
+                })
+                .sort((a, b) => {
+                    // Pertahankan kelompok role yang sudah berlaku.
+                    const orderA = ROLE_ORDER_SORT[a.role] ?? 99;
+                    const orderB = ROLE_ORDER_SORT[b.role] ?? 99;
+                    if (orderA !== orderB) return orderA - orderB;
 
-                // Data JOIN SMB yang sama/kosong tetap stabil dan mudah dicari.
-                return String(a.name).localeCompare(String(b.name), 'id');
-            });
+                    // Di dalam role yang sama: masa kerja paling lama berada di atas.
+                    // JOIN SMB adalah dasar perhitungan masa kerja dan rank.
+                    const profileA = employeeProfileFor(a.id);
+                    const profileB = employeeProfileFor(b.id);
+                    const joinA = employeeDateFromISO(profileA?.join_smb_date);
+                    const joinB = employeeDateFromISO(profileB?.join_smb_date);
+                    const timeA = joinA ? joinA.getTime() : Number.POSITIVE_INFINITY;
+                    const timeB = joinB ? joinB.getTime() : Number.POSITIVE_INFINITY;
+
+                    if (timeA !== timeB) return timeA - timeB;
+
+                    // Data JOIN SMB yang sama/kosong tetap stabil dan mudah dicari.
+                    return String(a.name).localeCompare(String(b.name), 'id');
+                });
         }
 
         function employeeInactiveUsers() {
-            const source = employeeUserDirectory.length ? employeeUserDirectory : [];
+            const source =
+                employeeUserDirectory.length
+                    ? employeeUserDirectory
+                    : [];
+
             return source
-                .filter(user => String(user.status || 'active').toLowerCase() === 'inactive')
+                .filter(user => {
+                    if (
+                        String(user.status || 'active').toLowerCase() !==
+                        'inactive'
+                    ) {
+                        return false;
+                    }
+
+                    return employeeMatchesUserFilters(
+                        user,
+                        { inactive: true }
+                    );
+                })
                 .sort((a, b) => {
                     const dateA = String(a.inactive_at || '0000-00-00');
                     const dateB = String(b.inactive_at || '0000-00-00');
@@ -62580,11 +62794,24 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
         window.setEmployeeUserFilter = function(key, value) {
             employeeUserFilters[key] = value;
+
+            /*
+             * Shared Users filters now affect Active + Nonaktif.
+             * Always return inactive pagination to page 1 after a filter change.
+             */
+            employeeInactivePage = 1;
+
             renderUsersPage();
+
             if (key === 'search') {
                 const input = document.getElementById('employeeUserSearch');
                 input?.focus();
-                if (input) input.setSelectionRange(input.value.length, input.value.length);
+                if (input) {
+                    input.setSelectionRange(
+                        input.value.length,
+                        input.value.length
+                    );
+                }
             }
         };
 
@@ -112107,6 +112334,98 @@ html.shift-note-resume-still-v51
             moveRpc:'move_shift_staff_atomic',
             noteRpc:'update_shift_staff_note_atomic'
         })
+    });
+})();
+</script>
+
+
+<!-- ================================================================
+     USERS V56 — DDT Original shell/search reconciliation
+     Scope: DDT Original ONLY.
+     ================================================================ -->
+<style id="users-v56-ddt-original-shell-search">
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-users-shell{
+    background: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-users-shell::before,
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users .employee-users-shell::after{
+    content: none !important;
+    display: none !important;
+}
+
+/*
+ * Data User search follows the calmer Sidebar-route search treatment:
+ * one neutral 1px border, no thick cyan/blue focus ring.
+ */
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users #employeeUserSearch{
+    border: 1px solid var(--border-input) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users #employeeUserSearch:hover{
+    border-color: var(--border-color) !important;
+    box-shadow: none !important;
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users #employeeUserSearch:focus,
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-users #employeeUserSearch:focus-visible{
+    border-color: var(--border-color) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+</style>
+
+<script id="users-v56-authority-marker">
+(function UsersV56Authority(){
+    'use strict';
+    if (window.__USERS_V56__) return;
+    window.__USERS_V56__ = true;
+
+    window.UsersCandidateV56 = Object.freeze({
+        version:'v56',
+        registration:Object.freeze({
+            inactiveDuplicate:'blocked',
+            writeMode:'INSERT not UPSERT',
+            databaseUniqueRaceGuard:true
+        }),
+        filters:Object.freeze({
+            activeAndInactive:true,
+            monitoring:'independent Passport / Visa / Training',
+            inactivePaginationReset:true
+        }),
+        ddtOriginal:Object.freeze({
+            outerUsersShell:'transparent',
+            tableSurface:'preserved',
+            searchBorder:'neutral single-line'
+        }),
+        backend:'unchanged'
     });
 })();
 </script>
