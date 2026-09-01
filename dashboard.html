@@ -46992,6 +46992,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         let shiftHistoryData = [];
         let previewData = null;
         let activeShiftPeriod = null;
+
+        /*
+         * V55 — hidden Note reservoir for staff currently in DATA STAFF.
+         * This is data state, not UI state. Active and Draft are isolated.
+         */
+        let shiftUnassignedNotesByWorkspace = {
+            active: {},
+            draft: {}
+        };
+
         let columnDragData = null;
         let shiftLogs = [];
         let noteDebounceTimers = {};
@@ -51764,6 +51774,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 let parsedData = typeof shiftData.shift_data === 'string' ?
                     JSON.parse(shiftData.shift_data) :
                     shiftData.shift_data;
+
+                shiftUnassignedNotesByWorkspace.active =
+                    parsedData?.unassigned_notes &&
+                    typeof parsedData.unassigned_notes === 'object' &&
+                    !Array.isArray(parsedData.unassigned_notes)
+                        ? { ...parsedData.unassigned_notes }
+                        : {};
 
                 shiftActiveId = shiftData.id;
                 lastShiftDataUpdatedAt = new Date(shiftData.updated_at || 0).getTime();
@@ -57822,6 +57839,18 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         }
 
         function buildShiftActiveData() {
+            const workspace =
+                (typeof shiftWorkspaceMode !== 'undefined' &&
+                 shiftWorkspaceMode === 'draft')
+                    ? 'draft'
+                    : 'active';
+
+            const hiddenNotes =
+                shiftUnassignedNotesByWorkspace?.[workspace] &&
+                typeof shiftUnassignedNotesByWorkspace[workspace] === 'object'
+                    ? shiftUnassignedNotesByWorkspace[workspace]
+                    : {};
+
             return {
                 period: activeShiftPeriod
                     ? {
@@ -57840,7 +57869,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         role: user.role,
                         note: user.note || ''
                     }))
-                }))
+                })),
+                unassigned_notes: JSON.parse(JSON.stringify(hiddenNotes))
             };
         }
 
@@ -58815,9 +58845,32 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             openShiftNoteColumnIds.delete(String(columnId));
 
+            const workspace =
+                (typeof shiftWorkspaceMode !== 'undefined' &&
+                 shiftWorkspaceMode === 'draft')
+                    ? 'draft'
+                    : 'active';
+
+            if (!shiftUnassignedNotesByWorkspace[workspace]) {
+                shiftUnassignedNotesByWorkspace[workspace] = {};
+            }
+
             col.users.forEach(user => {
+                const noteValue = String(user.note || '');
+                const userKey = String(user.id);
+
+                if (noteValue.trim()) {
+                    shiftUnassignedNotesByWorkspace[workspace][userKey] =
+                        noteValue;
+                } else {
+                    delete shiftUnassignedNotesByWorkspace[workspace][userKey];
+                }
+
                 if (!availableUsers.some(u => u.id === user.id)) {
-                    availableUsers.push(user);
+                    availableUsers.push({
+                        ...user,
+                        note: ''
+                    });
                 }
             });
 
@@ -58856,10 +58909,33 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             const colNames = shiftColumns.map(c => c.name).join(', ');
 
+            const resetWorkspace =
+                (typeof shiftWorkspaceMode !== 'undefined' &&
+                 shiftWorkspaceMode === 'draft')
+                    ? 'draft'
+                    : 'active';
+
+            if (!shiftUnassignedNotesByWorkspace[resetWorkspace]) {
+                shiftUnassignedNotesByWorkspace[resetWorkspace] = {};
+            }
+
             shiftColumns.forEach(col => {
                 col.users.forEach(user => {
+                    const noteValue = String(user.note || '');
+                    const userKey = String(user.id);
+
+                    if (noteValue.trim()) {
+                        shiftUnassignedNotesByWorkspace[resetWorkspace][userKey] =
+                            noteValue;
+                    } else {
+                        delete shiftUnassignedNotesByWorkspace[resetWorkspace][userKey];
+                    }
+
                     if (!availableUsers.some(u => u.id === user.id)) {
-                        availableUsers.push(user);
+                        availableUsers.push({
+                            ...user,
+                            note: ''
+                        });
                     }
                 });
                 col.users = [];
@@ -95588,6 +95664,13 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
             throw new Error('Payload Draft Shift tidak valid.');
         }
 
+        shiftUnassignedNotesByWorkspace.draft =
+            parsed?.unassigned_notes &&
+            typeof parsed.unassigned_notes === 'object' &&
+            !Array.isArray(parsed.unassigned_notes)
+                ? { ...parsed.unassigned_notes }
+                : {};
+
         const previousLayout = animate && typeof captureShiftCardLayout === 'function'
             ? captureShiftCardLayout()
             : null;
@@ -103583,11 +103666,35 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         removeLocalUserV24(user.id);
 
         const target = String(result?.to_source || DATA_STAFF);
+        const workspace = modeV24() === 'draft' ? 'draft' : 'active';
+
+        if (!shiftUnassignedNotesByWorkspace[workspace]) {
+            shiftUnassignedNotesByWorkspace[workspace] = {};
+        }
+
+        const hiddenNotes = shiftUnassignedNotesByWorkspace[workspace];
+        const userKey = String(user.id);
+        const noteValue = String(user.note || '');
 
         if (target === DATA_STAFF) {
-            availableUsers.push(user);
+            if (noteValue.trim()) {
+                hiddenNotes[userKey] = noteValue;
+            } else {
+                delete hiddenNotes[userKey];
+            }
+
+            /*
+             * DATA STAFF does not expose Note UI. Keep the visible/available
+             * user object neutral; the real Note lives in hidden metadata.
+             */
+            availableUsers.push({
+                ...user,
+                note: ''
+            });
             sortAvailableUsers();
         } else {
+            delete hiddenNotes[userKey];
+
             const column = shiftColumns.find(
                 item => String(item.id) === target
             );
@@ -111825,6 +111932,13 @@ html.shift-note-resume-still-v51
             const result=await atomicNoteRpcV53(record);
             if(result?.conflict===true)throw new Error(result.conflict_type==='staff_not_assigned'?'Staff sudah tidak berada pada tabel Shift; Note belum dapat disimpan.':'Konflik Note Shift.');
             if(!result?.ok)throw new Error('Server tidak mengonfirmasi penyimpanan Note.');
+
+            try{
+                if(shiftUnassignedNotesByWorkspace?.[record.workspace]){
+                    delete shiftUnassignedNotesByWorkspace[record.workspace][String(record.userId)];
+                }
+            }catch(_){}
+
             window.DDTShiftCandidateV20?.acceptRevision?.(record.workspace,result.revision);
             const latest=notePendingV53.get(key);
             if(latest&&latest.version===record.version&&String(latest.value)===String(record.value)){
@@ -111958,6 +112072,41 @@ html.shift-note-resume-still-v51
             saveRpc:false
         }),
         backend:'V53 unchanged'
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate V55 — Hidden Note Preservation for DATA STAFF -->
+<script id="ddt-shift-v55-hidden-note-marker">
+(function DDTShiftV55HiddenNoteMarker(){
+    'use strict';
+    if(window.__DDT_SHIFT_V55__) return;
+    window.__DDT_SHIFT_V55__ = true;
+
+    window.DDTShiftCandidateV55 = Object.freeze({
+        version:'v55',
+        dataStaffNote:Object.freeze({
+            shiftToDataStaff:'persist hidden',
+            dataStaffUi:'no Note surface',
+            dataStaffToShift:'restore automatically',
+            activeDraft:'isolated',
+            storage:'shift_data.unassigned_notes'
+        }),
+        bulkFlows:Object.freeze({
+            deleteColumn:'preserve hidden Note',
+            resetShift:'preserve hidden Note',
+            publishDraftReset:'clear Draft hidden Note as new lifecycle'
+        }),
+        history:Object.freeze({
+            snapshot:'hidden metadata travels with payload',
+            load:'top-level hidden metadata retained'
+        }),
+        backend:Object.freeze({
+            migration:'shift_hidden_note_preservation_v55',
+            moveRpc:'move_shift_staff_atomic',
+            noteRpc:'update_shift_staff_note_atomic'
+        })
     });
 })();
 </script>
