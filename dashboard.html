@@ -109954,5 +109954,1054 @@ html[data-theme="dark"][data-theme-variant="venom"]
 })();
 </script>
 
+
+<!-- ================================================================
+     DDT Shift Candidate V49
+     - Note Alt+Tab persistence
+     - Premium screenshot sheet/background
+     - Safe x STAFF right datum
+     ================================================================ -->
+<script id="ddt-shift-v49-note-screenshot">
+(function DDTShiftV49NoteScreenshot(){
+    'use strict';
+    if (window.__DDT_SHIFT_V49_NOTE_SCREENSHOT__) return;
+    window.__DDT_SHIFT_V49_NOTE_SCREENSHOT__ = true;
+
+    const NOTE_KEY_PREFIX_V49 = 'ddt_shift_note_ui_v49_';
+    const ROLE_LABELS_V49 = {
+        csline:'CS LINE',
+        cs:'CS',
+        kapten:'KAPTEN',
+        kasir:'KASIR'
+    };
+
+    let lastFocusV49 = null;
+    let restoreTimerV49 = null;
+    let noteObserverV49 = null;
+
+    function workspaceV49(){
+        try {
+            return window.DDTShiftCandidate?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    function noteStorageKeyV49(){
+        return NOTE_KEY_PREFIX_V49 + workspaceV49();
+    }
+
+    function isShiftRouteV49(){
+        try {
+            if (typeof currentTab !== 'undefined' && currentTab !== 'shifts') {
+                return false;
+            }
+        } catch (_) {}
+        return Boolean(document.getElementById('shiftsContent'));
+    }
+
+    function textareaDescriptorV49(textarea){
+        if (!(textarea instanceof HTMLTextAreaElement)) return null;
+
+        const wrapper = textarea.closest(
+            '.shift-column-wrapper[data-column-id]'
+        );
+        const item = textarea.closest('.note-user-item[data-user-id]');
+
+        if (!wrapper || !item) return null;
+
+        return {
+            columnId:String(wrapper.dataset.columnId || ''),
+            userId:String(item.dataset.userId || ''),
+            selectionStart:Number(textarea.selectionStart || 0),
+            selectionEnd:Number(textarea.selectionEnd || 0),
+            scrollTop:Number(textarea.scrollTop || 0)
+        };
+    }
+
+    function readNoteStateV49(){
+        try {
+            const parsed = JSON.parse(
+                sessionStorage.getItem(noteStorageKeyV49()) || 'null'
+            );
+            if (!parsed || !Array.isArray(parsed.openIds)) return null;
+            return parsed;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function writeNoteStateV49({ preserveFocus = true } = {}){
+        if (!isShiftRouteV49()) return;
+
+        const openIds = Array.from(
+            document.querySelectorAll(
+                '#shiftsContent .shift-column-wrapper.has-note-open[data-column-id]'
+            )
+        ).map(wrapper => String(wrapper.dataset.columnId || '')).filter(Boolean);
+
+        const active = document.activeElement;
+        if (
+            preserveFocus &&
+            active instanceof HTMLTextAreaElement &&
+            active.closest('#shiftsContent .shift-note-panel')
+        ) {
+            lastFocusV49 = textareaDescriptorV49(active) || lastFocusV49;
+        }
+
+        const state = {
+            openIds,
+            focus:lastFocusV49,
+            savedAt:Date.now()
+        };
+
+        try {
+            sessionStorage.setItem(
+                noteStorageKeyV49(),
+                JSON.stringify(state)
+            );
+        } catch (_) {}
+    }
+
+    function applyNoteOpenIdsV49(openIds){
+        const ids = new Set(
+            (Array.isArray(openIds) ? openIds : [])
+                .map(String)
+                .filter(Boolean)
+        );
+
+        try {
+            openShiftNoteColumnIds = new Set(ids);
+        } catch (_) {}
+
+        try {
+            if (typeof applyOpenShiftNoteState === 'function') {
+                applyOpenShiftNoteState(ids,{animate:false});
+                return;
+            }
+        } catch (_) {}
+
+        document.querySelectorAll(
+            '#shiftsContent .shift-column-wrapper[data-column-id]'
+        ).forEach(wrapper => {
+            const id = String(wrapper.dataset.columnId || '');
+            const open = ids.has(id);
+            wrapper.classList.toggle('has-note-open',open);
+            wrapper.querySelector('.shift-note-panel')
+                ?.classList.toggle('open',open);
+        });
+    }
+
+    function restoreTextareaFocusV49(focus){
+        if (!focus || document.visibilityState !== 'visible') return;
+
+        const wrapper = Array.from(
+            document.querySelectorAll(
+                '#shiftsContent .shift-column-wrapper[data-column-id]'
+            )
+        ).find(item => String(item.dataset.columnId || '') === String(focus.columnId));
+
+        if (!wrapper) return;
+
+        const item = Array.from(
+            wrapper.querySelectorAll('.note-user-item[data-user-id]')
+        ).find(node => String(node.dataset.userId || '') === String(focus.userId));
+
+        const textarea = item?.querySelector('textarea');
+        if (!(textarea instanceof HTMLTextAreaElement)) return;
+        if (textarea.readOnly) return;
+
+        try {
+            textarea.focus({preventScroll:true});
+            const max = textarea.value.length;
+            const start = Math.min(Number(focus.selectionStart || 0),max);
+            const end = Math.min(Number(focus.selectionEnd ?? start),max);
+            textarea.setSelectionRange(start,end);
+            textarea.scrollTop = Number(focus.scrollTop || 0);
+            lastFocusV49 = {
+                ...focus,
+                selectionStart:start,
+                selectionEnd:end
+            };
+        } catch (_) {}
+    }
+
+    function restoreNoteStateV49({ focus = false } = {}){
+        if (!isShiftRouteV49()) return false;
+
+        const state = readNoteStateV49();
+        if (!state) return false;
+
+        const validIds = new Set(
+            Array.from(
+                document.querySelectorAll(
+                    '#shiftsContent .shift-column-wrapper[data-column-id]'
+                )
+            ).map(wrapper => String(wrapper.dataset.columnId || ''))
+        );
+
+        const openIds = state.openIds.filter(id => validIds.has(String(id)));
+        applyNoteOpenIdsV49(openIds);
+
+        if (focus && state.focus) {
+            window.requestAnimationFrame(() => {
+                restoreTextareaFocusV49(state.focus);
+            });
+        }
+
+        return true;
+    }
+
+    function scheduleRestoreV49({ focus = false } = {}){
+        clearTimeout(restoreTimerV49);
+
+        const passes = [0,60,180,420,850];
+        passes.forEach((delay,index) => {
+            window.setTimeout(() => {
+                restoreNoteStateV49({
+                    focus:focus && index === passes.length - 1
+                });
+            },delay);
+        });
+    }
+
+    function bindNoteObserverV49(){
+        noteObserverV49?.disconnect();
+
+        const content = document.getElementById('shiftsContent');
+        if (!content) return;
+
+        noteObserverV49 = new MutationObserver(mutations => {
+            let structural = false;
+            let openStateChanged = false;
+
+            for (const mutation of mutations) {
+                if (mutation.type === 'childList') structural = true;
+
+                if (
+                    mutation.type === 'attributes' &&
+                    mutation.attributeName === 'class' &&
+                    mutation.target instanceof Element &&
+                    mutation.target.matches('.shift-column-wrapper[data-column-id]')
+                ) {
+                    openStateChanged = true;
+                }
+            }
+
+            if (structural) {
+                window.requestAnimationFrame(() => {
+                    restoreNoteStateV49({focus:false});
+                });
+            } else if (openStateChanged && document.visibilityState === 'visible') {
+                writeNoteStateV49({preserveFocus:true});
+            }
+        });
+
+        noteObserverV49.observe(content,{
+            childList:true,
+            subtree:true,
+            attributes:true,
+            attributeFilter:['class']
+        });
+    }
+
+    document.addEventListener('focusin',event => {
+        const textarea = event.target instanceof HTMLTextAreaElement
+            ? event.target
+            : null;
+
+        if (!textarea?.closest('#shiftsContent .shift-note-panel')) return;
+
+        lastFocusV49 = textareaDescriptorV49(textarea);
+        writeNoteStateV49({preserveFocus:true});
+    },true);
+
+    document.addEventListener('keyup',event => {
+        const textarea = event.target instanceof HTMLTextAreaElement
+            ? event.target
+            : null;
+        if (!textarea?.closest('#shiftsContent .shift-note-panel')) return;
+        lastFocusV49 = textareaDescriptorV49(textarea);
+    },true);
+
+    document.addEventListener('mouseup',event => {
+        const textarea = event.target instanceof HTMLTextAreaElement
+            ? event.target
+            : null;
+        if (!textarea?.closest('#shiftsContent .shift-note-panel')) return;
+        lastFocusV49 = textareaDescriptorV49(textarea);
+    },true);
+
+    document.addEventListener('focusout',event => {
+        const textarea = event.target instanceof HTMLTextAreaElement
+            ? event.target
+            : null;
+        if (!textarea?.closest('#shiftsContent .shift-note-panel')) return;
+
+        lastFocusV49 = textareaDescriptorV49(textarea) || lastFocusV49;
+        writeNoteStateV49({preserveFocus:false});
+    },true);
+
+    window.addEventListener('blur',() => {
+        writeNoteStateV49({preserveFocus:true});
+    },true);
+
+    document.addEventListener('visibilitychange',() => {
+        if (document.visibilityState === 'hidden') {
+            writeNoteStateV49({preserveFocus:true});
+            return;
+        }
+
+        bindNoteObserverV49();
+        scheduleRestoreV49({focus:true});
+    });
+
+    window.addEventListener('focus',() => {
+        scheduleRestoreV49({focus:true});
+    });
+
+    /* ================================================================
+       PREMIUM SCREENSHOT
+       Sheet = 650px authority.
+       Canvas includes a premium outer matte frame.
+       ================================================================ */
+
+    function cssV49(name,fallback){
+        const value = getComputedStyle(document.documentElement)
+            .getPropertyValue(name)
+            .trim();
+        return value || fallback;
+    }
+
+    function isVenomV49(){
+        const root = document.documentElement;
+        return root.dataset.theme === 'dark' &&
+            root.dataset.themeVariant === 'venom';
+    }
+
+    function isCyberV49(){
+        const root = document.documentElement;
+        return root.dataset.theme === 'dark' &&
+            root.dataset.themeVariant !== 'venom';
+    }
+
+    function paletteV49(){
+        if (isVenomV49()) {
+            return {
+                outerTop:'#111711',
+                outerBottom:'#050805',
+                sheet:'#0b0f0b',
+                header:'#101510',
+                body:'#0c100c',
+                footer:'#090d09',
+                sectionA:'#111811',
+                sectionB:'#0d120d',
+                border:'#2c362c',
+                borderSoft:'#202920',
+                text:'#dce6da',
+                secondary:'#a7b3a4',
+                muted:'#758273',
+                accent:'#68cf58',
+                accentStrong:'#72dc61',
+                shadow:'rgba(0,0,0,.58)'
+            };
+        }
+
+        if (isCyberV49()) {
+            return {
+                outerTop:'#111d29',
+                outerBottom:'#050b12',
+                sheet:'#0f1822',
+                header:'#121e29',
+                body:'#0d161f',
+                footer:'#0b141c',
+                sectionA:'#142331',
+                sectionB:'#101b26',
+                border:'#2b3d4b',
+                borderSoft:'#1e2d38',
+                text:'#e4edf3',
+                secondary:'#a6b7c2',
+                muted:'#738693',
+                accent:cssV49('--accent','#3aa9d8'),
+                accentStrong:cssV49('--accent-strong',cssV49('--accent','#3aa9d8')),
+                shadow:'rgba(0,0,0,.48)'
+            };
+        }
+
+        /* Premium neutral light sheet. Theme identity remains in accent/roles. */
+        return {
+            outerTop:'#edf2f4',
+            outerBottom:'#dce5e9',
+            sheet:'#fbfcfc',
+            header:'#f4f8f9',
+            body:'#fafcfc',
+            footer:'#f4f7f8',
+            sectionA:'#f3f8f9',
+            sectionB:'#f8fafb',
+            border:'#cfdee3',
+            borderSoft:'#dce7eb',
+            text:'#24343b',
+            secondary:'#52666f',
+            muted:'#819198',
+            accent:cssV49('--accent','#18abc2'),
+            accentStrong:cssV49('--accent-strong',cssV49('--accent','#18abc2')),
+            shadow:'rgba(24,45,55,.20)'
+        };
+    }
+
+    function roundedRectV49(ctx,x,y,w,h,r){
+        const radius = Math.min(r,w/2,h/2);
+        ctx.beginPath();
+        ctx.moveTo(x+radius,y);
+        ctx.arcTo(x+w,y,x+w,y+h,radius);
+        ctx.arcTo(x+w,y+h,x,y+h,radius);
+        ctx.arcTo(x,y+h,x,y,radius);
+        ctx.arcTo(x,y,x+w,y,radius);
+        ctx.closePath();
+    }
+
+    function truncateV49(ctx,text,maxWidth){
+        const source = String(text || '');
+        if (ctx.measureText(source).width <= maxWidth) return source;
+        let output = source;
+
+        while (
+            output.length > 1 &&
+            ctx.measureText(`${output}…`).width > maxWidth
+        ) {
+            output = output.slice(0,-1);
+        }
+        return `${output}…`;
+    }
+
+    function roleV49(user){
+        const role = String(user?.role || 'cs').toLowerCase();
+        return ['csline','cs','kapten','kasir'].includes(role)
+            ? role
+            : 'cs';
+    }
+
+    function usersV49(users){
+        try {
+            if (typeof sortUsersV32 === 'function') return sortUsersV32(users || []);
+        } catch (_) {}
+        return Array.isArray(users) ? [...users] : [];
+    }
+
+    function noteFitV49(ctx,text,maxWidth){
+        const source = String(text || '').trim();
+        if (!source) return {size:0,lines:[]};
+
+        let size = 6.4;
+        while (size >= 5.4) {
+            ctx.font = `500 ${size.toFixed(1)}px Segoe UI, Arial, sans-serif`;
+            if (ctx.measureText(source).width <= maxWidth) {
+                return {size,lines:[source]};
+            }
+            size -= .25;
+        }
+
+        const words = source.split(/\s+/).filter(Boolean);
+        let size2 = 5.3;
+
+        while (size2 >= 4.6) {
+            ctx.font = `500 ${size2.toFixed(1)}px Segoe UI, Arial, sans-serif`;
+
+            let best = null;
+            let bestScore = Infinity;
+
+            if (words.length > 1) {
+                for (let cut=1;cut<words.length;cut++) {
+                    const a = words.slice(0,cut).join(' ');
+                    const b = words.slice(cut).join(' ');
+                    const wa = ctx.measureText(a).width;
+                    const wb = ctx.measureText(b).width;
+                    const overflow =
+                        Math.max(0,wa-maxWidth) +
+                        Math.max(0,wb-maxWidth);
+                    const score =
+                        overflow*100 +
+                        Math.abs(wa-wb)*.04;
+                    if (score < bestScore) {
+                        bestScore = score;
+                        best = [a,b];
+                    }
+                }
+            } else {
+                const mid = Math.ceil(source.length/2);
+                best = [source.slice(0,mid),source.slice(mid)];
+            }
+
+            if (
+                best &&
+                best.every(line => ctx.measureText(line).width <= maxWidth)
+            ) {
+                return {size:size2,lines:best};
+            }
+
+            size2 -= .2;
+        }
+
+        const mid = Math.ceil(source.length/2);
+        return {
+            size:4.6,
+            lines:[source.slice(0,mid),source.slice(mid)]
+        };
+    }
+
+    function screenshotSectionsV49(){
+        return (previewData?.columns || []).map(column => ({
+            name:String(column?.name || 'SHIFT'),
+            users:usersV49(column?.users || [])
+        }));
+    }
+
+    async function captureShiftScreenshotV49(){
+        const button = document.getElementById('shiftScreenshotButton');
+
+        if (!previewData?.columns?.length) {
+            showShiftToast('Preview Shift belum tersedia.','warning');
+            return;
+        }
+
+        const original = button?.innerHTML || '';
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<span>Memproses</span>';
+        }
+
+        try {
+            try {
+                window.syncPreviewRoleAuthorityV34?.(
+                    document.getElementById('shiftPreviewModal')
+                );
+            } catch (_) {}
+
+            const palette = paletteV49();
+            const sections = screenshotSectionsV49();
+
+            const sheetWidth = 650;
+            const frame = 22;
+            const canvasWidth = sheetWidth + frame*2;
+            const sheetX = frame;
+            const sheetY = frame;
+
+            const contentInset = 21;
+            const contentX = sheetX + contentInset;
+            const colWidth = 297;
+            const colGap = 14;
+
+            const headerH = 58;
+            const sectionHeadH = 27;
+            const columnsH = 19;
+            const baseRowH = 25;
+            const sectionGap = 11;
+            const footerH = 38;
+            const bodyTopGap = 8;
+
+            const measureCanvas = document.createElement('canvas');
+            const measureCtx = measureCanvas.getContext('2d');
+
+            function rowHeight(user){
+                const fit = noteFitV49(
+                    measureCtx,
+                    String(user?.note || ''),
+                    40
+                );
+                return fit.lines.length > 1 ? 29 : baseRowH;
+            }
+
+            function sectionHeight(section){
+                const rows = section.users.length
+                    ? section.users.reduce(
+                        (sum,user) => sum + rowHeight(user),
+                        0
+                    )
+                    : baseRowH;
+
+                return sectionHeadH + columnsH + rows;
+            }
+
+            const pairs = [];
+            for (let i=0;i<sections.length;i+=2) {
+                const left = sections[i];
+                const right = sections[i+1] || null;
+
+                pairs.push({
+                    left,
+                    right,
+                    height:Math.max(
+                        sectionHeight(left),
+                        right ? sectionHeight(right) : 0
+                    )
+                });
+            }
+
+            const bodyHeight = pairs.reduce(
+                (sum,pair) => sum + pair.height + sectionGap,
+                0
+            );
+
+            const sheetHeight =
+                headerH +
+                bodyTopGap +
+                bodyHeight +
+                footerH;
+
+            const canvasHeight = sheetHeight + frame*2;
+
+            const scale = Math.min(
+                2,
+                Math.max(1.5,window.devicePixelRatio || 1)
+            );
+
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(canvasWidth*scale);
+            canvas.height = Math.round(canvasHeight*scale);
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Canvas tidak tersedia.');
+            ctx.scale(scale,scale);
+            ctx.textBaseline = 'middle';
+
+            /* outer premium matte */
+            const outerGradient = ctx.createLinearGradient(
+                0,0,0,canvasHeight
+            );
+            outerGradient.addColorStop(0,palette.outerTop);
+            outerGradient.addColorStop(1,palette.outerBottom);
+            ctx.fillStyle = outerGradient;
+            ctx.fillRect(0,0,canvasWidth,canvasHeight);
+
+            /* sheet shadow */
+            ctx.save();
+            ctx.shadowColor = palette.shadow;
+            ctx.shadowBlur = isCyberV49() || isVenomV49() ? 22 : 18;
+            ctx.shadowOffsetY = 8;
+            roundedRectV49(
+                ctx,
+                sheetX,
+                sheetY,
+                sheetWidth,
+                sheetHeight,
+                14
+            );
+            ctx.fillStyle = palette.sheet;
+            ctx.fill();
+            ctx.restore();
+
+            /* sheet border + clipping */
+            roundedRectV49(
+                ctx,
+                sheetX,
+                sheetY,
+                sheetWidth,
+                sheetHeight,
+                14
+            );
+            ctx.strokeStyle = palette.border;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.save();
+            roundedRectV49(
+                ctx,
+                sheetX,
+                sheetY,
+                sheetWidth,
+                sheetHeight,
+                14
+            );
+            ctx.clip();
+
+            /* header background */
+            ctx.fillStyle = palette.header;
+            ctx.fillRect(sheetX,sheetY,sheetWidth,headerH);
+
+            const headerLeft = sheetX+15;
+            const headerY = sheetY;
+
+            ctx.fillStyle = palette.accentStrong;
+            ctx.font = '860 14px Segoe UI, Arial, sans-serif';
+            ctx.fillText('SHIFT KERJA',headerLeft,headerY+21);
+
+            const period = previewData.periodLabel || 'Periode belum ditentukan';
+
+            ctx.fillStyle = palette.muted;
+            ctx.font = '850 6.3px Segoe UI, Arial, sans-serif';
+            ctx.fillText('PERIODE',headerLeft,headerY+40);
+
+            ctx.fillStyle = palette.secondary;
+            ctx.font = '760 8.5px Segoe UI, Arial, sans-serif';
+            ctx.fillText(
+                truncateV49(ctx,period,220),
+                headerLeft+43,
+                headerY+40
+            );
+
+            const shiftCount =
+                previewData.shiftCount ??
+                (
+                    typeof operationalShiftCountV46 === 'function'
+                        ? operationalShiftCountV46(previewData.columns)
+                        : (previewData.columns || []).filter(
+                            col => !/\bcuti\b/i.test(String(col?.name || ''))
+                          ).length
+                );
+
+            const cuti =
+                previewData.cutiCount ??
+                (
+                    typeof cutiCountV32 === 'function'
+                        ? cutiCountV32(previewData.columns)
+                        : 0
+                );
+
+            const summary = [
+                ['TOTAL STAFF',String(previewData.totalStaff || 0),52],
+                ['SHIFT',String(shiftCount),39],
+                ['CUTI',String(cuti),39]
+            ];
+
+            let metricX =
+                sheetX +
+                sheetWidth -
+                15 -
+                summary.reduce((sum,item) => sum+item[2],0);
+
+            summary.forEach(([label,value,width],index) => {
+                if (index > 0) {
+                    ctx.strokeStyle = palette.border;
+                    ctx.beginPath();
+                    ctx.moveTo(metricX,headerY+17);
+                    ctx.lineTo(metricX,headerY+43);
+                    ctx.stroke();
+                }
+
+                ctx.textAlign = 'right';
+                ctx.fillStyle = palette.muted;
+                ctx.font = '850 5.2px Segoe UI, Arial, sans-serif';
+                ctx.fillText(label,metricX+width-6,headerY+24);
+
+                ctx.fillStyle = palette.text;
+                ctx.font = '840 11.3px Segoe UI, Arial, sans-serif';
+                ctx.fillText(value,metricX+width-6,headerY+37);
+                ctx.textAlign = 'left';
+
+                metricX += width;
+            });
+
+            ctx.strokeStyle = palette.border;
+            ctx.beginPath();
+            ctx.moveTo(sheetX,sheetY+headerH);
+            ctx.lineTo(sheetX+sheetWidth,sheetY+headerH);
+            ctx.stroke();
+
+            /* body base */
+            ctx.fillStyle = palette.body;
+            ctx.fillRect(
+                sheetX,
+                sheetY+headerH,
+                sheetWidth,
+                sheetHeight-headerH-footerH
+            );
+
+            let globalSectionIndex = 0;
+
+            function drawSection(section,x,y){
+                const users = section.users || [];
+                const number = String(++globalSectionIndex).padStart(2,'0');
+
+                const band = ctx.createLinearGradient(
+                    x,y,x+colWidth,y
+                );
+                band.addColorStop(0,palette.sectionA);
+                band.addColorStop(.62,palette.sectionB);
+                band.addColorStop(1,palette.body);
+                ctx.fillStyle = band;
+                ctx.fillRect(x,y,colWidth,sectionHeadH);
+
+                ctx.fillStyle = palette.accentStrong;
+                ctx.font = '860 6.5px Segoe UI, Arial, sans-serif';
+                ctx.fillText(number,x+2,y+sectionHeadH/2);
+
+                ctx.fillStyle = palette.text;
+                ctx.font = '815 9.6px Segoe UI, Arial, sans-serif';
+                ctx.fillText(
+                    truncateV49(ctx,section.name,colWidth-105),
+                    x+24,
+                    y+sectionHeadH/2
+                );
+
+                /* Safe count group: both number and STAFF stay inside datum. */
+                const countRight = x + colWidth - 4;
+
+                ctx.textAlign = 'right';
+                ctx.fillStyle = palette.muted;
+                ctx.font = '820 5.1px Segoe UI, Arial, sans-serif';
+                const staffText = 'STAFF';
+                ctx.fillText(
+                    staffText,
+                    countRight,
+                    y+sectionHeadH/2
+                );
+
+                const staffWidth = ctx.measureText(staffText).width;
+
+                ctx.fillStyle = palette.secondary;
+                ctx.font = '820 7.3px Segoe UI, Arial, sans-serif';
+                ctx.fillText(
+                    String(users.length),
+                    countRight-staffWidth-4,
+                    y+sectionHeadH/2
+                );
+                ctx.textAlign = 'left';
+
+                ctx.strokeStyle = palette.border;
+                ctx.beginPath();
+                ctx.moveTo(x,y+sectionHeadH);
+                ctx.lineTo(x+colWidth,y+sectionHeadH);
+                ctx.stroke();
+
+                const columnsY = y+sectionHeadH;
+                const noX = x+3;
+                const nameX = x+27;
+                const roleX = x+180;
+                const noteRight = x+colWidth-4;
+
+                ctx.fillStyle = palette.muted;
+                ctx.font = '840 5.8px Segoe UI, Arial, sans-serif';
+                ctx.fillText('NO',noX,columnsY+columnsH/2);
+                ctx.fillText('NAMA',nameX,columnsY+columnsH/2);
+                ctx.fillText('ROLE',roleX,columnsY+columnsH/2);
+
+                ctx.textAlign = 'right';
+                ctx.fillText(
+                    'CATATAN',
+                    noteRight,
+                    columnsY+columnsH/2
+                );
+                ctx.textAlign = 'left';
+
+                ctx.strokeStyle = palette.borderSoft;
+                ctx.beginPath();
+                ctx.moveTo(x,columnsY+columnsH);
+                ctx.lineTo(x+colWidth,columnsY+columnsH);
+                ctx.stroke();
+
+                let rowY = columnsY+columnsH;
+
+                if (!users.length) {
+                    ctx.fillStyle = palette.muted;
+                    ctx.font = 'italic 500 7px Segoe UI, Arial, sans-serif';
+                    ctx.fillText(
+                        'Belum ada staff',
+                        x+3,
+                        rowY+baseRowH/2
+                    );
+                    return;
+                }
+
+                users.forEach((user,index) => {
+                    const fit = noteFitV49(
+                        ctx,
+                        String(user?.note || ''),
+                        40
+                    );
+                    const height =
+                        fit.lines.length > 1 ? 29 : baseRowH;
+
+                    ctx.fillStyle = palette.muted;
+                    ctx.font = '760 6.2px Segoe UI, Arial, sans-serif';
+                    ctx.fillText(
+                        String(index+1).padStart(2,'0'),
+                        noX,
+                        rowY+height/2
+                    );
+
+                    ctx.fillStyle = palette.text;
+                    ctx.font = '760 8.5px Segoe UI, Arial, sans-serif';
+                    ctx.fillText(
+                        truncateV49(
+                            ctx,
+                            String(user?.name || 'User'),
+                            143
+                        ),
+                        nameX,
+                        rowY+height/2
+                    );
+
+                    const role = roleV49(user);
+                    ctx.fillStyle =
+                        window.__DDT_PREVIEW_ROLE_COLORS_V34__?.[role]
+                        || palette.accentStrong;
+                    ctx.font = '810 6.5px Segoe UI, Arial, sans-serif';
+                    ctx.fillText(
+                        ROLE_LABELS_V49[role] || role.toUpperCase(),
+                        roleX,
+                        rowY+height/2
+                    );
+
+                    if (fit.lines.length) {
+                        ctx.textAlign = 'right';
+                        ctx.fillStyle = palette.muted;
+                        ctx.font =
+                            `520 ${fit.size}px Segoe UI, Arial, sans-serif`;
+
+                        if (fit.lines.length === 1) {
+                            ctx.fillText(
+                                fit.lines[0],
+                                noteRight,
+                                rowY+height/2
+                            );
+                        } else {
+                            ctx.fillText(
+                                fit.lines[0],
+                                noteRight,
+                                rowY+height/2-3.2
+                            );
+                            ctx.fillText(
+                                fit.lines[1],
+                                noteRight,
+                                rowY+height/2+3.2
+                            );
+                        }
+                        ctx.textAlign = 'left';
+                    }
+
+                    rowY += height;
+
+                    ctx.strokeStyle = palette.borderSoft;
+                    ctx.beginPath();
+                    ctx.moveTo(x,rowY);
+                    ctx.lineTo(x+colWidth,rowY);
+                    ctx.stroke();
+                });
+            }
+
+            let bodyY = sheetY + headerH + bodyTopGap;
+
+            pairs.forEach(pair => {
+                drawSection(pair.left,contentX,bodyY);
+
+                if (pair.right) {
+                    drawSection(
+                        pair.right,
+                        contentX+colWidth+colGap,
+                        bodyY
+                    );
+                }
+
+                bodyY += pair.height + sectionGap;
+            });
+
+            /* footer */
+            const footerY = sheetY + sheetHeight - footerH;
+
+            ctx.fillStyle = palette.footer;
+            ctx.fillRect(sheetX,footerY,sheetWidth,footerH);
+
+            ctx.strokeStyle = palette.border;
+            ctx.beginPath();
+            ctx.moveTo(sheetX,footerY);
+            ctx.lineTo(sheetX+sheetWidth,footerY);
+            ctx.stroke();
+
+            ctx.fillStyle = palette.muted;
+            ctx.font = '500 6.7px Segoe UI, Arial, sans-serif';
+            ctx.fillText(
+                `Diperbarui ${previewData.createdAt || '-'} · ${previewData.createdBy || 'System'}`,
+                sheetX+15,
+                footerY+footerH/2
+            );
+
+            ctx.restore();
+
+            /* re-stroke outer border after clip */
+            roundedRectV49(
+                ctx,
+                sheetX,
+                sheetY,
+                sheetWidth,
+                sheetHeight,
+                14
+            );
+            ctx.strokeStyle = palette.border;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            if (typeof downloadCanvasAsPng !== 'function') {
+                throw new Error(
+                    'Fungsi download screenshot tidak tersedia.'
+                );
+            }
+
+            await downloadCanvasAsPng(
+                canvas,
+                `shift-kerja-${new Date().toISOString().split('T')[0]}.png`
+            );
+
+            showShiftToast(
+                'Screenshot Shift berhasil dibuat.',
+                'success'
+            );
+        } catch (error) {
+            console.error('[V49] Screenshot gagal:',error);
+            showShiftToast(
+                'Screenshot gagal dibuat oleh browser ini.',
+                'error',
+                3500
+            );
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = original;
+            }
+        }
+    }
+
+    window.captureShiftScreenshot = captureShiftScreenshotV49;
+    try {
+        captureShiftScreenshot = captureShiftScreenshotV49;
+    } catch (_) {}
+
+    function startV49(){
+        bindNoteObserverV49();
+
+        /* If the browser restored the page after an inactive period, reapply
+           the local note UI state without waiting for another interaction. */
+        scheduleRestoreV49({focus:false});
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            startV49,
+            {once:true}
+        );
+    } else {
+        startV49();
+    }
+
+    window.DDTShiftCandidateV49 = Object.freeze({
+        version:'v49',
+        note:Object.freeze({
+            visibility:'session-local per Active/Draft workspace',
+            altTab:'restore open panel and textarea cursor',
+            dataPersistence:'existing autosave retained'
+        }),
+        screenshot:Object.freeze({
+            sheet:'650px',
+            outerFrame:'22px premium matte',
+            staffCount:'safe inside right datum',
+            themes:'Light / Cyber Dark / Venom'
+        }),
+        backend:'unchanged'
+    });
+})();
+</script>
+
 </body>
 </html>
