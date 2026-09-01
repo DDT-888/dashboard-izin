@@ -57487,15 +57487,15 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                                 <span class="col-count">${col.users.length}</span>
                                             </div>
                                             <div class="col-actions">
+                                                <span class="note-badge history-tooltip-target ${col.users.some(u => u.note && u.note.trim() !== '') ? 'has-note' : ''}" 
+                                                      onclick="toggleNotePanel('${col.id}')"
+                                                      data-tooltip="${canEdit ? 'Buka / tutup Note' : 'Lihat Note'}"
+                                                      data-tooltip-icon="info"
+                                                      aria-label="${canEdit ? 'Buka / tutup Note' : 'Lihat Note'}">
+                                                    ${col.users.some(u => u.note && u.note.trim() !== '') ? '<span class="badge-dot"></span>' : ''}
+                                                    note
+                                                </span>
                                                 ${canEdit ? `
-                                                    <span class="note-badge history-tooltip-target ${col.users.some(u => u.note && u.note.trim() !== '') ? 'has-note' : ''}" 
-                                                          onclick="toggleNotePanel('${col.id}')"
-                                                          data-tooltip="Buka / tutup Note"
-                                                          data-tooltip-icon="info"
-                                                          aria-label="Buka / tutup Note">
-                                                        ${col.users.some(u => u.note && u.note.trim() !== '') ? '<span class="badge-dot"></span>' : ''}
-                                                        note
-                                                    </span>
                                                     <button class="delete-col history-tooltip-target" onclick="deleteShiftColumn('${col.id}')" data-tooltip="Hapus kolom" data-tooltip-icon="delete" aria-label="Hapus kolom">
                                                         <svg viewBox="0 0 24 24" aria-hidden="true">
                                                             <path d="M3 6h18"/>
@@ -57565,12 +57565,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                                 <div class="note-user-item role-${user.role}" data-user-id="${user.id}">
                                                     <textarea placeholder="${!canEdit ? 'Mode baca' : 'Tulis note...'}" 
                                                               class="role-${user.role}"
-                                                              ${!canEdit ? 'readonly' : ''}
-                                                              ${!canEdit ? 'style="cursor:default;"' : ''}
-                                                              ${!canEdit ? 'title="🔒 Mode baca - hanya bisa melihat note"' : ''}
+                                                              ${!canEdit ? 'readonly aria-readonly="true"' : ''}
+                                                              ${!canEdit ? 'title="Mode baca — Note dapat dilihat dan disalin"' : ''}
                                                               oninput="onNoteInput('${col.id}', '${user.id}', this)"
-                                                              onblur="onNoteBlur('${col.id}', '${user.id}', this)"
-                                                              onfocus="${!canEdit ? 'this.blur()' : ''}">${user.note || ''}</textarea>
+                                                              onblur="onNoteBlur('${col.id}', '${user.id}', this)">${user.note || ''}</textarea>
                                                 </div>
                                             `).join('')}
                                         </div>
@@ -111708,8 +111706,24 @@ html.shift-note-resume-still-v51
     }
     function currentOpenSetV53(){
         const w=modeV53(),valid=validColumnIdsV53();
-        const clean=new Set([...openByWorkspaceV53[w]].filter(id=>valid.has(String(id))));
+
+        /*
+         * V54 REFRESH AUTHORITY:
+         * At initial script execution / early refresh, shiftColumns can still
+         * be empty while server data is loading. An empty valid set is NOT
+         * evidence that persisted Note IDs are invalid.
+         */
+        if(valid.size===0){
+            return new Set(openByWorkspaceV53[w]);
+        }
+
+        const clean=new Set(
+            [...openByWorkspaceV53[w]]
+                .filter(id=>valid.has(String(id)))
+        );
+
         openByWorkspaceV53[w]=clean;
+        writeOpenV53(w);
         return clean;
     }
     function installCurrentOpenSetV53({animate=false}={}){
@@ -111732,11 +111746,29 @@ html.shift-note-resume-still-v51
     const baseRenderV53=typeof renderShiftPage==='function'?renderShiftPage:null;
     if(baseRenderV53){
         renderShiftPage=function candidateV53RenderShiftPage(previousCardLayout=null){
-            const w=modeV53(),valid=validColumnIdsV53();
-            openByWorkspaceV53[w]=new Set([...openByWorkspaceV53[w]].filter(id=>valid.has(String(id))));
-            try{openShiftNoteColumnIds=new Set(openByWorkspaceV53[w]);}catch(_){}
+            const w=modeV53();
+
+            /*
+             * Install persisted workspace state BEFORE markup generation.
+             * Never validate it against an early/empty shiftColumns snapshot.
+             */
+            try{
+                openShiftNoteColumnIds=
+                    new Set(openByWorkspaceV53[w]);
+            }catch(_){}
+
             const result=baseRenderV53(previousCardLayout);
-            requestAnimationFrame(()=>{if(modeV53()===w)installCurrentOpenSetV53({animate:false});});
+
+            requestAnimationFrame(()=>{
+                if(modeV53()!==w)return;
+
+                /*
+                 * After real render/data exists, validation is safe.
+                 * Genuinely deleted Shift column IDs are still cleaned.
+                 */
+                installCurrentOpenSetV53({animate:false});
+            });
+
             return result;
         };
         window.renderShiftPage=renderShiftPage;
@@ -111882,6 +111914,50 @@ html.shift-note-resume-still-v51
         noteUi:Object.freeze({activeDraft:'separate session state'}),
         workspace:Object.freeze({legacyRecoverDraft:'disabled',legacyDraftRealtime:'disabled',revisionAuthority:'V20/V23'}),
         backend:Object.freeze({rpc:'update_shift_staff_note_atomic',migration:'shift_note_workspace_isolation_v53'})
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate V54 — Note Refresh Persistence + View-Only Access -->
+<style id="ddt-shift-v54-note-viewonly">
+#tab-shifts .shift-note-panel .note-user-item textarea[readonly]{
+    cursor:text !important;
+    user-select:text !important;
+    -webkit-user-select:text !important;
+    opacity:1 !important;
+}
+
+#tab-shifts .shift-note-panel .note-user-item textarea[readonly]:focus{
+    outline:none !important;
+}
+
+#tab-shifts .column-header .col-actions .note-badge{
+    pointer-events:auto !important;
+}
+</style>
+
+<script id="ddt-shift-v54-marker">
+(function DDTShiftV54Marker(){
+    'use strict';
+    if(window.__DDT_SHIFT_V54__) return;
+    window.__DDT_SHIFT_V54__=true;
+
+    window.DDTShiftCandidateV54=Object.freeze({
+        version:'v54',
+        noteRefresh:Object.freeze({
+            persistedOpenState:'sessionStorage per workspace',
+            earlyEmptyColumns:'never prunes stored state',
+            validation:'after real render only'
+        }),
+        viewOnly:Object.freeze({
+            openNote:true,
+            read:true,
+            selectCopy:true,
+            edit:false,
+            saveRpc:false
+        }),
+        backend:'V53 unchanged'
     });
 })();
 </script>
