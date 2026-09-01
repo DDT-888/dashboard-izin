@@ -108190,5 +108190,214 @@ html[data-theme="dark"][data-theme-variant="venom"]
 })();
 </script>
 
+
+<!-- DDT Shift Candidate V42 — Preview P11 + Data Staff role fix + header cleanup -->
+<style id="ddt-shift-preview-p11-v42-style">
+/* ================================================================
+   V42 Design Authority
+   - Preview header premium polish
+   - Summary top-right scale rebalance
+   - Section head must read as ONE connected band (not double-line)
+   - DATA STAFF user cards must preserve role color material
+   ================================================================ */
+
+/* --- Preview header premium polish --- */
+#shiftPreviewModal .preview-roster-header{
+    min-height:56px !important;
+    padding:11px 14px 9px !important;
+    gap:10px !important;
+}
+
+#shiftPreviewModal .preview-roster-kicker{
+    font-size:14.8px !important;
+    margin-bottom:4px !important;
+    letter-spacing:.012em !important;
+}
+
+#shiftPreviewModal .preview-roster-period-inline{
+    gap:6px !important;
+}
+
+#shiftPreviewModal .preview-roster-period-inline > span{
+    font-size:6.6px !important;
+    letter-spacing:.115em !important;
+}
+
+#shiftPreviewModal .preview-roster-period-inline > strong{
+    font-size:8.8px !important;
+    font-weight:770 !important;
+    letter-spacing:-.004em !important;
+}
+
+#shiftPreviewModal .preview-roster-head-tools{
+    align-items:center !important;
+    gap:9px !important;
+}
+
+#shiftPreviewModal .preview-roster-head-summary{
+    min-height:28px !important;
+    align-items:stretch !important;
+}
+
+#shiftPreviewModal .preview-roster-head-metric{
+    min-height:28px !important;
+    justify-content:center !important;
+    padding:0 8px !important;
+    gap:2px !important;
+}
+
+#shiftPreviewModal .preview-roster-head-metric:first-child{
+    min-width:52px !important;
+}
+
+#shiftPreviewModal .preview-roster-head-metric small{
+    font-size:5.45px !important;
+    letter-spacing:.086em !important;
+}
+
+#shiftPreviewModal .preview-roster-head-metric strong{
+    font-size:11.7px !important;
+    line-height:1 !important;
+}
+
+#shiftPreviewModal .preview-roster-close{
+    width:28px !important;
+    height:28px !important;
+    border-radius:8px !important;
+}
+
+/* --- Section head must feel joined to the table, not separated by dual lines --- */
+#shiftPreviewModal .preview-roster-scroll{
+    padding-top:6px !important;
+}
+
+#shiftPreviewModal .preview-roster-grid{
+    row-gap:11px !important;
+}
+
+#shiftPreviewModal .preview-roster-section-head{
+    min-height:28px !important;
+    padding:5px 1px 2px !important;
+    border:0 !important;
+    background:linear-gradient(
+        90deg,
+        color-mix(in srgb,var(--accent) 3.5%, transparent) 0%,
+        transparent 62%
+    ) !important;
+    box-shadow:none !important;
+}
+
+#shiftPreviewModal .preview-roster-section-title h3{
+    font-size:9.8px !important;
+    font-weight:815 !important;
+}
+
+#shiftPreviewModal .preview-roster-columns{
+    padding:3px 4px 4px !important;
+    border-top:none !important;
+    border-bottom:1px solid color-mix(in srgb,var(--accent) 7%, var(--border-color)) !important;
+}
+
+#shiftPreviewModal .preview-roster-columns span{
+    font-size:5.9px !important;
+}
+
+/* --- DATA STAFF must preserve role color materials exactly like Shift cards --- */
+html:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-available .user-card-shift{
+    border:1px solid color-mix(in srgb, var(--shift-role-accent) 32%, var(--border-color)) !important;
+    border-left:3px solid var(--shift-role-accent) !important;
+    background:linear-gradient(
+        118deg,
+        var(--shift-role-grad-start) 0%,
+        var(--shift-role-grad-mid) 48%,
+        color-mix(in srgb, var(--bg-card) 96%, transparent) 100%
+    ) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.055), 0 5px 14px color-mix(in srgb, var(--shift-role-accent) 6%, transparent) !important;
+}
+
+html:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-available .user-card-shift:hover{
+    border-color:color-mix(in srgb, var(--shift-role-accent) 44%, var(--border-color)) !important;
+    border-left-color:var(--shift-role-accent) !important;
+    background:linear-gradient(
+        118deg,
+        color-mix(in srgb, var(--shift-role-grad-start) 118%, transparent) 0%,
+        color-mix(in srgb, var(--shift-role-grad-mid) 116%, transparent) 50%,
+        var(--bg-card) 100%
+    ) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.065), 0 8px 18px color-mix(in srgb, var(--shift-role-accent) 10%, transparent) !important;
+}
+
+/* Venom keeps its own tone but still must preserve role identity in DATA STAFF */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-shifts .shift-available .user-card-shift{
+    border-color:color-mix(in srgb, var(--shift-role-accent) 34%, #2d352d) !important;
+    border-left-color:var(--shift-role-accent) !important;
+}
+</style>
+
+<script id="ddt-shift-preview-p11-v42-script">
+(function DDTShiftPreviewP11V42(){
+    'use strict';
+    if (window.__DDT_SHIFT_PREVIEW_P11_V42__) return;
+    window.__DDT_SHIFT_PREVIEW_P11_V42__ = true;
+
+    function patchShiftToast(){
+        if (typeof window.showShiftToast !== 'function' || window.showShiftToast.__v42patched) return;
+        const original = window.showShiftToast;
+        const wrapped = function(message, type, duration){
+            const text = String(message ?? '').replace(/\s+/g, ' ').trim();
+            if (/sudah berada di data staff/i.test(text)) return;
+            if (/sudah berada di kolom ini/i.test(text)) return;
+            if (/sudah ada di kolom ini/i.test(text)) return;
+            return original.apply(this, arguments);
+        };
+        wrapped.__v42patched = true;
+        window.showShiftToast = wrapped;
+    }
+
+    function removeLiteralProfileSlashN(){
+        const roots = document.querySelectorAll('.topbar-right, .header-profile-container, .profile-container, .topbar');
+        roots.forEach((root) => {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            const trash = [];
+            let node = walker.nextNode();
+            while (node) {
+                const text = (node.nodeValue || '').trim();
+                if (text === '\\n' || text === '\n') trash.push(node);
+                node = walker.nextNode();
+            }
+            trash.forEach(node => node.remove());
+        });
+    }
+
+    function bootV42(){
+        patchShiftToast();
+        removeLiteralProfileSlashN();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootV42, { once:true });
+    } else {
+        bootV42();
+    }
+
+    const observer = new MutationObserver(() => {
+        patchShiftToast();
+        removeLiteralProfileSlashN();
+    });
+    if (document.documentElement) {
+        observer.observe(document.documentElement, { childList:true, subtree:true });
+    }
+
+    window.DDTShiftPreviewV42 = Object.freeze({
+        version:'v42-preview-p11',
+        authority:'Preview premium polish + Data Staff role preservation',
+        backend:'unchanged'
+    });
+})();
+</script>
+
 </body>
 </html>
