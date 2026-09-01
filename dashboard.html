@@ -109592,9 +109592,17 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 bodyH +
                 footerH;
 
+            /*
+             * V50 Hi-Res authority:
+             * Same logical composition, substantially more physical pixels.
+             * PNG remains lossless; file size is allowed to grow for clarity.
+             */
             const scale = Math.min(
-                2,
-                Math.max(1.5,window.devicePixelRatio || 1)
+                4,
+                Math.max(
+                    3.5,
+                    (window.devicePixelRatio || 1) * 1.5
+                )
             );
 
             const canvas = document.createElement('canvas');
@@ -110128,6 +110136,37 @@ html[data-theme="dark"][data-theme-variant="venom"]
         } catch (_) {}
     }
 
+    function noteDomMatchesStateV50(openIds){
+        const desired = new Set(
+            (Array.isArray(openIds) ? openIds : [])
+                .map(String)
+                .filter(Boolean)
+        );
+
+        const wrappers = Array.from(
+            document.querySelectorAll(
+                '#shiftsContent .shift-column-wrapper[data-column-id]'
+            )
+        );
+
+        for (const wrapper of wrappers) {
+            const id = String(wrapper.dataset.columnId || '');
+            const shouldOpen = desired.has(id);
+            const panel = wrapper.querySelector('.shift-note-panel');
+
+            const wrapperOpen = wrapper.classList.contains('has-note-open');
+            const panelOpen = Boolean(panel?.classList.contains('open'));
+
+            if (shouldOpen) {
+                if (!wrapperOpen || !panelOpen) return false;
+            } else {
+                if (wrapperOpen || panelOpen) return false;
+            }
+        }
+
+        return true;
+    }
+
     function restoreNoteStateV49({ focus = false } = {}){
         if (!isShiftRouteV49()) return false;
 
@@ -110142,8 +110181,21 @@ html[data-theme="dark"][data-theme-variant="venom"]
             ).map(wrapper => String(wrapper.dataset.columnId || ''))
         );
 
-        const openIds = state.openIds.filter(id => validIds.has(String(id)));
-        applyNoteOpenIdsV49(openIds);
+        const openIds = state.openIds.filter(
+            id => validIds.has(String(id))
+        );
+
+        /*
+         * V50 stay-still authority:
+         * Do NOT touch open/close classes if the DOM already matches.
+         * This avoids height recalculation / sibling-column motion after
+         * Alt+Tab when the Note panel never actually disappeared.
+         */
+        const layoutNeedsRestore = !noteDomMatchesStateV50(openIds);
+
+        if (layoutNeedsRestore) {
+            applyNoteOpenIdsV49(openIds);
+        }
 
         if (focus && state.focus) {
             window.requestAnimationFrame(() => {
@@ -110151,20 +110203,27 @@ html[data-theme="dark"][data-theme-variant="venom"]
             });
         }
 
-        return true;
+        return {
+            restored:true,
+            layoutMutated:layoutNeedsRestore
+        };
     }
 
     function scheduleRestoreV49({ focus = false } = {}){
         clearTimeout(restoreTimerV49);
 
-        const passes = [0,60,180,420,850];
-        passes.forEach((delay,index) => {
-            window.setTimeout(() => {
-                restoreNoteStateV49({
-                    focus:focus && index === passes.length - 1
-                });
-            },delay);
-        });
+        /*
+         * V50: one stabilization pass only.
+         * The previous five-pass sequence repeatedly re-entered the restore
+         * path and could make Note + neighbor tables appear to move.
+         */
+        restoreTimerV49 = window.setTimeout(() => {
+            restoreTimerV49 = null;
+
+            window.requestAnimationFrame(() => {
+                restoreNoteStateV49({focus});
+            });
+        },36);
     }
 
     function bindNoteObserverV49(){
@@ -110191,10 +110250,17 @@ html[data-theme="dark"][data-theme-variant="venom"]
             }
 
             if (structural) {
+                /*
+                 * V50 compare-first restore: harmless when the currently
+                 * visible Note layout is already correct.
+                 */
                 window.requestAnimationFrame(() => {
                     restoreNoteStateV49({focus:false});
                 });
-            } else if (openStateChanged && document.visibilityState === 'visible') {
+            } else if (
+                openStateChanged &&
+                document.visibilityState === 'visible'
+            ) {
                 writeNoteStateV49({preserveFocus:true});
             }
         });
@@ -110563,6 +110629,9 @@ html[data-theme="dark"][data-theme-variant="venom"]
 
             const ctx = canvas.getContext('2d');
             if (!ctx) throw new Error('Canvas tidak tersedia.');
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.scale(scale,scale);
             ctx.textBaseline = 'middle';
 
@@ -110997,6 +111066,33 @@ html[data-theme="dark"][data-theme-variant="venom"]
             outerFrame:'22px premium matte',
             staffCount:'safe inside right datum',
             themes:'Light / Cyber Dark / Venom'
+        }),
+        backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- DDT Shift Candidate V50 — Note Stay Still + Hi-Res Screenshot -->
+<script id="ddt-shift-v50-marker">
+(function DDTShiftV50Marker(){
+    'use strict';
+    if (window.__DDT_SHIFT_V50__) return;
+    window.__DDT_SHIFT_V50__ = true;
+
+    window.DDTShiftCandidateV50 = Object.freeze({
+        version:'v50',
+        note:Object.freeze({
+            altTab:'compare-first restore',
+            repeatedLayoutRestore:'removed',
+            stabilizationPasses:1,
+            focusCursor:'retained'
+        }),
+        screenshot:Object.freeze({
+            logicalComposition:'V49 retained',
+            renderScale:'3.5x–4x',
+            imageSmoothing:'high',
+            png:'lossless'
         }),
         backend:'unchanged'
     });
