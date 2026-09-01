@@ -109593,16 +109593,22 @@ html[data-theme="dark"][data-theme-variant="venom"]
                 footerH;
 
             /*
-             * V50 Hi-Res authority:
-             * Same logical composition, substantially more physical pixels.
-             * PNG remains lossless; file size is allowed to grow for clarity.
+             * V51 Ultra-HD authority:
+             * 6x target render density.  The logical layout stays identical;
+             * only the physical pixel grid increases.
+             *
+             * A 72M physical-pixel safety cap protects browsers on unusually
+             * tall rosters while keeping normal rosters at the full 6x target.
              */
-            const scale = Math.min(
-                4,
-                Math.max(
-                    3.5,
-                    (window.devicePixelRatio || 1) * 1.5
-                )
+            const targetScaleV51 = 6;
+            const maxPhysicalPixelsV51 = 72000000;
+            const safeScaleV51 = Math.sqrt(
+                maxPhysicalPixelsV51 /
+                Math.max(1,canvasWidth * canvasHeight)
+            );
+            const scale = Math.max(
+                4.5,
+                Math.min(targetScaleV51,safeScaleV51)
             );
 
             const canvas = document.createElement('canvas');
@@ -111092,6 +111098,450 @@ html[data-theme="dark"][data-theme-variant="venom"]
             logicalComposition:'V49 retained',
             renderScale:'3.5x–4x',
             imageSmoothing:'high',
+            png:'lossless'
+        }),
+        backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- ================================================================
+     DDT Shift Candidate V51
+     Note DOM Stability Guard + Ultra-HD Screenshot
+     ================================================================ -->
+<style id="ddt-shift-v51-note-dom-stability">
+/* During browser visibility resume, suppress presentation transitions.
+   If no structural data changed, the DOM is not rerendered at all. */
+html.shift-note-resume-still-v51
+#tab-shifts .shift-column-wrapper,
+html.shift-note-resume-still-v51
+#tab-shifts .shift-column,
+html.shift-note-resume-still-v51
+#tab-shifts .shift-note-panel,
+html.shift-note-resume-still-v51
+#tab-shifts .shift-note-panel *,
+html.shift-note-resume-still-v51
+#tab-shifts .user-card-shift{
+    transition:none !important;
+    animation:none !important;
+}
+</style>
+
+<script id="ddt-shift-v51-note-dom-stability-script">
+(function DDTShiftV51NoteDomStability(){
+    'use strict';
+    if (window.__DDT_SHIFT_V51_NOTE_DOM_STABILITY__) return;
+    window.__DDT_SHIFT_V51_NOTE_DOM_STABILITY__ = true;
+
+    const baseRenderShiftPageV51 =
+        typeof renderShiftPage === 'function'
+            ? renderShiftPage
+            : null;
+
+    if (!baseRenderShiftPageV51) return;
+
+    let guardV51 = null;
+    let releaseTimerV51 = null;
+    let lastEditorV51 = null;
+
+    function currentModeV51(){
+        try {
+            return window.DDTShiftCandidate?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    function noteTextareaV51(node){
+        if (!(node instanceof HTMLTextAreaElement)) return null;
+        return node.closest('#shiftsContent .shift-note-panel')
+            ? node
+            : null;
+    }
+
+    function currentNoteTextareaV51(){
+        return noteTextareaV51(document.activeElement);
+    }
+
+    function structuralSignatureV51(){
+        try {
+            const columns = (Array.isArray(shiftColumns) ? shiftColumns : [])
+                .map(column => ({
+                    id:String(column?.id || ''),
+                    name:String(column?.name || ''),
+                    columnNote:String(column?.note || ''),
+                    users:(Array.isArray(column?.users) ? column.users : [])
+                        .map(user => [
+                            String(user?.id ?? ''),
+                            String(user?.role || '')
+                        ])
+                }));
+
+            const available = (Array.isArray(availableUsers) ? availableUsers : [])
+                .map(user => [
+                    String(user?.id ?? ''),
+                    String(user?.role || '')
+                ]);
+
+            let period = null;
+            try {
+                period = currentModeV51() === 'draft'
+                    ? (window.__DDT_SHIFT_DRAFT_PERIOD__ || null)
+                    : (activeShiftPeriod || null);
+            } catch (_) {}
+
+            return JSON.stringify({
+                mode:currentModeV51(),
+                columns,
+                available,
+                period
+            });
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function captureEditorV51(textarea){
+        const node = noteTextareaV51(textarea);
+        if (!node) return null;
+
+        const wrapper = node.closest(
+            '.shift-column-wrapper[data-column-id]'
+        );
+        const item = node.closest(
+            '.note-user-item[data-user-id]'
+        );
+
+        if (!wrapper || !item) return null;
+
+        const panelBody = node.closest('.note-panel-body');
+        const columnsWrapper =
+            document.getElementById('shiftColumnsWrapper');
+
+        const snapshot = {
+            node,
+            columnId:String(wrapper.dataset.columnId || ''),
+            userId:String(item.dataset.userId || ''),
+            start:Number(node.selectionStart || 0),
+            end:Number(node.selectionEnd || 0),
+            direction:String(node.selectionDirection || 'none'),
+            textareaScrollTop:Number(node.scrollTop || 0),
+            panelScrollTop:Number(panelBody?.scrollTop || 0),
+            columnsScrollLeft:Number(columnsWrapper?.scrollLeft || 0),
+            pageX:Number(window.scrollX || 0),
+            pageY:Number(window.scrollY || 0),
+            signature:structuralSignatureV51(),
+            mode:currentModeV51(),
+            capturedAt:Date.now()
+        };
+
+        lastEditorV51 = snapshot;
+        return snapshot;
+    }
+
+    function findEditorV51(snapshot){
+        if (!snapshot) return null;
+
+        if (
+            snapshot.node instanceof HTMLTextAreaElement &&
+            snapshot.node.isConnected
+        ) {
+            return snapshot.node;
+        }
+
+        const wrapper = Array.from(
+            document.querySelectorAll(
+                '#shiftsContent .shift-column-wrapper[data-column-id]'
+            )
+        ).find(node =>
+            String(node.dataset.columnId || '') ===
+            String(snapshot.columnId || '')
+        );
+
+        if (!wrapper) return null;
+
+        const item = Array.from(
+            wrapper.querySelectorAll('.note-user-item[data-user-id]')
+        ).find(node =>
+            String(node.dataset.userId || '') ===
+            String(snapshot.userId || '')
+        );
+
+        return item?.querySelector('textarea') || null;
+    }
+
+    function restoreEditorV51(snapshot){
+        if (!snapshot) return false;
+
+        const textarea = findEditorV51(snapshot);
+        if (!(textarea instanceof HTMLTextAreaElement)) return false;
+        if (textarea.readOnly) return false;
+
+        const panelBody = textarea.closest('.note-panel-body');
+        const columnsWrapper =
+            document.getElementById('shiftColumnsWrapper');
+
+        try {
+            /* Restore scroll datums before and after focus. */
+            if (columnsWrapper) {
+                columnsWrapper.scrollLeft =
+                    Number(snapshot.columnsScrollLeft || 0);
+            }
+            if (panelBody) {
+                panelBody.scrollTop =
+                    Number(snapshot.panelScrollTop || 0);
+            }
+            textarea.scrollTop =
+                Number(snapshot.textareaScrollTop || 0);
+
+            window.scrollTo(
+                Number(snapshot.pageX || 0),
+                Number(snapshot.pageY || 0)
+            );
+
+            textarea.focus({preventScroll:true});
+
+            const max = textarea.value.length;
+            const start = Math.min(
+                Number(snapshot.start || 0),
+                max
+            );
+            const end = Math.min(
+                Number(snapshot.end ?? start),
+                max
+            );
+
+            textarea.setSelectionRange(
+                start,
+                end,
+                snapshot.direction === 'forward' ||
+                snapshot.direction === 'backward'
+                    ? snapshot.direction
+                    : 'none'
+            );
+
+            textarea.scrollTop =
+                Number(snapshot.textareaScrollTop || 0);
+
+            if (panelBody) {
+                panelBody.scrollTop =
+                    Number(snapshot.panelScrollTop || 0);
+            }
+            if (columnsWrapper) {
+                columnsWrapper.scrollLeft =
+                    Number(snapshot.columnsScrollLeft || 0);
+            }
+
+            window.scrollTo(
+                Number(snapshot.pageX || 0),
+                Number(snapshot.pageY || 0)
+            );
+
+            lastEditorV51 = {
+                ...snapshot,
+                node:textarea,
+                start,
+                end
+            };
+
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function beginGuardV51(snapshot){
+        if (!snapshot) return;
+
+        clearTimeout(releaseTimerV51);
+
+        guardV51 = {
+            ...snapshot,
+            active:true,
+            startedAt:Date.now(),
+            suppressedRenders:0
+        };
+
+        document.documentElement.classList.add(
+            'shift-note-resume-still-v51'
+        );
+    }
+
+    function releaseGuardV51(delay=900){
+        clearTimeout(releaseTimerV51);
+
+        releaseTimerV51 = window.setTimeout(() => {
+            guardV51 = null;
+            document.documentElement.classList.remove(
+                'shift-note-resume-still-v51'
+            );
+        },delay);
+    }
+
+    function structureUnchangedV51(){
+        if (!guardV51?.active) return false;
+        if (currentModeV51() !== guardV51.mode) return false;
+
+        return structuralSignatureV51() === guardV51.signature;
+    }
+
+    function notePanelStillOpenV51(snapshot){
+        const textarea = findEditorV51(snapshot);
+        if (!(textarea instanceof HTMLTextAreaElement)) return false;
+
+        const wrapper = textarea.closest(
+            '.shift-column-wrapper[data-column-id]'
+        );
+        const panel = textarea.closest('.shift-note-panel');
+
+        return Boolean(
+            wrapper?.classList.contains('has-note-open') &&
+            panel?.classList.contains('open')
+        );
+    }
+
+    /*
+     * FINAL RENDER GUARD
+     *
+     * renderShiftPage() rebuilds shiftsContent via innerHTML.
+     * During Alt+Tab, NOTE save / realtime resume may invoke it even though
+     * staff/columns have not structurally changed.  That destroys the exact
+     * textarea node and causes both the table jump and lost cursor.
+     *
+     * V51 suppresses only those note-resume renders for which the structural
+     * Shift signature is unchanged and the Note panel is already intact.
+     * Real staff/column/period changes are NEVER suppressed.
+     */
+    renderShiftPage = function candidateV51RenderShiftPage(
+        previousCardLayout = null
+    ){
+        if (
+            guardV51?.active &&
+            structureUnchangedV51() &&
+            notePanelStillOpenV51(guardV51)
+        ) {
+            guardV51.suppressedRenders += 1;
+
+            /* Keep lightweight visual metadata fresh without rebuilding DOM. */
+            try {
+                const textarea = findEditorV51(guardV51);
+                if (textarea) {
+                    updateNoteAlignment?.(textarea);
+                }
+            } catch (_) {}
+
+            return;
+        }
+
+        return baseRenderShiftPageV51(previousCardLayout);
+    };
+
+    window.renderShiftPage = renderShiftPage;
+
+    function captureCurrentV51(){
+        const active = currentNoteTextareaV51();
+        if (active) {
+            return captureEditorV51(active);
+        }
+
+        if (
+            lastEditorV51?.node instanceof HTMLTextAreaElement &&
+            lastEditorV51.node.isConnected
+        ) {
+            /* Refresh selection if the browser still reports the node. */
+            return captureEditorV51(lastEditorV51.node);
+        }
+
+        return lastEditorV51;
+    }
+
+    document.addEventListener('focusin',event => {
+        const textarea = noteTextareaV51(event.target);
+        if (!textarea) return;
+
+        captureEditorV51(textarea);
+    },true);
+
+    document.addEventListener('selectionchange',() => {
+        const textarea = currentNoteTextareaV51();
+        if (!textarea) return;
+
+        captureEditorV51(textarea);
+    },true);
+
+    document.addEventListener('input',event => {
+        const textarea = noteTextareaV51(event.target);
+        if (!textarea) return;
+
+        captureEditorV51(textarea);
+    },true);
+
+    window.addEventListener('blur',() => {
+        const snapshot = captureCurrentV51();
+        if (snapshot) beginGuardV51(snapshot);
+    },true);
+
+    document.addEventListener('visibilitychange',() => {
+        if (document.visibilityState === 'hidden') {
+            const snapshot = captureCurrentV51();
+            if (snapshot) beginGuardV51(snapshot);
+            return;
+        }
+
+        if (!guardV51?.active) return;
+
+        /*
+         * Let the browser finish the visibility transition, then restore the
+         * exact same node/caret without creating a new Note layout.
+         */
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                restoreEditorV51(guardV51);
+
+                /* Repeat scroll/caret datum once after browser focus settles. */
+                window.setTimeout(() => {
+                    if (guardV51?.active) {
+                        restoreEditorV51(guardV51);
+                    }
+                },70);
+
+                releaseGuardV51(1000);
+            });
+        });
+    },true);
+
+    window.addEventListener('focus',() => {
+        if (!guardV51?.active) return;
+
+        window.requestAnimationFrame(() => {
+            restoreEditorV51(guardV51);
+
+            window.setTimeout(() => {
+                if (guardV51?.active) {
+                    restoreEditorV51(guardV51);
+                }
+            },70);
+
+            releaseGuardV51(1000);
+        });
+    },true);
+
+    window.DDTShiftCandidateV51 = Object.freeze({
+        version:'v51',
+        note:Object.freeze({
+            renderGuard:'structural-signature based',
+            exactTextareaNode:'preserved when structure unchanged',
+            cursor:'selection start/end/direction restored',
+            scroll:'page/panel/textarea/horizontal datums restored',
+            realtimeIntegrity:'real structural changes remain renderable'
+        }),
+        screenshot:Object.freeze({
+            targetScale:'6x',
+            maxPhysicalPixels:72000000,
+            minScale:'4.5x safety floor',
             png:'lossless'
         }),
         backend:'unchanged'
