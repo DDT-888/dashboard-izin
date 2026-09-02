@@ -61473,8 +61473,17 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             // Kunci lama boleh tetap tersimpan di database untuk kompatibilitas,
             // tetapi tidak lagi digunakan atau ditampilkan di Permission Matrix.
             if (permissionKey === 'employee_monitoring_view') return true;
-            if (currentUserRole === 'leader' || currentUserRole === 'csline') return true;
-            return Boolean(dashboardPermissionMatrix?.[currentUserRole]?.[permissionKey]);
+
+            /*
+             * V68 permission parity:
+             * Backend has_dashboard_permission() hard-bypasses Leader only.
+             * CS Line must follow Permission Matrix like every non-Leader role.
+             */
+            if (currentUserRole === 'leader') return true;
+
+            return Boolean(
+                dashboardPermissionMatrix?.[currentUserRole]?.[permissionKey]
+            );
         }
 
         function employeeEscape(value) {
@@ -113727,6 +113736,41 @@ body[data-selected-theme="rose-gold"]
             shiftV55:true
         }),
         backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- USERS V68 — Pre-Production Backend Hardening frontend parity -->
+<script id="users-v68-preproduction-hardening-authority">
+(function UsersV68PreProductionHardening(){
+    'use strict';
+
+    if(window.__USERS_V68__) return;
+    window.__USERS_V68__ = true;
+
+    window.UsersCandidateV68 = Object.freeze({
+        version:'v68',
+        scope:'Users pre-production hardening',
+        frontend:Object.freeze({
+            leaderBypass:true,
+            cslineUsesPermissionMatrix:true,
+            employeeMonitoringGlobal:true,
+            visualV67:'unchanged'
+        }),
+        backend:Object.freeze({
+            migration:'users_preproduction_backend_hardening_v68',
+            migrationVersion:'20260902185758',
+            lastActiveLeaderGuard:true,
+            directUsersUpdateRevoked:true,
+            anonRpcExecuteRevoked:true,
+            canonicalRpcMutation:true
+        }),
+        explicitlyDeferred:Object.freeze({
+            shiftRealtimeLifecycleHardening:true,
+            lifecycleProfileReloadOptimization:true,
+            sourceConsolidation:true
+        })
     });
 })();
 </script>
