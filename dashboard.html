@@ -62506,14 +62506,20 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 rank === employeeUserFilters.rank;
 
             /*
-             * Monitoring filters are independent.
-             * A user may match Passport AND Visa at the same time.
+             * V66 monitoring-filter authority:
+             * Passport / Visa / Training / Aman are operational renewal
+             * filters and apply ONLY to User Aktif.
+             *
+             * User Nonaktif keeps Search / Role / Rank filtering, but ignores
+             * Monitoring entirely.
              */
             const matchAlert =
-                employeeMatchesAlertFilter(
-                    profile,
-                    employeeUserFilters.alert
-                );
+                inactive
+                    ? true
+                    : employeeMatchesAlertFilter(
+                        profile,
+                        employeeUserFilters.alert
+                    );
 
             return (
                 matchSearch &&
@@ -113625,6 +113631,43 @@ body[data-selected-theme="rose-gold"]
         rootCause:'V64 halo intensity too thick in live visual review',
         implementation:'CSS-only, V64 specificity preserved, thinner ring',
         retained:'V64 specificity authority',
+        backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- USERS V66 — Monitoring filter Active-only authority -->
+<script id="users-v66-monitoring-filter-authority">
+(function UsersV66MonitoringAuthority(){
+    'use strict';
+
+    if(window.__USERS_V66__) return;
+    window.__USERS_V66__ = true;
+
+    window.UsersCandidateV66 = Object.freeze({
+        version:'v66',
+        scope:'Users Monitoring filter target only',
+        filters:Object.freeze({
+            search:'Active + Nonaktif',
+            role:'Active + Nonaktif',
+            rank:'Active + Nonaktif',
+            monitoring:'Active only'
+        }),
+        monitoring:Object.freeze({
+            passport:true,
+            visa:true,
+            training:true,
+            safe:true,
+            inactiveTableIgnored:true
+        }),
+        locked:Object.freeze({
+            v65Halo:true,
+            inactiveFootprint:true,
+            cyberHeader:true,
+            venom:true,
+            shiftV55:true
+        }),
         backend:'unchanged'
     });
 })();
