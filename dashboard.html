@@ -46967,6 +46967,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         let usersSnapshotPromise = null;
         let usersRealtimeSyncTimer = null;
         let usersRealtimeNeedsReconcile = false;
+
+        /*
+         * V70 — Users/Shift lifecycle convergence.
+         * A lifecycle change can arrive on Users realtime before/after the
+         * Shift USER_INACTIVE signal. Keep an explicit pending flag so route
+         * entry can force a canonical workspace snapshot instead of trusting
+         * an already-consumed realtime baseline.
+         */
+        let shiftLifecycleRouteRefreshPendingV70 = false;
+        let shiftLifecycleUsersSyncPromiseV70 = null;
         let currentUserAccessRevoked = false;
 
         let settingsRealtimeChannel = null;
@@ -50816,6 +50826,24 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             return usersSnapshotPromise;
         }
 
+        async function syncUsersForShiftLifecycleV70(
+            reason = 'shift-lifecycle'
+        ) {
+            if (shiftLifecycleUsersSyncPromiseV70) {
+                return shiftLifecycleUsersSyncPromiseV70;
+            }
+
+            shiftLifecycleUsersSyncPromiseV70 = Promise.resolve(
+                syncUsersSnapshot({
+                    reason: `v70-${reason}`
+                })
+            ).finally(() => {
+                shiftLifecycleUsersSyncPromiseV70 = null;
+            });
+
+            return shiftLifecycleUsersSyncPromiseV70;
+        }
+
         function scheduleUsersSnapshotSync(reason = 'users-event') {
             usersRealtimeNeedsReconcile = true;
             clearTimeout(usersRealtimeSyncTimer);
@@ -50836,12 +50864,58 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const freshRecord = payload?.new || null;
             const previousRecord = payload?.old || null;
             const accessRecord = freshRecord || previousRecord;
+            const nextStatus = String(freshRecord?.status || '').toLowerCase();
 
             if (isCurrentUserAccessRecord(accessRecord)) {
-                const nextStatus = String(freshRecord?.status || '').toLowerCase();
-                if (eventType === 'DELETE' || (eventType === 'UPDATE' && nextStatus && nextStatus !== 'active')) {
+                if (
+                    eventType === 'DELETE' ||
+                    (
+                        eventType === 'UPDATE' &&
+                        nextStatus &&
+                        nextStatus !== 'active'
+                    )
+                ) {
                     revokeCurrentUserAccess('users-realtime-direct');
                     return;
+                }
+            }
+
+            const lifecycleRemoved =
+                eventType === 'DELETE' ||
+                (
+                    eventType === 'UPDATE' &&
+                    nextStatus &&
+                    nextStatus !== 'active'
+                );
+
+            if (lifecycleRemoved) {
+                shiftLifecycleRouteRefreshPendingV70 = true;
+
+                /*
+                 * Do not wait 550 ms before removing an inactive staff member
+                 * from the local Shift eligibility map. Without this, a Draft
+                 * USER_INACTIVE snapshot can briefly reinterpret the removed
+                 * staff as DATA STAFF before the Users snapshot catches up.
+                 */
+                const removedId =
+                    freshRecord?.id ??
+                    previousRecord?.id ??
+                    null;
+
+                if (
+                    removedId != null &&
+                    Array.isArray(listUsers) &&
+                    listUsers.length
+                ) {
+                    const nextUsers = listUsers.filter(
+                        user =>
+                            String(user?.id) !== String(removedId)
+                    );
+
+                    if (nextUsers.length !== listUsers.length) {
+                        listUsers = nextUsers;
+                        reconcileShiftRosterFromUsers(listUsers);
+                    }
                 }
             }
 
@@ -54922,6 +54996,14 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             };
             const { error } = await supabaseDashboard.rpc('save_employee_user_lifecycle', args);
             if (error) throw error;
+
+            if (
+                nextStatus === 'inactive' &&
+                String(user.status || 'active').toLowerCase() === 'active'
+            ) {
+                shiftLifecycleRouteRefreshPendingV70 = true;
+            }
+
             employeeDirectoryDirty = true;
             await broadcastUserAccessChange(user, nextStatus);
             await Promise.all([
@@ -102342,7 +102424,29 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                                     );
                                     return;
                                 }
-                                await syncWorkspaceV20('active',{apply:true}).catch(()=>{});
+
+                                if (
+                                    String(row.change_type || '').toUpperCase() ===
+                                    'USER_INACTIVE'
+                                ) {
+                                    shiftLifecycleRouteRefreshPendingV70 = true;
+                                    await syncUsersForShiftLifecycleV70(
+                                        'active-user-inactive-signal'
+                                    ).catch(()=>false);
+                                }
+
+                                const synced = await syncWorkspaceV20(
+                                    'active',
+                                    {apply:true}
+                                ).catch(()=>false);
+
+                                if (
+                                    synced &&
+                                    String(row.change_type || '').toUpperCase() ===
+                                    'USER_INACTIVE'
+                                ) {
+                                    shiftLifecycleRouteRefreshPendingV70 = false;
+                                }
                             }
                         }, 100);
                     }
@@ -102374,7 +102478,29 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                                     );
                                     return;
                                 }
-                                await syncWorkspaceV20('draft',{apply:true}).catch(()=>{});
+
+                                if (
+                                    String(row.change_type || '').toUpperCase() ===
+                                    'USER_INACTIVE'
+                                ) {
+                                    shiftLifecycleRouteRefreshPendingV70 = true;
+                                    await syncUsersForShiftLifecycleV70(
+                                        'draft-user-inactive-signal'
+                                    ).catch(()=>false);
+                                }
+
+                                const synced = await syncWorkspaceV20(
+                                    'draft',
+                                    {apply:true}
+                                ).catch(()=>false);
+
+                                if (
+                                    synced &&
+                                    String(row.change_type || '').toUpperCase() ===
+                                    'USER_INACTIVE'
+                                ) {
+                                    shiftLifecycleRouteRefreshPendingV70 = false;
+                                }
                             }
                         }, 100);
                     }
@@ -113771,6 +113897,124 @@ body[data-selected-theme="rose-gold"]
             lifecycleProfileReloadOptimization:true,
             sourceConsolidation:true
         })
+    });
+})();
+</script>
+
+
+<!-- ================================================================
+     USERS / SHIFT V70 — Lifecycle Convergence
+     Frontend-only correction for USER_INACTIVE ordering + route preflight
+     ================================================================ -->
+<script id="users-shift-v70-lifecycle-convergence">
+(function UsersShiftV70LifecycleConvergence(){
+    'use strict';
+
+    if (window.__USERS_SHIFT_V70__) return;
+    window.__USERS_SHIFT_V70__ = true;
+
+    const baseSwitchTabV70 =
+        typeof window.switchTab === 'function'
+            ? window.switchTab
+            : null;
+
+    let routePreflightBusyV70 = false;
+
+    function workspaceModeV70(){
+        try {
+            return window.DDTShiftCandidate?.getMode?.() === 'draft'
+                ? 'draft'
+                : 'active';
+        } catch (_) {
+            return 'active';
+        }
+    }
+
+    async function preflightShiftRouteV70(){
+        const target = workspaceModeV70();
+
+        await syncUsersForShiftLifecycleV70(
+            `route-open-${target}`
+        );
+
+        if (window.DDTShiftCandidateV20?.syncWorkspace) {
+            const ok = await window.DDTShiftCandidateV20.syncWorkspace(
+                target,
+                {apply:true}
+            );
+
+            if (ok === false) {
+                throw new Error(
+                    `Snapshot ${target === 'draft' ? 'Draft Shift' : 'Shift Aktif'} belum berhasil disinkronkan.`
+                );
+            }
+
+            return true;
+        }
+
+        if (typeof loadShiftActiveData === 'function') {
+            await loadShiftActiveData();
+            return true;
+        }
+
+        throw new Error('Loader Shift canonical tidak tersedia.');
+    }
+
+    if (baseSwitchTabV70) {
+        window.switchTab = function candidateV70SwitchTab(tab){
+            const target = String(tab || '');
+
+            if (
+                target === 'shifts' &&
+                shiftLifecycleRouteRefreshPendingV70 &&
+                !routePreflightBusyV70
+            ) {
+                routePreflightBusyV70 = true;
+
+                preflightShiftRouteV70()
+                    .then(() => {
+                        shiftLifecycleRouteRefreshPendingV70 = false;
+                        baseSwitchTabV70.call(this, 'shifts');
+                    })
+                    .catch(error => {
+                        console.error(
+                            '[users-shift-v70] Shift lifecycle preflight gagal:',
+                            error
+                        );
+
+                        showShiftToast(
+                            'Data Shift sedang disinkronkan. Silakan buka Shift Kerja sekali lagi.',
+                            'warning',
+                            3200
+                        );
+                    })
+                    .finally(() => {
+                        routePreflightBusyV70 = false;
+                    });
+
+                return false;
+            }
+
+            return baseSwitchTabV70.apply(this, arguments);
+        };
+
+        try {
+            switchTab = window.switchTab;
+        } catch (_) {}
+    }
+
+    window.UsersShiftCandidateV70 = Object.freeze({
+        version:'v70',
+        scope:'USER_INACTIVE realtime ordering + Shift route convergence',
+        backend:'unchanged from V69',
+        authorities:Object.freeze({
+            immediateLocalEligibilityRemoval:true,
+            usersBeforeShiftSnapshot:true,
+            routeCanonicalPreflight:true,
+            v69BackendRetained:true,
+            v55ShiftBehaviorRetained:true
+        }),
+        getPending:() => Boolean(shiftLifecycleRouteRefreshPendingV70)
     });
 })();
 </script>
