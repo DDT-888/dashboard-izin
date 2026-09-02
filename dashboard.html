@@ -113508,18 +113508,35 @@ body #tab-users
 
 
 
+
 <!-- ================================================================
-     USERS V63 — Pastel Search Focus Ring
-     CSS-only / explicit theme colors / no overlay / no JS
+     USERS V64 — Pastel Search Specificity Fix
+     Root-cause correction: beat V59 focus authority correctly
      ================================================================ -->
-<style id="users-v63-pastel-search-focus-ring">
+<style id="users-v64-pastel-search-specificity-fix">
+/*
+ * V59 selector has:
+ * html[data-theme][data-selected-theme] ...
+ *
+ * V63 had only:
+ * html[data-selected-theme] ...
+ *
+ * Both were !important, so V59 won on specificity.
+ *
+ * V64 deliberately includes rendered theme + selected theme on HTML
+ * and selected theme on BODY. No runtime JS/overlay is required.
+ */
+
 /* Pastel Pink */
-html[data-selected-theme="pink"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus,
-html[data-selected-theme="pink"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
-html[data-selected-theme="pink"]
-body #tab-users .employee-toolbar.users-search-active-v61
+html[data-theme="pink"][data-selected-theme="pink"]
+body[data-selected-theme="pink"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme="pink"][data-selected-theme="pink"]
+body[data-selected-theme="pink"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme="pink"][data-selected-theme="pink"]
+body[data-selected-theme="pink"]
+#tab-users .employee-toolbar.users-search-active-v61
 > #employeeUserSearch{
     border: 1px solid #e65392 !important;
     outline: 2px solid rgba(230,83,146,.34) !important;
@@ -113528,12 +113545,15 @@ body #tab-users .employee-toolbar.users-search-active-v61
 }
 
 /* Emerald */
-html[data-selected-theme="emerald"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus,
-html[data-selected-theme="emerald"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
-html[data-selected-theme="emerald"]
-body #tab-users .employee-toolbar.users-search-active-v61
+html[data-theme="emerald"][data-selected-theme="emerald"]
+body[data-selected-theme="emerald"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme="emerald"][data-selected-theme="emerald"]
+body[data-selected-theme="emerald"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme="emerald"][data-selected-theme="emerald"]
+body[data-selected-theme="emerald"]
+#tab-users .employee-toolbar.users-search-active-v61
 > #employeeUserSearch{
     border: 1px solid #18a77b !important;
     outline: 2px solid rgba(24,167,123,.34) !important;
@@ -113542,12 +113562,15 @@ body #tab-users .employee-toolbar.users-search-active-v61
 }
 
 /* Royal Purple */
-html[data-selected-theme="purple"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus,
-html[data-selected-theme="purple"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
-html[data-selected-theme="purple"]
-body #tab-users .employee-toolbar.users-search-active-v61
+html[data-theme="purple"][data-selected-theme="purple"]
+body[data-selected-theme="purple"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme="purple"][data-selected-theme="purple"]
+body[data-selected-theme="purple"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme="purple"][data-selected-theme="purple"]
+body[data-selected-theme="purple"]
+#tab-users .employee-toolbar.users-search-active-v61
 > #employeeUserSearch{
     border: 1px solid #8061df !important;
     outline: 2px solid rgba(128,97,223,.34) !important;
@@ -113556,12 +113579,15 @@ body #tab-users .employee-toolbar.users-search-active-v61
 }
 
 /* Ocean Blue */
-html[data-selected-theme="ocean"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus,
-html[data-selected-theme="ocean"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
-html[data-selected-theme="ocean"]
-body #tab-users .employee-toolbar.users-search-active-v61
+html[data-theme="ocean"][data-selected-theme="ocean"]
+body[data-selected-theme="ocean"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme="ocean"][data-selected-theme="ocean"]
+body[data-selected-theme="ocean"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme="ocean"][data-selected-theme="ocean"]
+body[data-selected-theme="ocean"]
+#tab-users .employee-toolbar.users-search-active-v61
 > #employeeUserSearch{
     border: 1px solid #0796bd !important;
     outline: 2px solid rgba(7,150,189,.34) !important;
@@ -113570,12 +113596,15 @@ body #tab-users .employee-toolbar.users-search-active-v61
 }
 
 /* Rose Gold */
-html[data-selected-theme="rose-gold"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus,
-html[data-selected-theme="rose-gold"]
-body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
-html[data-selected-theme="rose-gold"]
-body #tab-users .employee-toolbar.users-search-active-v61
+html[data-theme="rose-gold"][data-selected-theme="rose-gold"]
+body[data-selected-theme="rose-gold"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme="rose-gold"][data-selected-theme="rose-gold"]
+body[data-selected-theme="rose-gold"]
+#tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme="rose-gold"][data-selected-theme="rose-gold"]
+body[data-selected-theme="rose-gold"]
+#tab-users .employee-toolbar.users-search-active-v61
 > #employeeUserSearch{
     border: 1px solid #c67f73 !important;
     outline: 2px solid rgba(198,127,115,.36) !important;
@@ -113584,16 +113613,18 @@ body #tab-users .employee-toolbar.users-search-active-v61
 }
 </style>
 
-<script id="users-v63-authority-marker">
-(function UsersV63Authority(){
+<script id="users-v64-authority-marker">
+(function UsersV64Authority(){
     'use strict';
-    if(window.__USERS_V63__) return;
-    window.__USERS_V63__ = true;
-    window.UsersCandidateV63 = Object.freeze({
-        version:'v63',
-        scope:'Five pastel Users Search focus ring only',
-        implementation:'CSS-only explicit outline',
-        runtimeHalo:false,
+    if(window.__USERS_V64__) return;
+    window.__USERS_V64__ = true;
+
+    window.UsersCandidateV64 = Object.freeze({
+        version:'v64',
+        scope:'Five pastel Users Search focus specificity only',
+        rootCause:'V63 lost to higher-specificity V59 !important rule',
+        implementation:'CSS-only, corrected selector specificity',
+        removed:'failed V63 block',
         backend:'unchanged'
     });
 })();
