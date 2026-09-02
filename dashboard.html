@@ -64470,6 +64470,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         const UNIFIED_FILTER_SELECTORS = [
             '#tab-monitoring .search-container select',
             '#tab-monitoring #filterRoleDashboard',
+            '#tab-monitoring #filterShiftDashboard',
             '#tab-history .filter-history select',
             '#tab-historyshift .history-shift-container .filter-bar select'
         ];
@@ -114191,6 +114192,7 @@ html:not([data-theme-variant="venom"])
     ]);
 
     let shiftMap = new Map();
+    let shiftColumns = [];
     let shiftPeriod = null;
     let shiftRevision = null;
     let shiftLoaded = false;
@@ -114362,6 +114364,7 @@ html:not([data-theme-variant="venom"])
                 if (error) throw error;
                 if (!data) {
                     shiftMap = new Map();
+                    shiftColumns = [];
                     shiftPeriod = null;
                     shiftRevision = null;
                     shiftLoaded = true;
@@ -114372,6 +114375,11 @@ html:not([data-theme-variant="venom"])
 
                 const payload = parseShiftData(data.shift_data) || {};
                 const nextMap = buildMapFromActivePayload(payload);
+                shiftColumns = (Array.isArray(payload?.columns) ? payload.columns : [])
+                    .map((column, index) => ({
+                        id: String(column?.id || `shift_${index + 1}`),
+                        label: sanitizeShiftLabel(column?.name || `SHIFT ${index + 1}`)
+                    }));
                 const nextRevision = Number(data.revision) || 0;
                 const nextSignature = mapSignature(nextMap, nextRevision);
                 const changed = nextSignature !== lastMapSignature;
@@ -114532,6 +114540,7 @@ html:not([data-theme-variant="venom"])
             return {
                 revision: shiftRevision,
                 period: shiftPeriod ? { ...shiftPeriod } : null,
+                columns: shiftColumns.map(column => ({ ...column })),
                 assignments: Object.fromEntries(shiftMap)
             };
         },
@@ -114541,6 +114550,410 @@ html:not([data-theme-variant="venom"])
                 reason: 'manual-audit'
             });
         }
+    });
+})();
+</script>
+
+
+<!-- ==================================================================
+     MONITORING IZIN V3 — TOOLBAR + SHIFT FILTER + TYPOGRAPHY
+     Baseline: V2 LIVE PASS
+     No backend migration / no new realtime channel / no polling.
+     ================================================================== -->
+<style id="monitoring-izin-v3-toolbar-shift-filter-style">
+/* ------------------------------------------------------------------
+   Shift cell typography
+   Authority DNA: Shift Kerja V12 Summary label
+   7.5px / 820 / .095em / uppercase.
+   Table adaptation is intentionally +1.5px for row readability.
+   ------------------------------------------------------------------ */
+#tab-monitoring .monitoring-shift-label {
+    color: color-mix(in srgb, var(--text-secondary) 68%, var(--text-muted)) !important;
+    font-size: 9px !important;
+    line-height: 1 !important;
+    font-weight: 780 !important;
+    letter-spacing: .075em !important;
+    text-transform: uppercase !important;
+    opacity: .82 !important;
+}
+
+#tab-monitoring .monitoring-shift-label.is-unassigned {
+    color: var(--text-muted) !important;
+    font-weight: 700 !important;
+    letter-spacing: .06em !important;
+    opacity: .56 !important;
+}
+
+/* Count moves into the operational control rail, directly left of Search. */
+#tab-monitoring .monitoring-members-count.monitoring-v3-toolbar-count {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    align-self: center !important;
+}
+
+/* Preserve the old Search footprint by enlarging only the control rail. */
+#tab-monitoring .monitoring-table-controls {
+    flex: 0 1 682px !important;
+}
+
+#tab-monitoring .monitoring-search-field {
+    flex: 1 1 240px !important;
+    min-width: 190px !important;
+}
+
+#tab-monitoring .monitoring-role-filter {
+    flex: 0 0 136px !important;
+}
+
+#tab-monitoring .monitoring-shift-filter {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 11px;
+    flex: 0 0 132px;
+    min-width: 0;
+}
+
+html:not([data-mi-native-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-shift-filter {
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--border-color) 90%, transparent);
+    background: color-mix(in srgb, var(--bg-secondary) 72%, var(--bg-card));
+    color: var(--text-muted);
+    transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+html:not([data-mi-native-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-shift-filter:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 48%, var(--border-color));
+    background: var(--bg-card);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+#tab-monitoring .monitoring-shift-filter select {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+}
+
+html:not([data-mi-native-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-shift-filter select {
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    color: var(--text-primary);
+    box-shadow: none !important;
+    font-size: 11px;
+    font-weight: 550;
+}
+
+/* New Shift filter uses the same compact glyph metric as the LIVE-PASS Role filter. */
+html:not([data-theme-variant="venom"])
+    :not([data-mi-native-presentation="mecha-ivory"])
+    :not([data-mi-frozen-presentation="mecha-ivory"])
+    #tab-monitoring .monitoring-shift-filter .unified-custom-filter-leading {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    flex: 0 0 16px !important;
+    padding: 0 !important;
+    place-items: center !important;
+    border-radius: 5px !important;
+}
+
+html:not([data-theme-variant="venom"])
+    :not([data-mi-native-presentation="mecha-ivory"])
+    :not([data-mi-frozen-presentation="mecha-ivory"])
+    #tab-monitoring .monitoring-shift-filter .unified-custom-filter-leading svg {
+    width: 11px !important;
+    height: 11px !important;
+    min-width: 11px !important;
+    min-height: 11px !important;
+}
+
+/* Venom Role is untouched; the NEW Shift filter simply adopts its accepted metric. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-shift-filter .unified-custom-filter-leading {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    flex-basis: 16px !important;
+}
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-shift-filter .unified-custom-filter-leading svg {
+    width: 11px !important;
+    height: 11px !important;
+}
+
+#tab-monitoring tr.monitoring-v3-shift-hidden {
+    display: none !important;
+}
+
+@media (max-width: 1220px) {
+    #tab-monitoring .monitoring-table-controls {
+        flex: 0 1 646px !important;
+    }
+    #tab-monitoring .monitoring-role-filter {
+        flex-basis: 128px !important;
+    }
+    #tab-monitoring .monitoring-shift-filter {
+        flex-basis: 124px !important;
+    }
+}
+
+@media (max-width: 980px) {
+    #tab-monitoring .monitoring-table-controls {
+        width: 100% !important;
+        flex-basis: auto !important;
+    }
+}
+
+@media (max-width: 620px) {
+    #tab-monitoring .monitoring-members-count.monitoring-v3-toolbar-count {
+        align-self: flex-start !important;
+    }
+    #tab-monitoring .monitoring-search-field,
+    #tab-monitoring .monitoring-role-filter,
+    #tab-monitoring .monitoring-shift-filter {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: 0 0 36px !important;
+    }
+}
+</style>
+
+<script id="monitoring-izin-v3-toolbar-shift-filter">
+(() => {
+    'use strict';
+
+    if (window.__DDT_MONITORING_IZIN_V3__) return;
+    window.__DDT_MONITORING_IZIN_V3__ = true;
+
+    const UNASSIGNED_VALUE = '__UNASSIGNED__';
+    let lastOptionSignature = '';
+
+    function moveCountBadgeToToolbar() {
+        const count = document.getElementById('monitoringMemberTotal');
+        const controls = document.querySelector(
+            '#tab-monitoring .monitoring-table-controls'
+        );
+        const search = controls?.querySelector('.monitoring-search-field');
+
+        if (!count || !controls || !search) return;
+
+        count.classList.add('monitoring-v3-toolbar-count');
+
+        if (count.parentElement !== controls || count.nextElementSibling !== search) {
+            controls.insertBefore(count, search);
+        }
+    }
+
+    function ensureShiftFilter() {
+        const controls = document.querySelector(
+            '#tab-monitoring .monitoring-table-controls'
+        );
+        const roleFilter = controls?.querySelector('.monitoring-role-filter');
+        if (!controls || !roleFilter) return null;
+
+        let wrapper = controls.querySelector('.monitoring-shift-filter');
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.className = 'monitoring-shift-filter';
+
+            const select = document.createElement('select');
+            select.id = 'filterShiftDashboard';
+            select.setAttribute('aria-label', 'Filter shift aktif anggota');
+            select.innerHTML = '<option value="">Semua Shift</option><option value="__UNASSIGNED__">UNASSIGNED</option>';
+            select.addEventListener('change', () => {
+                if (currentTab === 'monitoring' && typeof window.renderDashboardTable === 'function') {
+                    window.renderDashboardTable();
+                }
+            });
+
+            wrapper.appendChild(select);
+            roleFilter.insertAdjacentElement('afterend', wrapper);
+        }
+
+        return wrapper.querySelector('#filterShiftDashboard');
+    }
+
+    function activeSnapshot() {
+        try {
+            return window.MonitoringIzinV2?.getSnapshot?.() || {
+                revision: null,
+                columns: [],
+                assignments: {}
+            };
+        } catch (_) {
+            return { revision: null, columns: [], assignments: {} };
+        }
+    }
+
+    function syncShiftFilterOptions() {
+        const select = ensureShiftFilter();
+        if (!select) return;
+
+        const snapshot = activeSnapshot();
+        const labels = [];
+        const seen = new Set();
+
+        (Array.isArray(snapshot.columns) ? snapshot.columns : []).forEach(column => {
+            const label = String(column?.label || '').trim();
+            if (!label || label === '—' || seen.has(label)) return;
+            seen.add(label);
+            labels.push(label);
+        });
+
+        const signature = [
+            String(snapshot.revision ?? ''),
+            ...labels
+        ].join('|');
+
+        if (signature === lastOptionSignature) return;
+        lastOptionSignature = signature;
+
+        const previous = select.value;
+        select.replaceChildren();
+
+        const all = document.createElement('option');
+        all.value = '';
+        all.textContent = 'Semua Shift';
+        select.appendChild(all);
+
+        labels.forEach(label => {
+            const option = document.createElement('option');
+            option.value = label;
+            option.textContent = label;
+            select.appendChild(option);
+        });
+
+        /* Always available, even when Active currently has zero unassigned users. */
+        const unassigned = document.createElement('option');
+        unassigned.value = UNASSIGNED_VALUE;
+        unassigned.textContent = 'UNASSIGNED';
+        select.appendChild(unassigned);
+
+        const validValues = new Set(Array.from(select.options).map(option => option.value));
+        select.value = validValues.has(previous) ? previous : '';
+
+        /* Existing unified-filter MutationObserver rebuilds its visual menu. */
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function currentMonitoringTotal() {
+        try {
+            return (Array.isArray(daftarAnggota) ? daftarAnggota : [])
+                .filter(nama => getRoleForUser(nama) !== 'leader')
+                .length;
+        } catch (_) {
+            return 0;
+        }
+    }
+
+    function applyShiftFilterToRenderedRows() {
+        const select = document.getElementById('filterShiftDashboard');
+        const tbody = document.getElementById('dashboardTableBody');
+        if (!select || !tbody) return;
+
+        tbody.querySelector('.monitoring-v3-empty-row')?.remove();
+
+        const selected = select.value;
+        const memberRows = Array.from(tbody.querySelectorAll('tr[data-nama]'));
+        let visible = 0;
+
+        memberRows.forEach(row => {
+            const label = String(
+                row.querySelector('.monitoring-shift-label')?.textContent || '—'
+            ).trim();
+
+            let match = true;
+            if (selected === UNASSIGNED_VALUE) {
+                match = label === '—';
+            } else if (selected) {
+                match = label === selected;
+            }
+
+            row.classList.toggle('monitoring-v3-shift-hidden', !match);
+            if (match) visible += 1;
+        });
+
+        if (selected && memberRows.length > 0 && visible === 0) {
+            const row = document.createElement('tr');
+            row.className = 'monitoring-v3-empty-row';
+            row.innerHTML = '<td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Anggota tidak ditemukan</td>';
+            tbody.appendChild(row);
+        }
+
+        const count = document.getElementById('monitoringMemberTotal');
+        if (count) {
+            const searchValue = document.getElementById('searchInput')?.value.trim() || '';
+            const roleValue = document.getElementById('filterRoleDashboard')?.value || '';
+            const total = currentMonitoringTotal();
+            const hasAnyFilter = Boolean(searchValue || roleValue || selected);
+
+            if (memberRows.length === 0) visible = 0;
+
+            count.textContent = hasAnyFilter
+                ? `${visible} dari ${total} anggota`
+                : `${total} anggota`;
+        }
+    }
+
+    function reconcileToolbarAndFilter() {
+        moveCountBadgeToToolbar();
+        ensureShiftFilter();
+        syncShiftFilterOptions();
+        applyShiftFilterToRenderedRows();
+    }
+
+    const baseRenderV3 = window.renderDashboardTable;
+    if (typeof baseRenderV3 === 'function') {
+        const wrapped = function monitoringV3RenderDashboardTable() {
+            const result = baseRenderV3.apply(this, arguments);
+            reconcileToolbarAndFilter();
+            return result;
+        };
+        window.renderDashboardTable = wrapped;
+        try { renderDashboardTable = wrapped; } catch (_) {}
+    }
+
+    const baseSwitchV3 = window.switchTab;
+    if (typeof baseSwitchV3 === 'function') {
+        window.switchTab = function monitoringV3SwitchTab(tab) {
+            const result = baseSwitchV3.apply(this, arguments);
+            if (tab === 'monitoring') {
+                window.requestAnimationFrame(reconcileToolbarAndFilter);
+            }
+            return result;
+        };
+        try { switchTab = window.switchTab; } catch (_) {}
+    }
+
+    function initialize() {
+        reconcileToolbarAndFilter();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize, { once: true });
+    } else {
+        initialize();
+    }
+
+    window.MonitoringIzinV3 = Object.freeze({
+        version: 'v3',
+        searchScope: 'name-only',
+        filters: Object.freeze(['role', 'shift']),
+        unassignedValue: UNASSIGNED_VALUE,
+        shiftTypographyAuthority: Object.freeze({
+            source: 'Shift Kerja V12 Summary',
+            sourceSizePx: 7.5,
+            tableSizePx: 9,
+            weight: 780,
+            letterSpacingEm: 0.075
+        }),
+        sync: reconcileToolbarAndFilter
     });
 })();
 </script>
