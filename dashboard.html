@@ -62799,9 +62799,25 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const activeCount =
                 document.getElementById('employeeActiveCountHost');
 
+            const searchInput =
+                document.getElementById('employeeUserSearch');
+
             if (!activeBody || !activeCount) {
                 return false;
             }
+
+            const searchWasFocused =
+                searchInput instanceof HTMLInputElement &&
+                document.activeElement === searchInput;
+
+            const searchSelection =
+                searchWasFocused
+                    ? {
+                        start: searchInput.selectionStart,
+                        end: searchInput.selectionEnd,
+                        direction: searchInput.selectionDirection
+                    }
+                    : null;
 
             const users =
                 employeeFilteredUsers();
@@ -62833,6 +62849,38 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
              * updates only tbody + pagination/reserve.
              */
             renderEmployeeInactivePageOnly();
+
+            /*
+             * V60 caret authority:
+             * Search DOM is preserved by V59. Reassert native focus and the
+             * exact post-input selection synchronously so no other tbody/
+             * pagination work can leave the caret visually inactive.
+             */
+            if (
+                searchWasFocused &&
+                searchInput instanceof HTMLInputElement &&
+                searchInput.isConnected
+            ) {
+                try {
+                    if (document.activeElement !== searchInput) {
+                        searchInput.focus({ preventScroll: true });
+                    }
+
+                    if (
+                        searchSelection &&
+                        Number.isInteger(searchSelection.start) &&
+                        Number.isInteger(searchSelection.end)
+                    ) {
+                        searchInput.setSelectionRange(
+                            searchSelection.start,
+                            searchSelection.end,
+                            searchSelection.direction || 'none'
+                        );
+                    }
+                } catch (_) {
+                    /* Native input remains usable even if selection API rejects. */
+                }
+            }
 
             return true;
         }
@@ -113124,6 +113172,164 @@ body #tab-users
             v58VenomToolbarFix:true,
             controlRailFlatBorders:true,
             inactiveFootprintLock:true,
+            shiftV55:true
+        }),
+        backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- ================================================================
+     USERS V60 — Search Surface/Caret + Cyber Header Reconciliation
+     ================================================================ -->
+<style id="users-v60-search-surface-caret-cyber-header">
+/* ================================================================
+   A. FIVE LIGHT LEGACY THEMES — dedicated input surface
+   ================================================================ */
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch{
+    background: var(--bg-input) !important;
+    background-image: none !important;
+    color: var(--text-primary) !important;
+    caret-color: var(--accent-strong) !important;
+    border: 1px solid var(--border-input) !important;
+    box-shadow: none !important;
+}
+
+/* More visible focus on light/pastel surfaces. */
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch.users-search-focus-v58{
+    background: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    caret-color: var(--accent-strong) !important;
+    border: 1px solid var(--accent) !important;
+    outline: none !important;
+    box-shadow:
+        0 0 0 3px rgba(var(--accent-rgb), .24),
+        0 2px 8px rgba(var(--accent-rgb), .08) !important;
+    position: relative !important;
+    z-index: 5 !important;
+}
+
+/* Placeholder remains subdued but readable against the dedicated input surface. */
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch::placeholder{
+    color: var(--text-muted) !important;
+    opacity: .78 !important;
+}
+
+/* ================================================================
+   B. CYBER DARK — explicit caret, keep already-PASS focus behavior
+   ================================================================ */
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users .employee-toolbar > #employeeUserSearch{
+    background: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    caret-color: var(--accent) !important;
+}
+
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users .employee-toolbar > #employeeUserSearch.users-search-focus-v58{
+    caret-color: var(--accent) !important;
+}
+
+/* DDT Original also receives an explicit visible caret without changing
+   its already-PASS surface/focus authority. */
+html[data-selected-theme="light"]
+body #tab-users .employee-toolbar > #employeeUserSearch{
+    caret-color: var(--accent-strong) !important;
+}
+
+/* ================================================================
+   C. CYBER DARK ACTIVE USER HEADER — cyber slate, not generic charcoal
+   ================================================================ */
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    background: #102832 !important;
+    background-image: none !important;
+    color: #dff3f7 !important;
+    border-bottom-color: rgba(0,229,255,.16) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead
+> tr > th:is(.sticky-left-one,.sticky-left-two,.sticky-right){
+    background: #102832 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+}
+</style>
+
+<script id="users-v60-authority-marker">
+(function UsersV60Authority(){
+    'use strict';
+
+    if(window.__USERS_V60__) return;
+    window.__USERS_V60__ = true;
+
+    window.UsersCandidateV60 = Object.freeze({
+        version:'v60',
+        search:Object.freeze({
+            pastelSurface:'bg-input',
+            pastelFocus:'accent + visible 3px halo',
+            caret:'explicit theme caret color',
+            selection:'synchronously preserved during result update',
+            domRebuild:false
+        }),
+        cyberHeader:Object.freeze({
+            activeUsers:'#102832 cyber slate',
+            inactiveHeader:'unchanged'
+        }),
+        retained:Object.freeze({
+            v56Logic:true,
+            v58VenomFix:true,
+            v59SearchTargetedRender:true,
+            fiveThemeSolidHeaders:true,
+            inactiveFootprint:true,
             shiftV55:true
         }),
         backend:'unchanged'
