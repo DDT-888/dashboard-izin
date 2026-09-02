@@ -62758,6 +62758,15 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const inactiveUsersAll = employeeInactiveUsers();
             const inactivePageState = employeeInactivePageState(inactiveUsersAll.length);
             const inactiveUsers = inactiveUsersAll.slice(inactivePageState.startIndex, inactivePageState.endIndex);
+
+            /*
+             * V67 visibility authority:
+             * User Nonaktif is operationally irrelevant while Monitoring
+             * Passport / Visa / Training / Aman is active.
+             */
+            const showInactiveSection =
+                String(employeeUserFilters.alert || 'all') === 'all';
+
             const activeDirectory = (employeeUserDirectory.length ? employeeUserDirectory : listUsers).filter(user => String(user.status || 'active').toLowerCase() === 'active');
             const roleCounts = { leader: 0, csline: 0, cs: 0, kapten: 0, kasir: 0 };
             activeDirectory.forEach(user => { if (roleCounts[user.role] != null) roleCounts[user.role] += 1; });
@@ -62782,6 +62791,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry">Masa Aktif Passport</th><th class="employee-col-expiry">Masa Aktif Visa</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-training">Training</th><th class="employee-col-tenure">Masa Kerja</th><th class="employee-col-actions sticky-right">Aksi</th>
                 </tr></thead><tbody id="employeeActiveTableBody">${renderEmployeeUserRows(users)}</tbody></table></div>
                 <div id="employeeActiveCountHost" class="history-count">Menampilkan <span>${users.length}</span> dari <span>${activeDirectory.length}</span> user aktif</div>
+                ${showInactiveSection ? `
                 <section class="employee-inactive-section">
                     <div class="users-list-heading employee-inactive-heading"><div class="users-list-title"><span class="users-section-icon compact employee-inactive-section-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5v9"/><path d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></span><div><h3>User Nonaktif</h3><p>Daftar user yang sudah tidak bekerja di DDT</p></div></div></div>
                     <div class="employee-table-wrap employee-inactive-table-wrap"><table class="employee-users-table employee-inactive-table"><thead><tr>
@@ -62789,12 +62799,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     </tr></thead><tbody id="employeeInactiveTableBody">${renderEmployeeInactiveRows(inactiveUsers)}</tbody></table><div id="employeeInactiveFootprintReserve" class="employee-inactive-footprint-reserve" aria-hidden="true" style="height:0px"></div></div>
                     <div id="employeeInactivePaginationHost">${employeeInactivePaginationMarkup(inactivePageState)}</div>
                 </section>
+                ` : ''}
             </div>`;
-            employeeSyncInactiveFootprint(
-                document.getElementById('employeeInactiveTableBody'),
-                document.getElementById('employeeInactiveFootprintReserve'),
-                inactiveUsers.length
-            );
+            if (showInactiveSection) {
+                employeeSyncInactiveFootprint(
+                    document.getElementById('employeeInactiveTableBody'),
+                    document.getElementById('employeeInactiveFootprintReserve'),
+                    inactiveUsers.length
+                );
+            }
+
             employeeRestoreRegisterDraftToDOM();
         }
 
@@ -113664,6 +113678,50 @@ body[data-selected-theme="rose-gold"]
         locked:Object.freeze({
             v65Halo:true,
             inactiveFootprint:true,
+            cyberHeader:true,
+            venom:true,
+            shiftV55:true
+        }),
+        backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- USERS V67 — Monitoring active hides User Nonaktif section -->
+<script id="users-v67-monitoring-hide-inactive-authority">
+(function UsersV67MonitoringVisibility(){
+    'use strict';
+
+    if(window.__USERS_V67__) return;
+    window.__USERS_V67__ = true;
+
+    window.UsersCandidateV67 = Object.freeze({
+        version:'v67',
+        scope:'Users inactive-section visibility only',
+        visibility:Object.freeze({
+            monitoringAll:'Active + Nonaktif visible',
+            passport:'Nonaktif hidden',
+            visa:'Nonaktif hidden',
+            training:'Nonaktif hidden',
+            safe:'Nonaktif hidden'
+        }),
+        filters:Object.freeze({
+            search:'Active + Nonaktif when Monitoring=all',
+            role:'Active + Nonaktif when Monitoring=all',
+            rank:'Active + Nonaktif when Monitoring=all',
+            monitoring:'Active only'
+        }),
+        hiddenScope:Object.freeze({
+            heading:true,
+            table:true,
+            countPagination:true,
+            footprintReserve:true
+        }),
+        locked:Object.freeze({
+            v65Halo:true,
+            v66FilterScope:true,
+            inactiveFootprintAuthority:true,
             cyberHeader:true,
             venom:true,
             shiftV55:true
