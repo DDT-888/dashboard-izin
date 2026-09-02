@@ -62799,26 +62799,15 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const activeCount =
                 document.getElementById('employeeActiveCountHost');
 
-            const searchInput =
-                document.getElementById('employeeUserSearch');
-
             if (!activeBody || !activeCount) {
                 return false;
             }
 
-            const searchWasFocused =
-                searchInput instanceof HTMLInputElement &&
-                document.activeElement === searchInput;
-
-            const searchSelection =
-                searchWasFocused
-                    ? {
-                        start: searchInput.selectionStart,
-                        end: searchInput.selectionEnd,
-                        direction: searchInput.selectionDirection
-                    }
-                    : null;
-
+            /*
+             * V61 native-caret authority:
+             * V59 already keeps the exact Search node alive.
+             * Browser native caret/selection is the sole authority.
+             */
             const users =
                 employeeFilteredUsers();
 
@@ -62849,38 +62838,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
              * updates only tbody + pagination/reserve.
              */
             renderEmployeeInactivePageOnly();
-
-            /*
-             * V60 caret authority:
-             * Search DOM is preserved by V59. Reassert native focus and the
-             * exact post-input selection synchronously so no other tbody/
-             * pagination work can leave the caret visually inactive.
-             */
-            if (
-                searchWasFocused &&
-                searchInput instanceof HTMLInputElement &&
-                searchInput.isConnected
-            ) {
-                try {
-                    if (document.activeElement !== searchInput) {
-                        searchInput.focus({ preventScroll: true });
-                    }
-
-                    if (
-                        searchSelection &&
-                        Number.isInteger(searchSelection.start) &&
-                        Number.isInteger(searchSelection.end)
-                    ) {
-                        searchInput.setSelectionRange(
-                            searchSelection.start,
-                            searchSelection.end,
-                            searchSelection.direction || 'none'
-                        );
-                    }
-                } catch (_) {
-                    /* Native input remains usable even if selection API rejects. */
-                }
-            }
 
             return true;
         }
@@ -113328,6 +113285,218 @@ body #tab-users
             v56Logic:true,
             v58VenomFix:true,
             v59SearchTargetedRender:true,
+            fiveThemeSolidHeaders:true,
+            inactiveFootprint:true,
+            shiftV55:true
+        }),
+        backend:'unchanged'
+    });
+})();
+</script>
+
+
+<!-- ================================================================
+     USERS V61 — Native Caret + Legacy Search Halo + Cyber Header
+     ================================================================ -->
+<style id="users-v61-native-caret-history-header">
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch{
+    background: var(--bg-input) !important;
+    background-image: none !important;
+    color: var(--text-primary) !important;
+    caret-color: var(--accent-strong) !important;
+    border: 1px solid var(--border-input) !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users
+.employee-toolbar.users-search-active-v61
+> #employeeUserSearch,
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible{
+    background: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    caret-color: var(--accent-strong) !important;
+    border: 1px solid var(--accent) !important;
+    outline: none !important;
+    box-shadow:
+        0 0 0 3px rgba(var(--accent-rgb), .32),
+        0 3px 12px rgba(var(--accent-rgb), .10) !important;
+    position: relative !important;
+    z-index: 8 !important;
+}
+
+html[data-selected-theme="light"]
+body #tab-users .employee-toolbar > #employeeUserSearch,
+html[data-selected-theme="light"]
+body #tab-users
+.employee-toolbar.users-search-active-v61
+> #employeeUserSearch{
+    caret-color: var(--accent-strong) !important;
+}
+
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users .employee-toolbar > #employeeUserSearch,
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-toolbar.users-search-active-v61
+> #employeeUserSearch{
+    caret-color: var(--accent) !important;
+}
+
+/* Cyber Dark reuses History Izin / Voucher Premium Operational Table tokens. */
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table{
+    --users-v61-head:
+        color-mix(
+            in srgb,
+            var(--bg-secondary) 88%,
+            var(--bg-card)
+        );
+    --users-v61-head-border:
+        color-mix(
+            in srgb,
+            var(--border-color) 88%,
+            var(--accent) 12%
+        );
+    --users-v61-head-text:
+        color-mix(
+            in srgb,
+            var(--text-muted) 82%,
+            var(--text-primary) 18%
+        );
+}
+
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead,
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr,
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    background: var(--users-v61-head) !important;
+    background-image: none !important;
+    color: var(--users-v61-head-text) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    border-top: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom:
+        1px solid var(--users-v61-head-border) !important;
+}
+
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead
+> tr > th:is(.sticky-left-one,.sticky-left-two,.sticky-right){
+    background: var(--users-v61-head) !important;
+    background-image: none !important;
+    color: var(--users-v61-head-text) !important;
+    box-shadow: none !important;
+}
+</style>
+
+<script id="users-v61-focus-state-controller">
+(function UsersV61FocusState(){
+    'use strict';
+    if(window.__USERS_V61__) return;
+    window.__USERS_V61__ = true;
+
+    function toolbarForSearchV61(node){
+        if(
+            !(node instanceof HTMLInputElement) ||
+            node.id !== 'employeeUserSearch'
+        ){
+            return null;
+        }
+        return node.closest('.employee-toolbar');
+    }
+
+    document.addEventListener('focusin', event => {
+        const toolbar = toolbarForSearchV61(event.target);
+        if(!toolbar) return;
+        toolbar.classList.add('users-search-active-v61');
+    }, true);
+
+    document.addEventListener('focusout', event => {
+        const toolbar = toolbarForSearchV61(event.target);
+        if(!toolbar) return;
+
+        queueMicrotask(() => {
+            const currentSearch =
+                document.getElementById('employeeUserSearch');
+
+            if(
+                !currentSearch ||
+                document.activeElement !== currentSearch
+            ){
+                toolbar.classList.remove(
+                    'users-search-active-v61'
+                );
+            }
+        });
+    }, true);
+
+    window.UsersCandidateV61 = Object.freeze({
+        version:'v61',
+        search:Object.freeze({
+            caret:'browser native only',
+            focusCallsPerKeystroke:0,
+            selectionRangeCallsPerKeystroke:0,
+            pastelHalo:'toolbar state class -> Search only'
+        }),
+        cyberHeader:Object.freeze({
+            authority:'History Izin / Voucher Premium Operational Table',
+            surface:'color-mix(bg-secondary 88%, bg-card)',
+            border:'color-mix(border-color 88%, accent 12%)',
+            text:'color-mix(text-muted 82%, text-primary 18%)'
+        }),
+        retained:Object.freeze({
+            v56FunctionalLogic:true,
+            v58VenomToolbarFix:true,
+            v59TargetedSearchRender:true,
             fiveThemeSolidHeaders:true,
             inactiveFootprint:true,
             shiftV55:true
