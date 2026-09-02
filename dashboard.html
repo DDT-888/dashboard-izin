@@ -46220,6 +46220,20 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             return preferred ? encodePreferredAnimalEmoji(preferred) : null;
         }
 
+        async function saveIzinEmoticonRpcV1(nama, emoticon) {
+            const formattedNama = formatName(nama);
+            const { data, error } = await supabaseDashboard.rpc(
+                'save_izin_emoticon',
+                {
+                    p_nama: formattedNama,
+                    p_emoticon: emoticon || null
+                }
+            );
+
+            if (error) throw error;
+            return typeof data === 'string' ? JSON.parse(data) : data;
+        }
+
         async function syncPreferredAnimalRecord(nama) {
             const formattedNama = formatName(nama);
             const preferredValue = getPreferredAnimalStorageValue(formattedNama);
@@ -46228,20 +46242,15 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const record = dataIzin[formattedNama];
             record.emoticon = preferredValue;
             try {
-                const { error } = await supabaseDashboard
-                    .from('izin_anggota')
-                    .upsert({
-                        nama: formattedNama,
-                        status: record.status || 'none',
-                        mulai: record.mulai || null,
-                        selesai: record.selesai || null,
-                        tanggal: record.tanggal || null,
-                        role: record.role || getRoleForUser(formattedNama),
-                        emoticon: preferredValue
-                    }, { onConflict: 'nama' });
-                if (error) console.warn('Pilihan emoticon belum tersinkron:', error.message);
+                await saveIzinEmoticonRpcV1(
+                    formattedNama,
+                    preferredValue
+                );
             } catch (error) {
-                console.warn('Pilihan emoticon belum tersinkron:', error?.message || error);
+                console.warn(
+                    'Pilihan emoticon belum tersinkron:',
+                    error?.message || error
+                );
             }
         }
 
@@ -46355,21 +46364,17 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             if (!TEST_MODE) {
                 try {
-                    const { error } = await supabaseDashboard
-                        .from('izin_anggota')
-                        .upsert({
-                            nama: formattedNama,
-                            status: record.status || 'none',
-                            mulai: record.mulai || null,
-                            selesai: record.selesai || null,
-                            tanggal: record.tanggal || null,
-                            role: record.role || getRoleForUser(formattedNama),
-                            emoticon: storedValue
-                        }, { onConflict: 'nama' });
-                    if (error) throw error;
+                    await saveIzinEmoticonRpcV1(
+                        formattedNama,
+                        storedValue
+                    );
                 } catch (error) {
                     console.error('Gagal menyimpan emoticon:', error);
-                    showToast('Pilihan tersimpan di perangkat, tetapi belum tersinkron ke database.', 'warning', 4000);
+                    showToast(
+                        'Pilihan tersimpan di perangkat, tetapi belum tersinkron ke database.',
+                        'warning',
+                        4000
+                    );
                 }
             }
 
@@ -49508,8 +49513,22 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         // ============================================================
         // QUOTA FUNCTIONS
         // ============================================================
+        function getOperationalDateLabel(date = new Date()) {
+            try {
+                return new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Asia/Phnom_Penh',
+                    weekday: 'short',
+                    month: 'short',
+                    day: '2-digit',
+                    year: 'numeric'
+                }).format(date).replace(/,/g, '');
+            } catch (_) {
+                return date.toDateString();
+            }
+        }
+
         function getUsedIzinToday(nama) {
-            const today = new Date().toDateString();
+            const today = getOperationalDateLabel();
             const formattedNama = formatName(nama);
 
             const used = historyData.filter(h =>
@@ -49524,7 +49543,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
         function getMaxQuota(nama) {
             const role = getRoleForUser(nama);
-            return maxIzinPerRole[role] || 4;
+            return maxIzinPerRole[role] ?? 4;
         }
 
         function canIzinByDailyLimit(nama) {
@@ -50266,6 +50285,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             artifactUiFrame = requestAnimationFrame(() => {
                 artifactUiFrame = null;
 
+                const monitoringArtifactDirty =
+                    artifactHistoryDirty ||
+                    artifactVoucherDirty;
+
                 if (artifactHistoryDirty) {
                     updateAllSidebarBadges();
 
@@ -50282,6 +50305,19 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     if (currentTab === 'voucher') {
                         renderVoucherPage();
                     }
+                }
+
+                /*
+                 * Monitoring V1:
+                 * History and Voucher realtime already update local state.
+                 * Reuse that state and rerender the table once per frame.
+                 * No extra query/polling is introduced.
+                 */
+                if (
+                    monitoringArtifactDirty &&
+                    currentTab === 'monitoring'
+                ) {
+                    renderDashboardTable();
                 }
 
                 artifactHistoryDirty = false;
@@ -53673,7 +53709,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             });
 
             const now = new Date();
-            const today = now.toDateString();
+            const today = getOperationalDateLabel(now);
             const preferredEmoji = getPreferredAnimalEmoji(formattedNama);
             const activeEmojiValue = preferredEmoji
                 ? encodePreferredAnimalEmoji(preferredEmoji)
@@ -53706,26 +53742,34 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         return;
                     }
 
+                    const canonicalMulai =
+                        resultData?.mulai ||
+                        mulaiISO;
+                    const canonicalTanggal =
+                        resultData?.tanggal ||
+                        getOperationalDateLabel(
+                            new Date(canonicalMulai)
+                        );
+
                     data.status = 'izin';
-                    data.mulai = mulaiISO;
+                    data.mulai = canonicalMulai;
                     data.selesai = null;
-                    data.tanggal = today;
+                    data.tanggal = canonicalTanggal;
                     data.emoticon = activeEmojiValue;
                     dataIzin[formattedNama] = data;
                     isJackpotShown[formattedNama] = false;
 
-                    const { error: syncError } = await supabaseDashboard
-                        .from('izin_anggota')
-                        .upsert({
-                            nama: formattedNama,
-                            status: 'izin',
-                            mulai: mulaiISO,
-                            selesai: null,
-                            tanggal: today,
-                            role,
-                            emoticon: activeEmojiValue
-                        }, { onConflict: 'nama' });
-                    if (syncError) console.warn('Emoticon belum tersinkron:', syncError.message);
+                    try {
+                        await saveIzinEmoticonRpcV1(
+                            formattedNama,
+                            activeEmojiValue
+                        );
+                    } catch (syncError) {
+                        console.warn(
+                            'Emoticon belum tersinkron:',
+                            syncError?.message || syncError
+                        );
+                    }
 
                     renderAll();
                     updateCurrentCounts();
@@ -114017,6 +114061,41 @@ body[data-selected-theme="rose-gold"]
         getPending:() => Boolean(shiftLifecycleRouteRefreshPendingV70)
     });
 })();
+</script>
+
+
+<!-- ================================================================
+     MONITORING IZIN V1 — PRE-PRODUCTION INTEGRITY & REALTIME
+     Backend migration: monitoring_izin_v1_integrity_hardening
+     Table authority remains 8 columns; no Shift column in V1.
+     ================================================================ -->
+<script id="monitoring-izin-v1-integrity-realtime-authority">
+window.MonitoringIzinCandidateV1 = Object.freeze({
+    version: 'v1',
+    scope: 'pre-production integrity + realtime hardening',
+    tableColumns: Object.freeze([
+        'Status',
+        'Anggota',
+        'Role',
+        'Sisa Izin',
+        'Voucher',
+        'Mulai',
+        'Progress',
+        'Aksi'
+    ]),
+    backend: Object.freeze({
+        serverAuthoritativeStart: true,
+        cslineLiveLimitParity: true,
+        narrowEmoticonRpc: 'save_izin_emoticon',
+        directIzinLifecycleWriteClosed: true
+    }),
+    realtime: Object.freeze({
+        historyRefreshesMonitoring: true,
+        voucherRefreshesMonitoring: true,
+        extraPolling: false
+    }),
+    plannedShiftColumn: false
+});
 </script>
 
 </body>
