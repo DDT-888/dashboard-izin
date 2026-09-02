@@ -113506,5 +113506,328 @@ body #tab-users
 })();
 </script>
 
+
+<!-- ================================================================
+     USERS V62 — Pastel Search Halo Overlay
+     Scope: Pink / Emerald / Purple / Ocean / Rose Gold ONLY
+     ================================================================ -->
+<style id="users-v62-pastel-search-halo">
+/*
+ * V62 stops relying on the accumulated input box-shadow authorities.
+ * The input owns only its accent border; an independent fixed overlay paints
+ * the halo and cannot be swallowed by older theme-specific input CSS.
+ */
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"]
+)
+body #tab-users
+.employee-toolbar.users-search-active-v61
+> #employeeUserSearch{
+    border-color: var(--accent) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Independent paint layer. It never receives pointer events. */
+.users-search-halo-overlay-v62{
+    position: fixed;
+    display: none;
+    box-sizing: border-box;
+    pointer-events: none !important;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    z-index: 2147483000;
+    opacity: 0;
+    transition:
+        opacity 90ms ease,
+        box-shadow 90ms ease;
+}
+
+.users-search-halo-overlay-v62.is-visible{
+    display: block;
+    opacity: 1;
+}
+</style>
+
+<script id="users-v62-pastel-search-halo-controller">
+(function UsersV62PastelSearchHalo(){
+    'use strict';
+
+    if(window.__USERS_V62__) return;
+    window.__USERS_V62__ = true;
+
+    const pastelThemesV62 =
+        new Set([
+            'pink',
+            'emerald',
+            'purple',
+            'ocean',
+            'rose-gold'
+        ]);
+
+    let haloV62 = null;
+    let rafV62 = 0;
+
+    function currentThemeV62(){
+        return String(
+            document.documentElement.dataset.selectedTheme || ''
+        ).toLowerCase();
+    }
+
+    function searchV62(){
+        const node =
+            document.getElementById('employeeUserSearch');
+
+        return node instanceof HTMLInputElement
+            ? node
+            : null;
+    }
+
+    function ensureHaloV62(){
+        if(
+            haloV62 instanceof HTMLElement &&
+            haloV62.isConnected
+        ){
+            return haloV62;
+        }
+
+        haloV62 = document.createElement('div');
+        haloV62.className =
+            'users-search-halo-overlay-v62';
+        haloV62.setAttribute('aria-hidden','true');
+
+        document.body.appendChild(haloV62);
+
+        return haloV62;
+    }
+
+    function hideHaloV62(){
+        if(!haloV62) return;
+
+        haloV62.classList.remove('is-visible');
+        haloV62.style.display = 'none';
+    }
+
+    function paintHaloV62(){
+        rafV62 = 0;
+
+        const input = searchV62();
+
+        if(
+            !input ||
+            document.activeElement !== input ||
+            !pastelThemesV62.has(currentThemeV62())
+        ){
+            hideHaloV62();
+            return;
+        }
+
+        const rect =
+            input.getBoundingClientRect();
+
+        if(
+            rect.width <= 0 ||
+            rect.height <= 0 ||
+            rect.bottom < 0 ||
+            rect.top > window.innerHeight
+        ){
+            hideHaloV62();
+            return;
+        }
+
+        const halo = ensureHaloV62();
+
+        const computed =
+            getComputedStyle(input);
+
+        const accent =
+            computed
+                .getPropertyValue('--accent')
+                .trim() ||
+            computed.borderColor ||
+            '#6f7f8d';
+
+        /*
+         * The overlay sits 2px outside the input.
+         * Search geometry itself is never modified.
+         */
+        halo.style.left =
+            `${Math.round(rect.left - 2)}px`;
+
+        halo.style.top =
+            `${Math.round(rect.top - 2)}px`;
+
+        halo.style.width =
+            `${Math.round(rect.width + 4)}px`;
+
+        halo.style.height =
+            `${Math.round(rect.height + 4)}px`;
+
+        halo.style.borderColor = accent;
+
+        halo.style.boxShadow =
+            `0 0 0 3px color-mix(in srgb, ${accent} 32%, transparent), ` +
+            `0 4px 12px color-mix(in srgb, ${accent} 11%, transparent)`;
+
+        halo.style.display = 'block';
+
+        requestAnimationFrame(() => {
+            if(haloV62 === halo){
+                halo.classList.add('is-visible');
+            }
+        });
+    }
+
+    function schedulePaintV62(){
+        if(rafV62) return;
+
+        rafV62 =
+            requestAnimationFrame(
+                paintHaloV62
+            );
+    }
+
+    /*
+     * Focus only.
+     * No focus(), blur(), selection, keyboard, value or filter manipulation.
+     */
+    document.addEventListener(
+        'focusin',
+        event => {
+            if(
+                event.target instanceof HTMLInputElement &&
+                event.target.id === 'employeeUserSearch'
+            ){
+                schedulePaintV62();
+            }
+        },
+        true
+    );
+
+    document.addEventListener(
+        'focusout',
+        event => {
+            if(
+                event.target instanceof HTMLInputElement &&
+                event.target.id === 'employeeUserSearch'
+            ){
+                queueMicrotask(() => {
+                    if(
+                        document.activeElement !== searchV62()
+                    ){
+                        hideHaloV62();
+                    }
+                });
+            }
+        },
+        true
+    );
+
+    /*
+     * Keep overlay locked to Search if the viewport moves.
+     * This is presentation-only and does not rerender Users.
+     */
+    window.addEventListener(
+        'resize',
+        schedulePaintV62,
+        { passive:true }
+    );
+
+    window.addEventListener(
+        'scroll',
+        schedulePaintV62,
+        {
+            passive:true,
+            capture:true
+        }
+    );
+
+    /*
+     * Theme switch while Search remains focused.
+     * Show only for the five pastel themes; all PASS themes remain untouched.
+     */
+    const themeObserverV62 =
+        new MutationObserver(
+            mutations => {
+                if(
+                    mutations.some(m =>
+                        m.type === 'attributes' &&
+                        (
+                            m.attributeName === 'data-selected-theme' ||
+                            m.attributeName === 'data-theme' ||
+                            m.attributeName === 'data-theme-variant'
+                        )
+                    )
+                ){
+                    schedulePaintV62();
+                }
+            }
+        );
+
+    themeObserverV62.observe(
+        document.documentElement,
+        {
+            attributes:true,
+            attributeFilter:[
+                'data-selected-theme',
+                'data-theme',
+                'data-theme-variant'
+            ]
+        }
+    );
+
+    window.UsersCandidateV62 =
+        Object.freeze({
+            version:'v62',
+            scope:'Pastel Users Search halo only',
+            themes:Object.freeze([
+                'Pastel Pink',
+                'Emerald',
+                'Royal Purple',
+                'Ocean Blue',
+                'Rose Gold'
+            ]),
+            halo:Object.freeze({
+                renderer:'independent fixed overlay',
+                searchGeometry:'unchanged',
+                inputDom:'unchanged',
+                pointerEvents:false,
+                themeAccent:true
+            }),
+            locked:Object.freeze({
+                cyberHeaderV61:true,
+                cyberSearch:true,
+                ddtOriginalSearch:true,
+                venom:true,
+                cursorCaretLogic:true,
+                v56FunctionalLogic:true,
+                inactiveFootprint:true,
+                shiftV55:true
+            }),
+            backend:'unchanged'
+        });
+})();
+</script>
+
 </body>
 </html>
