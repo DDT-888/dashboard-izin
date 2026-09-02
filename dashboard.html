@@ -102455,6 +102455,7 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                     },
                     payload => {
                         const row = payload?.new || {};
+                        window.__DDT_MONITORING_V2_SHIFT_SIGNAL__?.(row);
                         window.setTimeout(async () => {
                             if (String(row.client_id || '') === clientIdV20()) {
                                 await readRevisionV20('active').catch(()=>{});
@@ -114096,6 +114097,452 @@ window.MonitoringIzinCandidateV1 = Object.freeze({
     }),
     plannedShiftColumn: false
 });
+</script>
+
+
+<!-- ==================================================================
+     MONITORING IZIN V2 — SHIFT AKTIF COLUMN + FILTER SCALE
+     - Active Shift only
+     - ID-based mapping
+     - No Note / no Draft
+     - No new realtime channel / no polling
+     - Active period revision invalidates Monitoring snapshot
+     ================================================================== -->
+<style id="monitoring-izin-v2-shift-filter-authority">
+/* Shift is secondary operational context, not a new visual focal point. */
+#tab-monitoring .table-dashboard-wrap .col-shift {
+    width: 112px;
+    min-width: 96px;
+    max-width: 132px;
+    text-align: left;
+}
+
+#tab-monitoring .monitoring-shift-label {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--text-secondary) 72%, var(--text-muted));
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 620;
+    letter-spacing: .018em;
+    opacity: .88;
+    vertical-align: middle;
+}
+
+#tab-monitoring .monitoring-shift-label.is-unassigned {
+    color: var(--text-muted);
+    font-weight: 560;
+    opacity: .58;
+}
+
+/*
+ * Monitoring filter scale reconciliation.
+ * Venom Green is explicitly excluded because its 16px / 11px glyph
+ * authority is already live-accepted.
+ *
+ * Mecha Ivory frozen/native presentation is also excluded to preserve
+ * its frozen presentation authority.
+ */
+html:not([data-theme-variant="venom"])
+    :not([data-mi-native-presentation="mecha-ivory"])
+    :not([data-mi-frozen-presentation="mecha-ivory"])
+    #tab-monitoring .monitoring-role-filter .unified-custom-filter-leading {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    flex: 0 0 16px !important;
+    padding: 0 !important;
+    place-items: center !important;
+    border-radius: 5px !important;
+}
+
+html:not([data-theme-variant="venom"])
+    :not([data-mi-native-presentation="mecha-ivory"])
+    :not([data-mi-frozen-presentation="mecha-ivory"])
+    #tab-monitoring .monitoring-role-filter .unified-custom-filter-leading svg {
+    width: 11px !important;
+    height: 11px !important;
+    min-width: 11px !important;
+    min-height: 11px !important;
+}
+
+@media (max-width: 1180px) {
+    #tab-monitoring .table-dashboard-wrap .col-shift {
+        width: 104px;
+        min-width: 92px;
+    }
+}
+</style>
+
+<script id="monitoring-izin-v2-shift-active-integration">
+(() => {
+    'use strict';
+
+    if (window.__DDT_MONITORING_IZIN_V2__) return;
+    window.__DDT_MONITORING_IZIN_V2__ = true;
+
+    const NOTE_ONLY_SIGNALS = new Set([
+        'NOTE_UI',
+        'NOTE_ATOMIC'
+    ]);
+
+    let shiftMap = new Map();
+    let shiftPeriod = null;
+    let shiftRevision = null;
+    let shiftLoaded = false;
+    let shiftDirty = true;
+    let shiftSnapshotPromise = null;
+    let shiftRefreshTimer = null;
+    let lastMapSignature = '';
+
+    function parseShiftData(raw) {
+        if (!raw) return null;
+        if (typeof raw === 'object') return raw;
+        try {
+            return JSON.parse(raw);
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function sanitizeShiftLabel(value) {
+        let text = String(value || '').trim();
+        if (!text) return '—';
+
+        /* Monitoring does not repeat the structural "SHIFT" prefix. */
+        text = text
+            .replace(/^\s*SHIFT\s+/i, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        return text || '—';
+    }
+
+    function buildMapFromActivePayload(payload) {
+        const next = new Map();
+        const columns = Array.isArray(payload?.columns)
+            ? payload.columns
+            : [];
+
+        columns.forEach(column => {
+            const label = sanitizeShiftLabel(column?.name);
+            const users = Array.isArray(column?.users)
+                ? column.users
+                : [];
+
+            users.forEach(user => {
+                if (user?.id === null || user?.id === undefined) return;
+                next.set(String(user.id), label);
+            });
+        });
+
+        return next;
+    }
+
+    function mapSignature(map, revision) {
+        return [
+            String(revision ?? ''),
+            ...[...map.entries()]
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([id, label]) => `${id}:${label}`)
+        ].join('|');
+    }
+
+    function currentActiveUserIndex() {
+        const index = new Map();
+
+        if (!Array.isArray(window.listUsers || listUsers)) {
+            return index;
+        }
+
+        (window.listUsers || listUsers).forEach(user => {
+            if (!user || user.id === null || user.id === undefined) return;
+            if (String(user.status || 'active').toLowerCase() !== 'active') return;
+
+            const name = typeof formatName === 'function'
+                ? formatName(user.name || '')
+                : String(user.name || '').trim().toUpperCase();
+
+            if (name) index.set(name, String(user.id));
+        });
+
+        return index;
+    }
+
+    function ensureHeader() {
+        const roleHeader = document.querySelector(
+            '#tab-monitoring .table-dashboard-wrap thead th.col-role'
+        );
+        if (!roleHeader) return;
+
+        let shiftHeader = document.querySelector(
+            '#tab-monitoring .table-dashboard-wrap thead th.col-shift'
+        );
+
+        if (!shiftHeader) {
+            shiftHeader = document.createElement('th');
+            shiftHeader.className = 'col-shift';
+            shiftHeader.textContent = 'Shift';
+            roleHeader.insertAdjacentElement('afterend', shiftHeader);
+        }
+    }
+
+    function patchRows() {
+        ensureHeader();
+
+        const tbody = document.getElementById('dashboardTableBody');
+        if (!tbody) return;
+
+        const userIndex = currentActiveUserIndex();
+
+        tbody.querySelectorAll('tr').forEach(row => {
+            const roleCell = row.querySelector('td.col-role');
+
+            /* Empty/loading rows keep a single cell. */
+            if (!roleCell) {
+                const onlyCell = row.querySelector('td[colspan]');
+                if (onlyCell) onlyCell.setAttribute('colspan', '9');
+                return;
+            }
+
+            let shiftCell = row.querySelector('td.col-shift');
+            if (!shiftCell) {
+                shiftCell = document.createElement('td');
+                shiftCell.className = 'col-shift';
+                roleCell.insertAdjacentElement('afterend', shiftCell);
+            }
+
+            const rawName = row.dataset.nama || '';
+            const normalizedName = typeof formatName === 'function'
+                ? formatName(rawName)
+                : String(rawName).trim().toUpperCase();
+
+            const userId = userIndex.get(normalizedName) || null;
+            const label = userId
+                ? (shiftMap.get(String(userId)) || '—')
+                : '—';
+
+            shiftCell.replaceChildren();
+
+            const span = document.createElement('span');
+            span.className =
+                'monitoring-shift-label' +
+                (label === '—' ? ' is-unassigned' : '');
+            span.textContent = label;
+            span.title = label === '—' ? '' : label;
+
+            shiftCell.appendChild(span);
+        });
+    }
+
+    async function fetchActiveSnapshot({
+        force = false,
+        reason = 'monitoring'
+    } = {}) {
+        if (!force && shiftLoaded && !shiftDirty) {
+            return true;
+        }
+
+        if (shiftSnapshotPromise) {
+            return shiftSnapshotPromise;
+        }
+
+        shiftSnapshotPromise = (async () => {
+            try {
+                const { data, error } = await supabaseDashboard
+                    .from('shift_active')
+                    .select('id, revision, shift_data, updated_at')
+                    .eq('id', 1)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!data) {
+                    shiftMap = new Map();
+                    shiftPeriod = null;
+                    shiftRevision = null;
+                    shiftLoaded = true;
+                    shiftDirty = false;
+                    patchRows();
+                    return true;
+                }
+
+                const payload = parseShiftData(data.shift_data) || {};
+                const nextMap = buildMapFromActivePayload(payload);
+                const nextRevision = Number(data.revision) || 0;
+                const nextSignature = mapSignature(nextMap, nextRevision);
+                const changed = nextSignature !== lastMapSignature;
+
+                shiftMap = nextMap;
+
+                /*
+                 * Period is retained as part of the canonical Active snapshot.
+                 * It is intentionally not rendered in Monitoring.
+                 * Any Active PERIOD revision refreshes this value.
+                 */
+                shiftPeriod =
+                    payload?.period &&
+                    typeof payload.period === 'object'
+                        ? {
+                            start: payload.period.start || null,
+                            end: payload.period.end || null,
+                            source: 'active'
+                        }
+                        : null;
+
+                shiftRevision = nextRevision;
+                shiftLoaded = true;
+                shiftDirty = false;
+                lastMapSignature = nextSignature;
+
+                if (
+                    changed &&
+                    typeof window.renderDashboardTable === 'function' &&
+                    currentTab === 'monitoring'
+                ) {
+                    window.renderDashboardTable.__v2InternalRefresh = true;
+                    try {
+                        window.renderDashboardTable();
+                    } finally {
+                        window.renderDashboardTable.__v2InternalRefresh = false;
+                    }
+                } else {
+                    patchRows();
+                }
+
+                return true;
+            } catch (error) {
+                console.warn(
+                    `[Monitoring V2] Shift Active sync gagal (${reason}):`,
+                    error?.message || error
+                );
+                shiftDirty = true;
+                patchRows();
+                return false;
+            } finally {
+                shiftSnapshotPromise = null;
+            }
+        })();
+
+        return shiftSnapshotPromise;
+    }
+
+    function scheduleActiveRefresh(row = {}) {
+        const changeType = String(row?.change_type || 'DATA').toUpperCase();
+
+        /*
+         * Note-only signals must never make Monitoring fetch or expose Note.
+         * Every other Active revision — including PERIOD — invalidates cache.
+         */
+        if (NOTE_ONLY_SIGNALS.has(changeType)) {
+            return;
+        }
+
+        shiftDirty = true;
+
+        window.clearTimeout(shiftRefreshTimer);
+
+        if (currentTab !== 'monitoring') {
+            return;
+        }
+
+        shiftRefreshTimer = window.setTimeout(() => {
+            fetchActiveSnapshot({
+                force: true,
+                reason: `active-${changeType.toLowerCase()}`
+            });
+        }, 120);
+    }
+
+    window.__DDT_MONITORING_V2_SHIFT_SIGNAL__ = scheduleActiveRefresh;
+
+    const baseRender = window.renderDashboardTable;
+    if (typeof baseRender === 'function') {
+        const wrappedRender = function monitoringV2RenderDashboardTable() {
+            const result = baseRender.apply(this, arguments);
+            patchRows();
+
+            if (!wrappedRender.__v2InternalRefresh) {
+                fetchActiveSnapshot({
+                    force: false,
+                    reason: 'render'
+                });
+            }
+
+            return result;
+        };
+
+        window.renderDashboardTable = wrappedRender;
+        try { renderDashboardTable = wrappedRender; } catch (_) {}
+    }
+
+    const baseSwitchTab = window.switchTab;
+    if (typeof baseSwitchTab === 'function') {
+        window.switchTab = function monitoringV2SwitchTab(tab) {
+            const result = baseSwitchTab.apply(this, arguments);
+
+            if (tab === 'monitoring') {
+                /*
+                 * One tiny Active-row read on route entry closes any missed
+                 * realtime signal after sleep/reconnect and guarantees that
+                 * Active period revisions are followed.
+                 */
+                fetchActiveSnapshot({
+                    force: true,
+                    reason: 'route-entry'
+                });
+            }
+
+            return result;
+        };
+
+        try { switchTab = window.switchTab; } catch (_) {}
+    }
+
+    function initialize() {
+        ensureHeader();
+        patchRows();
+
+        if (currentTab === 'monitoring') {
+            fetchActiveSnapshot({
+                force: true,
+                reason: 'initial-monitoring'
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize, { once: true });
+    } else {
+        initialize();
+    }
+
+    window.MonitoringIzinV2 = Object.freeze({
+        version: 'v2',
+        source: 'shift_active',
+        draftVisible: false,
+        noteVisible: false,
+        polling: false,
+        newRealtimeChannel: false,
+        formatShiftLabel: sanitizeShiftLabel,
+        getSnapshot() {
+            return {
+                revision: shiftRevision,
+                period: shiftPeriod ? { ...shiftPeriod } : null,
+                assignments: Object.fromEntries(shiftMap)
+            };
+        },
+        refresh() {
+            return fetchActiveSnapshot({
+                force: true,
+                reason: 'manual-audit'
+            });
+        }
+    });
+})();
 </script>
 
 </body>
