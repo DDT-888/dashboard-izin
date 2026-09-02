@@ -62774,8 +62774,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 </div>
                 <div class="employee-table-wrap"><table class="employee-users-table"><thead><tr>
                     <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry">Masa Aktif Passport</th><th class="employee-col-expiry">Masa Aktif Visa</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-training">Training</th><th class="employee-col-tenure">Masa Kerja</th><th class="employee-col-actions sticky-right">Aksi</th>
-                </tr></thead><tbody>${renderEmployeeUserRows(users)}</tbody></table></div>
-                <div class="history-count">Menampilkan <span>${users.length}</span> dari <span>${activeDirectory.length}</span> user aktif</div>
+                </tr></thead><tbody id="employeeActiveTableBody">${renderEmployeeUserRows(users)}</tbody></table></div>
+                <div id="employeeActiveCountHost" class="history-count">Menampilkan <span>${users.length}</span> dari <span>${activeDirectory.length}</span> user aktif</div>
                 <section class="employee-inactive-section">
                     <div class="users-list-heading employee-inactive-heading"><div class="users-list-title"><span class="users-section-icon compact employee-inactive-section-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5v9"/><path d="M7.05 5.75a8 8 0 1 0 9.9 0"/></svg></span><div><h3>User Nonaktif</h3><p>Daftar user yang sudah tidak bekerja di DDT</p></div></div></div>
                     <div class="employee-table-wrap employee-inactive-table-wrap"><table class="employee-users-table employee-inactive-table"><thead><tr>
@@ -62792,20 +62792,81 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             employeeRestoreRegisterDraftToDOM();
         }
 
+        function renderEmployeeSearchResultsV59() {
+            const activeBody =
+                document.getElementById('employeeActiveTableBody');
+
+            const activeCount =
+                document.getElementById('employeeActiveCountHost');
+
+            if (!activeBody || !activeCount) {
+                return false;
+            }
+
+            const users =
+                employeeFilteredUsers();
+
+            const source =
+                employeeUserDirectory.length
+                    ? employeeUserDirectory
+                    : listUsers;
+
+            const activeDirectory =
+                source.filter(user =>
+                    String(user.status || 'active').toLowerCase() ===
+                    'active'
+                );
+
+            /*
+             * Search-only update:
+             * preserve toolbar/search DOM, native focus, caret and V58 halo.
+             */
+            activeBody.innerHTML =
+                renderEmployeeUserRows(users);
+
+            activeCount.innerHTML =
+                `Menampilkan <span>${users.length}</span> dari ` +
+                `<span>${activeDirectory.length}</span> user aktif`;
+
+            /*
+             * This helper already preserves the locked inactive footprint and
+             * updates only tbody + pagination/reserve.
+             */
+            renderEmployeeInactivePageOnly();
+
+            return true;
+        }
+
         window.setEmployeeUserFilter = function(key, value) {
             employeeUserFilters[key] = value;
 
             /*
-             * Shared Users filters now affect Active + Nonaktif.
-             * Always return inactive pagination to page 1 after a filter change.
+             * Shared Users filters affect Active + Nonaktif.
+             * Return inactive pagination to page 1 after any filter change.
              */
             employeeInactivePage = 1;
 
+            if (key === 'search') {
+                /*
+                 * V59: do not destroy/recreate Search on every keystroke.
+                 * This eliminates the focus/halo/caret blink.
+                 */
+                if (renderEmployeeSearchResultsV59()) {
+                    return;
+                }
+            }
+
+            /*
+             * Role/Rank/Monitoring keep the established full render path.
+             */
             renderUsersPage();
 
             if (key === 'search') {
-                const input = document.getElementById('employeeUserSearch');
+                const input =
+                    document.getElementById('employeeUserSearch');
+
                 input?.focus();
+
                 if (input) {
                     input.setSelectionRange(
                         input.value.length,
@@ -112850,6 +112911,222 @@ html[data-selected-theme="venom"][data-theme="dark"][data-theme-variant="venom"]
         }),
         backend:'unchanged',
         v56FunctionalLogic:'retained'
+    });
+})();
+</script>
+
+
+<!-- ================================================================
+     USERS V59 — Search Stability + Active Header Reconciliation
+     ================================================================ -->
+<style id="users-v59-search-active-header-authority">
+/* ================================================================
+   A. SIX LEGACY THEMES — explicit high-specificity search focus
+   ================================================================ */
+
+/* Pastel Pink */
+html[data-theme][data-selected-theme="pink"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme][data-selected-theme="pink"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme][data-selected-theme="pink"]
+body #tab-users .employee-toolbar > #employeeUserSearch.users-search-focus-v58,
+
+/* Emerald */
+html[data-theme][data-selected-theme="emerald"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme][data-selected-theme="emerald"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme][data-selected-theme="emerald"]
+body #tab-users .employee-toolbar > #employeeUserSearch.users-search-focus-v58,
+
+/* Royal Purple */
+html[data-theme][data-selected-theme="purple"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme][data-selected-theme="purple"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme][data-selected-theme="purple"]
+body #tab-users .employee-toolbar > #employeeUserSearch.users-search-focus-v58,
+
+/* Ocean Blue */
+html[data-theme][data-selected-theme="ocean"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme][data-selected-theme="ocean"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme][data-selected-theme="ocean"]
+body #tab-users .employee-toolbar > #employeeUserSearch.users-search-focus-v58,
+
+/* Rose Gold */
+html[data-theme][data-selected-theme="rose-gold"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme][data-selected-theme="rose-gold"]
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme][data-selected-theme="rose-gold"]
+body #tab-users .employee-toolbar > #employeeUserSearch.users-search-focus-v58,
+
+/* Cyber Dark — explicitly not Venom */
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users .employee-toolbar > #employeeUserSearch:focus,
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users .employee-toolbar > #employeeUserSearch:focus-visible,
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users .employee-toolbar > #employeeUserSearch.users-search-focus-v58{
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-color:
+        color-mix(
+            in srgb,
+            var(--accent) 62%,
+            var(--border-color)
+        ) !important;
+    outline: none !important;
+    box-shadow:
+        0 0 0 3px
+        color-mix(
+            in srgb,
+            var(--accent) 20%,
+            transparent
+        ) !important;
+    position: relative !important;
+    z-index: 4 !important;
+}
+
+/* ================================================================
+   B. ACTIVE USERS TABLE HEADER — one solid theme surface
+      Inactive Users header is deliberately excluded.
+   ================================================================ */
+
+/*
+ * Root cause:
+ * --bg-table-header is a gradient on these themes.
+ * Applied individually to each TH, it restarts at every column and produces
+ * the alternating / striped visual seen in live testing.
+ */
+
+html[data-selected-theme="pink"]
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    background: #76304f !important;
+    background-image: none !important;
+    color: #fff5f9 !important;
+    border-bottom-color: rgba(255,255,255,.13) !important;
+    box-shadow: none !important;
+}
+
+html[data-selected-theme="emerald"]
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    background: #185244 !important;
+    background-image: none !important;
+    color: #f2fff9 !important;
+    border-bottom-color: rgba(255,255,255,.12) !important;
+    box-shadow: none !important;
+}
+
+html[data-selected-theme="purple"]
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    background: #463473 !important;
+    background-image: none !important;
+    color: #faf6ff !important;
+    border-bottom-color: rgba(255,255,255,.13) !important;
+    box-shadow: none !important;
+}
+
+html[data-selected-theme="ocean"]
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    background: #095871 !important;
+    background-image: none !important;
+    color: #f2fcff !important;
+    border-bottom-color: rgba(255,255,255,.13) !important;
+    box-shadow: none !important;
+}
+
+html[data-selected-theme="rose-gold"]
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    background: #683b45 !important;
+    background-image: none !important;
+    color: #fff7f5 !important;
+    border-bottom-color: rgba(255,255,255,.14) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"][data-selected-theme="dark"]:not([data-theme-variant="venom"])
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead > tr > th{
+    background: #151b26 !important;
+    background-image: none !important;
+    color: #dbe9f5 !important;
+    border-bottom-color: rgba(142,190,224,.13) !important;
+    box-shadow: none !important;
+}
+
+/*
+ * Sticky header cells must use the SAME exact surface.
+ * Remove lateral header shadow only; sticky BODY cell shadows stay untouched.
+ */
+html:is(
+    [data-selected-theme="pink"],
+    [data-selected-theme="emerald"],
+    [data-selected-theme="purple"],
+    [data-selected-theme="ocean"],
+    [data-selected-theme="rose-gold"],
+    [data-selected-theme="dark"]
+)
+body #tab-users
+.employee-table-wrap:not(.employee-inactive-table-wrap)
+> .employee-users-table > thead
+> tr > th:is(.sticky-left-one,.sticky-left-two,.sticky-right){
+    background-image: none !important;
+    box-shadow: none !important;
+}
+</style>
+
+<script id="users-v59-authority-marker">
+(function UsersV59Authority(){
+    'use strict';
+
+    if(window.__USERS_V59__) return;
+    window.__USERS_V59__ = true;
+
+    window.UsersCandidateV59 = Object.freeze({
+        version:'v59',
+        search:Object.freeze({
+            typingRender:'tbody-only',
+            toolbarDomPreserved:true,
+            caretPreserved:true,
+            haloBlinkRemoved:true,
+            sixLegacyFocus:'explicit high specificity'
+        }),
+        activeTableHeader:Object.freeze({
+            themes:[
+                'Pastel Pink',
+                'Emerald',
+                'Royal Purple',
+                'Ocean Blue',
+                'Rose Gold',
+                'Cyber Dark'
+            ],
+            material:'single solid themed surface',
+            perCellGradient:false,
+            inactiveHeader:'unchanged'
+        }),
+        retained:Object.freeze({
+            v56FunctionalLogic:true,
+            v58VenomToolbarFix:true,
+            controlRailFlatBorders:true,
+            inactiveFootprintLock:true,
+            shiftV55:true
+        }),
+        backend:'unchanged'
     });
 })();
 </script>
