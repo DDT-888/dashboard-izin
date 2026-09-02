@@ -64596,6 +64596,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
                 if (willOpen) {
                     window.requestAnimationFrame(() => {
+                        if (select.id === 'filterShiftDashboard') return;
                         wrapper.querySelector('.unified-custom-filter-option.active')
                             ?.scrollIntoView({ block: 'nearest' });
                     });
@@ -114956,6 +114957,193 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
         sync: reconcileToolbarAndFilter
     });
 })();
+</script>
+
+
+<!-- ==================================================================
+     MONITORING IZIN V3.1 — FILTER POPUP + COUNTER STABILIZATION
+     Targeted correction only; V3 logic retained.
+     ================================================================== -->
+<style id="monitoring-izin-v3-1-visual-stabilization">
+/* ---------------------------------------------------------------
+   Member count: toolbar micro-counter, not a floating badge.
+   Position remains immediately left of Search as requested.
+   --------------------------------------------------------------- */
+#tab-monitoring .monitoring-members-count.monitoring-v3-toolbar-count {
+    min-width: 86px !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0 5px !important;
+    margin: 0 2px 0 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: color-mix(in srgb, var(--text-secondary) 64%, var(--text-muted)) !important;
+    font-size: 8.5px !important;
+    line-height: 1 !important;
+    font-weight: 760 !important;
+    letter-spacing: .055em !important;
+    text-transform: uppercase !important;
+    opacity: .80 !important;
+    white-space: nowrap !important;
+}
+
+/* ---------------------------------------------------------------
+   Shift filter shell.
+   The custom unified trigger becomes the ONLY visible surface.
+   This removes the nested/double-control feeling of V3.
+   --------------------------------------------------------------- */
+#tab-monitoring .monitoring-shift-filter {
+    flex: 0 0 142px !important;
+    width: 142px !important;
+    min-width: 142px !important;
+    max-width: 142px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+}
+
+#tab-monitoring .monitoring-shift-filter > .unified-custom-filter {
+    --unified-filter-width: 142px !important;
+    flex: 0 0 142px !important;
+    width: 142px !important;
+    min-width: 142px !important;
+    max-width: 142px !important;
+    height: 34px !important;
+    box-sizing: border-box !important;
+}
+
+#tab-monitoring .monitoring-shift-filter > .unified-custom-filter > .unified-custom-filter-trigger {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    box-sizing: border-box !important;
+}
+
+/* ---------------------------------------------------------------
+   Right-edge anchored popup.
+   It grows LEFT, never outside the right edge of the toolbar.
+   This prevents viewport/table horizontal movement on open.
+   --------------------------------------------------------------- */
+#tab-monitoring .monitoring-shift-filter > .unified-custom-filter > .unified-custom-filter-menu {
+    left: auto !important;
+    right: 0 !important;
+    width: 158px !important;
+    min-width: 158px !important;
+    max-width: 158px !important;
+    max-height: 236px !important;
+    padding: 4px !important;
+    border-radius: 9px !important;
+    transform-origin: top right !important;
+    scrollbar-gutter: auto !important;
+    box-sizing: border-box !important;
+}
+
+#tab-monitoring .monitoring-shift-filter .unified-custom-filter-option {
+    min-height: 27px !important;
+    padding: 0 8px !important;
+    gap: 8px !important;
+    border-radius: 6px !important;
+    font-size: 9.2px !important;
+    line-height: 1 !important;
+    font-weight: 560 !important;
+    letter-spacing: .005em !important;
+    transform: none !important;
+}
+
+#tab-monitoring .monitoring-shift-filter .unified-custom-filter-option:hover,
+#tab-monitoring .monitoring-shift-filter .unified-custom-filter-option:focus-visible {
+    transform: none !important;
+}
+
+#tab-monitoring .monitoring-shift-filter .unified-custom-filter-option.active {
+    font-weight: 690 !important;
+}
+
+#tab-monitoring .monitoring-shift-filter .unified-custom-filter-option > span {
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Search keeps its V3 footprint; extra space comes from the rail. */
+#tab-monitoring .monitoring-table-controls {
+    flex: 0 1 696px !important;
+}
+
+@media (max-width: 1220px) {
+    #tab-monitoring .monitoring-table-controls {
+        flex: 0 1 660px !important;
+    }
+    #tab-monitoring .monitoring-shift-filter,
+    #tab-monitoring .monitoring-shift-filter > .unified-custom-filter {
+        flex-basis: 134px !important;
+        width: 134px !important;
+        min-width: 134px !important;
+        max-width: 134px !important;
+        --unified-filter-width: 134px !important;
+    }
+}
+
+@media (max-width: 620px) {
+    #tab-monitoring .monitoring-members-count.monitoring-v3-toolbar-count {
+        width: auto !important;
+        min-width: 0 !important;
+        height: 24px !important;
+        min-height: 24px !important;
+        padding: 0 !important;
+        justify-content: flex-start !important;
+    }
+
+    #tab-monitoring .monitoring-shift-filter,
+    #tab-monitoring .monitoring-shift-filter > .unified-custom-filter {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+        --unified-filter-width: 100% !important;
+    }
+
+    #tab-monitoring .monitoring-shift-filter > .unified-custom-filter > .unified-custom-filter-menu {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        left: 0 !important;
+        right: auto !important;
+    }
+}
+</style>
+
+<script id="monitoring-izin-v3-1-authority">
+window.MonitoringIzinV31 = Object.freeze({
+    version: 'v3.1',
+    scope: 'targeted filter popup and counter stabilization',
+    shiftPopup: Object.freeze({
+        triggerWidthPx: 142,
+        menuWidthPx: 158,
+        anchor: 'right',
+        scrollIntoViewOnOpen: false
+    }),
+    memberCounter: Object.freeze({
+        position: 'left-of-search',
+        presentation: 'micro-counter',
+        pill: false
+    }),
+    v3FunctionalityRetained: true
+});
 </script>
 
 </body>
