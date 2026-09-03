@@ -115566,5 +115566,528 @@ window.MonitoringIzinV35 = Object.freeze({
 <!-- MONITORING IZIN V3.5.1 — FINAL COPY MICRO CLOSURE
      Visible copy only: Operational Members table description.
      No functional/backend/query/realtime/polling/lifecycle changes. -->
+
+<style id="ddt-monitoring-animal-integration-v2-style">
+/* ================================================================
+   DDT Monitoring Animal Integration v2
+   Baseline: Monitoring Izin V3.5.1 production authority.
+   Additive presentation only. Existing START/END, Supabase, realtime,
+   polling, search, role filtering and quota/voucher lifecycle remain owners.
+   ================================================================ */
+
+:root{
+  --ddt-animal-table-size:38px;
+  --ddt-animal-live-size:44px;
+}
+
+#tab-monitoring .member-avatar.ddt-animal-3d{
+  width:var(--ddt-animal-table-size)!important;
+  height:var(--ddt-animal-table-size)!important;
+  flex:0 0 var(--ddt-animal-table-size)!important;
+  padding:2px!important;
+  overflow:hidden!important;
+  border-radius:11px!important;
+  font-size:0!important;
+  line-height:0!important;
+}
+#tab-monitoring .member-avatar.ddt-animal-3d > .ddt-animal-img,
+#tab-monitoring .visual-fun-col.ddt-animal-3d > .ddt-animal-img,
+#aps-avatar.ddt-animal-3d > .ddt-animal-img,
+#animalEmojiPickerPreview.ddt-animal-3d > .ddt-animal-img{
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  object-fit:contain!important;
+  pointer-events:none!important;
+}
+#tab-monitoring .member-avatar.ddt-animal-3d > .ddt-animal-img{
+  transform:scale(1.07);
+}
+#tab-monitoring .live-card-main{
+  grid-template-columns:var(--ddt-animal-live-size) minmax(0,1fr) auto!important;
+  gap:8px!important;
+}
+#tab-monitoring .live-card-col .visual-fun-col.ddt-animal-3d{
+  width:var(--ddt-animal-live-size)!important;
+  height:var(--ddt-animal-live-size)!important;
+  margin:0!important;
+  padding:2px!important;
+  overflow:hidden!important;
+  border-radius:12px!important;
+  font-size:0!important;
+  line-height:0!important;
+}
+#tab-monitoring .live-card-col .visual-fun-col.ddt-animal-3d > .ddt-animal-img{
+  transform:scale(1.07);
+}
+#tab-monitoring .live-card-meta{
+  margin-left:calc(var(--ddt-animal-live-size) + 8px)!important;
+}
+#aps-avatar.ddt-animal-3d{
+  padding:4px!important;
+  font-size:0!important;
+  line-height:0!important;
+}
+#aps-avatar.ddt-animal-3d > .ddt-animal-img{
+  transform:scale(1.05);
+}
+
+/* Picker shell */
+.animal-emoji-picker-dialog.ddt-animal-library{
+  width:min(760px,calc(100vw - 28px))!important;
+}
+.ddt-animal-library .animal-emoji-picker-header{
+  margin-bottom:13px!important;
+}
+.ddt-animal-library .animal-emoji-picker-preview{
+  width:70px!important;
+  height:70px!important;
+  flex:0 0 70px!important;
+  padding:3px!important;
+  overflow:hidden!important;
+  font-size:0!important;
+}
+.ddt-animal-library .animal-emoji-picker-preview.ddt-animal-legacy{
+  font-size:31px!important;
+}
+.ddt-animal-library .animal-emoji-picker-preview > .ddt-animal-img{
+  transform:scale(1.04);
+}
+.ddt-animal-library .animal-emoji-pagination{
+  display:none!important;
+}
+.ddt-animal-library .animal-emoji-picker-grid{
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  gap:8px!important;
+  padding:10px!important;
+  max-height:min(465px,54vh);
+  overflow:auto;
+  align-content:start;
+}
+.ddt-animal-library .animal-emoji-option.ddt-animal-option{
+  aspect-ratio:auto!important;
+  min-height:96px!important;
+  display:grid!important;
+  grid-template-rows:60px auto auto!important;
+  place-items:center!important;
+  gap:2px!important;
+  padding:6px 4px!important;
+  border-radius:11px!important;
+}
+.ddt-animal-library .ddt-animal-thumb{
+  width:60px;
+  height:60px;
+  display:block;
+  object-fit:contain;
+  transform:scale(1.05);
+  pointer-events:none;
+}
+.ddt-animal-library .ddt-animal-name{
+  width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:center;
+  color:var(--text-primary);
+  font-size:8.5px;
+  font-weight:820;
+  line-height:1.15;
+}
+.ddt-animal-library .ddt-animal-gender{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:16px;
+  padding:1px 6px;
+  border-radius:999px;
+  font-size:7px;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.ddt-animal-library .ddt-animal-gender.male{
+  color:#3267b8;
+  background:color-mix(in srgb,#4f8de4 12%,var(--bg-card));
+  border:1px solid color-mix(in srgb,#4f8de4 27%,var(--border-color));
+}
+.ddt-animal-library .ddt-animal-gender.female{
+  color:#c14c82;
+  background:color-mix(in srgb,#eb6aa6 11%,var(--bg-card));
+  border:1px solid color-mix(in srgb,#eb6aa6 26%,var(--border-color));
+}
+.ddt-animal-library .ddt-animal-option.ddt-asset-error .ddt-animal-thumb{
+  opacity:.16;
+}
+.ddt-animal-library .ddt-animal-option.ddt-asset-error::after{
+  content:"ASSET?";
+  position:absolute;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.04em;
+  color:#d97706;
+}
+
+/* Category tabs inserted above the grid. */
+.ddt-animal-tabs{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin:0 0 9px;
+  padding:0 1px;
+}
+.ddt-animal-tab{
+  min-height:31px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:6px 11px;
+  border-radius:9px;
+  border:1px solid var(--border-color);
+  background:color-mix(in srgb,var(--bg-secondary) 76%,transparent);
+  color:var(--text-muted);
+  font-size:8.5px;
+  font-weight:830;
+  letter-spacing:.04em;
+  cursor:pointer;
+}
+.ddt-animal-tab strong{
+  font-size:7px;
+  opacity:.72;
+}
+.ddt-animal-tab.active{
+  color:var(--text-primary);
+  border-color:color-mix(in srgb,var(--accent) 42%,var(--border-color));
+  background:color-mix(in srgb,var(--accent) 9%,var(--bg-card));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.ddt-animal-library .animal-emoji-picker-footer{
+  margin-top:11px!important;
+}
+.ddt-animal-library .animal-emoji-random-button{
+  white-space:nowrap;
+}
+
+/* Venom closure: do not reintroduce legacy badge glow/material. */
+html[data-theme="dark"][data-theme-variant="venom"] #tab-monitoring .ddt-animal-3d{
+  background:#121612!important;
+  border-color:#2f3e30!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-animal-option.selected{
+  border-color:#44d62c!important;
+  background:rgba(68,214,44,.08)!important;
+  box-shadow:0 0 0 2px rgba(68,214,44,.07)!important;
+}
+
+@media(max-width:760px){
+  :root{
+    --ddt-animal-table-size:34px;
+    --ddt-animal-live-size:40px;
+  }
+  .ddt-animal-library .animal-emoji-picker-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:540px){
+  .ddt-animal-tabs{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .ddt-animal-tab{
+    padding:6px 5px;
+  }
+  .ddt-animal-library .animal-emoji-picker-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:6px!important;
+    padding:8px!important;
+  }
+  .ddt-animal-library .animal-emoji-option.ddt-animal-option{
+    min-height:91px!important;
+  }
+}
+</style>
+
+
+<script id="ddt-monitoring-animal-integration-v2-controller">
+(()=>{
+  'use strict';
+
+  const BASELINE_SHA='f40b6011834b9eb9ddc8034b792a55ac053c9ad9d750f63c45f1d8d83257c1d6';
+  const CATALOG=[{"key":"zodiac_rat_male","group":"zodiac","species":"rat","label":"Tikus","gender":"male","src":"assets/animal/zodiac/zodiac_rat_male.webp"},{"key":"zodiac_rat_female","group":"zodiac","species":"rat","label":"Tikus","gender":"female","src":"assets/animal/zodiac/zodiac_rat_female.webp"},{"key":"zodiac_ox_male","group":"zodiac","species":"ox","label":"Kerbau","gender":"male","src":"assets/animal/zodiac/zodiac_ox_male.webp"},{"key":"zodiac_ox_female","group":"zodiac","species":"ox","label":"Kerbau","gender":"female","src":"assets/animal/zodiac/zodiac_ox_female.webp"},{"key":"zodiac_tiger_male","group":"zodiac","species":"tiger","label":"Harimau","gender":"male","src":"assets/animal/zodiac/zodiac_tiger_male.webp"},{"key":"zodiac_tiger_female","group":"zodiac","species":"tiger","label":"Harimau","gender":"female","src":"assets/animal/zodiac/zodiac_tiger_female.webp"},{"key":"zodiac_rabbit_male","group":"zodiac","species":"rabbit","label":"Kelinci","gender":"male","src":"assets/animal/zodiac/zodiac_rabbit_male.webp"},{"key":"zodiac_rabbit_female","group":"zodiac","species":"rabbit","label":"Kelinci","gender":"female","src":"assets/animal/zodiac/zodiac_rabbit_female.webp"},{"key":"zodiac_dragon_male","group":"zodiac","species":"dragon","label":"Naga","gender":"male","src":"assets/animal/zodiac/zodiac_dragon_male.webp"},{"key":"zodiac_dragon_female","group":"zodiac","species":"dragon","label":"Naga","gender":"female","src":"assets/animal/zodiac/zodiac_dragon_female.webp"},{"key":"zodiac_snake_male","group":"zodiac","species":"snake","label":"Ular","gender":"male","src":"assets/animal/zodiac/zodiac_snake_male.webp"},{"key":"zodiac_snake_female","group":"zodiac","species":"snake","label":"Ular","gender":"female","src":"assets/animal/zodiac/zodiac_snake_female.webp"},{"key":"zodiac_horse_male","group":"zodiac","species":"horse","label":"Kuda","gender":"male","src":"assets/animal/zodiac/zodiac_horse_male.webp"},{"key":"zodiac_horse_female","group":"zodiac","species":"horse","label":"Kuda","gender":"female","src":"assets/animal/zodiac/zodiac_horse_female.webp"},{"key":"zodiac_goat_male","group":"zodiac","species":"goat","label":"Kambing","gender":"male","src":"assets/animal/zodiac/zodiac_goat_male.webp"},{"key":"zodiac_goat_female","group":"zodiac","species":"goat","label":"Kambing","gender":"female","src":"assets/animal/zodiac/zodiac_goat_female.webp"},{"key":"zodiac_monkey_male","group":"zodiac","species":"monkey","label":"Monyet","gender":"male","src":"assets/animal/zodiac/zodiac_monkey_male.webp"},{"key":"zodiac_monkey_female","group":"zodiac","species":"monkey","label":"Monyet","gender":"female","src":"assets/animal/zodiac/zodiac_monkey_female.webp"},{"key":"zodiac_rooster_male","group":"zodiac","species":"rooster","label":"Ayam","gender":"male","src":"assets/animal/zodiac/zodiac_rooster_male.webp"},{"key":"zodiac_rooster_female","group":"zodiac","species":"rooster","label":"Ayam","gender":"female","src":"assets/animal/zodiac/zodiac_rooster_female.webp"},{"key":"zodiac_dog_male","group":"zodiac","species":"dog","label":"Anjing","gender":"male","src":"assets/animal/zodiac/zodiac_dog_male.webp"},{"key":"zodiac_dog_female","group":"zodiac","species":"dog","label":"Anjing","gender":"female","src":"assets/animal/zodiac/zodiac_dog_female.webp"},{"key":"zodiac_pig_male","group":"zodiac","species":"pig","label":"Babi","gender":"male","src":"assets/animal/zodiac/zodiac_pig_male.webp"},{"key":"zodiac_pig_female","group":"zodiac","species":"pig","label":"Babi","gender":"female","src":"assets/animal/zodiac/zodiac_pig_female.webp"},{"key":"animal_wolf_male","group":"popular","species":"wolf","label":"Serigala","gender":"male","src":"assets/animal/general/animal_wolf_male.webp"},{"key":"animal_wolf_female","group":"popular","species":"wolf","label":"Serigala","gender":"female","src":"assets/animal/general/animal_wolf_female.webp"},{"key":"animal_fox_male","group":"popular","species":"fox","label":"Rubah","gender":"male","src":"assets/animal/general/animal_fox_male.webp"},{"key":"animal_fox_female","group":"popular","species":"fox","label":"Rubah","gender":"female","src":"assets/animal/general/animal_fox_female.webp"},{"key":"animal_panda_male","group":"popular","species":"panda","label":"Panda","gender":"male","src":"assets/animal/general/animal_panda_male.webp"},{"key":"animal_panda_female","group":"popular","species":"panda","label":"Panda","gender":"female","src":"assets/animal/general/animal_panda_female.webp"},{"key":"animal_lion_male","group":"popular","species":"lion","label":"Singa","gender":"male","src":"assets/animal/general/animal_lion_male.webp"},{"key":"animal_lion_female","group":"popular","species":"lion","label":"Singa","gender":"female","src":"assets/animal/general/animal_lion_female.webp"},{"key":"animal_bear_male","group":"popular","species":"bear","label":"Beruang","gender":"male","src":"assets/animal/general/animal_bear_male.webp"},{"key":"animal_bear_female","group":"popular","species":"bear","label":"Beruang","gender":"female","src":"assets/animal/general/animal_bear_female.webp"},{"key":"animal_cat_male","group":"popular","species":"cat","label":"Kucing","gender":"male","src":"assets/animal/general/animal_cat_male.webp"},{"key":"animal_cat_female","group":"popular","species":"cat","label":"Kucing","gender":"female","src":"assets/animal/general/animal_cat_female.webp"},{"key":"animal_owl_male","group":"popular","species":"owl","label":"Burung Hantu","gender":"male","src":"assets/animal/general/animal_owl_male.webp"},{"key":"animal_owl_female","group":"popular","species":"owl","label":"Burung Hantu","gender":"female","src":"assets/animal/general/animal_owl_female.webp"},{"key":"animal_eagle_male","group":"popular","species":"eagle","label":"Elang","gender":"male","src":"assets/animal/general/animal_eagle_male.webp"},{"key":"animal_eagle_female","group":"popular","species":"eagle","label":"Elang","gender":"female","src":"assets/animal/general/animal_eagle_female.webp"},{"key":"animal_deer_male","group":"popular","species":"deer","label":"Rusa","gender":"male","src":"assets/animal/general/animal_deer_male.webp"},{"key":"animal_deer_female","group":"popular","species":"deer","label":"Rusa","gender":"female","src":"assets/animal/general/animal_deer_female.webp"},{"key":"animal_raccoon_male","group":"popular","species":"raccoon","label":"Rakun","gender":"male","src":"assets/animal/general/animal_raccoon_male.webp"},{"key":"animal_raccoon_female","group":"popular","species":"raccoon","label":"Rakun","gender":"female","src":"assets/animal/general/animal_raccoon_female.webp"},{"key":"animal_koala_male","group":"popular","species":"koala","label":"Koala","gender":"male","src":"assets/animal/general/animal_koala_male.webp"},{"key":"animal_koala_female","group":"popular","species":"koala","label":"Koala","gender":"female","src":"assets/animal/general/animal_koala_female.webp"},{"key":"animal_penguin_male","group":"popular","species":"penguin","label":"Penguin","gender":"male","src":"assets/animal/general/animal_penguin_male.webp"},{"key":"animal_penguin_female","group":"popular","species":"penguin","label":"Penguin","gender":"female","src":"assets/animal/general/animal_penguin_female.webp"},{"key":"animal_elephant_male","group":"new","species":"elephant","label":"Gajah","gender":"male","src":"assets/animal/general/animal_elephant_male.webp"},{"key":"animal_elephant_female","group":"new","species":"elephant","label":"Gajah","gender":"female","src":"assets/animal/general/animal_elephant_female.webp"},{"key":"animal_giraffe_male","group":"new","species":"giraffe","label":"Jerapah","gender":"male","src":"assets/animal/general/animal_giraffe_male.webp"},{"key":"animal_giraffe_female","group":"new","species":"giraffe","label":"Jerapah","gender":"female","src":"assets/animal/general/animal_giraffe_female.webp"},{"key":"animal_hippo_male","group":"new","species":"hippo","label":"Kuda Nil","gender":"male","src":"assets/animal/general/animal_hippo_male.webp"},{"key":"animal_hippo_female","group":"new","species":"hippo","label":"Kuda Nil","gender":"female","src":"assets/animal/general/animal_hippo_female.webp"},{"key":"animal_zebra_male","group":"new","species":"zebra","label":"Zebra","gender":"male","src":"assets/animal/general/animal_zebra_male.webp"},{"key":"animal_zebra_female","group":"new","species":"zebra","label":"Zebra","gender":"female","src":"assets/animal/general/animal_zebra_female.webp"},{"key":"animal_dolphin_male","group":"new","species":"dolphin","label":"Lumba-lumba","gender":"male","src":"assets/animal/general/animal_dolphin_male.webp"},{"key":"animal_dolphin_female","group":"new","species":"dolphin","label":"Lumba-lumba","gender":"female","src":"assets/animal/general/animal_dolphin_female.webp"},{"key":"animal_shark_male","group":"new","species":"shark","label":"Hiu","gender":"male","src":"assets/animal/general/animal_shark_male.webp"},{"key":"animal_shark_female","group":"new","species":"shark","label":"Hiu","gender":"female","src":"assets/animal/general/animal_shark_female.webp"},{"key":"animal_otter_male","group":"new","species":"otter","label":"Berang-berang","gender":"male","src":"assets/animal/general/animal_otter_male.webp"},{"key":"animal_otter_female","group":"new","species":"otter","label":"Berang-berang","gender":"female","src":"assets/animal/general/animal_otter_female.webp"},{"key":"animal_turtle_male","group":"new","species":"turtle","label":"Kura-kura","gender":"male","src":"assets/animal/general/animal_turtle_male.webp"},{"key":"animal_turtle_female","group":"new","species":"turtle","label":"Kura-kura","gender":"female","src":"assets/animal/general/animal_turtle_female.webp"},{"key":"animal_hedgehog_male","group":"new","species":"hedgehog","label":"Landak","gender":"male","src":"assets/animal/general/animal_hedgehog_male.webp"},{"key":"animal_hedgehog_female","group":"new","species":"hedgehog","label":"Landak","gender":"female","src":"assets/animal/general/animal_hedgehog_female.webp"},{"key":"animal_squirrel_male","group":"new","species":"squirrel","label":"Tupai","gender":"male","src":"assets/animal/general/animal_squirrel_male.webp"},{"key":"animal_squirrel_female","group":"new","species":"squirrel","label":"Tupai","gender":"female","src":"assets/animal/general/animal_squirrel_female.webp"},{"key":"animal_frog_male","group":"new","species":"frog","label":"Katak","gender":"male","src":"assets/animal/general/animal_frog_male.webp"},{"key":"animal_frog_female","group":"new","species":"frog","label":"Katak","gender":"female","src":"assets/animal/general/animal_frog_female.webp"},{"key":"animal_bat_male","group":"new","species":"bat","label":"Kelelawar","gender":"male","src":"assets/animal/general/animal_bat_male.webp"},{"key":"animal_bat_female","group":"new","species":"bat","label":"Kelelawar","gender":"female","src":"assets/animal/general/animal_bat_female.webp"}];
+  const MAP=new Map(CATALOG.map(item=>[item.key,item]));
+  const GROUP_LABELS={
+    zodiac:['Shio','24'],
+    popular:['Popular','24'],
+    new:['New','24']
+  };
+  let activeGroup='zodiac';
+  let hydrationQueued=false;
+
+  function isCanonicalKey(value){
+    return typeof value==='string'&&MAP.has(value);
+  }
+  function itemFor(key){
+    return MAP.get(key)||null;
+  }
+  function assetFor(key){
+    return itemFor(key)?.src||'';
+  }
+  function imageNode(key,alt='',lazy=false){
+    const img=document.createElement('img');
+    img.className='ddt-animal-img';
+    img.src=assetFor(key);
+    img.alt=alt;
+    img.decoding='async';
+    img.loading=lazy?'lazy':'eager';
+    img.draggable=false;
+    return img;
+  }
+  function renderCanonicalInto(node,key,alt=''){
+    if(!node||!isCanonicalKey(key))return false;
+    if(node.dataset.ddtAnimalKey===key&&node.querySelector(':scope > .ddt-animal-img'))return true;
+    const img=imageNode(key,alt,false);
+    img.addEventListener('error',()=>{
+      if(node.dataset.ddtAnimalKey!==key)return;
+      node.classList.remove('ddt-animal-3d');
+      node.classList.add('ddt-animal-load-error');
+      node.replaceChildren(document.createTextNode('🐾'));
+    },{once:true});
+    node.replaceChildren(img);
+    node.classList.add('ddt-animal-3d');
+    node.classList.remove('ddt-animal-load-error');
+    node.dataset.ddtAnimalKey=key;
+    return true;
+  }
+  function currentKeyFor(nama){
+    try{
+      const formatted=formatName(nama);
+      const key=getAnimalEmojiForDisplay(formatted,dataIzin?.[formatted]);
+      return isCanonicalKey(key)?key:null;
+    }catch{return null}
+  }
+  function hydrateTable(){
+    document.querySelectorAll('#tab-monitoring #dashboardTableBody tr[data-nama]').forEach(row=>{
+      const nama=row.dataset.nama||'';
+      const avatar=row.querySelector('.member-avatar');
+      const key=currentKeyFor(nama);
+      if(key){
+        const meta=itemFor(key);
+        renderCanonicalInto(avatar,key,`${nama} — ${meta?.label||'Animal'} ${meta?.gender||''}`);
+        avatar?.setAttribute('aria-label',`Pilih animal untuk ${nama}`);
+        avatar?.setAttribute('data-tooltip','Pilih animal profil');
+      }
+    });
+  }
+  function hydrateLive(){
+    document.querySelectorAll('#tab-monitoring .live-card-col[data-nama]').forEach(card=>{
+      const nama=card.dataset.nama||'';
+      const slot=card.querySelector('.visual-fun-col');
+      const key=currentKeyFor(nama);
+      if(key)renderCanonicalInto(slot,key,'');
+    });
+  }
+  function hydrateAps(){
+    const slot=document.getElementById('aps-avatar');
+    const name=document.getElementById('aps-name')?.textContent?.trim()||'';
+    if(!slot||!name)return;
+    const key=currentKeyFor(name);
+    if(key)renderCanonicalInto(slot,key,`${name} animal`);
+  }
+  function hydrateAll(){
+    hydrationQueued=false;
+    hydrateTable();
+    hydrateLive();
+    hydrateAps();
+  }
+  function queueHydration(){
+    if(hydrationQueued)return;
+    hydrationQueued=true;
+    requestAnimationFrame(hydrateAll);
+  }
+
+  function ensureTabs(){
+    const overlay=document.getElementById('animalEmojiPicker');
+    const grid=document.getElementById('animalEmojiPickerGrid');
+    if(!overlay||!grid)return null;
+    let tabs=overlay.querySelector('.ddt-animal-tabs');
+    if(!tabs){
+      tabs=document.createElement('div');
+      tabs.className='ddt-animal-tabs';
+      tabs.setAttribute('role','tablist');
+      tabs.setAttribute('aria-label','Kategori animal');
+      grid.parentNode.insertBefore(tabs,grid);
+    }
+    tabs.innerHTML=Object.entries(GROUP_LABELS).map(([group,[label,count]])=>`
+      <button type="button"
+              class="ddt-animal-tab ${activeGroup===group?'active':''}"
+              data-ddt-animal-group="${group}"
+              role="tab"
+              aria-selected="${activeGroup===group?'true':'false'}">
+        <span>${label}</span><strong>${count}</strong>
+      </button>
+    `).join('');
+    tabs.querySelectorAll('[data-ddt-animal-group]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        activeGroup=btn.dataset.ddtAnimalGroup;
+        renderLibrary();
+      });
+    });
+    return tabs;
+  }
+
+  function renderPreview(preview,value,nama){
+    if(!preview)return;
+    preview.classList.remove('ddt-animal-legacy');
+    if(isCanonicalKey(value)){
+      renderCanonicalInto(preview,value,`${nama} animal`);
+      return;
+    }
+    preview.classList.remove('ddt-animal-3d','ddt-animal-load-error');
+    delete preview.dataset.ddtAnimalKey;
+    preview.classList.add('ddt-animal-legacy');
+    preview.textContent=value||'🐼';
+  }
+
+  function renderLibrary(){
+    const grid=document.getElementById('animalEmojiPickerGrid');
+    if(!grid)return;
+    ensureTabs();
+
+    const selected=(()=>{
+      try{return getPreferredAnimalEmoji(animalEmojiPickerTargetName)}
+      catch{return null}
+    })();
+
+    const items=CATALOG.filter(item=>item.group===activeGroup);
+    grid.innerHTML=items.map(item=>`
+      <button type="button"
+              class="animal-emoji-option ddt-animal-option ${selected===item.key?'selected':''}"
+              data-ddt-animal-key="${item.key}"
+              aria-label="Pilih ${item.label} ${item.gender==='male'?'Male':'Female'}">
+        <img class="ddt-animal-thumb"
+             src="${item.src}"
+             alt=""
+             loading="lazy"
+             decoding="async"
+             draggable="false">
+        <span class="ddt-animal-name">${item.label}</span>
+        <span class="ddt-animal-gender ${item.gender}">${item.gender==='male'?'Male':'Female'}</span>
+      </button>
+    `).join('');
+
+    grid.querySelectorAll('[data-ddt-animal-key]').forEach(btn=>{
+      const img=btn.querySelector('img');
+      img?.addEventListener('error',()=>btn.classList.add('ddt-asset-error'),{once:true});
+      btn.addEventListener('click',()=>window.selectDDTAnimal(btn.dataset.ddtAnimalKey));
+    });
+  }
+
+  window.selectDDTAnimal=async function(key){
+    if(!animalEmojiPickerTargetName||!isCanonicalKey(key))return;
+    await saveAnimalEmojiPreference(animalEmojiPickerTargetName,key);
+    queueHydration();
+  };
+
+  window.openAnimalEmojiPicker=function(nama){
+    const formattedNama=formatName(nama);
+    if(!canEditMemberAnimalEmoji(formattedNama)){
+      showToast('Animal hanya dapat diubah sesuai permission profil.', 'warning', 3000);
+      return;
+    }
+
+    animalEmojiPickerTargetName=formattedNama;
+    const overlay=document.getElementById('animalEmojiPicker');
+    if(!overlay)return;
+
+    const dialog=overlay.querySelector('.animal-emoji-picker-dialog');
+    const kicker=overlay.querySelector('.animal-emoji-picker-kicker');
+    const title=document.getElementById('animalEmojiPickerTitle');
+    const subtitle=document.getElementById('animalEmojiPickerSubtitle');
+    const preview=document.getElementById('animalEmojiPickerPreview');
+    const randomBtn=overlay.querySelector('.animal-emoji-random-button');
+    const note=overlay.querySelector('.animal-emoji-picker-note');
+
+    dialog?.classList.add('ddt-animal-library');
+    if(kicker)kicker.textContent='ANIMAL IDENTITY';
+    if(title)title.textContent='Pilih Animal 3D';
+    if(subtitle)subtitle.textContent='Pilih karakter dan varian Male / Female untuk identitas anggota.';
+    if(randomBtn){
+      const spans=randomBtn.querySelectorAll('span');
+      if(spans.length>1)spans[1].textContent='Gunakan Emoji Random';
+    }
+    if(note)note.textContent='Pilihan tersimpan dan otomatis digunakan setiap kali START.';
+
+    const selected=(()=>{
+      try{return getPreferredAnimalEmoji(formattedNama)}
+      catch{return null}
+    })();
+    const display=(()=>{
+      try{return getAnimalEmojiForDisplay(formattedNama,dataIzin?.[formattedNama])||'🐼'}
+      catch{return '🐼'}
+    })();
+
+    if(isCanonicalKey(selected)){
+      activeGroup=itemFor(selected)?.group||'zodiac';
+    }else{
+      activeGroup='zodiac';
+    }
+
+    renderPreview(preview,selected||display,formattedNama);
+    renderLibrary();
+
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+    document.body.classList.add('animal-emoji-picker-open');
+  };
+
+  /* Existing render authorities stay intact; hydration is additive after them. */
+  if(typeof window.renderDashboardTable==='function'){
+    const baseRenderDashboardTable=window.renderDashboardTable;
+    window.renderDashboardTable=function(){
+      const result=baseRenderDashboardTable.apply(this,arguments);
+      queueHydration();
+      return result;
+    };
+  }
+  if(typeof window.renderLiveIzin==='function'){
+    const baseRenderLiveIzin=window.renderLiveIzin;
+    window.renderLiveIzin=function(){
+      const result=baseRenderLiveIzin.apply(this,arguments);
+      queueHydration();
+      return result;
+    };
+  }
+
+  /* APS controller owns its text identity; rehydrate only after its own update. */
+  const observer=new MutationObserver(mutations=>{
+    for(const mutation of mutations){
+      const target=mutation.target?.nodeType===1?mutation.target:mutation.target?.parentElement;
+      if(target?.closest?.('#tab-monitoring,#aps-layer,#animalEmojiPicker')){
+        queueHydration();
+        break;
+      }
+    }
+  });
+  observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+
+  window.DDTAnimalIntegrationV2=Object.freeze({
+    version:'2.0.0-candidate',
+    baselineSha256:BASELINE_SHA,
+    assetCount:CATALOG.length,
+    speciesCount:CATALOG.length/2,
+    zodiacAssetRoot:'assets/animal/zodiac/',
+    generalAssetRoot:'assets/animal/general/',
+    persistence:'existing izin_anggota.emoticon + save_izin_emoticon RPC',
+    backendChanges:false,
+    schemaChanges:false,
+    catalog:Object.freeze(CATALOG.map(item=>Object.freeze({...item})))
+  });
+
+  queueHydration();
+})();
+</script>
+
 </body>
 </html>
