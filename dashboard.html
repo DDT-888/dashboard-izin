@@ -116089,5 +116089,287 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
 })();
 </script>
 
+
+<style id="ddt-monitoring-animal-integration-v2-1-fix-style">
+/* ================================================================
+   DDT Monitoring Animal Integration v2.1 — Live Test Root-Cause Fix
+   Baseline: Animal Integration v2 candidate.
+   Scope:
+   - picker close-button centering only
+   - no Monitoring V3.5.1 status geometry/function changes
+   ================================================================ */
+
+.ddt-animal-library .animal-emoji-picker-close{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  line-height:1!important;
+  text-align:center!important;
+  font-size:0!important;
+}
+.ddt-animal-library .animal-emoji-picker-close > svg{
+  width:14px!important;
+  height:14px!important;
+  display:block!important;
+  flex:0 0 14px!important;
+  stroke:currentColor!important;
+  fill:none!important;
+  stroke-width:2!important;
+  stroke-linecap:round!important;
+}
+
+.ddt-animal-library .animal-emoji-random-button{
+  justify-content:center;
+}
+</style>
+
+
+<script id="ddt-monitoring-animal-integration-v2-1-fix-controller">
+(()=>{
+  'use strict';
+
+  const VERSION='2.1.0-candidate';
+  const ASSET_REV='20260904-v21';
+  const originalGetPreferred=globalThis.getPreferredAnimalEmoji;
+  const originalGetDisplay=globalThis.getAnimalEmojiForDisplay;
+  const originalOpenPicker=globalThis.openAnimalEmojiPicker;
+  const originalClearPreference=globalThis.clearAnimalEmojiPreference;
+
+  function canonicalCatalog(){
+    return Array.isArray(globalThis.DDTAnimalIntegrationV2?.catalog)
+      ? globalThis.DDTAnimalIntegrationV2.catalog
+      : [];
+  }
+  function canonicalMap(){
+    return new Map(canonicalCatalog().map(item=>[item.key,item]));
+  }
+  function isCanonicalKey(value){
+    return typeof value==='string' && canonicalMap().has(value);
+  }
+
+  /* ---------------------------------------------------------------
+     RC-01: Cross-browser realtime authority
+     Old reader preferred localStorage before DB.
+     New contract: loaded Supabase/realtime row is authority;
+     localStorage is cache only.
+     --------------------------------------------------------------- */
+  function dbFirstPreferredAnimal(nama){
+    const formattedNama=formatName(nama);
+    const record=dataIzin?.[formattedNama];
+    const localMap=typeof getStoredAnimalPreferenceMap==='function'
+      ? getStoredAnimalPreferenceMap()
+      : {};
+    const localPreference=localMap?.[formattedNama] || null;
+
+    if(record){
+      const dbPreference=decodePreferredAnimalEmoji(record.emoticon);
+
+      if(dbPreference){
+        if(localPreference!==dbPreference && typeof setStoredAnimalPreference==='function'){
+          setStoredAnimalPreference(formattedNama,dbPreference);
+        }
+        return dbPreference;
+      }
+
+      /* A realtime/database row exists but no preferred: key.
+         Remove stale browser cache so User B cannot pin an old animal. */
+      if(localPreference && typeof setStoredAnimalPreference==='function'){
+        setStoredAnimalPreference(formattedNama,null);
+      }
+      return null;
+    }
+
+    /* Before first DB snapshot only, keep the previous local fallback. */
+    return localPreference ||
+      (typeof originalGetPreferred==='function' ? originalGetPreferred(formattedNama) : null);
+  }
+
+  function dbFirstAnimalDisplay(nama,izinData=null){
+    const formattedNama=formatName(nama);
+    const preferred=dbFirstPreferredAnimal(formattedNama);
+    if(preferred)return preferred;
+
+    const data=izinData || dataIzin?.[formattedNama];
+    if(data?.status!=='izin')return null;
+
+    const rawValue=data?.emoticon;
+    if(!rawValue || typeof rawValue!=='string')return null;
+    return decodePreferredAnimalEmoji(rawValue) || rawValue;
+  }
+
+  globalThis.getPreferredAnimalEmoji=dbFirstPreferredAnimal;
+  globalThis.getAnimalEmojiForDisplay=dbFirstAnimalDisplay;
+
+  /* ---------------------------------------------------------------
+     RC-02: Canonical Random
+     Existing button cleared the preference and triggered legacy emoji.
+     It now chooses one of the 72 canonical animal keys.
+     --------------------------------------------------------------- */
+  function chooseRandomCanonical(){
+    const catalog=canonicalCatalog();
+    if(!catalog.length)return null;
+
+    let current=null;
+    try{
+      current=dbFirstPreferredAnimal(animalEmojiPickerTargetName);
+    }catch{}
+
+    const pool=catalog.filter(item=>item.key!==current);
+    const source=pool.length ? pool : catalog;
+    return source[Math.floor(Math.random()*source.length)]?.key || null;
+  }
+
+  globalThis.clearAnimalEmojiPreference=function(){
+    if(!animalEmojiPickerTargetName)return;
+    const randomKey=chooseRandomCanonical();
+
+    if(!randomKey){
+      if(typeof originalClearPreference==='function'){
+        return originalClearPreference();
+      }
+      return;
+    }
+
+    return saveAnimalEmojiPreference(animalEmojiPickerTargetName,randomKey);
+  };
+
+  /* ---------------------------------------------------------------
+     RC-03: Batch-B asset resilience
+     Primary contract remains:
+       assets/animal/zodiac/zodiac_*.webp
+       assets/animal/general/animal_*.webp
+
+     If a WebP is missing at the primary URL, try:
+       - same URL with cache-buster
+       - production_webp subfolder (common GitHub upload shape)
+       - opposite asset group as safety fallback
+     Existing final fallback/ASSET? remains owner after candidates exhaust.
+     --------------------------------------------------------------- */
+  function keyFromImage(img){
+    const explicit=img.closest?.('[data-ddt-animal-key]')?.dataset?.ddtAnimalKey;
+    if(explicit && isCanonicalKey(explicit))return explicit;
+
+    const own=img.closest?.('[data-ddt-animal-key]')?.getAttribute?.('data-ddt-animal-key');
+    if(own && isCanonicalKey(own))return own;
+
+    const holder=img.parentElement?.dataset?.ddtAnimalKey;
+    if(holder && isCanonicalKey(holder))return holder;
+
+    const src=img.getAttribute('src') || '';
+    const match=src.match(/(?:^|\/)((?:zodiac|animal)_[a-z0-9_]+)\.webp(?:\?|$)/i);
+    return match && isCanonicalKey(match[1]) ? match[1] : null;
+  }
+
+  function candidateSources(key){
+    const file=`${key}.webp`;
+    const isZodiac=key.startsWith('zodiac_');
+    const primary=isZodiac ? 'zodiac' : 'general';
+    const secondary=isZodiac ? 'general' : 'zodiac';
+
+    return [
+      `assets/animal/${primary}/${file}?v=${ASSET_REV}`,
+      `assets/animal/${primary}/production_webp/${file}?v=${ASSET_REV}`,
+      `assets/animal/${secondary}/${file}?v=${ASSET_REV}`,
+      `assets/animal/${secondary}/production_webp/${file}?v=${ASSET_REV}`
+    ];
+  }
+
+  document.addEventListener('error',(event)=>{
+    const img=event.target;
+    if(!(img instanceof HTMLImageElement))return;
+    if(!img.matches('.ddt-animal-img,.ddt-animal-thumb'))return;
+
+    const key=keyFromImage(img);
+    if(!key)return;
+
+    const candidates=candidateSources(key);
+    const currentIndex=Number(img.dataset.ddtFallbackIndex || '-1');
+    const nextIndex=currentIndex+1;
+
+    if(nextIndex>=candidates.length){
+      /* Let the v2 handler own the final visible failure state. */
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    img.dataset.ddtFallbackIndex=String(nextIndex);
+    img.src=candidates[nextIndex];
+  },true);
+
+  /* ---------------------------------------------------------------
+     RC-04: Picker copy + perfectly centered X SVG
+     --------------------------------------------------------------- */
+  function refinePickerChrome(){
+    const overlay=document.getElementById('animalEmojiPicker');
+    if(!overlay)return;
+
+    const close=overlay.querySelector('.animal-emoji-picker-close');
+    if(close && !close.querySelector('svg')){
+      close.replaceChildren();
+      close.insertAdjacentHTML(
+        'beforeend',
+        '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15"/></svg>'
+      );
+    }
+
+    const randomBtn=overlay.querySelector('.animal-emoji-random-button');
+    if(randomBtn){
+      randomBtn.setAttribute('aria-label','Gunakan Animal Random');
+      const spans=randomBtn.querySelectorAll('span');
+      if(spans.length>1)spans[1].textContent='Gunakan Animal Random';
+    }
+
+    const note=overlay.querySelector('.animal-emoji-picker-note');
+    if(note){
+      note.textContent='Pilihan tersimpan dan otomatis tersinkron untuk tampilan anggota.';
+    }
+  }
+
+  if(typeof originalOpenPicker==='function'){
+    globalThis.openAnimalEmojiPicker=function(){
+      const result=originalOpenPicker.apply(this,arguments);
+      refinePickerChrome();
+      return result;
+    };
+  }
+
+  /* Make sure chrome is correct even before the first open. */
+  refinePickerChrome();
+
+  /* Reconcile stale local caches once the page already has its DB snapshot.
+     This is intentionally side-effect free for Supabase: it only updates
+     browser cache to match dataIzin. */
+  function reconcileLoadedPreferences(){
+    if(!dataIzin || typeof dataIzin!=='object')return;
+    Object.keys(dataIzin).forEach(nama=>{
+      try{ dbFirstPreferredAnimal(nama); }catch{}
+    });
+
+    try{
+      globalThis.DDTAnimalIntegrationV2?.hydrate?.();
+    }catch{}
+  }
+
+  window.addEventListener('focus',reconcileLoadedPreferences);
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden)reconcileLoadedPreferences();
+  });
+
+  setTimeout(reconcileLoadedPreferences,0);
+  setTimeout(reconcileLoadedPreferences,1200);
+
+  globalThis.DDTAnimalIntegrationV21=Object.freeze({
+    version:VERSION,
+    baseline:'Animal Integration v2',
+    preferenceAuthority:'Supabase/realtime row first; localStorage cache only',
+    randomMode:'72 canonical assets',
+    assetFallback:true,
+    closeButton:'centered SVG X'
+  });
+})();
+</script>
+
 </body>
 </html>
