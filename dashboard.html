@@ -115875,8 +115875,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
       if(key){
         const meta=itemFor(key);
         renderCanonicalInto(avatar,key,`${nama} — ${meta?.label||'Animal'} ${meta?.gender||''}`);
-        avatar?.setAttribute('aria-label',`Pilih animal untuk ${nama}`);
-        avatar?.setAttribute('data-tooltip','Pilih animal profil');
+        avatar?.setAttribute('aria-label',`Lihat Avatar ${nama}`);
+        avatar?.setAttribute('data-tooltip','Lihat Avatar');
       }
     });
   }
@@ -116794,7 +116794,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
 (()=>{
   'use strict';
 
-  const VERSION='2.4.0-phase-a-candidate';
+  const VERSION='2.5.0-phase-a-refinement-candidate';
   const directOpenAnimalPicker=typeof window.openAnimalEmojiPicker==='function'
     ? window.openAnimalEmojiPicker.bind(window)
     : null;
@@ -116994,8 +116994,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
     document.querySelectorAll('#tab-monitoring tr[data-nama] .member-avatar').forEach(trigger=>{
       const nama=triggerName(trigger);
       trigger.classList.add('ddt-avatar-trigger');
-      trigger.setAttribute('aria-label',nama?`Lihat avatar ${nama}`:'Lihat avatar');
-      trigger.dataset.tooltip='Lihat avatar';
+      trigger.setAttribute('aria-label',nama?`Lihat Avatar ${nama}`:'Lihat Avatar');
+      trigger.dataset.tooltip='Lihat Avatar';
       trigger.dataset.tooltipIcon='user';
     });
 
@@ -117005,7 +117005,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
       trigger.removeAttribute('aria-hidden');
       trigger.setAttribute('role','button');
       trigger.setAttribute('tabindex','0');
-      trigger.setAttribute('aria-label',nama?`Lihat avatar ${nama}`:'Lihat avatar');
+      trigger.setAttribute('aria-label',nama?`Lihat Avatar ${nama}`:'Lihat Avatar');
     });
   }
 
@@ -117053,15 +117053,22 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
     if(popover?.classList.contains('show'))closeAvatarPopover(false);
   },{passive:true,capture:true});
 
+  let triggerSyncFrame=0;
   const observer=new MutationObserver(()=>{
-    syncAvatarTriggers();
-    if(popover?.classList.contains('show') && activeName){
-      const fresh=document.querySelector(`#tab-monitoring tr[data-nama="${CSS.escape(activeName)}"] .member-avatar, #tab-monitoring .live-card-col[data-nama="${CSS.escape(activeName)}"] .visual-fun-col`);
-      if(fresh && fresh!==activeTrigger){
-        activeTrigger=fresh;
-        positionPopover(fresh);
-      }
-    }
+    /*
+      Online rows/cards can mutate frequently (status/timer/realtime).
+      Sync trigger accessibility, but NEVER reposition an already-open
+      popover from a mutation. Its screen position stays frozen until:
+      - user closes it,
+      - user clicks another avatar,
+      - resize (intentional reposition),
+      - scroll (intentional close).
+    */
+    if(triggerSyncFrame)return;
+    triggerSyncFrame=requestAnimationFrame(()=>{
+      triggerSyncFrame=0;
+      syncAvatarTriggers();
+    });
   });
 
   const monitoring=document.getElementById('tab-monitoring');
@@ -117082,6 +117089,39 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   });
 })();
 </script>
+
+
+<style id="ddt-avatar-popover-phase-a-v2-5-refinement-style">
+/* ================================================================
+   Phase A v2.5 refinement
+   - exact hover copy: "Lihat Avatar"
+   - unauthorized action footer fully collapses
+   - authorized action remains compact
+   - no badge visual refinement in this phase
+   ================================================================ */
+
+.ddt-avatar-popover-actions[hidden]{
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  min-height:0!important;
+}
+
+.ddt-avatar-popover-actions:not([hidden]){
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  margin-top:9px!important;
+  padding-top:8px!important;
+}
+
+.ddt-avatar-popover-edit{
+  min-width:62px;
+  min-height:27px!important;
+  padding:5px 9px!important;
+}
+</style>
 
 </body>
 </html>
