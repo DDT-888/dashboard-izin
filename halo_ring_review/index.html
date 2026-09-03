@@ -8,11 +8,15 @@
 :root{
   --animal-scale:.82;
   --animal-y:-.8%;
+  --back-y:1.8%;
+  --front-y:-1.1%;
   --surface:#f4f7fb;
   --card:#fff;
   --text:#172235;
   --muted:#738198;
   --border:#dbe3ee;
+  --inner-haze:radial-gradient(ellipse at 50% 56%, rgba(135,215,255,.28) 0%, rgba(135,215,255,.18) 24%, rgba(135,215,255,.10) 40%, rgba(255,255,255,.00) 68%);
+  --inner-shadow:inset 0 0 0 1px rgba(255,255,255,.22), inset 0 16px 28px rgba(158,216,255,.10), inset 0 -20px 30px rgba(18,93,155,.07);
 }
 *{box-sizing:border-box}
 body{
@@ -27,6 +31,8 @@ body.dark{
   --text:#f4f8ff;
   --muted:#93a7c4;
   --border:#29405f;
+  --inner-haze:radial-gradient(ellipse at 50% 56%, rgba(76,182,255,.18) 0%, rgba(76,182,255,.11) 28%, rgba(76,182,255,0) 66%);
+  --inner-shadow:inset 0 0 0 1px rgba(255,255,255,.04), inset 0 18px 28px rgba(76,182,255,.04), inset 0 -22px 28px rgba(0,0,0,.18);
 }
 main{max-width:1180px;margin:0 auto;padding:28px}
 .header{
@@ -44,7 +50,8 @@ p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
 input[type=range]{width:120px}
 button{
   border:1px solid var(--border);background:var(--card);color:var(--text);
-  border-radius:8px;padding:7px 10px;font-weight:700;cursor:pointer
+  border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;
+  box-shadow:0 1px 0 rgba(255,255,255,.3) inset;
 }
 .grid{
   display:grid;
@@ -71,6 +78,17 @@ button{
   position:relative;
   flex:none;
   isolation:isolate;
+  border-radius:50%;
+}
+.avatar-composite::before{
+  content:'';
+  position:absolute;
+  inset:12%;
+  border-radius:50%;
+  background:var(--inner-haze);
+  box-shadow:var(--inner-shadow);
+  z-index:1;
+  pointer-events:none;
 }
 .avatar-composite img{
   position:absolute;
@@ -81,15 +99,15 @@ button{
   display:block;
   pointer-events:none;
 }
-.avatar-composite .back{z-index:1}
+.avatar-composite .back{z-index:2;transform:translateY(var(--back-y));}
 .avatar-composite .animal{
-  z-index:2;
+  z-index:3;
   transform:translateY(var(--animal-y)) scale(var(--animal-scale));
   transform-origin:50% 50%;
 }
-.avatar-composite .front{z-index:3}
+.avatar-composite .front{z-index:4;transform:translateY(var(--front-y));}
 .avatar-large{width:128px;height:128px}
-.avatar-small{width:52px;height:52px}
+.avatar-small{width:52px;height:52px;--back-y:1.2%;--front-y:-.7%;}
 .mini-row{
   display:flex;align-items:center;gap:9px;
   border-top:1px solid var(--border);
@@ -132,9 +150,19 @@ button{
       <b id="scaleVal">82%</b>
     </label>
     <label class="control">
-      Vertical
+      Animal Y
       <input id="ypos" type="range" min="-5" max="5" step=".5" value="-.8">
       <b id="yVal">-0.8%</b>
+    </label>
+    <label class="control">
+      Back ring Y
+      <input id="backY" type="range" min="0" max="4" step=".1" value="1.8">
+      <b id="backYVal">+1.8%</b>
+    </label>
+    <label class="control">
+      Front ring Y
+      <input id="frontY" type="range" min="-3" max="1" step=".1" value="-1.1">
+      <b id="frontYVal">-1.1%</b>
     </label>
     <button id="resetBtn" type="button">Reset</button>
   </div>
@@ -263,30 +291,41 @@ button{
   </section>
 
   <section class="layer-note">
-    <div><b>Back Layer</b>Upper halo + side geometry berada di belakang animal, sehingga telinga/tanduk/rambut boleh keluar.</div>
+    <div><b>Back Layer</b>Back ring sedikit diturunkan agar lebih terasa jatuh di belakang kepala. Telinga, tanduk, dan rambut tetap bebas keluar.</div>
     <div><b>Animal Layer</b>Canonical WebP existing. Scale dan Y offset hanya CSS calibration, tidak mengubah asset animal.</div>
-    <div><b>Front Layer</b>Lower arc + lower side menjadi foreground untuk menutup collar/bulu bawah secara natural.</div>
+    <div><b>Front Layer</b>Front ring sedikit dinaikkan agar area bawah wajah dan collar terasa lebih dipeluk oleh halo pada light maupun dark theme.</div>
   </section>
 </main>
 <script>
 const root=document.documentElement;
 const scale=document.getElementById('scale');
 const ypos=document.getElementById('ypos');
+const backY=document.getElementById('backY');
+const frontY=document.getElementById('frontY');
 const scaleVal=document.getElementById('scaleVal');
 const yVal=document.getElementById('yVal');
+const backYVal=document.getElementById('backYVal');
+const frontYVal=document.getElementById('frontYVal');
+
+function fmt(v){return (v>0?'+':'')+v.toFixed(1)+'%'}
 
 function apply(){
   const s=Number(scale.value)/100;
   const y=Number(ypos.value);
+  const b=Number(backY.value);
+  const f=Number(frontY.value);
   root.style.setProperty('--animal-scale',s);
   root.style.setProperty('--animal-y',y+'%');
+  root.style.setProperty('--back-y',b+'%');
+  root.style.setProperty('--front-y',f+'%');
   scaleVal.textContent=scale.value+'%';
-  yVal.textContent=(y>0?'+':'')+y.toFixed(1)+'%';
+  yVal.textContent=fmt(y);
+  backYVal.textContent=fmt(b);
+  frontYVal.textContent=fmt(f);
 }
-scale.addEventListener('input',apply);
-ypos.addEventListener('input',apply);
+[scale,ypos,backY,frontY].forEach(el=>el.addEventListener('input',apply));
 document.getElementById('resetBtn').addEventListener('click',()=>{
-  scale.value=82;ypos.value=-.8;apply();
+  scale.value=82; ypos.value=-.8; backY.value=1.8; frontY.value=-1.1; apply();
 });
 document.getElementById('themeBtn').addEventListener('click',()=>document.body.classList.toggle('dark'));
 apply();
