@@ -50401,6 +50401,12 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dataIzin[nama].avatar_frame_color = Number.isFinite(Number(dataIzin[nama].avatar_frame_color))
                     ? Math.max(0, Math.min(100, Math.round(Number(dataIzin[nama].avatar_frame_color))))
                     : 50;
+                dataIzin[nama].avatar_frame_color_profiles =
+                    dataIzin[nama].avatar_frame_color_profiles &&
+                    typeof dataIzin[nama].avatar_frame_color_profiles === 'object' &&
+                    !Array.isArray(dataIzin[nama].avatar_frame_color_profiles)
+                        ? {...dataIzin[nama].avatar_frame_color_profiles}
+                        : {};
             });
 
             records.forEach(item => {
@@ -50420,6 +50426,12 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dataIzin[item.nama].avatar_frame_color = Number.isFinite(Number(item.avatar_frame_color))
                     ? Math.max(0, Math.min(100, Math.round(Number(item.avatar_frame_color))))
                     : 50;
+                dataIzin[item.nama].avatar_frame_color_profiles =
+                    item.avatar_frame_color_profiles &&
+                    typeof item.avatar_frame_color_profiles === 'object' &&
+                    !Array.isArray(item.avatar_frame_color_profiles)
+                        ? {...item.avatar_frame_color_profiles}
+                        : {};
 
                 if (item.role) {
                     dataIzin[item.nama].role = item.role;
@@ -50452,7 +50464,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 try {
                     const { data, error } = await supabaseDashboard
                         .from('izin_anggota')
-                        .select('nama, status, mulai, selesai, tanggal, role, emoticon, avatar_frame, avatar_frame_color');
+                        .select('nama, status, mulai, selesai, tanggal, role, emoticon, avatar_frame, avatar_frame_color, avatar_frame_color_profiles');
 
                     if (error) {
                         console.error('Gagal sinkronisasi izin ringan:', error);
@@ -51052,7 +51064,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                     avatar_frame: newRecord.avatar_frame || 'none',
                                     avatar_frame_color: Number.isFinite(Number(newRecord.avatar_frame_color))
                                         ? Math.max(0, Math.min(100, Math.round(Number(newRecord.avatar_frame_color))))
-                                        : 50
+                                        : 50,
+                                    avatar_frame_color_profiles:
+                                        newRecord.avatar_frame_color_profiles &&
+                                        typeof newRecord.avatar_frame_color_profiles === 'object' &&
+                                        !Array.isArray(newRecord.avatar_frame_color_profiles)
+                                            ? {...newRecord.avatar_frame_color_profiles}
+                                            : {}
                                 };
 
                                 if (!daftarAnggota.includes(nama)) {
@@ -51074,6 +51092,12 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             dataIzin[nama].avatar_frame_color = Number.isFinite(Number(newRecord.avatar_frame_color))
                                 ? Math.max(0, Math.min(100, Math.round(Number(newRecord.avatar_frame_color))))
                                 : 50;
+                            dataIzin[nama].avatar_frame_color_profiles =
+                                newRecord.avatar_frame_color_profiles &&
+                                typeof newRecord.avatar_frame_color_profiles === 'object' &&
+                                !Array.isArray(newRecord.avatar_frame_color_profiles)
+                                    ? {...newRecord.avatar_frame_color_profiles}
+                                    : {};
 
                             if (newRecord.role) {
                                 dataIzin[nama].role = newRecord.role;
@@ -51089,6 +51113,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                 dataIzin[nama].emoticon = null;
                                 dataIzin[nama].avatar_frame = 'none';
                                 dataIzin[nama].avatar_frame_color = 50;
+                                dataIzin[nama].avatar_frame_color_profiles = {};
                             }
                         }
 
@@ -51644,7 +51669,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     historyPromise,
                     supabaseDashboard
                         .from('izin_anggota')
-                        .select('nama, status, mulai, selesai, tanggal, role, emoticon, avatar_frame, avatar_frame_color'),
+                        .select('nama, status, mulai, selesai, tanggal, role, emoticon, avatar_frame, avatar_frame_color, avatar_frame_color_profiles'),
                     supabaseDashboard
                         .from('vouchers')
                         .select('nama, jumlah'),
@@ -117822,14 +117847,15 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.8.0-dynamic-color-atmosphere-live-test-candidate';
+  const VERSION='2.8.1-per-frame-color-propagation-click-only-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
   const FRAME_STORAGE_COLUMN='avatar_frame';
   const FRAME_RPC='save_izin_avatar_frame';
   const FRAME_COLOR_STORAGE_COLUMN='avatar_frame_color';
-  const FRAME_COLOR_RPC='save_izin_avatar_frame_color';
+  const FRAME_COLOR_PROFILES_COLUMN='avatar_frame_color_profiles';
+  const FRAME_COLOR_RPC='save_izin_avatar_frame_color_profile';
   const FRAME_COLOR_DEFAULT=50;
   const FRAMES=Object.freeze({
     none:Object.freeze({id:'none',label:'None',back:null,front:null}),
@@ -117862,12 +117888,35 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     return Math.max(0,Math.min(100,Math.round(numeric)));
   }
 
-  function colorForName(nama){
+  function normalizeColorProfiles(value){
+    let source=value;
+    if(typeof source==='string'){
+      try{source=JSON.parse(source)}catch{source={}}
+    }
+    if(!source||typeof source!=='object'||Array.isArray(source))source={};
+
+    const next={};
+    Object.entries(source).forEach(([frameId,color])=>{
+      if(!validFrame(frameId)||frameId==='none')return;
+      next[frameId]=clampFrameColor(color);
+    });
+    return next;
+  }
+
+  function profilesForName(nama){
     const formatted=normalizeName(nama);
-    if(frameColorState.has(formatted))return clampFrameColor(frameColorState.get(formatted));
-    const coreValue=dataIzin?.[formatted]?.avatar_frame_color;
-    if(Number.isFinite(Number(coreValue)))return clampFrameColor(coreValue);
-    return FRAME_COLOR_DEFAULT;
+    if(frameColorState.has(formatted)){
+      return normalizeColorProfiles(frameColorState.get(formatted));
+    }
+    return normalizeColorProfiles(dataIzin?.[formatted]?.avatar_frame_color_profiles);
+  }
+
+  function colorForFrame(nama,frameId){
+    if(!frameId||frameId==='none')return FRAME_COLOR_DEFAULT;
+    const profiles=profilesForName(nama);
+    return Object.prototype.hasOwnProperty.call(profiles,frameId)
+      ? clampFrameColor(profiles[frameId])
+      : FRAME_COLOR_DEFAULT;
   }
 
   /* One slider position = one Color Profile.
@@ -117918,10 +117967,40 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     });
   }
 
+  function frameMaterialFilter(profile){
+    return [
+      `hue-rotate(${profile.hue.toFixed(2)}deg)`,
+      `saturate(${profile.sat.toFixed(3)})`,
+      `brightness(${profile.bright.toFixed(3)})`,
+      `contrast(${profile.contrast.toFixed(3)})`,
+      `drop-shadow(0 1px 3px ${profile.glowSoft})`,
+      `drop-shadow(0 0 4px ${profile.glow})`
+    ].join(' ');
+  }
+
+  function motionMaterialFilter(profile){
+    return [
+      `hue-rotate(${profile.hue.toFixed(2)}deg)`,
+      `saturate(${(profile.sat*1.04).toFixed(3)})`,
+      `brightness(${(profile.bright*1.42).toFixed(3)})`,
+      `contrast(${profile.contrast.toFixed(3)})`,
+      `drop-shadow(0 0 5px ${profile.glow})`
+    ].join(' ');
+  }
+
+  function depthMaterialFilter(profile){
+    return [
+      `hue-rotate(${profile.depthHue.toFixed(2)}deg)`,
+      `saturate(${profile.depthSat.toFixed(3)})`,
+      `brightness(${profile.depthBright.toFixed(3)})`
+    ].join(' ');
+  }
+
   function applyColorProfileToElement(element,frameId,value){
     if(!element||frameId==='none')return;
     const profile=frameColorProfile(frameId,value);
     element.dataset.ddtFrameColor=String(profile.value);
+
     element.style.setProperty('--ddt-frame-profile-hue',`${profile.hue.toFixed(2)}deg`);
     element.style.setProperty('--ddt-frame-profile-sat',profile.sat.toFixed(3));
     element.style.setProperty('--ddt-frame-profile-bright',profile.bright.toFixed(3));
@@ -117931,11 +118010,23 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     element.style.setProperty('--ddt-frame-profile-depth-bright',profile.depthBright.toFixed(3));
     element.style.setProperty('--ddt-frame-profile-glow',profile.glow);
     element.style.setProperty('--ddt-frame-profile-glow-soft',profile.glowSoft);
+
+    /* Inline-important material ownership closes popup/START propagation.
+       Older theme/effect rules can no longer overwrite the selected profile. */
+    const frameFilter=frameMaterialFilter(profile);
+    element.querySelectorAll(':scope > .ddt-avatar-frame-back,:scope > .ddt-avatar-frame-front,:scope > .ddt-frame-tile-back,:scope > .ddt-frame-tile-front')
+      .forEach(layer=>layer.style.setProperty('filter',frameFilter,'important'));
+
+    element.querySelectorAll(':scope > .ddt-avatar-frame-depth')
+      .forEach(layer=>layer.style.setProperty('filter',depthMaterialFilter(profile),'important'));
+
+    element.querySelectorAll(':scope > .ddt-avatar-frame-motion')
+      .forEach(layer=>layer.style.setProperty('filter',motionMaterialFilter(profile),'important'));
   }
 
   function applyColorProfile(host,nama,frameId=frameForName(nama)){
     if(!host||frameId==='none')return;
-    applyColorProfileToElement(host,frameId,colorForName(nama));
+    applyColorProfileToElement(host,frameId,colorForFrame(nama,frameId));
   }
 
   function applyColorToRendered(nama){
@@ -117960,9 +118051,12 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const pickerPreview=document.getElementById('animalEmojiPickerPreview');
     if(pickerPreview&&targetPickerName()===formatted)applyColorProfile(pickerPreview,formatted,currentFrame);
 
+    /* Each Frame tile owns its own profile. Halo changes never repaint Orb. */
     document.querySelectorAll('.ddt-frame-tile-visual[data-ddt-frame-id]').forEach(tile=>{
       const frameId=String(tile.dataset.ddtFrameId||'none');
-      if(frameId!=='none')applyColorProfileToElement(tile,frameId,colorForName(formatted));
+      if(frameId!=='none'){
+        applyColorProfileToElement(tile,frameId,colorForFrame(formatted,frameId));
+      }
     });
   }
 
@@ -117971,43 +118065,79 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     if(!formatted||targetPickerName()!==formatted)return;
     const input=document.querySelector('.ddt-frame-color-input');
     if(!input)return;
-    const value=colorForName(formatted);
+    const frameId=frameForName(formatted);
+    const value=colorForFrame(formatted,frameId);
     if(Number(input.value)!==value)input.value=String(value);
     input.setAttribute('aria-valuetext',`Color Profile ${value}`);
     const control=input.closest('.ddt-frame-color-control');
     if(control)control.style.setProperty('--ddt-frame-color-position',`${value}%`);
   }
 
-  function setColorOptimistic(nama,value){
+  function setColorOptimistic(nama,frameId,value){
     const formatted=normalizeName(nama);
-    if(!formatted)return;
+    if(!formatted||!validFrame(frameId)||frameId==='none')return;
     const next=clampFrameColor(value);
-    frameColorState.set(formatted,next);
-    if(dataIzin?.[formatted])dataIzin[formatted].avatar_frame_color=next;
+    const profiles=profilesForName(formatted);
+    profiles[frameId]=next;
+    frameColorState.set(formatted,profiles);
+
+    if(dataIzin?.[formatted]){
+      dataIzin[formatted].avatar_frame_color_profiles={...profiles};
+      if(frameForName(formatted)===frameId)dataIzin[formatted].avatar_frame_color=next;
+    }
+
     applyColorToRendered(formatted);
     syncColorControl(formatted);
   }
 
-  async function saveColorProfile(nama,value){
+  async function saveColorProfile(nama,frameId,value){
     const formatted=normalizeName(nama);
-    if(!formatted)return;
+    if(!formatted||!validFrame(frameId)||frameId==='none')return;
+
     const next=clampFrameColor(value);
-    const confirmed=frameColorPersistedState.has(formatted)
-      ? clampFrameColor(frameColorPersistedState.get(formatted))
+    const persisted=normalizeColorProfiles(frameColorPersistedState.get(formatted));
+    const confirmed=Object.prototype.hasOwnProperty.call(persisted,frameId)
+      ? clampFrameColor(persisted[frameId])
       : FRAME_COLOR_DEFAULT;
 
-    setColorOptimistic(formatted,next);
+    setColorOptimistic(formatted,frameId,next);
 
     try{
-      const {error}=await supabaseDashboard.rpc(FRAME_COLOR_RPC,{
+      const {data,error}=await supabaseDashboard.rpc(FRAME_COLOR_RPC,{
         p_nama:formatted,
+        p_avatar_frame:frameId,
         p_avatar_frame_color:next
       });
       if(error)throw error;
-      frameColorPersistedState.set(formatted,next);
+
+      const persistedNext=normalizeColorProfiles(
+        data?.avatar_frame_color_profiles || profilesForName(formatted)
+      );
+      persistedNext[frameId]=next;
+      frameColorPersistedState.set(formatted,persistedNext);
+      frameColorState.set(formatted,{...persistedNext});
+
+      if(dataIzin?.[formatted]){
+        dataIzin[formatted].avatar_frame_color_profiles={...persistedNext};
+        if(frameForName(formatted)===frameId)dataIzin[formatted].avatar_frame_color=next;
+      }
+
+      applyColorToRendered(formatted);
+      syncColorControl(formatted);
     }catch(error){
-      frameColorState.set(formatted,confirmed);
-      if(dataIzin?.[formatted])dataIzin[formatted].avatar_frame_color=confirmed;
+      const rollback=profilesForName(formatted);
+      if(confirmed===FRAME_COLOR_DEFAULT && !Object.prototype.hasOwnProperty.call(persisted,frameId)){
+        delete rollback[frameId];
+      }else{
+        rollback[frameId]=confirmed;
+      }
+      frameColorState.set(formatted,rollback);
+
+      if(dataIzin?.[formatted]){
+        dataIzin[formatted].avatar_frame_color_profiles={...rollback};
+        if(frameForName(formatted)===frameId)dataIzin[formatted].avatar_frame_color=confirmed;
+      }
+
       applyColorToRendered(formatted);
       syncColorControl(formatted);
       if(typeof showToast==='function'){
@@ -118122,7 +118252,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     if(item?.src){const animal=document.createElement('img');animal.className='ddt-frame-tile-animal';animal.src=item.src;animal.alt='';animal.decoding='async';animal.loading='lazy';animal.draggable=false;visual.appendChild(animal)}
     else{const mark=document.createElement('span');mark.className='ddt-frame-none-mark';mark.textContent='·';visual.appendChild(mark)}
     if(frameId!=='none'){const frame=FRAMES[frameId];const front=document.createElement('img');front.className='ddt-frame-tile-front';front.src=frame.front;front.alt='';front.decoding='async';front.draggable=false;visual.appendChild(front)}
-    if(frameId!=='none')applyColorProfileToElement(visual,frameId,colorForName(nama));
+    if(frameId!=='none')applyColorProfileToElement(visual,frameId,colorForFrame(nama,frameId));
     return visual;
   }
   function ensurePickerLayout(){
@@ -118179,7 +118309,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       btn.addEventListener('click',(event)=>{
         event.preventDefault();
         event.stopPropagation();
-        triggerFrameEffectPreview(frameId);
+        /* Motion preview remains HOLD until Color Profile is locked.
+           No hover effect and no old effect language during this gate. */
         void saveFrame(nama,frameId);
       });
       frameGrid.appendChild(btn);
@@ -118187,7 +118318,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     rail.appendChild(frameGrid);
 
     if(current!=='none'){
-      const colorValue=colorForName(nama);
+      const colorValue=colorForFrame(nama,current);
       const colorControl=document.createElement('div');
       colorControl.className=`ddt-frame-color-control ${current}`;
       colorControl.style.setProperty('--ddt-frame-color-position',`${colorValue}%`);
@@ -118215,13 +118346,13 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         const value=clampFrameColor(event.currentTarget.value);
         colorControl.style.setProperty('--ddt-frame-color-position',`${value}%`);
         event.currentTarget.setAttribute('aria-valuetext',`Color Profile ${value}`);
-        setColorOptimistic(nama,value);
+        setColorOptimistic(nama,current,value);
       });
 
       /* Persist only when the slider value is committed. */
       colorInput.addEventListener('change',event=>{
         event.stopPropagation();
-        void saveColorProfile(nama,event.currentTarget.value);
+        void saveColorProfile(nama,current,event.currentTarget.value);
       });
 
       colorControl.append(colorLabel,colorInput);
@@ -118236,18 +118367,33 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   function queueHydration(){if(hydrationFrame)return;hydrationFrame=requestAnimationFrame(hydrateAll)}
   async function loadFrames(){
     try{
-      const {data,error}=await supabaseDashboard.from('izin_anggota').select('nama, avatar_frame, avatar_frame_color');if(error)throw error;
+      const {data,error}=await supabaseDashboard.from('izin_anggota').select('nama, avatar_frame, avatar_frame_color, avatar_frame_color_profiles');if(error)throw error;
       (Array.isArray(data)?data:[]).forEach(row=>{
         const nama=normalizeName(row?.nama||'');
         if(!nama)return;
+
         const frame=String(row?.avatar_frame||'none').toLowerCase();
-        const color=clampFrameColor(row?.avatar_frame_color);
-        frameState.set(nama,validFrame(frame)?frame:'none');
-        frameColorState.set(nama,color);
-        frameColorPersistedState.set(nama,color);
+        const normalizedFrame=validFrame(frame)?frame:'none';
+        const profiles=normalizeColorProfiles(row?.avatar_frame_color_profiles);
+
+        /* Backward compatibility: if an old row only has scalar active color,
+           seed it into the active frame in memory. */
+        if(
+          normalizedFrame!=='none' &&
+          !Object.prototype.hasOwnProperty.call(profiles,normalizedFrame) &&
+          Number.isFinite(Number(row?.avatar_frame_color))
+        ){
+          profiles[normalizedFrame]=clampFrameColor(row.avatar_frame_color);
+        }
+
+        frameState.set(nama,normalizedFrame);
+        frameColorState.set(nama,{...profiles});
+        frameColorPersistedState.set(nama,{...profiles});
+
         if(dataIzin?.[nama]){
-          dataIzin[nama].avatar_frame=validFrame(frame)?frame:'none';
-          dataIzin[nama].avatar_frame_color=color;
+          dataIzin[nama].avatar_frame=normalizedFrame;
+          dataIzin[nama].avatar_frame_color=clampFrameColor(row?.avatar_frame_color);
+          dataIzin[nama].avatar_frame_color_profiles={...profiles};
         }
       });
       queueHydration();
@@ -118259,7 +118405,10 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     pickerBusy=true;
     const previousCoreFrame=dataIzin?.[formatted]?.avatar_frame||previous;
     frameState.set(formatted,frameId);
-    if(dataIzin?.[formatted])dataIzin[formatted].avatar_frame=frameId;
+    if(dataIzin?.[formatted]){
+      dataIzin[formatted].avatar_frame=frameId;
+      dataIzin[formatted].avatar_frame_color=colorForFrame(formatted,frameId);
+    }
     queueHydration();
     document.querySelectorAll('.ddt-frame-option').forEach(btn=>btn.disabled=true);
     try{
@@ -118287,11 +118436,24 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
           needsHydration=true;
         }
 
-        if(typeof row?.avatar_frame_color!=='undefined'){
-          const color=clampFrameColor(row.avatar_frame_color);
-          frameColorState.set(nama,color);
-          frameColorPersistedState.set(nama,color);
-          if(dataIzin?.[nama])dataIzin[nama].avatar_frame_color=color;
+        if(typeof row?.avatar_frame_color_profiles!=='undefined'){
+          const profiles=normalizeColorProfiles(row.avatar_frame_color_profiles);
+          frameColorState.set(nama,{...profiles});
+          frameColorPersistedState.set(nama,{...profiles});
+          if(dataIzin?.[nama])dataIzin[nama].avatar_frame_color_profiles={...profiles};
+          applyColorToRendered(nama);
+          syncColorControl(nama);
+        }else if(typeof row?.avatar_frame_color!=='undefined'){
+          /* Legacy realtime fallback for older clients. */
+          const activeFrame=validFrame(row?.avatar_frame)?String(row.avatar_frame).toLowerCase():frameForName(nama);
+          if(activeFrame!=='none'){
+            const profiles=profilesForName(nama);
+            profiles[activeFrame]=clampFrameColor(row.avatar_frame_color);
+            frameColorState.set(nama,{...profiles});
+            frameColorPersistedState.set(nama,{...profiles});
+            if(dataIzin?.[nama])dataIzin[nama].avatar_frame_color_profiles={...profiles};
+          }
+          if(dataIzin?.[nama])dataIzin[nama].avatar_frame_color=clampFrameColor(row.avatar_frame_color);
           applyColorToRendered(nama);
           syncColorControl(nama);
         }
@@ -118316,13 +118478,14 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
-    colorAuthority:Object.freeze({column:FRAME_COLOR_STORAGE_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:0,max:100,profileNotHueOnly:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,
+    colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:0,max:100,profileNotHueOnly:true,perFrameIndependent:true}),
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,
     refresh:queueHydration,
     frameFor:nama=>frameForName(nama),
-    colorFor:nama=>colorForName(nama),
+    colorFor:(nama,frameId=frameForName(nama))=>colorForFrame(nama,frameId),
     colorProfile:(frameId,value)=>frameColorProfile(frameId,value),
-    setColor:(nama,value)=>saveColorProfile(nama,value)
+    applyColorToHost:(host,nama,frameId=frameForName(nama))=>applyColorProfile(host,nama,frameId),
+    setColor:(nama,frameId,value)=>saveColorProfile(nama,frameId,value)
   });
   loadFrames();startRealtime();queueHydration();
 })();
@@ -118956,6 +119119,9 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
         host.querySelector(':scope > .ddt-animal-img')
       )
     ){
+      if(context!=='table'&&next.frameId!=='none'){
+        globalThis.DDTAvatarFrameIntegrationV27?.applyColorToHost?.(host,nama,next.frameId);
+      }
       return {handled:true,...next};
     }
 
@@ -118970,6 +119136,10 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
 
     if(context!=='table')host.dataset.ddtFrameId=next.frameId;
     else delete host.dataset.ddtFrameId;
+
+    if(context!=='table'&&next.frameId!=='none'){
+      globalThis.DDTAvatarFrameIntegrationV27?.applyColorToHost?.(host,nama,next.frameId);
+    }
 
     return {handled:true,...next};
   }
@@ -120350,6 +120520,46 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
     padding:7px 9px 6px;
   }
 }
+</style>
+
+
+<style id="ddt-v2-8-1-per-frame-color-authority">
+/* ================================================================
+   v2.8.1 — PER-FRAME COLOR / NO HOVER EFFECT
+   ================================================================ */
+
+/* Hover/focus must never change or reset Color Profile. */
+.ddt-frame-option:hover .ddt-frame-tile-back,
+.ddt-frame-option:hover .ddt-frame-tile-front,
+.ddt-frame-option:focus-visible .ddt-frame-tile-back,
+.ddt-frame-option:focus-visible .ddt-frame-tile-front,
+.ddt-frame-option:hover .ddt-frame-tile-visual::before,
+.ddt-frame-option:hover .ddt-frame-tile-visual::after,
+.ddt-frame-option:focus-visible .ddt-frame-tile-visual::before,
+.ddt-frame-option:focus-visible .ddt-frame-tile-visual::after,
+.ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-back,
+.ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-front,
+.ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual::before,
+.ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual::after{
+  animation:none!important;
+}
+
+/* Old pseudo sweep is fully suppressed in picker during Color Profile gate. */
+.ddt-frame-option .ddt-frame-tile-visual::before,
+.ddt-frame-option .ddt-frame-tile-visual::after{
+  opacity:0!important;
+  visibility:hidden!important;
+}
+
+/* Hover may show ordinary affordance only — no frame visual transformation. */
+.ddt-frame-option:hover,
+.ddt-frame-option:focus-visible{
+  border-color:color-mix(in srgb,var(--accent) 30%,var(--border-color))!important;
+  box-shadow:none!important;
+}
+
+/* Actual frame/tile layer filters are applied inline !important by
+   Color Profile controller, making Popup AVATAR / START propagation robust. */
 </style>
 
 </body>
