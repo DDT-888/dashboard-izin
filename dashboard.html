@@ -50384,7 +50384,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dataIzin[nama].emoticon = null;
                 dataIzin[nama].avatar_frame = dataIzin[nama].avatar_frame || 'none';
                 dataIzin[nama].avatar_frame_color = Number.isFinite(Number(dataIzin[nama].avatar_frame_color))
-                    ? Math.max(-20, Math.min(120, Math.round(Number(dataIzin[nama].avatar_frame_color))))
+                    ? Math.max(-40, Math.min(140, Math.round(Number(dataIzin[nama].avatar_frame_color))))
                     : 50;
                 dataIzin[nama].avatar_frame_color_profiles =
                     dataIzin[nama].avatar_frame_color_profiles &&
@@ -50409,7 +50409,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dataIzin[item.nama].emoticon = item.emoticon || null;
                 dataIzin[item.nama].avatar_frame = item.avatar_frame || 'none';
                 dataIzin[item.nama].avatar_frame_color = Number.isFinite(Number(item.avatar_frame_color))
-                    ? Math.max(-20, Math.min(120, Math.round(Number(item.avatar_frame_color))))
+                    ? Math.max(-40, Math.min(140, Math.round(Number(item.avatar_frame_color))))
                     : 50;
                 dataIzin[item.nama].avatar_frame_color_profiles =
                     item.avatar_frame_color_profiles &&
@@ -51048,7 +51048,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                     emoticon: null,
                                     avatar_frame: newRecord.avatar_frame || 'none',
                                     avatar_frame_color: Number.isFinite(Number(newRecord.avatar_frame_color))
-                                        ? Math.max(-20, Math.min(120, Math.round(Number(newRecord.avatar_frame_color))))
+                                        ? Math.max(-40, Math.min(140, Math.round(Number(newRecord.avatar_frame_color))))
                                         : 50,
                                     avatar_frame_color_profiles:
                                         newRecord.avatar_frame_color_profiles &&
@@ -51075,7 +51075,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             dataIzin[nama].emoticon = newRecord.emoticon || null;
                             dataIzin[nama].avatar_frame = newRecord.avatar_frame || 'none';
                             dataIzin[nama].avatar_frame_color = Number.isFinite(Number(newRecord.avatar_frame_color))
-                                ? Math.max(-20, Math.min(120, Math.round(Number(newRecord.avatar_frame_color))))
+                                ? Math.max(-40, Math.min(140, Math.round(Number(newRecord.avatar_frame_color))))
                                 : 50;
                             dataIzin[nama].avatar_frame_color_profiles =
                                 newRecord.avatar_frame_color_profiles &&
@@ -64957,7 +64957,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <span>🎲</span>
                     <span>Acak Animal</span>
                 </button>
-                <span class="animal-emoji-picker-note">Pilihan tersimpan dan digunakan setiap kali START.</span>
+                <span class="animal-emoji-picker-note">Pilih Animal, Frame, dan Color lalu Simpan.</span>
+                <button type="button" class="ddt-avatar-composer-save" id="ddtAvatarComposerSave" onclick="saveAvatarComposition()" disabled>
+                    <span class="ddt-avatar-composer-save-label">Simpan</span>
+                </button>
             </div>
         </div>
     </div>
@@ -116045,6 +116048,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     ensureTabs();
 
     const selected=(()=>{
+      const staged=globalThis.DDTAvatarComposerV284?.getStagedAnimal?.(animalEmojiPickerTargetName);
+      if(staged)return staged;
       try{return getPreferredAnimalEmoji(animalEmojiPickerTargetName)}
       catch{return null}
     })();
@@ -116076,6 +116081,16 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
   window.selectDDTAnimal=async function(key){
     if(!animalEmojiPickerTargetName||!isCanonicalKey(key))return;
     const targetName=animalEmojiPickerTargetName;
+
+    if(globalThis.DDTAvatarComposerV284?.isActiveFor?.(targetName)){
+      globalThis.DDTAvatarComposerV284.stageAnimal(targetName,key);
+      const preview=document.getElementById('animalEmojiPickerPreview');
+      renderPreview(preview,key,targetName);
+      renderLibrary();
+      globalThis.DDTAvatarFrameIntegrationV27?.refreshPicker?.();
+      return;
+    }
+
     await saveAnimalEmojiPreference(targetName,key,{closePicker:false,toast:false});
     const preview=document.getElementById('animalEmojiPickerPreview');
     renderPreview(preview,key,targetName);
@@ -116090,6 +116105,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     }
 
     animalEmojiPickerTargetName=formattedNama;
+    globalThis.DDTAvatarComposerV284?.begin?.(formattedNama);
     const overlay=document.getElementById('animalEmojiPicker');
     if(!overlay)return;
 
@@ -116109,9 +116125,11 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
       const spans=randomBtn.querySelectorAll('span');
       if(spans.length>1)spans[1].textContent='Acak Animal';
     }
-    if(note)note.textContent='Pilihan tersimpan dan otomatis digunakan setiap kali START.';
+    if(note)note.textContent='Pilih Animal, Frame, dan Color lalu Simpan.';
 
     const selected=(()=>{
+      const staged=globalThis.DDTAvatarComposerV284?.getStagedAnimal?.(formattedNama);
+      if(staged)return staged;
       try{return getPreferredAnimalEmoji(formattedNama)}
       catch{return null}
     })();
@@ -117830,7 +117848,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.8.3-smooth-switch-neutral-atmosphere-candidate';
+  const VERSION='2.8.4-staged-atomic-save-extended-neutral-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -117870,8 +117888,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     return (parts.length===1?parts[0].slice(0,2):parts[0][0]+parts[parts.length-1][0]).toUpperCase();
   }
   function validFrame(value){return Object.prototype.hasOwnProperty.call(FRAMES,String(value||'').toLowerCase())}
-  const FRAME_COLOR_MIN=-20;
-  const FRAME_COLOR_MAX=120;
+  const FRAME_COLOR_MIN=-40;
+  const FRAME_COLOR_MAX=140;
 
   function clampFrameColor(value){
     const numeric=Number(value);
@@ -117896,6 +117914,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 
   function profilesForName(nama){
     const formatted=normalizeName(nama);
+    const staged=globalThis.DDTAvatarComposerV284?.getStagedProfiles?.(formatted);
+    if(staged)return normalizeColorProfiles(staged);
     if(frameColorState.has(formatted)){
       return normalizeColorProfiles(frameColorState.get(formatted));
     }
@@ -117913,7 +117933,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   /* One slider position = one Color Profile.
      Halo and Orb intentionally translate the same value differently. */
   function chromaticFrameColorProfile(frameId,value){
-    /* IMPORTANT: values 0..100 reproduce v2.8.2 exactly. */
+    /* Exact v2.8.2 chromatic authority for values 0..100. */
     const v=Math.max(0,Math.min(100,Math.round(Number(value))));
     const x=(v-FRAME_COLOR_DEFAULT)/FRAME_COLOR_DEFAULT;
     const a=Math.abs(x);
@@ -117961,12 +117981,12 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 
   function lerpNumber(a,b,t){return a+((b-a)*t)}
 
-  function frameColorProfile(frameId,value){
-    const v=clampFrameColor(value);
+  function v283FrameColorProfile(frameId,value){
+    /* This function intentionally reproduces v2.8.3 for -20..120. */
+    const v=Math.max(-20,Math.min(120,Math.round(Number(value))));
 
-    /* Existing chromatic values are byte-for-byte conceptually preserved. */
     if(v>=0&&v<=100){
-      return Object.freeze(chromaticFrameColorProfile(frameId,v));
+      return chromaticFrameColorProfile(frameId,v);
     }
 
     if(v<0){
@@ -117974,8 +117994,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       const t=Math.max(0,Math.min(1,(-v)/20));
 
       if(frameId==='orb_ring'){
-        /* Graphite -> Obsidian: dark glossy cosmic metal, never flat black. */
-        return Object.freeze({
+        return {
           value:v,
           hue:lerpNumber(base.hue,0,t),
           sat:lerpNumber(base.sat,.13,t),
@@ -117986,11 +118005,10 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
           depthBright:lerpNumber(base.depthBright,.48,t),
           glow:`hsla(${lerpNumber(210,220,t).toFixed(1)},18%,${lerpNumber(68,76,t).toFixed(1)}%,${lerpNumber(.13,.09,t).toFixed(3)})`,
           glowSoft:`hsla(216,14%,68%,${lerpNumber(.075,.045,t).toFixed(3)})`
-        });
+        };
       }
 
-      /* Halo neutral dark stays ceremonial, with a thin silver edge. */
-      return Object.freeze({
+      return {
         value:v,
         hue:lerpNumber(base.hue,0,t),
         sat:lerpNumber(base.sat,.10,t),
@@ -118001,15 +118019,14 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         depthBright:lerpNumber(base.depthBright,.52,t),
         glow:`hsla(205,16%,${lerpNumber(72,82,t).toFixed(1)}%,${lerpNumber(.12,.085,t).toFixed(3)})`,
         glowSoft:`hsla(208,12%,74%,${lerpNumber(.065,.04,t).toFixed(3)})`
-      });
+      };
     }
 
     const base=chromaticFrameColorProfile(frameId,100);
     const t=Math.max(0,Math.min(1,(v-100)/20));
 
     if(frameId==='orb_ring'){
-      /* Silver -> Pearl White: high-value cosmic metal with retained contour. */
-      return Object.freeze({
+      return {
         value:v,
         hue:lerpNumber(base.hue,0,t),
         sat:lerpNumber(base.sat,.11,t),
@@ -118020,10 +118037,10 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         depthBright:lerpNumber(base.depthBright,1.10,t),
         glow:`hsla(210,24%,96%,${lerpNumber(.17,.24,t).toFixed(3)})`,
         glowSoft:`hsla(214,18%,90%,${lerpNumber(.09,.13,t).toFixed(3)})`
-      });
+      };
     }
 
-    return Object.freeze({
+    return {
       value:v,
       hue:lerpNumber(base.hue,0,t),
       sat:lerpNumber(base.sat,.08,t),
@@ -118034,6 +118051,81 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       depthBright:lerpNumber(base.depthBright,1.08,t),
       glow:`hsla(202,22%,97%,${lerpNumber(.15,.22,t).toFixed(3)})`,
       glowSoft:`hsla(208,16%,92%,${lerpNumber(.08,.12,t).toFixed(3)})`
+    };
+  }
+
+  function frameColorProfile(frameId,value){
+    const v=clampFrameColor(value);
+
+    /* Preserve every v2.8.3 value exactly. */
+    if(v>=-20&&v<=120){
+      return Object.freeze(v283FrameColorProfile(frameId,v));
+    }
+
+    if(v<-20){
+      const base=v283FrameColorProfile(frameId,-20);
+      const t=Math.max(0,Math.min(1,(-20-v)/20));
+
+      if(frameId==='orb_ring'){
+        /* Obsidian -> Void Black: deeper, but specular contour survives. */
+        return Object.freeze({
+          value:v,
+          hue:lerpNumber(base.hue,0,t),
+          sat:lerpNumber(base.sat,.055,t),
+          bright:lerpNumber(base.bright,.28,t),
+          contrast:lerpNumber(base.contrast,1.34,t),
+          depthHue:0,
+          depthSat:lerpNumber(base.depthSat,.05,t),
+          depthBright:lerpNumber(base.depthBright,.34,t),
+          glow:`hsla(220,12%,${lerpNumber(76,88,t).toFixed(1)}%,${lerpNumber(.09,.065,t).toFixed(3)})`,
+          glowSoft:`hsla(220,9%,76%,${lerpNumber(.045,.030,t).toFixed(3)})`
+        });
+      }
+
+      return Object.freeze({
+        value:v,
+        hue:lerpNumber(base.hue,0,t),
+        sat:lerpNumber(base.sat,.045,t),
+        bright:lerpNumber(base.bright,.30,t),
+        contrast:lerpNumber(base.contrast,1.30,t),
+        depthHue:0,
+        depthSat:lerpNumber(base.depthSat,.04,t),
+        depthBright:lerpNumber(base.depthBright,.36,t),
+        glow:`hsla(208,10%,${lerpNumber(82,91,t).toFixed(1)}%,${lerpNumber(.085,.060,t).toFixed(3)})`,
+        glowSoft:`hsla(210,8%,79%,${lerpNumber(.040,.027,t).toFixed(3)})`
+      });
+    }
+
+    const base=v283FrameColorProfile(frameId,120);
+    const t=Math.max(0,Math.min(1,(v-120)/20));
+
+    if(frameId==='orb_ring'){
+      /* Pearl -> Luminous Frost: bright, not clipped/flat. */
+      return Object.freeze({
+        value:v,
+        hue:0,
+        sat:lerpNumber(base.sat,.045,t),
+        bright:lerpNumber(base.bright,1.29,t),
+        contrast:lerpNumber(base.contrast,1.02,t),
+        depthHue:0,
+        depthSat:lerpNumber(base.depthSat,.04,t),
+        depthBright:lerpNumber(base.depthBright,1.16,t),
+        glow:`hsla(210,18%,99%,${lerpNumber(.24,.31,t).toFixed(3)})`,
+        glowSoft:`hsla(214,12%,96%,${lerpNumber(.13,.18,t).toFixed(3)})`
+      });
+    }
+
+    return Object.freeze({
+      value:v,
+      hue:0,
+      sat:lerpNumber(base.sat,.035,t),
+      bright:lerpNumber(base.bright,1.27,t),
+      contrast:lerpNumber(base.contrast,1.02,t),
+      depthHue:0,
+      depthSat:lerpNumber(base.depthSat,.035,t),
+      depthBright:lerpNumber(base.depthBright,1.14,t),
+      glow:`hsla(202,16%,99%,${lerpNumber(.22,.29,t).toFixed(3)})`,
+      glowSoft:`hsla(208,11%,96%,${lerpNumber(.12,.17,t).toFixed(3)})`
     });
   }
 
@@ -118130,6 +118222,24 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     });
   }
 
+  function applyStagedColorToPicker(nama){
+    const formatted=normalizeName(nama);
+    if(!formatted||targetPickerName()!==formatted)return;
+    const currentFrame=frameForName(formatted);
+
+    const preview=document.getElementById('animalEmojiPickerPreview');
+    if(preview&&currentFrame!=='none'){
+      applyColorProfile(preview,formatted,currentFrame);
+    }
+
+    document.querySelectorAll('.ddt-frame-tile-visual[data-ddt-frame-id]').forEach(tile=>{
+      const frameId=String(tile.dataset.ddtFrameId||'none');
+      if(frameId!=='none'){
+        applyColorProfileToElement(tile,frameId,colorForFrame(formatted,frameId));
+      }
+    });
+  }
+
   function syncColorControl(nama){
     const formatted=normalizeName(nama);
     if(!formatted||targetPickerName()!==formatted)return;
@@ -118150,6 +118260,14 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const formatted=normalizeName(nama);
     if(!formatted||!validFrame(frameId)||frameId==='none')return;
     const next=clampFrameColor(value);
+
+    if(globalThis.DDTAvatarComposerV284?.isActiveFor?.(formatted)){
+      globalThis.DDTAvatarComposerV284.stageColor(formatted,frameId,next);
+      applyStagedColorToPicker(formatted);
+      syncColorControl(formatted);
+      return;
+    }
+
     const profiles=profilesForName(formatted);
     profiles[frameId]=next;
     frameColorState.set(formatted,profiles);
@@ -118168,6 +118286,13 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     if(!formatted||!validFrame(frameId)||frameId==='none')return;
 
     const next=clampFrameColor(value);
+
+    if(globalThis.DDTAvatarComposerV284?.isActiveFor?.(formatted)){
+      globalThis.DDTAvatarComposerV284.stageColor(formatted,frameId,next);
+      applyStagedColorToPicker(formatted);
+      syncColorControl(formatted);
+      return;
+    }
     const persisted=normalizeColorProfiles(frameColorPersistedState.get(formatted));
     const confirmed=Object.prototype.hasOwnProperty.call(persisted,frameId)
       ? clampFrameColor(persisted[frameId])
@@ -118219,6 +118344,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 
   function frameForName(nama){
     const formatted=normalizeName(nama);
+    const stagedFrame=globalThis.DDTAvatarComposerV284?.getStagedFrame?.(formatted);
+    if(typeof stagedFrame==='string'&&validFrame(stagedFrame))return stagedFrame;
     if(frameDesiredState.has(formatted)){
       const desired=String(frameDesiredState.get(formatted)||'none').toLowerCase();
       return validFrame(desired)?desired:'none';
@@ -118315,7 +118442,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   }
   function pickerAnimalItem(){
     const nama=targetPickerName();if(!nama)return null;
-    const key=(()=>{try{return getPreferredAnimalEmoji(nama)||animalKeyForName(nama)}catch{return animalKeyForName(nama)}})();
+    const staged=globalThis.DDTAvatarComposerV284?.getStagedAnimal?.(nama);
+    const key=staged||(()=>{try{return getPreferredAnimalEmoji(nama)||animalKeyForName(nama)}catch{return animalKeyForName(nama)}})();
     return key?catalogMap().get(key)||null:null;
   }
   function makeTileVisual(frameId,item,nama){
@@ -118731,11 +118859,42 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const formatted=normalizeName(nama);
     if(!formatted||!validFrame(frameId))return;
 
+    if(globalThis.DDTAvatarComposerV284?.isActiveFor?.(formatted)){
+      globalThis.DDTAvatarComposerV284.stageFrame(formatted,frameId);
+      applyPickerFrameFast(formatted);
+      syncFrameRailState(formatted);
+      return;
+    }
+
     const current=frameForName(formatted);
     if(current===frameId && !frameSaveActive.has(formatted) && !frameSaveTimers.has(formatted))return;
 
     applyFrameIntent(formatted,frameId);
     scheduleFramePersistence(formatted);
+  }
+
+  function commitCompositionState(nama,frameId,profiles){
+    const formatted=normalizeName(nama);
+    const normalizedFrame=validFrame(frameId)?frameId:'none';
+    const normalizedProfiles=normalizeColorProfiles(profiles);
+
+    frameDesiredState.delete(formatted);
+    const timer=frameSaveTimers.get(formatted);
+    if(timer)clearTimeout(timer);
+    frameSaveTimers.delete(formatted);
+
+    frameState.set(formatted,normalizedFrame);
+    framePersistedState.set(formatted,normalizedFrame);
+    frameColorState.set(formatted,{...normalizedProfiles});
+    frameColorPersistedState.set(formatted,{...normalizedProfiles});
+
+    if(dataIzin?.[formatted]){
+      dataIzin[formatted].avatar_frame=normalizedFrame;
+      dataIzin[formatted].avatar_frame_color_profiles={...normalizedProfiles};
+      dataIzin[formatted].avatar_frame_color=colorForFrame(formatted,normalizedFrame);
+    }
+
+    scheduleSettledFrameHydration();
   }
 
   function startRealtime(){
@@ -118810,8 +118969,10 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
     colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:FRAME_COLOR_MIN,max:FRAME_COLOR_MAX,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
     refresh:queueHydration,
+    refreshPicker:hydratePickerPreview,
+    commitCompositionState,
     frameFor:nama=>frameForName(nama),
     colorFor:(nama,frameId=frameForName(nama))=>colorForFrame(nama,frameId),
     colorProfile:(frameId,value)=>frameColorProfile(frameId,value),
@@ -121042,6 +121203,412 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
 /* Keep selected visual immediate; no transform/size animation. */
 .ddt-frame-option.selected{
   transform:none!important;
+}
+</style>
+
+
+<script id="ddt-avatar-composer-v2-8-4-controller">
+(()=>{
+  'use strict';
+
+  const RPC='save_izin_avatar_composition';
+  const MIN_COLOR=-40;
+  const MAX_COLOR=140;
+  const DEFAULT_COLOR=50;
+
+  let state=null;
+  let saving=false;
+  let baseClose=null;
+
+  function normalizeNameSafe(value){
+    try{return typeof formatName==='function'?formatName(value):String(value||'').trim().toUpperCase()}
+    catch{return String(value||'').trim().toUpperCase()}
+  }
+
+  function normalizeProfiles(value){
+    let source=value;
+    if(typeof source==='string'){
+      try{source=JSON.parse(source)}catch{source={}}
+    }
+    if(!source||typeof source!=='object'||Array.isArray(source))source={};
+    const out={};
+    Object.entries(source).forEach(([key,val])=>{
+      const numeric=Number(val);
+      if(!Number.isFinite(numeric))return;
+      out[key]=Math.max(MIN_COLOR,Math.min(MAX_COLOR,Math.round(numeric)));
+    });
+    return out;
+  }
+
+  function persistedAnimal(nama){
+    try{return getPreferredAnimalEmoji(nama)||null}catch{return null}
+  }
+
+  function persistedFrame(nama){
+    try{return globalThis.DDTAvatarFrameIntegrationV27?.frameFor?.(nama)||'none'}
+    catch{return 'none'}
+  }
+
+  function persistedProfiles(nama){
+    const row=dataIzin?.[nama];
+    return normalizeProfiles(row?.avatar_frame_color_profiles);
+  }
+
+  function snapshot(nama){
+    const formatted=normalizeNameSafe(nama);
+    return {
+      nama:formatted,
+      animal:persistedAnimal(formatted),
+      frame:persistedFrame(formatted),
+      profiles:persistedProfiles(formatted)
+    };
+  }
+
+  function cloneSnapshot(source){
+    return {
+      nama:source.nama,
+      animal:source.animal||null,
+      frame:source.frame||'none',
+      profiles:{...source.profiles}
+    };
+  }
+
+  function equalProfiles(a,b){
+    const ka=Object.keys(a||{}).sort();
+    const kb=Object.keys(b||{}).sort();
+    if(ka.length!==kb.length)return false;
+    for(let i=0;i<ka.length;i++){
+      if(ka[i]!==kb[i]||Number(a[ka[i]])!==Number(b[kb[i]]))return false;
+    }
+    return true;
+  }
+
+  function dirty(){
+    if(!state)return false;
+    return (
+      state.staged.animal!==state.persisted.animal ||
+      state.staged.frame!==state.persisted.frame ||
+      !equalProfiles(state.staged.profiles,state.persisted.profiles)
+    );
+  }
+
+  function note(text,kind=''){
+    const node=document.querySelector('#animalEmojiPicker .animal-emoji-picker-note');
+    if(!node)return;
+    node.textContent=text;
+    node.dataset.composerState=kind;
+  }
+
+  function syncSaveButton(){
+    const btn=document.getElementById('ddtAvatarComposerSave');
+    if(!btn)return;
+    btn.disabled=saving||!dirty();
+    btn.classList.toggle('is-saving',saving);
+    const label=btn.querySelector('.ddt-avatar-composer-save-label');
+    if(label)label.textContent=saving?'Menyimpan…':'Simpan';
+
+    if(saving)note('Menyimpan avatar…','saving');
+    else if(dirty())note('Perubahan belum disimpan.','dirty');
+    else note('Pilih Animal, Frame, dan Color lalu Simpan.','clean');
+  }
+
+  function begin(nama){
+    if(saving)return;
+    const persisted=snapshot(nama);
+    state={
+      persisted,
+      staged:cloneSnapshot(persisted)
+    };
+    syncSaveButton();
+  }
+
+  function cancel(){
+    if(saving)return false;
+    state=null;
+    syncSaveButton();
+    return true;
+  }
+
+  function isActiveFor(nama){
+    return !!state && state.staged.nama===normalizeNameSafe(nama);
+  }
+
+  function getStagedAnimal(nama){
+    return isActiveFor(nama)?state.staged.animal:null;
+  }
+
+  function getStagedFrame(nama){
+    return isActiveFor(nama)?state.staged.frame:null;
+  }
+
+  function getStagedProfiles(nama){
+    return isActiveFor(nama)?{...state.staged.profiles}:null;
+  }
+
+  function stageAnimal(nama,key){
+    if(!isActiveFor(nama)||saving)return;
+    state.staged.animal=key||null;
+    syncSaveButton();
+  }
+
+  function stageFrame(nama,frameId){
+    if(!isActiveFor(nama)||saving)return;
+    state.staged.frame=String(frameId||'none');
+    syncSaveButton();
+  }
+
+  function stageColor(nama,frameId,value){
+    if(!isActiveFor(nama)||saving||!frameId||frameId==='none')return;
+    const numeric=Number(value);
+    if(!Number.isFinite(numeric))return;
+    state.staged.profiles[frameId]=Math.max(MIN_COLOR,Math.min(MAX_COLOR,Math.round(numeric)));
+    syncSaveButton();
+  }
+
+  function encodeAnimal(key){
+    if(!key)return null;
+    return typeof encodePreferredAnimalEmoji==='function'
+      ? encodePreferredAnimalEmoji(key)
+      : `preferred:${key}`;
+  }
+
+  async function save(){
+    if(!state||saving||!dirty())return;
+
+    const current=cloneSnapshot(state.staged);
+    saving=true;
+    syncSaveButton();
+
+    try{
+      const {data,error}=await supabaseDashboard.rpc(RPC,{
+        p_nama:current.nama,
+        p_emoticon:encodeAnimal(current.animal),
+        p_avatar_frame:current.frame,
+        p_avatar_frame_color_profiles:current.profiles
+      });
+      if(error)throw error;
+
+      /* Commit locally only after the single atomic server write succeeds. */
+      if(typeof setStoredAnimalPreference==='function'){
+        setStoredAnimalPreference(current.nama,current.animal||null);
+      }
+
+      if(!dataIzin[current.nama]){
+        dataIzin[current.nama]={
+          status:'none',
+          mulai:null,
+          selesai:null,
+          tanggal:null,
+          role:typeof getRoleForUser==='function'?getRoleForUser(current.nama):null,
+          emoticon:null,
+          avatar_frame:'none',
+          avatar_frame_color:DEFAULT_COLOR,
+          avatar_frame_color_profiles:{}
+        };
+      }
+
+      const row=dataIzin[current.nama];
+      row.emoticon=encodeAnimal(current.animal);
+      row.avatar_frame=current.frame;
+      row.avatar_frame_color_profiles={...current.profiles};
+      row.avatar_frame_color=current.frame!=='none' && Object.prototype.hasOwnProperty.call(current.profiles,current.frame)
+        ? Number(current.profiles[current.frame])
+        : DEFAULT_COLOR;
+      dataIzin[current.nama]=row;
+
+      globalThis.DDTAvatarFrameIntegrationV27?.commitCompositionState?.(
+        current.nama,
+        current.frame,
+        current.profiles
+      );
+
+      state.persisted=cloneSnapshot(current);
+      state.staged=cloneSnapshot(current);
+      saving=false;
+      syncSaveButton();
+
+      /* Close first, then reconcile Monitoring only once. */
+      state=null;
+      if(typeof baseClose==='function')baseClose();
+      else{
+        const overlay=document.getElementById('animalEmojiPicker');
+        overlay?.classList.remove('show');
+        overlay?.setAttribute('aria-hidden','true');
+        document.body.classList.remove('animal-emoji-picker-open');
+        try{animalEmojiPickerTargetName=''}catch{}
+      }
+
+      requestAnimationFrame(()=>{
+        try{
+          if(typeof renderAll==='function')renderAll();
+          else{
+            if(typeof renderDashboardTable==='function')renderDashboardTable();
+            if(typeof renderLiveIzin==='function')renderLiveIzin();
+          }
+        }catch(error){
+          console.warn('Avatar post-save render warning:',error);
+        }
+
+        globalThis.DDTAvatarFrameIntegrationV27?.refresh?.();
+        globalThis.DDTStableAvatarV276?.repaintExisting?.();
+      });
+    }catch(error){
+      saving=false;
+      console.error('Gagal menyimpan komposisi avatar:',error);
+      note('Belum tersimpan. Coba lagi.','error');
+      syncSaveButton();
+    }
+  }
+
+  function installCloseGuard(){
+    if(typeof window.closeAnimalEmojiPicker!=='function')return;
+    if(window.closeAnimalEmojiPicker.__ddtComposerWrapped)return;
+
+    baseClose=window.closeAnimalEmojiPicker;
+    const wrapped=function(){
+      if(saving)return;
+      cancel();
+      return baseClose.apply(this,arguments);
+    };
+    wrapped.__ddtComposerWrapped=true;
+    window.closeAnimalEmojiPicker=wrapped;
+  }
+
+  window.saveAvatarComposition=save;
+
+  window.DDTAvatarComposerV284=Object.freeze({
+    version:'2.8.4',
+    begin,
+    cancel,
+    save,
+    isActiveFor,
+    getStagedAnimal,
+    getStagedFrame,
+    getStagedProfiles,
+    stageAnimal,
+    stageFrame,
+    stageColor,
+    isDirty:dirty,
+    egressPolicy:'one atomic RPC only after explicit Save'
+  });
+
+  installCloseGuard();
+
+  /* If another late script replaces the close handler, re-wrap once after load. */
+  window.addEventListener('load',installCloseGuard,{once:true});
+})();
+</script>
+
+
+<style id="ddt-v2-8-4-staged-save-style">
+/* ================================================================
+   v2.8.4 — STAGED AVATAR COMPOSER
+   ================================================================ */
+
+.ddt-animal-library .animal-emoji-picker-footer{
+  display:grid!important;
+  grid-template-columns:auto minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:10px!important;
+}
+
+.ddt-animal-library .animal-emoji-picker-note{
+  min-width:0;
+  text-align:left;
+}
+
+.ddt-animal-library .animal-emoji-picker-note[data-composer-state="dirty"]{
+  color:var(--text-secondary)!important;
+}
+.ddt-animal-library .animal-emoji-picker-note[data-composer-state="saving"]{
+  color:var(--accent)!important;
+}
+.ddt-animal-library .animal-emoji-picker-note[data-composer-state="error"]{
+  color:#dc2626!important;
+}
+
+.ddt-avatar-composer-save{
+  min-width:72px;
+  height:31px;
+  padding:0 13px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid color-mix(in srgb,var(--accent) 64%,var(--border-color));
+  border-radius:8px;
+  background:var(--accent);
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.025em;
+  cursor:pointer;
+  box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 18%,transparent);
+  transition:filter .14s ease,opacity .14s ease,transform .12s ease;
+}
+
+.ddt-avatar-composer-save:hover:not(:disabled){
+  filter:brightness(1.05);
+}
+.ddt-avatar-composer-save:active:not(:disabled){
+  transform:translateY(1px);
+}
+.ddt-avatar-composer-save:disabled{
+  cursor:default;
+  opacity:.42;
+  box-shadow:none;
+}
+.ddt-avatar-composer-save.is-saving{
+  opacity:.72;
+}
+
+/* Existing v2.8.3 interval -20..120 stays visually identical.
+   Only the new outer tails are added. */
+.ddt-frame-color-control.halo_ring{
+  --ddt-frame-color-track:
+    linear-gradient(90deg,
+      #020304 0%,
+      #090b0d 11.1%,
+      #555b61 16.7%,
+      #79e7b7 22.2%,
+      #80f2ee 30.6%,
+      #65d9f6 38.9%,
+      #51c6ef 50%,
+      #6c91f2 58.3%,
+      #9a75ed 66.7%,
+      #e38bc7 77.8%,
+      #aeb5bc 83.3%,
+      #f7f9fb 88.9%,
+      #ffffff 100%)!important;
+}
+
+.ddt-frame-color-control.orb_ring{
+  --ddt-frame-color-track:
+    linear-gradient(90deg,
+      #010204 0%,
+      #07090c 11.1%,
+      #4b5159 16.7%,
+      #72e09b 22.2%,
+      #46e6da 30.0%,
+      #43bce9 37.8%,
+      #716fe6 50%,
+      #a45ee0 58.9%,
+      #df62b8 67.8%,
+      #ee8c73 77.8%,
+      #aab1bc 83.3%,
+      #fbfcff 88.9%,
+      #ffffff 100%)!important;
+}
+
+@media(max-width:760px){
+  .ddt-animal-library .animal-emoji-picker-footer{
+    grid-template-columns:auto 1fr auto!important;
+    gap:7px!important;
+  }
+  .ddt-avatar-composer-save{
+    min-width:66px;
+    height:30px;
+    padding:0 11px;
+  }
 }
 </style>
 
