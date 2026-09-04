@@ -54167,14 +54167,17 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     const liveName = formatName(item.nama);
                     const liveInitials = liveName.split(/\s+/).filter(Boolean).slice(0,2).map(part => part.charAt(0)).join('').toUpperCase() || '?';
                     const liveAnimal = getAnimalEmojiForDisplay(item.nama, item);
-                    const liveAvatarContent = liveAnimal || liveInitials;
+                    const stableLiveAvatar = globalThis.DDTStableAvatarV275?.parts?.(liveName,'live') || null;
+                    const liveAvatarContent = stableLiveAvatar?.content ?? (liveAnimal || liveInitials);
+                    const liveAvatarClass = stableLiveAvatar?.classes || '';
+                    const liveAvatarAttrs = stableLiveAvatar?.attrs || '';
 
                     return `
                         <article class="live-card-col ${stateClass}" data-nama="${item.nama}">
                             <div class="live-card-main">
-                                <span class="visual-fun-col" aria-hidden="true">${liveAvatarContent}</span>
+                                <span class="visual-fun-col ${liveAvatarClass}" aria-hidden="true" ${liveAvatarAttrs}>${liveAvatarContent}</span>
                                 <span class="nama">${item.nama}</span>
-                                <span class="timer-col ${isOverLimit ? 'over-limit' : ''}" data-start="${item.mulai}">${menit}m ${detik}s</span>
+                                <span class="timer-col ${isOverLimit ? 'over-limit' : ''}" data-start="${item.mulai}" data-progress="${Math.round(progress)}">${menit}m ${detik}s</span>
                             </div>
                             <div class="live-card-meta">
                                 <span class="live-status-label"><span class="live-status-dot"></span>${statusText}</span>
@@ -54206,6 +54209,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const card = el.closest('.live-card-col');
 
                 el.textContent = `${menit}m ${detik}s`;
+                el.dataset.progress = String(Math.round(progress));
                 el.classList.toggle('over-limit', isOverLimit);
                 if (card) {
                     card.classList.toggle('over-limit', isOverLimit);
@@ -54339,8 +54343,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     .join('')
                     .toUpperCase() || '?';
                 const memberEmoji = getAnimalEmojiForDisplay(nama, data);
-                const memberAvatarContent = memberEmoji || memberInitials;
-                const memberAvatarClass = memberEmoji ? 'has-animal-emoji' : '';
+                const stableMemberAvatar = globalThis.DDTStableAvatarV275?.parts?.(displayName,'table') || null;
+                const memberAvatarContent = stableMemberAvatar?.content ?? (memberEmoji || memberInitials);
+                const memberAvatarClass = stableMemberAvatar?.classes ?? (memberEmoji ? 'has-animal-emoji' : '');
+                const memberAvatarAttrs = stableMemberAvatar?.attrs || '';
                 const encodedMemberName = encodeURIComponent(displayName);
 
                 const used = getUsedIzinToday(nama);
@@ -54540,7 +54546,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                         onclick="openAnimalEmojiPicker(decodeURIComponent('${encodedMemberName}'))"
                                         aria-label="Pilih emoticon untuk ${displayName}"
                                         data-tooltip="Pilih emoticon profil"
-                                        data-tooltip-icon="user">
+                                        data-tooltip-icon="user"
+                                        ${memberAvatarAttrs}>
                                     ${memberAvatarContent}
                                 </button>
                                 <span class="nama-cell history-tooltip-target smart-name-tooltip"
@@ -92591,7 +92598,9 @@ body:has(#aps-layer:not([hidden])) #historyActionTooltip{z-index:24020}
   function updateIdentity(){
     if(!activeName)return;
     const key=normalized(activeName);const data=dataIzin?.[key]||null;const role=roleFor(key);
-    avatarEl.textContent=sessionEmoji(key,data);nameEl.textContent=key;nameEl.title=key;roleEl.textContent=roleLabel(role);
+    const stablePaint=globalThis.DDTStableAvatarV275?.paintHost?.(avatarEl,key,'aps');
+    if(!stablePaint?.handled)avatarEl.textContent=sessionEmoji(key,data);
+    nameEl.textContent=key;nameEl.title=key;roleEl.textContent=roleLabel(role);
     let used=0,max=0;try{used=getUsedIzinToday(key)||0;max=getMaxQuota(key)||0}catch{}
     const remaining=Math.max(0,max-used);quotaValue.textContent=`${remaining} / ${max}`;
     const allowed=canEnd(key);endBtn.disabled=ending||!allowed;endBtn.removeAttribute('title');endBtn.setAttribute('aria-label','END IZIN');
@@ -116912,6 +116921,14 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
 
   function renderVisual(container,nama){
     if(!container)return;
+    const stablePaint=globalThis.DDTStableAvatarV275?.paintHost?.(container,nama,'popover');
+    if(stablePaint?.handled){
+      return {
+        value:stablePaint.key||null,
+        item:stablePaint.item||null,
+        meta:stablePaint.meta||'Belum memilih avatar'
+      };
+    }
     container.replaceChildren();
     container.classList.remove('ddt-avatar-popover-legacy','ddt-avatar-popover-empty');
     delete container.dataset.ddtAnimalKey;
@@ -117731,7 +117748,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.7.4-usercard-recomposition-thin-premium-motion-candidate';
+  const VERSION='2.7.5-stable-paint-progress-asset-masked-motion-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -117926,7 +117943,13 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     }catch(error){console.warn('Avatar frame realtime gagal:',error?.message||error)}
   }
   const observer=new MutationObserver(mutations=>{
-    let relevant=false;for(const mutation of mutations){const node=mutation.target?.nodeType===1?mutation.target:mutation.target?.parentElement;if(node?.closest?.('#tab-monitoring,#aps-layer,#ddtAvatarPopover,#animalEmojiPicker')){relevant=true;break}}
+    let relevant=false;
+    for(const mutation of mutations){
+      const node=mutation.target?.nodeType===1?mutation.target:mutation.target?.parentElement;
+      if(!node)continue;
+      if(node.closest?.('.ddt-frame-picker-rail,.ddt-avatar-frame-layer,.ddt-avatar-frame-depth,.ddt-avatar-frame-motion'))continue;
+      if(node.closest?.('#tab-monitoring,#aps-layer,#ddtAvatarPopover,#animalEmojiPicker')){relevant=true;break}
+    }
     if(relevant)queueHydration();
   });
   observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','aria-hidden']});
@@ -117934,7 +117957,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
-    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
   });
   loadFrames();startRealtime();queueHydration();
 })();
@@ -118423,6 +118446,404 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
   #aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
     opacity:.26;
   }
+}
+</style>
+
+
+<script id="ddt-stable-avatar-paint-v2-7-5-controller">
+(()=>{
+  'use strict';
+
+  const FRAME_ASSETS=Object.freeze({
+    none:Object.freeze({label:'None',back:null,front:null}),
+    halo_ring:Object.freeze({
+      label:'Halo Ring',
+      back:'assets/animal/frame/halo_ring_back.webp',
+      front:'assets/animal/frame/halo_ring_front.webp'
+    }),
+    orb_ring:Object.freeze({
+      label:'Orb Ring',
+      back:'assets/animal/frame/orb_ring_back.webp',
+      front:'assets/animal/frame/orb_ring_front.webp'
+    })
+  });
+
+  function esc(value){
+    return String(value??'')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#39;");
+  }
+
+  function normalized(value){
+    try{return typeof formatName==='function'?formatName(value):String(value||'').trim().toUpperCase()}
+    catch{return String(value||'').trim().toUpperCase()}
+  }
+
+  function initials(value){
+    const parts=normalized(value).split(/\s+/).filter(Boolean);
+    if(!parts.length)return '—';
+    return (parts.length===1?parts[0].slice(0,2):parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  }
+
+  function catalog(){
+    return Array.isArray(globalThis.DDTAnimalIntegrationV2?.catalog)
+      ? globalThis.DDTAnimalIntegrationV2.catalog
+      : [];
+  }
+
+  function itemForName(nama){
+    const formatted=normalized(nama);
+    let key=null;
+    try{key=getAnimalEmojiForDisplay(formatted,dataIzin?.[formatted])||null}catch{}
+    if(!key)return {key:null,item:null};
+    const item=catalog().find(entry=>entry.key===key)||null;
+    return item?{key,item}:{key:null,item:null};
+  }
+
+  function frameFor(nama,context){
+    if(context==='table')return 'none';
+    let value='none';
+    try{value=globalThis.DDTAvatarFrameIntegrationV27?.frameFor?.(normalized(nama))||'none'}catch{}
+    return Object.prototype.hasOwnProperty.call(FRAME_ASSETS,value)?value:'none';
+  }
+
+  function dynamicClasses(context,key,frameId){
+    if(!key){
+      return context==='table'
+        ? 'ddt-animal-neutral'
+        : 'ddt-animal-neutral ddt-frame-neutral-avatar';
+    }
+    if(context==='table')return 'ddt-animal-3d';
+    return [
+      'ddt-animal-3d',
+      'ddt-frame-context',
+      `ddt-frame-${frameId}`,
+      frameId!=='none'?'ddt-frame-active':''
+    ].filter(Boolean).join(' ');
+  }
+
+  function contentFor(nama,context,key,item,frameId){
+    if(!key||!item)return esc(initials(nama));
+
+    const animal=`<img class="ddt-animal-img" src="${esc(item.src)}" alt="" decoding="async" draggable="false">`;
+    if(context==='table'||frameId==='none')return animal;
+
+    const frame=FRAME_ASSETS[frameId];
+    return [
+      '<span class="ddt-avatar-frame-depth" aria-hidden="true"></span>',
+      `<img class="ddt-avatar-frame-layer ddt-avatar-frame-back" src="${esc(frame.back)}" alt="" decoding="async" draggable="false">`,
+      animal,
+      `<img class="ddt-avatar-frame-layer ddt-avatar-frame-front" src="${esc(frame.front)}" alt="" decoding="async" draggable="false">`,
+      '<span class="ddt-avatar-frame-motion" aria-hidden="true"></span>'
+    ].join('');
+  }
+
+  function parts(nama,context='table'){
+    const formatted=normalized(nama);
+    const {key,item}=itemForName(formatted);
+    const frameId=frameFor(formatted,context);
+    const fingerprint=`${context}|${formatted}|${key||'neutral'}|${frameId}`;
+    const classes=dynamicClasses(context,key,frameId);
+    const content=contentFor(formatted,context,key,item,frameId);
+    const attrs=[
+      `data-ddt-stable-avatar="${esc(fingerprint)}"`,
+      key?`data-ddt-animal-key="${esc(key)}"`:'',
+      context!=='table'?`data-ddt-frame-id="${esc(frameId)}"`:''
+    ].filter(Boolean).join(' ');
+    const meta=item
+      ? `${item.label} · ${item.gender==='male'?'Male':'Female'}${frameId!=='none'?` · ${FRAME_ASSETS[frameId]?.label||frameId}`:''}`
+      : 'Belum memilih avatar';
+
+    return {formatted,key,item,frameId,fingerprint,classes,content,attrs,meta};
+  }
+
+  function clearDynamicClasses(host){
+    [...host.classList].forEach(name=>{
+      if(
+        name==='ddt-animal-3d' ||
+        name==='ddt-animal-neutral' ||
+        name==='ddt-animal-load-error' ||
+        name==='ddt-frame-context' ||
+        name==='ddt-frame-active' ||
+        name==='ddt-frame-neutral-avatar' ||
+        name.startsWith('ddt-frame-')
+      ){
+        host.classList.remove(name);
+      }
+    });
+  }
+
+  function paintHost(host,nama,context='table'){
+    if(!host)return {handled:false};
+    const next=parts(nama,context);
+
+    if(
+      host.dataset.ddtStableAvatar===next.fingerprint &&
+      (
+        !next.key ||
+        host.querySelector(':scope > .ddt-animal-img')
+      )
+    ){
+      return {handled:true,...next};
+    }
+
+    clearDynamicClasses(host);
+    next.classes.split(/\s+/).filter(Boolean).forEach(name=>host.classList.add(name));
+
+    host.innerHTML=next.content;
+    host.dataset.ddtStableAvatar=next.fingerprint;
+
+    if(next.key)host.dataset.ddtAnimalKey=next.key;
+    else delete host.dataset.ddtAnimalKey;
+
+    if(context!=='table')host.dataset.ddtFrameId=next.frameId;
+    else delete host.dataset.ddtFrameId;
+
+    return {handled:true,...next};
+  }
+
+  /* Pre-existing nodes are normalized once after controller availability.
+     No asset fan-out/preload is performed. */
+  function repaintExisting(){
+    document.querySelectorAll('#tab-monitoring #dashboardTableBody tr[data-nama]').forEach(row=>{
+      paintHost(row.querySelector('.member-avatar'),row.dataset.nama||'','table');
+    });
+    document.querySelectorAll('#tab-monitoring .live-card-col[data-nama]').forEach(card=>{
+      paintHost(card.querySelector('.visual-fun-col'),card.dataset.nama||'','live');
+    });
+
+    const aps=document.getElementById('aps-avatar');
+    const apsName=document.getElementById('aps-name')?.textContent?.trim();
+    if(aps&&apsName&&apsName!=='—')paintHost(aps,apsName,'aps');
+  }
+
+  window.DDTStableAvatarV275=Object.freeze({
+    version:'2.7.5',
+    parts,
+    paintHost,
+    repaintExisting,
+    noAssetPreload:true,
+    frameAssets:FRAME_ASSETS
+  });
+
+  repaintExisting();
+})();
+</script>
+
+
+<style id="ddt-v2-7-5-final-authority-style">
+/* ================================================================
+   v2.7.5 FINAL LIVE-TEST AUTHORITY
+   ================================================================ */
+
+/* ---------- USER CARD PROGRESS ALIGNMENT ---------- */
+#tab-monitoring .live-card-col .timer-col{
+  grid-column:3!important;
+  grid-row:1!important;
+  width:100%!important;
+  justify-self:stretch!important;
+  align-self:end!important;
+  display:flex!important;
+  justify-content:flex-end!important;
+  align-items:baseline!important;
+  gap:7px!important;
+  text-align:right!important;
+  white-space:nowrap!important;
+  font-size:10.4px!important;
+  font-weight:820!important;
+  font-variant-numeric:tabular-nums!important;
+}
+#tab-monitoring .live-card-col .timer-col::after{
+  content:attr(data-progress) "%";
+  color:var(--text-muted);
+  font-size:7.8px;
+  font-weight:760;
+  line-height:1;
+  letter-spacing:0;
+  font-variant-numeric:tabular-nums;
+}
+
+#tab-monitoring .live-card-col .live-mini-progress{
+  grid-column:3!important;
+  grid-row:2!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  justify-self:stretch!important;
+  align-self:start!important;
+  margin-top:5px!important;
+}
+#tab-monitoring .live-card-col .live-mini-progress::after{
+  display:none!important;
+  content:none!important;
+}
+
+/* ---------- PERCEPTUAL FRAME THINNING ---------- */
+/* Geometric stroke remains owned by locked WebP assets.
+   These values reduce visual density while retaining identity at small size. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-back,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-back{
+  opacity:.82!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-front,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-front{
+  opacity:.86!important;
+}
+#tab-monitoring .live-card-col .ddt-avatar-frame-back{opacity:.88!important}
+#tab-monitoring .live-card-col .ddt-avatar-frame-front{opacity:.91!important}
+
+/* ---------- ASSET-MASKED PREMIUM MOTION ---------- */
+/* The parent no longer draws an ellipse/circle of its own. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
+  display:block!important;
+  inset:0!important;
+  border-radius:0!important;
+  overflow:visible!important;
+  background:none!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+  filter:none!important;
+  transform:none!important;
+  opacity:1!important;
+  animation:none!important;
+}
+
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion::before,
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion::after,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion::before,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:0;
+  background-repeat:no-repeat;
+  background-size:260% 180%;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  mask-position:center;
+  -webkit-mask-size:contain;
+  mask-size:contain;
+}
+
+/* HALO: highlight is clipped to the real Halo Back/Front alpha. */
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion::before,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion::before{
+  background-image:linear-gradient(
+    112deg,
+    transparent 0 34%,
+    rgba(197,244,255,.10) 40%,
+    rgba(236,253,255,.82) 48%,
+    rgba(97,216,255,.34) 54%,
+    transparent 62% 100%
+  );
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_back.webp");
+  mask-image:url("assets/animal/frame/halo_ring_back.webp");
+}
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion::after,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion::after{
+  background-image:linear-gradient(
+    112deg,
+    transparent 0 35%,
+    rgba(215,249,255,.12) 42%,
+    rgba(255,255,255,.92) 49%,
+    rgba(92,225,255,.38) 55%,
+    transparent 63% 100%
+  );
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_front.webp");
+  mask-image:url("assets/animal/frame/halo_ring_front.webp");
+}
+
+/* ORB: sweep can only exist on the actual locked Orb pixels.
+   No generic orbital ellipse is drawn. */
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion::before,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion::before{
+  background-image:linear-gradient(
+    103deg,
+    transparent 0 31%,
+    rgba(105,224,255,.10) 38%,
+    rgba(228,249,255,.88) 47%,
+    rgba(210,119,255,.55) 53%,
+    rgba(102,104,255,.14) 60%,
+    transparent 68% 100%
+  );
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_back.webp");
+  mask-image:url("assets/animal/frame/orb_ring_back.webp");
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion::after,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion::after{
+  background-image:linear-gradient(
+    103deg,
+    transparent 0 32%,
+    rgba(111,231,255,.11) 39%,
+    rgba(245,252,255,.96) 48%,
+    rgba(221,117,255,.64) 54%,
+    rgba(105,105,255,.16) 61%,
+    transparent 69% 100%
+  );
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_front.webp");
+  mask-image:url("assets/animal/frame/orb_ring_front.webp");
+}
+
+/* v2.7.5 owns all popup frame animation. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-back,
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-front,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-back,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-front{
+  animation:none!important;
+}
+
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion::before,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion::before{
+    animation:ddtV275HaloMaskedSweep 7.8s ease-in-out infinite;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion::after,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion::after{
+    animation:ddtV275HaloMaskedSweep 7.8s ease-in-out -1.15s infinite;
+  }
+
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion::before,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion::before{
+    animation:ddtV275OrbMaskedSweep 6.2s ease-in-out infinite;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion::after,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion::after{
+    animation:ddtV275OrbMaskedSweep 6.2s ease-in-out -.8s infinite;
+  }
+}
+
+@keyframes ddtV275HaloMaskedSweep{
+  0%,12%{opacity:.08;background-position:145% 50%}
+  27%{opacity:.55}
+  48%{opacity:.76;background-position:-45% 50%}
+  62%{opacity:.28}
+  78%,100%{opacity:.07;background-position:-70% 50%}
+}
+@keyframes ddtV275OrbMaskedSweep{
+  0%,10%{opacity:.10;background-position:145% 50%}
+  29%{opacity:.62}
+  49%{opacity:.82;background-position:-42% 50%}
+  64%{opacity:.34}
+  82%,100%{opacity:.08;background-position:-68% 50%}
+}
+
+/* User Card is deliberately static. */
+#tab-monitoring .live-card-col .ddt-avatar-frame-motion{
+  display:none!important;
+}
+
+/* Stable direct markup should not flash text before image hydration. */
+#tab-monitoring .member-avatar[data-ddt-stable-avatar],
+#tab-monitoring .visual-fun-col[data-ddt-stable-avatar],
+#aps-avatar[data-ddt-stable-avatar],
+#ddtAvatarPopoverVisual[data-ddt-stable-avatar]{
+  text-rendering:geometricPrecision;
 }
 </style>
 
