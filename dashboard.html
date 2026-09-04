@@ -117851,7 +117851,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.9.4-left-occluded-handoff-refinement-candidate';
+  const VERSION='2.9.5-left-tunnel-continuity-shared-hidden-corridor-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -118420,7 +118420,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   }
   function removeFrameLayers(host){
     if(!host)return;
-    host.querySelectorAll(':scope > .ddt-avatar-frame-layer, :scope > .ddt-avatar-frame-depth, :scope > .ddt-avatar-frame-motion, :scope > .ddt-motion-v1').forEach(node=>node.remove());
+    host.querySelectorAll(':scope > .ddt-avatar-frame-layer, :scope > .ddt-avatar-frame-depth, :scope > .ddt-avatar-frame-motion, :scope > .ddt-motion-v1, :scope > .ddt-motion-v1-tunnel').forEach(node=>node.remove());
     [...host.classList].filter(c=>c.startsWith('ddt-frame-')).forEach(c=>{
       if(c!=='ddt-frame-context'&&c!=='ddt-frame-active'&&c!=='ddt-frame-neutral-avatar')host.classList.remove(c);
     });
@@ -118450,7 +118450,11 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const motionContext=context==='aps'||context==='popover';
     const hasMotionV1=
       host.querySelector(':scope > .ddt-motion-v1-back') &&
-      host.querySelector(':scope > .ddt-motion-v1-front');
+      host.querySelector(':scope > .ddt-motion-v1-front') &&
+      (
+        frameId!=='orb_ring' ||
+        host.querySelector(':scope > .ddt-motion-v1-tunnel')
+      );
 
     if(
       host.dataset.ddtFrameId===frameId &&
@@ -118483,6 +118487,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     motionFront.className='ddt-avatar-frame-motion ddt-avatar-frame-motion-front';motionFront.setAttribute('aria-hidden','true');
 
     let travelBack=null;
+    let travelTunnel=null;
     let travelFront=null;
     if(motionContext){
       travelBack=document.createElement('img');
@@ -118492,6 +118497,19 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       travelBack.decoding='async';
       travelBack.draggable=false;
       travelBack.setAttribute('aria-hidden','true');
+
+      if(frameId==='orb_ring'){
+        /* Shared hidden corridor:
+           the Front asset travels BEHIND the animal before emerging
+           onto the visible foreground Front layer. */
+        travelTunnel=document.createElement('img');
+        travelTunnel.className='ddt-motion-v1-tunnel';
+        travelTunnel.src=frame.front;
+        travelTunnel.alt='';
+        travelTunnel.decoding='async';
+        travelTunnel.draggable=false;
+        travelTunnel.setAttribute('aria-hidden','true');
+      }
 
       travelFront=document.createElement('img');
       travelFront.className='ddt-motion-v1 ddt-motion-v1-front';
@@ -118506,6 +118524,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     host.insertBefore(back,animal);
     host.insertBefore(motionBack,animal);
     if(travelBack)host.insertBefore(travelBack,animal);
+    if(travelTunnel)host.insertBefore(travelTunnel,animal);
     host.appendChild(front);
     host.appendChild(motionFront);
     if(travelFront)host.appendChild(travelFront);
@@ -118551,6 +118570,14 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       travelBack.src=frame.back;travelBack.alt='';travelBack.decoding='async';travelBack.draggable=false;
       travelBack.setAttribute('aria-hidden','true');
       visual.appendChild(travelBack);
+
+      if(frameId==='orb_ring'){
+        const tunnel=document.createElement('img');
+        tunnel.className='ddt-motion-v1-tile-tunnel';
+        tunnel.src=frame.front;tunnel.alt='';tunnel.decoding='async';tunnel.draggable=false;
+        tunnel.setAttribute('aria-hidden','true');
+        visual.appendChild(tunnel);
+      }
     }
 
     if(item?.src){
@@ -119148,7 +119175,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
     colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:FRAME_COLOR_MIN,max:FRAME_COLOR_MAX,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,motionV1ColorAwareTravellingLightV290:true,motionV1ChromaticSpecularV291:true,pickerSelectedLoopV291:true,orbFrontContinuityV292:true,orbFrontHoldBridgeV293:true,orbLeftOccludedHandoffV294:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,motionV1ColorAwareTravellingLightV290:true,motionV1ChromaticSpecularV291:true,pickerSelectedLoopV291:true,orbFrontContinuityV292:true,orbFrontHoldBridgeV293:true,orbLeftOccludedHandoffV294:true,orbLeftTunnelContinuityV295:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
     refresh:queueHydration,
     refreshPicker:hydratePickerPreview,
     commitCompositionState,
@@ -122630,6 +122657,341 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
   .ddt-frame-option.ddt-motion-v1-selected-loop
   .ddt-frame-tile-visual.orb_ring > .ddt-motion-v1-tile-front{
     animation:ddtMotionV1OrbFrontContinuityV294 1.75s linear infinite!important;
+  }
+}
+</style>
+
+
+<style id="ddt-v2-9-5-left-tunnel-continuity-shared-hidden-corridor">
+/* ================================================================
+   v2.9.5 — LEFT TUNNEL CONTINUITY / SHARED HIDDEN CORRIDOR
+
+   Root correction:
+   v2.9.4 moved the handoff inward but still used two independently
+   visible endpoints, making the apparent jump larger.
+
+   v2.9.5 introduces a THIRD physical motion phase for Orb only:
+   BACK (behind animal)
+       ->
+   TUNNEL using the FRONT WebP but still BEHIND animal
+       ->
+   FRONT foreground layer.
+
+   The tunnel shares exact coordinates with both neighboring phases.
+   There is therefore no geometric teleport at either boundary.
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   Orb tunnel layer.
+   It uses the Front WebP source but is physically below the animal.
+   ---------------------------------------------------------------- */
+.ddt-motion-v1-tunnel{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  pointer-events:none!important;
+  user-select:none!important;
+  -webkit-user-drag:none!important;
+  z-index:2!important;
+  opacity:0;
+  will-change:clip-path,opacity;
+  filter:
+    hue-rotate(var(--ddt-frame-profile-hue,0deg))
+    saturate(var(--ddt-frame-profile-sat,1))
+    brightness(
+      calc(
+        var(--ddt-frame-profile-bright,1) *
+        var(--ddt-motion-v1-boost,1.26)
+      )
+    )
+    contrast(
+      calc(
+        var(--ddt-frame-profile-contrast,1) *
+        var(--ddt-motion-v1-contrast-boost,1.06)
+      )
+    )
+    drop-shadow(
+      0 0 .75px
+      rgba(255,255,255,var(--ddt-motion-v1-core-alpha,.32))
+    )
+    drop-shadow(
+      0 0 3.2px
+      var(--ddt-motion-v1-edge,rgba(102,220,255,.34))
+    )!important;
+}
+
+#aps-avatar.ddt-frame-orb_ring > .ddt-motion-v1-tunnel,
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-motion-v1-tunnel{
+  transform:translateY(2.1%) scale(1.06)!important;
+}
+
+/* Correct stack:
+   Rear / Tunnel are both under animal.
+   Foreground Front motion stays above animal. */
+.ddt-frame-context.ddt-frame-active > .ddt-motion-v1-back{z-index:2!important}
+.ddt-frame-context.ddt-frame-active > .ddt-motion-v1-tunnel{z-index:2!important}
+.ddt-frame-context.ddt-frame-active > .ddt-animal-img{z-index:3!important}
+.ddt-frame-context.ddt-frame-active > .ddt-avatar-frame-front{z-index:4!important}
+.ddt-frame-context.ddt-frame-active > .ddt-motion-v1-front{z-index:5!important}
+
+/* ----------------------------------------------------------------
+   BACK PHASE
+   Ends at the REAL left junction around X 12%, Y 50%.
+   Do not move inward toward X 30-40%; that caused the v2.9.4 jump.
+   ---------------------------------------------------------------- */
+@keyframes ddtMotionV1OrbBackTunnelV295{
+  0%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:circle(9.5% at 91% 54%);
+  }
+  8%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:circle(9.5% at 89% 43%);
+  }
+  18%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:circle(9.5% at 78% 31%);
+  }
+  28%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:circle(9.5% at 60% 25%);
+  }
+  36%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:circle(9.5% at 42% 25%);
+  }
+  44%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:circle(9.5% at 23% 32%);
+  }
+  49%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:circle(9.5% at 14% 45%);
+  }
+  52%{
+    opacity:.70;
+    clip-path:circle(9.5% at 12% 50%);
+  }
+  54%{
+    opacity:.20;
+    clip-path:circle(9.5% at 12% 52%);
+  }
+  55%,94%{
+    opacity:0;
+    clip-path:circle(9.5% at 12% 52%);
+  }
+  95%{
+    opacity:.18;
+    clip-path:circle(9.5% at 92% 55%);
+  }
+  100%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:circle(9.5% at 91% 54%);
+  }
+}
+
+/* ----------------------------------------------------------------
+   HIDDEN TUNNEL PHASE
+   SAME Front asset, but below animal.
+
+   Starts exactly where Back disappears:
+     12%,52%
+   and exits exactly where visible Front begins:
+     18%,63%
+
+   The path follows actual v7.2 alpha observations:
+   x12 -> y~56
+   x15 -> y~60
+   x18 -> y~63.5
+   ---------------------------------------------------------------- */
+@keyframes ddtMotionV1OrbTunnelV295{
+  0%,50%{
+    opacity:0;
+    clip-path:ellipse(11% 7% at 12% 52%);
+  }
+  51%{
+    opacity:.22;
+    clip-path:ellipse(11% 7% at 12% 52%);
+  }
+  54%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(11% 7% at 12% 56%);
+  }
+  57%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(11% 7% at 15% 60%);
+  }
+  60%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(11% 7% at 18% 63%);
+  }
+  62%{
+    opacity:.28;
+    clip-path:ellipse(11% 7% at 18% 63%);
+  }
+  63%,100%{
+    opacity:0;
+    clip-path:ellipse(11% 7% at 18% 63%);
+  }
+}
+
+/* ----------------------------------------------------------------
+   VISIBLE FRONT PHASE
+   Begins at the EXACT tunnel exit coordinate: 18%,63%.
+   There is no spatial jump.
+
+   Center/right use the already-approved v2.9.3 geometry.
+   ---------------------------------------------------------------- */
+@keyframes ddtMotionV1OrbFrontTunnelV295{
+  0%,57%{
+    opacity:0;
+    clip-path:ellipse(13% 7.5% at 18% 63%);
+  }
+  58%{
+    opacity:.20;
+    clip-path:ellipse(13% 7.5% at 18% 63%);
+  }
+  60%{
+    opacity:.58;
+    clip-path:ellipse(13% 7.5% at 18% 63%);
+  }
+  62%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(13% 7.5% at 18% 63%);
+  }
+
+  /* approved front arc */
+  67%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(13% 7.5% at 27% 67%);
+  }
+  72%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(13% 7.5% at 38% 71%);
+  }
+  77%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(13% 7.5% at 50% 72.5%);
+  }
+  83%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(13% 7.5% at 62% 71%);
+  }
+  88%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(13% 7.5% at 73% 67%);
+  }
+  93%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(13% 7.5% at 82% 62%);
+  }
+  97%{
+    opacity:var(--ddt-motion-v1-opacity,.88);
+    clip-path:ellipse(13% 7.5% at 90% 56%);
+  }
+  100%{
+    opacity:.24;
+    clip-path:ellipse(13% 7.5% at 92% 54%);
+  }
+}
+
+/* Popup AVATAR + START */
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-motion-v1-back,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-motion-v1-back{
+    animation:ddtMotionV1OrbBackTunnelV295 6s linear infinite!important;
+  }
+
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-motion-v1-tunnel,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-motion-v1-tunnel{
+    animation:ddtMotionV1OrbTunnelV295 6s linear infinite!important;
+  }
+
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-motion-v1-front,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-motion-v1-front{
+    animation:ddtMotionV1OrbFrontTunnelV295 6s linear infinite!important;
+  }
+}
+
+/* ----------------------------------------------------------------
+   PICKER tunnel clone — also below animal.
+   ---------------------------------------------------------------- */
+.ddt-motion-v1-tile-tunnel{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  pointer-events:none!important;
+  z-index:2!important;
+  opacity:0;
+  will-change:clip-path,opacity;
+  transform:translateY(2.1%) scale(1.06)!important;
+  filter:
+    hue-rotate(var(--ddt-frame-profile-hue,0deg))
+    saturate(var(--ddt-frame-profile-sat,1))
+    brightness(
+      calc(
+        var(--ddt-frame-profile-bright,1) *
+        var(--ddt-motion-v1-boost,1.26)
+      )
+    )
+    contrast(
+      calc(
+        var(--ddt-frame-profile-contrast,1) *
+        var(--ddt-motion-v1-contrast-boost,1.06)
+      )
+    )
+    drop-shadow(
+      0 0 .75px
+      rgba(255,255,255,var(--ddt-motion-v1-core-alpha,.32))
+    )
+    drop-shadow(
+      0 0 3px
+      var(--ddt-motion-v1-edge,rgba(102,220,255,.34))
+    )!important;
+}
+
+.ddt-frame-tile-back{z-index:1!important}
+.ddt-motion-v1-tile-back{z-index:2!important}
+.ddt-motion-v1-tile-tunnel{z-index:2!important}
+.ddt-frame-tile-animal{z-index:3!important}
+.ddt-frame-tile-front{z-index:4!important}
+.ddt-motion-v1-tile-front{z-index:5!important}
+
+@media(prefers-reduced-motion:no-preference){
+  .ddt-frame-option.ddt-motion-v1-selected-loop
+  .ddt-frame-tile-visual.orb_ring > .ddt-motion-v1-tile-back{
+    animation:ddtMotionV1OrbBackTunnelV295 1.75s linear infinite!important;
+  }
+
+  .ddt-frame-option.ddt-motion-v1-selected-loop
+  .ddt-frame-tile-visual.orb_ring > .ddt-motion-v1-tile-tunnel{
+    animation:ddtMotionV1OrbTunnelV295 1.75s linear infinite!important;
+  }
+
+  .ddt-frame-option.ddt-motion-v1-selected-loop
+  .ddt-frame-tile-visual.orb_ring > .ddt-motion-v1-tile-front{
+    animation:ddtMotionV1OrbFrontTunnelV295 1.75s linear infinite!important;
+  }
+}
+
+/* Hover remains motion-free. */
+.ddt-frame-option:hover .ddt-motion-v1-tile-tunnel,
+.ddt-frame-option:focus-visible .ddt-motion-v1-tile-tunnel{
+  animation:none!important;
+  opacity:0!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ddt-motion-v1-tunnel,
+  .ddt-motion-v1-tile-tunnel{
+    display:none!important;
+    animation:none!important;
   }
 }
 </style>
