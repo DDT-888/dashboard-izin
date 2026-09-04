@@ -50384,7 +50384,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dataIzin[nama].emoticon = null;
                 dataIzin[nama].avatar_frame = dataIzin[nama].avatar_frame || 'none';
                 dataIzin[nama].avatar_frame_color = Number.isFinite(Number(dataIzin[nama].avatar_frame_color))
-                    ? Math.max(0, Math.min(100, Math.round(Number(dataIzin[nama].avatar_frame_color))))
+                    ? Math.max(-20, Math.min(120, Math.round(Number(dataIzin[nama].avatar_frame_color))))
                     : 50;
                 dataIzin[nama].avatar_frame_color_profiles =
                     dataIzin[nama].avatar_frame_color_profiles &&
@@ -50409,7 +50409,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dataIzin[item.nama].emoticon = item.emoticon || null;
                 dataIzin[item.nama].avatar_frame = item.avatar_frame || 'none';
                 dataIzin[item.nama].avatar_frame_color = Number.isFinite(Number(item.avatar_frame_color))
-                    ? Math.max(0, Math.min(100, Math.round(Number(item.avatar_frame_color))))
+                    ? Math.max(-20, Math.min(120, Math.round(Number(item.avatar_frame_color))))
                     : 50;
                 dataIzin[item.nama].avatar_frame_color_profiles =
                     item.avatar_frame_color_profiles &&
@@ -51048,7 +51048,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                     emoticon: null,
                                     avatar_frame: newRecord.avatar_frame || 'none',
                                     avatar_frame_color: Number.isFinite(Number(newRecord.avatar_frame_color))
-                                        ? Math.max(0, Math.min(100, Math.round(Number(newRecord.avatar_frame_color))))
+                                        ? Math.max(-20, Math.min(120, Math.round(Number(newRecord.avatar_frame_color))))
                                         : 50,
                                     avatar_frame_color_profiles:
                                         newRecord.avatar_frame_color_profiles &&
@@ -51075,7 +51075,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             dataIzin[nama].emoticon = newRecord.emoticon || null;
                             dataIzin[nama].avatar_frame = newRecord.avatar_frame || 'none';
                             dataIzin[nama].avatar_frame_color = Number.isFinite(Number(newRecord.avatar_frame_color))
-                                ? Math.max(0, Math.min(100, Math.round(Number(newRecord.avatar_frame_color))))
+                                ? Math.max(-20, Math.min(120, Math.round(Number(newRecord.avatar_frame_color))))
                                 : 50;
                             dataIzin[nama].avatar_frame_color_profiles =
                                 newRecord.avatar_frame_color_profiles &&
@@ -69135,7 +69135,7 @@ async function processCsEvaluationAppeal(id, status) {
             const cache = csEvalState.dashboardStatCache;
             if (!force && cache.email === email && now - cache.loadedAt < DASHBOARD_CS_STAT_CACHE_MS && cache.row) {
                 const baseBonus = Number(csEvalState.settings.base_bonus || CS_EVAL_DEFAULT_SETTINGS.base_bonus || 0);
-                const percent = baseBonus > 0 ? Math.max(0, Math.min(100, Math.round(Number(cache.row.estimated_bonus || 0) / baseBonus * 100))) : 0;
+                const percent = baseBonus > 0 ? Math.max(-20, Math.min(120, Math.round(Number(cache.row.estimated_bonus || 0) / baseBonus * 100))) : 0;
                 pointsNode.textContent = Number(cache.row.lc_points || 0);
                 bonusNode.textContent = `${percent}%`;
                 return;
@@ -69157,7 +69157,7 @@ async function processCsEvaluationAppeal(id, status) {
                 const row = summary.find(item => lower(item.staff_email) === email) || null;
                 if (!row) throw new Error('Data staff belum terhubung');
                 const baseBonus = Number(csEvalState.settings.base_bonus || CS_EVAL_DEFAULT_SETTINGS.base_bonus || 0);
-                const percent = baseBonus > 0 ? Math.max(0, Math.min(100, Math.round(Number(row.estimated_bonus || 0) / baseBonus * 100))) : 0;
+                const percent = baseBonus > 0 ? Math.max(-20, Math.min(120, Math.round(Number(row.estimated_bonus || 0) / baseBonus * 100))) : 0;
                 pointsNode.textContent = Number(row.lc_points || 0);
                 bonusNode.textContent = `${percent}%`;
                 csEvalState.dashboardStatCache = { periodId, email, loadedAt: now, row };
@@ -117830,7 +117830,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.8.2-rapid-switch-reset-extended-color-silent-selection-candidate';
+  const VERSION='2.8.3-smooth-switch-neutral-atmosphere-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -117852,6 +117852,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   const frameDesiredState=new Map();
   const frameSaveTimers=new Map();
   const frameSaveActive=new Set();
+  let frameSettledHydrationTimer=0;
   let hydrationFrame=0;
   let pickerBusy=false;
   let frameChannel=null;
@@ -117869,10 +117870,13 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     return (parts.length===1?parts[0].slice(0,2):parts[0][0]+parts[parts.length-1][0]).toUpperCase();
   }
   function validFrame(value){return Object.prototype.hasOwnProperty.call(FRAMES,String(value||'').toLowerCase())}
+  const FRAME_COLOR_MIN=-20;
+  const FRAME_COLOR_MAX=120;
+
   function clampFrameColor(value){
     const numeric=Number(value);
     if(!Number.isFinite(numeric))return FRAME_COLOR_DEFAULT;
-    return Math.max(0,Math.min(100,Math.round(numeric)));
+    return Math.max(FRAME_COLOR_MIN,Math.min(FRAME_COLOR_MAX,Math.round(numeric)));
   }
 
   function normalizeColorProfiles(value){
@@ -117908,20 +117912,20 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 
   /* One slider position = one Color Profile.
      Halo and Orb intentionally translate the same value differently. */
-  function frameColorProfile(frameId,value){
-    const v=clampFrameColor(value);
+  function chromaticFrameColorProfile(frameId,value){
+    /* IMPORTANT: values 0..100 reproduce v2.8.2 exactly. */
+    const v=Math.max(0,Math.min(100,Math.round(Number(value))));
     const x=(v-FRAME_COLOR_DEFAULT)/FRAME_COLOR_DEFAULT;
     const a=Math.abs(x);
 
     if(frameId==='orb_ring'){
-      /* Expanded Orb gamut: nearly full cosmic spectrum while 50 stays master. */
       const hue=x*170;
       const sat=1+(a*.28)+(Math.max(x,0)*.08);
       const bright=1-(x*.025)+(a*.018);
       const contrast=1+(a*.075);
       const glowHue=(238+hue+360)%360;
       const glowAlpha=.16+(a*.13);
-      return Object.freeze({
+      return {
         value:v,
         hue,
         sat,
@@ -117932,17 +117936,16 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         depthBright:1-(x*.018),
         glow:`hsla(${glowHue.toFixed(1)},92%,68%,${glowAlpha.toFixed(3)})`,
         glowSoft:`hsla(${glowHue.toFixed(1)},88%,63%,${(glowAlpha*.52).toFixed(3)})`
-      });
+      };
     }
 
-    /* Expanded Halo gamut, deliberately softer than Orb. */
     const hue=x*150;
     const sat=1+(a*.19)+(Math.max(x,0)*.06);
     const bright=1-(x*.028)+(a*.012);
     const contrast=1+(a*.055);
     const glowHue=(204+hue+360)%360;
     const glowAlpha=.13+(a*.105);
-    return Object.freeze({
+    return {
       value:v,
       hue,
       sat,
@@ -117953,6 +117956,84 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       depthBright:1-(x*.016),
       glow:`hsla(${glowHue.toFixed(1)},90%,70%,${glowAlpha.toFixed(3)})`,
       glowSoft:`hsla(${glowHue.toFixed(1)},86%,65%,${(glowAlpha*.50).toFixed(3)})`
+    };
+  }
+
+  function lerpNumber(a,b,t){return a+((b-a)*t)}
+
+  function frameColorProfile(frameId,value){
+    const v=clampFrameColor(value);
+
+    /* Existing chromatic values are byte-for-byte conceptually preserved. */
+    if(v>=0&&v<=100){
+      return Object.freeze(chromaticFrameColorProfile(frameId,v));
+    }
+
+    if(v<0){
+      const base=chromaticFrameColorProfile(frameId,0);
+      const t=Math.max(0,Math.min(1,(-v)/20));
+
+      if(frameId==='orb_ring'){
+        /* Graphite -> Obsidian: dark glossy cosmic metal, never flat black. */
+        return Object.freeze({
+          value:v,
+          hue:lerpNumber(base.hue,0,t),
+          sat:lerpNumber(base.sat,.13,t),
+          bright:lerpNumber(base.bright,.43,t),
+          contrast:lerpNumber(base.contrast,1.24,t),
+          depthHue:lerpNumber(base.depthHue,0,t),
+          depthSat:lerpNumber(base.depthSat,.12,t),
+          depthBright:lerpNumber(base.depthBright,.48,t),
+          glow:`hsla(${lerpNumber(210,220,t).toFixed(1)},18%,${lerpNumber(68,76,t).toFixed(1)}%,${lerpNumber(.13,.09,t).toFixed(3)})`,
+          glowSoft:`hsla(216,14%,68%,${lerpNumber(.075,.045,t).toFixed(3)})`
+        });
+      }
+
+      /* Halo neutral dark stays ceremonial, with a thin silver edge. */
+      return Object.freeze({
+        value:v,
+        hue:lerpNumber(base.hue,0,t),
+        sat:lerpNumber(base.sat,.10,t),
+        bright:lerpNumber(base.bright,.46,t),
+        contrast:lerpNumber(base.contrast,1.20,t),
+        depthHue:lerpNumber(base.depthHue,0,t),
+        depthSat:lerpNumber(base.depthSat,.09,t),
+        depthBright:lerpNumber(base.depthBright,.52,t),
+        glow:`hsla(205,16%,${lerpNumber(72,82,t).toFixed(1)}%,${lerpNumber(.12,.085,t).toFixed(3)})`,
+        glowSoft:`hsla(208,12%,74%,${lerpNumber(.065,.04,t).toFixed(3)})`
+      });
+    }
+
+    const base=chromaticFrameColorProfile(frameId,100);
+    const t=Math.max(0,Math.min(1,(v-100)/20));
+
+    if(frameId==='orb_ring'){
+      /* Silver -> Pearl White: high-value cosmic metal with retained contour. */
+      return Object.freeze({
+        value:v,
+        hue:lerpNumber(base.hue,0,t),
+        sat:lerpNumber(base.sat,.11,t),
+        bright:lerpNumber(base.bright,1.19,t),
+        contrast:lerpNumber(base.contrast,1.07,t),
+        depthHue:lerpNumber(base.depthHue,0,t),
+        depthSat:lerpNumber(base.depthSat,.10,t),
+        depthBright:lerpNumber(base.depthBright,1.10,t),
+        glow:`hsla(210,24%,96%,${lerpNumber(.17,.24,t).toFixed(3)})`,
+        glowSoft:`hsla(214,18%,90%,${lerpNumber(.09,.13,t).toFixed(3)})`
+      });
+    }
+
+    return Object.freeze({
+      value:v,
+      hue:lerpNumber(base.hue,0,t),
+      sat:lerpNumber(base.sat,.08,t),
+      bright:lerpNumber(base.bright,1.17,t),
+      contrast:lerpNumber(base.contrast,1.05,t),
+      depthHue:lerpNumber(base.depthHue,0,t),
+      depthSat:lerpNumber(base.depthSat,.08,t),
+      depthBright:lerpNumber(base.depthBright,1.08,t),
+      glow:`hsla(202,22%,97%,${lerpNumber(.15,.22,t).toFixed(3)})`,
+      glowSoft:`hsla(208,16%,92%,${lerpNumber(.08,.12,t).toFixed(3)})`
     });
   }
 
@@ -118059,7 +118140,10 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     if(Number(input.value)!==value)input.value=String(value);
     input.setAttribute('aria-valuetext',`Color Profile ${value}`);
     const control=input.closest('.ddt-frame-color-control');
-    if(control)control.style.setProperty('--ddt-frame-color-position',`${value}%`);
+    if(control)control.style.setProperty(
+      '--ddt-frame-color-position',
+      `${((value-FRAME_COLOR_MIN)/(FRAME_COLOR_MAX-FRAME_COLOR_MIN))*100}%`
+    );
   }
 
   function setColorOptimistic(nama,frameId,value){
@@ -118311,7 +118395,11 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       const colorValue=colorForFrame(nama,current);
       const colorControl=document.createElement('div');
       colorControl.className=`ddt-frame-color-control ${current}`;
-      colorControl.style.setProperty('--ddt-frame-color-position',`${colorValue}%`);
+      colorControl.dataset.ddtFrameId=current;
+      colorControl.style.setProperty(
+        '--ddt-frame-color-position',
+        `${((colorValue-FRAME_COLOR_MIN)/(FRAME_COLOR_MAX-FRAME_COLOR_MIN))*100}%`
+      );
 
       const colorLabel=document.createElement('span');
       colorLabel.className='ddt-frame-color-label';
@@ -118320,8 +118408,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       const colorInput=document.createElement('input');
       colorInput.className='ddt-frame-color-input';
       colorInput.type='range';
-      colorInput.min='0';
-      colorInput.max='100';
+      colorInput.min=String(FRAME_COLOR_MIN);
+      colorInput.max=String(FRAME_COLOR_MAX);
       colorInput.step='1';
       colorInput.value=String(colorValue);
       colorInput.setAttribute('aria-label',`Color Profile ${FRAMES[current].label}`);
@@ -118334,15 +118422,20 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       colorInput.addEventListener('input',event=>{
         event.stopPropagation();
         const value=clampFrameColor(event.currentTarget.value);
-        colorControl.style.setProperty('--ddt-frame-color-position',`${value}%`);
+        const activeFrame=String(colorControl.dataset.ddtFrameId||frameForName(nama));
+        colorControl.style.setProperty(
+          '--ddt-frame-color-position',
+          `${((value-FRAME_COLOR_MIN)/(FRAME_COLOR_MAX-FRAME_COLOR_MIN))*100}%`
+        );
         event.currentTarget.setAttribute('aria-valuetext',`Color Profile ${value}`);
-        setColorOptimistic(nama,current,value);
+        setColorOptimistic(nama,activeFrame,value);
       });
 
       /* Persist only when the slider value is committed. */
       colorInput.addEventListener('change',event=>{
         event.stopPropagation();
-        void saveColorProfile(nama,current,event.currentTarget.value);
+        const activeFrame=String(colorControl.dataset.ddtFrameId||frameForName(nama));
+        void saveColorProfile(nama,activeFrame,event.currentTarget.value);
       });
 
       const resetButton=document.createElement('button');
@@ -118364,16 +118457,141 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 
         colorInput.value=String(FRAME_COLOR_DEFAULT);
         colorInput.setAttribute('aria-valuetext',`Color Profile ${FRAME_COLOR_DEFAULT}`);
-        colorControl.style.setProperty('--ddt-frame-color-position',`${FRAME_COLOR_DEFAULT}%`);
+        colorControl.style.setProperty(
+          '--ddt-frame-color-position',
+          `${((FRAME_COLOR_DEFAULT-FRAME_COLOR_MIN)/(FRAME_COLOR_MAX-FRAME_COLOR_MIN))*100}%`
+        );
 
-        setColorOptimistic(nama,current,FRAME_COLOR_DEFAULT);
-        void saveColorProfile(nama,current,FRAME_COLOR_DEFAULT);
+        const activeFrame=String(colorControl.dataset.ddtFrameId||frameForName(nama));
+        setColorOptimistic(nama,activeFrame,FRAME_COLOR_DEFAULT);
+        void saveColorProfile(nama,activeFrame,FRAME_COLOR_DEFAULT);
       });
 
       colorControl.append(colorLabel,colorInput,resetButton);
       rail.appendChild(colorControl);
     }
   }
+  function applyPickerFrameFast(nama){
+    const formatted=normalizeName(nama);
+    const host=document.getElementById('animalEmojiPickerPreview');
+    if(!formatted||!host)return;
+
+    const animal=host.querySelector(':scope > .ddt-animal-img');
+    if(!animal){
+      applyFrameToHost(host,formatted,'picker');
+      return;
+    }
+
+    const frameId=frameForName(formatted);
+    if(frameId==='none'){
+      removeFrameLayers(host);
+      host.classList.remove('ddt-frame-context','ddt-frame-neutral-avatar');
+      host.dataset.ddtFrameId='none';
+      return;
+    }
+
+    const frame=FRAMES[frameId];
+    if(!frame)return;
+
+    let depth=host.querySelector(':scope > .ddt-avatar-frame-depth');
+    let back=host.querySelector(':scope > .ddt-avatar-frame-back');
+    let motionBack=host.querySelector(':scope > .ddt-avatar-frame-motion-back');
+    let front=host.querySelector(':scope > .ddt-avatar-frame-front');
+    let motionFront=host.querySelector(':scope > .ddt-avatar-frame-motion-front');
+
+    if(!depth||!back||!motionBack||!front||!motionFront){
+      applyFrameToHost(host,formatted,'picker');
+      return;
+    }
+
+    [...host.classList]
+      .filter(c=>c.startsWith('ddt-frame-')&&!['ddt-frame-context','ddt-frame-active'].includes(c))
+      .forEach(c=>host.classList.remove(c));
+
+    host.classList.add('ddt-frame-context','ddt-frame-active',`ddt-frame-${frameId}`);
+    host.classList.remove('ddt-frame-neutral-avatar');
+    host.dataset.ddtFrameId=frameId;
+
+    if(back.getAttribute('src')!==frame.back)back.src=frame.back;
+    if(front.getAttribute('src')!==frame.front)front.src=frame.front;
+
+    applyColorProfile(host,formatted,frameId);
+  }
+
+  function syncFrameRailState(nama){
+    const overlay=document.getElementById('animalEmojiPicker');
+    if(!overlay?.classList.contains('show'))return;
+
+    const rail=overlay.querySelector('.ddt-frame-picker-rail');
+    const formatted=normalizeName(nama);
+    if(!rail||!formatted)return;
+
+    const current=frameForName(formatted);
+
+    rail.querySelectorAll('.ddt-frame-option[data-ddt-frame-id]').forEach(btn=>{
+      const selected=btn.dataset.ddtFrameId===current;
+      btn.classList.toggle('selected',selected);
+      btn.setAttribute('aria-pressed',selected?'true':'false');
+    });
+
+    let control=rail.querySelector('.ddt-frame-color-control');
+
+    if(current==='none'){
+      if(control)control.hidden=true;
+    }else if(!control){
+      /* None -> decorated frame is the only case that needs one structural render. */
+      renderFrameRail(true);
+      return;
+    }else{
+      control.hidden=false;
+      control.classList.remove('halo_ring','orb_ring');
+      control.classList.add(current);
+      control.dataset.ddtFrameId=current;
+
+      const input=control.querySelector('.ddt-frame-color-input');
+      if(input){
+        const value=colorForFrame(formatted,current);
+        input.min=String(FRAME_COLOR_MIN);
+        input.max=String(FRAME_COLOR_MAX);
+        input.value=String(value);
+        input.setAttribute('aria-label',`Color Profile ${FRAMES[current]?.label||current}`);
+        input.setAttribute('aria-valuetext',`Color Profile ${value}`);
+        control.style.setProperty('--ddt-frame-color-position',`${((value-FRAME_COLOR_MIN)/(FRAME_COLOR_MAX-FRAME_COLOR_MIN))*100}%`);
+      }
+    }
+
+    const item=pickerAnimalItem();
+    rail.dataset.ddtFrameRenderKey=`${formatted}|${item?.key||'none'}|${current}`;
+  }
+
+  function scheduleSettledFrameHydration(){
+    if(frameSettledHydrationTimer)clearTimeout(frameSettledHydrationTimer);
+
+    frameSettledHydrationTimer=setTimeout(()=>{
+      frameSettledHydrationTimer=0;
+
+      if(frameSaveActive.size||frameSaveTimers.size){
+        scheduleSettledFrameHydration();
+        return;
+      }
+
+      const run=()=>{
+        hydrateLiveCards();
+        hydrateAps();
+        hydratePopover();
+
+        const pickerName=targetPickerName();
+        if(pickerName)applyPickerFrameFast(pickerName);
+      };
+
+      if(typeof requestIdleCallback==='function'){
+        requestIdleCallback(run,{timeout:450});
+      }else{
+        setTimeout(run,0);
+      }
+    },360);
+  }
+
   function hydratePickerPreview(){
     const overlay=document.getElementById('animalEmojiPicker');if(!overlay?.classList.contains('show'))return;
     const nama=targetPickerName();const host=document.getElementById('animalEmojiPickerPreview');if(host&&nama)applyFrameToHost(host,nama,'picker');renderFrameRail();
@@ -118427,8 +118645,9 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       dataIzin[formatted].avatar_frame_color=colorForFrame(formatted,frameId);
     }
 
-    queueHydration();
-    renderFrameRail(true);
+    applyPickerFrameFast(formatted);
+    syncFrameRailState(formatted);
+    scheduleSettledFrameHydration();
   }
 
   function scheduleFramePersistence(nama){
@@ -118441,7 +118660,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frameSaveTimers.set(formatted,setTimeout(()=>{
       frameSaveTimers.delete(formatted);
       void flushFramePersistence(formatted);
-    },150));
+    },220));
   }
 
   async function flushFramePersistence(nama){
@@ -118503,8 +118722,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         frameDesiredState.delete(formatted);
       }
 
-      queueHydration();
-      renderFrameRail(true);
+      syncFrameRailState(formatted);
+      scheduleSettledFrameHydration();
     }
   }
 
@@ -118570,7 +118789,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
           syncColorControl(nama);
         }
 
-        if(needsHydration)queueHydration();
+        if(needsHydration)scheduleSettledFrameHydration();
       }).subscribe();
     }catch(error){console.warn('Avatar frame realtime gagal:',error?.message||error)}
   }
@@ -118590,8 +118809,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
-    colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:0,max:100,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,
+    colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:FRAME_COLOR_MIN,max:FRAME_COLOR_MAX,profileNotHueOnly:true,perFrameIndependent:true}),
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,
     refresh:queueHydration,
     frameFor:nama=>frameForName(nama),
     colorFor:(nama,frameId=frameForName(nama))=>colorForFrame(nama,frameId),
@@ -120763,6 +120982,66 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
 /* Keep buttons clickable during rapid switching. */
 .ddt-frame-option{
   pointer-events:auto!important;
+}
+</style>
+
+
+<style id="ddt-v2-8-3-smooth-neutral-atmosphere-style">
+/* ================================================================
+   v2.8.3 — SMOOTH SWITCH + NEUTRAL ATMOSPHERE EXTENSION
+   Slider:
+   -20  Obsidian
+   -10  Graphite
+     0  start of unchanged v2.8.2 chromatic authority
+    50  WebP Master / Reset
+   100  end of unchanged v2.8.2 chromatic authority
+   110  Silver
+   120  Pearl White
+   ================================================================ */
+
+.ddt-frame-color-control.halo_ring{
+  --ddt-frame-color-track:
+    linear-gradient(90deg,
+      #090b0d 0%,
+      #555b61 7.1%,
+      #79e7b7 14.3%,
+      #80f2ee 25%,
+      #65d9f6 35.7%,
+      #51c6ef 50%,
+      #6c91f2 60.7%,
+      #9a75ed 71.4%,
+      #e38bc7 85.7%,
+      #aeb5bc 92.9%,
+      #f7f9fb 100%)!important;
+}
+
+.ddt-frame-color-control.orb_ring{
+  --ddt-frame-color-track:
+    linear-gradient(90deg,
+      #07090c 0%,
+      #4b5159 7.1%,
+      #72e09b 14.3%,
+      #46e6da 24.3%,
+      #43bce9 34.3%,
+      #716fe6 50%,
+      #a45ee0 61.4%,
+      #df62b8 72.9%,
+      #ee8c73 85.7%,
+      #aab1bc 92.9%,
+      #fbfcff 100%)!important;
+}
+
+/* Fast local selection should never animate layout/material on frame switch. */
+.ddt-frame-picker-rail,
+.ddt-frame-grid,
+.ddt-frame-option,
+.ddt-frame-color-control{
+  transition-property:border-color,background-color,color,box-shadow!important;
+}
+
+/* Keep selected visual immediate; no transform/size animation. */
+.ddt-frame-option.selected{
+  transform:none!important;
 }
 </style>
 
