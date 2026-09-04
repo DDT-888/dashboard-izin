@@ -46189,13 +46189,19 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             return value.slice(PREFERRED_ANIMAL_PREFIX.length) || null;
         }
 
+        function isCanonicalAnimalPreferenceValue(value) {
+            return typeof value === 'string' && /^(?:zodiac|animal)_[a-z0-9_]+_(?:male|female)$/.test(value);
+        }
+
         function getPreferredAnimalEmoji(nama) {
             const formattedNama = formatName(nama);
-            const localPreference = getStoredAnimalPreferenceMap()[formattedNama];
-            if (localPreference) return localPreference;
+            const storedMap = getStoredAnimalPreferenceMap();
+            const localPreference = storedMap[formattedNama];
+            if (isCanonicalAnimalPreferenceValue(localPreference)) return localPreference;
+            if (localPreference) setStoredAnimalPreference(formattedNama, null);
 
             const dbPreference = decodePreferredAnimalEmoji(dataIzin?.[formattedNama]?.emoticon);
-            if (dbPreference) {
+            if (isCanonicalAnimalPreferenceValue(dbPreference)) {
                 setStoredAnimalPreference(formattedNama, dbPreference);
                 return dbPreference;
             }
@@ -46205,14 +46211,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         function getAnimalEmojiForDisplay(nama, izinData = null) {
             const formattedNama = formatName(nama);
             const preferred = getPreferredAnimalEmoji(formattedNama);
-            if (preferred) return preferred;
+            if (isCanonicalAnimalPreferenceValue(preferred)) return preferred;
 
             const data = izinData || dataIzin?.[formattedNama];
-            if (data?.status !== 'izin') return null;
-
-            const rawValue = data?.emoticon;
-            if (!rawValue || typeof rawValue !== 'string') return null;
-            return decodePreferredAnimalEmoji(rawValue) || rawValue;
+            const decoded = decodePreferredAnimalEmoji(data?.emoticon);
+            return isCanonicalAnimalPreferenceValue(decoded) ? decoded : null;
         }
 
         function getPreferredAnimalStorageValue(nama) {
@@ -46354,10 +46357,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             setStoredAnimalPreference(formattedNama, emoji || null);
             const record = dataIzin[formattedNama];
-            const activeRandomEmoji = RANDOM_EMOJIS[Math.floor(Math.random() * RANDOM_EMOJIS.length)];
             const storedValue = emoji
                 ? encodePreferredAnimalEmoji(emoji)
-                : (record.status === 'izin' ? activeRandomEmoji : null);
+                : null;
 
             record.emoticon = storedValue;
             dataIzin[formattedNama] = record;
@@ -46383,8 +46385,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             if (options.toast !== false) {
                 showToast(
                     emoji
-                        ? `Emoticon profil ${formattedNama} berhasil diperbarui.`
-                        : `Mode emoticon random diaktifkan untuk ${formattedNama}.`,
+                        ? `Animal ${formattedNama} berhasil diperbarui.`
+                        : `Pilihan animal ${formattedNama} dihapus.`,
                     'success',
                     3000
                 );
@@ -46396,9 +46398,17 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             saveAnimalEmojiPreference(animalEmojiPickerTargetName, emoji);
         };
 
-        window.clearAnimalEmojiPreference = function() {
+        window.clearAnimalEmojiPreference = async function() {
             if (!animalEmojiPickerTargetName) return;
-            saveAnimalEmojiPreference(animalEmojiPickerTargetName, null);
+            const catalog = Array.isArray(globalThis.DDTAnimalIntegrationV2?.catalog)
+                ? globalThis.DDTAnimalIntegrationV2.catalog
+                : [];
+            if (!catalog.length || typeof window.selectDDTAnimal !== 'function') return;
+            const current = getPreferredAnimalEmoji(animalEmojiPickerTargetName);
+            const candidates = catalog.filter(item => item?.key && item.key !== current);
+            const pool = candidates.length ? candidates : catalog;
+            const picked = pool[Math.floor(Math.random() * pool.length)];
+            if (picked?.key) await window.selectDDTAnimal(picked.key);
         };
 
         document.addEventListener('click', function(event) {
@@ -53718,7 +53728,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const preferredEmoji = getPreferredAnimalEmoji(formattedNama);
             const activeEmojiValue = preferredEmoji
                 ? encodePreferredAnimalEmoji(preferredEmoji)
-                : RANDOM_EMOJIS[Math.floor(Math.random() * RANDOM_EMOJIS.length)];
+                : null;
 
             try {
                 if (!TEST_MODE) {
@@ -54154,10 +54164,15 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     const stateClass = isOverLimit ? 'over-limit' : (isWarning ? 'near-limit' : '');
                     const statusText = isOverLimit ? 'Melewati batas' : (isWarning ? 'Mendekati batas' : 'Sedang izin');
 
+                    const liveName = formatName(item.nama);
+                    const liveInitials = liveName.split(/\s+/).filter(Boolean).slice(0,2).map(part => part.charAt(0)).join('').toUpperCase() || '?';
+                    const liveAnimal = getAnimalEmojiForDisplay(item.nama, item);
+                    const liveAvatarContent = liveAnimal || liveInitials;
+
                     return `
                         <article class="live-card-col ${stateClass}" data-nama="${item.nama}">
                             <div class="live-card-main">
-                                <span class="visual-fun-col" aria-hidden="true">${item.emoticon}</span>
+                                <span class="visual-fun-col" aria-hidden="true">${liveAvatarContent}</span>
                                 <span class="nama" title="${item.nama}">${item.nama}</span>
                                 <span class="timer-col ${isOverLimit ? 'over-limit' : ''}" data-start="${item.mulai}">${menit}m ${detik}s</span>
                             </div>
@@ -64892,7 +64907,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             <div class="animal-emoji-picker-footer">
                 <button type="button" class="animal-emoji-random-button" onclick="clearAnimalEmojiPreference()">
                     <span>🎲</span>
-                    <span>Gunakan Random</span>
+                    <span>Acak Animal</span>
                 </button>
                 <span class="animal-emoji-picker-note">Pilihan tersimpan dan digunakan setiap kali START.</span>
             </div>
@@ -115579,7 +115594,7 @@ window.MonitoringIzinV35 = Object.freeze({
    ================================================================ */
 
 :root{
-  --ddt-animal-table-size:38px;
+  --ddt-animal-table-size:36px;
   --ddt-animal-live-size:44px;
 }
 
@@ -115787,7 +115802,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
 @media(max-width:760px){
   :root{
     --ddt-animal-table-size:34px;
-    --ddt-animal-live-size:40px;
+    --ddt-animal-live-size:42px;
   }
   .ddt-animal-library .animal-emoji-picker-grid{
     grid-template-columns:repeat(4,minmax(0,1fr))!important;
@@ -115855,14 +115870,29 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
       if(node.dataset.ddtAnimalKey!==key)return;
       node.classList.remove('ddt-animal-3d');
       node.classList.add('ddt-animal-load-error');
-      node.replaceChildren(document.createTextNode('🐾'));
+      node.classList.add('ddt-animal-neutral');
+      const neutral=(alt||'').trim().split(/\s+/).filter(Boolean).slice(0,2).map(part=>part.charAt(0)).join('').toUpperCase()||'?';
+      node.replaceChildren(document.createTextNode(neutral));
     },{once:true});
     node.replaceChildren(img);
     node.classList.add('ddt-animal-3d');
-    node.classList.remove('ddt-animal-load-error');
+    node.classList.remove('ddt-animal-load-error','ddt-animal-neutral');
     node.dataset.ddtAnimalKey=key;
     return true;
   }
+  function memberInitials(nama){
+    const parts=formatName(nama).split(/\s+/).filter(Boolean);
+    if(!parts.length)return '?';
+    return (parts.length===1?parts[0].slice(0,2):parts.slice(0,2).map(part=>part.charAt(0)).join('')).toUpperCase();
+  }
+  function renderNeutralInto(node,nama){
+    if(!node)return;
+    node.classList.remove('ddt-animal-3d','ddt-animal-load-error','has-animal-emoji');
+    node.classList.add('ddt-animal-neutral');
+    delete node.dataset.ddtAnimalKey;
+    node.replaceChildren(document.createTextNode(memberInitials(nama)));
+  }
+
   function currentKeyFor(nama){
     try{
       const formatted=formatName(nama);
@@ -115880,6 +115910,10 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
         renderCanonicalInto(avatar,key,`${nama} — ${meta?.label||'Animal'} ${meta?.gender||''}`);
         avatar?.setAttribute('aria-label',`Lihat Avatar ${nama}`);
         avatar?.setAttribute('data-tooltip','Lihat Avatar');
+      }else{
+        renderNeutralInto(avatar,nama);
+        avatar?.setAttribute('aria-label',`Lihat Avatar ${nama}`);
+        avatar?.setAttribute('data-tooltip','Lihat Avatar');
       }
     });
   }
@@ -115889,6 +115923,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
       const slot=card.querySelector('.visual-fun-col');
       const key=currentKeyFor(nama);
       if(key)renderCanonicalInto(slot,key,'');
+      else renderNeutralInto(slot,nama);
     });
   }
   function hydrateAps(){
@@ -115897,6 +115932,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     if(!slot||!name)return;
     const key=currentKeyFor(name);
     if(key)renderCanonicalInto(slot,key,`${name} animal`);
+    else renderNeutralInto(slot,name);
   }
   function hydrateAll(){
     hydrationQueued=false;
@@ -115947,10 +115983,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
       renderCanonicalInto(preview,value,`${nama} animal`);
       return;
     }
-    preview.classList.remove('ddt-animal-3d','ddt-animal-load-error');
-    delete preview.dataset.ddtAnimalKey;
-    preview.classList.add('ddt-animal-legacy');
-    preview.textContent=value||'🐼';
+    renderNeutralInto(preview,nama);
   }
 
   function renderLibrary(){
@@ -116023,7 +116056,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     if(subtitle)subtitle.textContent='Pilih karakter dan varian Male / Female untuk identitas anggota.';
     if(randomBtn){
       const spans=randomBtn.querySelectorAll('span');
-      if(spans.length>1)spans[1].textContent='Gunakan Emoji Random';
+      if(spans.length>1)spans[1].textContent='Acak Animal';
     }
     if(note)note.textContent='Pilihan tersimpan dan otomatis digunakan setiap kali START.';
 
@@ -116032,8 +116065,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
       catch{return null}
     })();
     const display=(()=>{
-      try{return getAnimalEmojiForDisplay(formattedNama,dataIzin?.[formattedNama])||'🐼'}
-      catch{return '🐼'}
+      try{return getAnimalEmojiForDisplay(formattedNama,dataIzin?.[formattedNama])||null}
+      catch{return null}
     })();
 
     if(isCanonicalKey(selected)){
@@ -116896,12 +116929,6 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
       return {value,item,meta:`${item.label} · ${item.gender==='male'?'Male':'Female'}`};
     }
 
-    if(typeof value==='string' && value){
-      container.classList.add('ddt-avatar-popover-legacy');
-      container.textContent=value;
-      return {value,item:null,meta:'Emoji'};
-    }
-
     container.classList.add('ddt-avatar-popover-empty');
     container.innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10.2 13.7c-1.4 0-2.5-1.5-2.5-3.4s1.1-3.4 2.5-3.4 2.5 1.5 2.5 3.4-1.1 3.4-2.5 3.4ZM21.8 13.7c-1.4 0-2.5-1.5-2.5-3.4s1.1-3.4 2.5-3.4 2.5 1.5 2.5 3.4-1.1 3.4-2.5 3.4ZM6.5 20.3c-1.3 0-2.3-1.3-2.3-3s1-3 2.3-3 2.3 1.3 2.3 3-1 3-2.3 3ZM25.5 20.3c-1.3 0-2.3-1.3-2.3-3s1-3 2.3-3 2.3 1.3 2.3 3-1 3-2.3 3Z"/><path d="M16 14.3c-4.3 0-8.1 3.5-8.1 7.2 0 2.3 1.8 3.9 4.2 3.9 1.5 0 2.7-.6 3.9-.6s2.4.6 3.9.6c2.4 0 4.2-1.6 4.2-3.9 0-3.7-3.8-7.2-8.1-7.2Z"/></svg>';
     return {value:null,item:null,meta:'Belum memilih avatar'};
@@ -117439,10 +117466,117 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-option.selected{b
 </style>
 
 
+
+<style id="ddt-phase-b-contract-closure-v2-7-1-style">
+/* Phase B contract closure — table/simple avatar + picker alignment */
+#tab-monitoring .member-avatar.ddt-animal-3d{
+  width:var(--ddt-animal-table-size)!important;
+  height:var(--ddt-animal-table-size)!important;
+  flex:0 0 var(--ddt-animal-table-size)!important;
+  padding:0!important;
+  border:1px solid color-mix(in srgb,var(--border-color) 68%,transparent)!important;
+  border-radius:10px!important;
+  background:color-mix(in srgb,var(--bg-secondary) 58%,transparent)!important;
+  box-shadow:none!important;
+}
+#tab-monitoring .member-avatar.ddt-animal-3d > .ddt-animal-img{
+  transform:none!important;
+}
+#tab-monitoring .member-avatar.ddt-animal-neutral{
+  width:var(--ddt-animal-table-size)!important;
+  height:var(--ddt-animal-table-size)!important;
+  flex:0 0 var(--ddt-animal-table-size)!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  border:1px solid color-mix(in srgb,var(--border-color) 68%,transparent)!important;
+  border-radius:10px!important;
+  background:color-mix(in srgb,var(--bg-secondary) 58%,transparent)!important;
+  color:var(--text-muted)!important;
+  box-shadow:none!important;
+  font-size:10px!important;
+  font-weight:850!important;
+  line-height:1!important;
+  letter-spacing:.02em!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-monitoring .member-avatar.ddt-animal-3d,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-monitoring .member-avatar.ddt-animal-neutral{
+  background:#121612!important;
+  border-color:#303830!important;
+  box-shadow:none!important;
+}
+
+/* Frame rail uses the same vertical language as Shio / Popular / New. */
+.ddt-frame-picker-body{
+  grid-template-columns:minmax(0,1fr) 196px!important;
+  gap:12px!important;
+  align-items:start!important;
+}
+.ddt-frame-picker-rail{
+  min-width:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+}
+.ddt-frame-picker-rail-head{
+  height:31px!important;
+  display:flex!important;
+  align-items:center!important;
+  margin:0 0 9px!important;
+  padding:0 1px!important;
+}
+.ddt-frame-picker-rail-head strong{
+  min-height:31px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:6px 11px!important;
+  border-radius:9px!important;
+  border:1px solid var(--border-color)!important;
+  background:color-mix(in srgb,var(--bg-secondary) 76%,transparent)!important;
+  color:var(--text-muted)!important;
+  font-size:8.5px!important;
+  font-weight:830!important;
+  line-height:1!important;
+  letter-spacing:.04em!important;
+  text-transform:none!important;
+}
+.ddt-frame-picker-rail-head span{display:none!important}
+.ddt-frame-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-content:start!important;
+  gap:8px!important;
+  padding:10px!important;
+  border-radius:13px!important;
+  border:1px solid color-mix(in srgb,var(--border-color) 86%,transparent)!important;
+  background:color-mix(in srgb,var(--bg-secondary) 72%,var(--bg-card))!important;
+}
+.ddt-frame-option{
+  min-height:96px!important;
+  grid-template-rows:66px auto!important;
+  border-radius:11px!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-picker-rail{
+  background:transparent!important;
+  border:0!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-grid{
+  background:#151a15!important;
+  border-color:#303830!important;
+}
+@media(max-width:760px){
+  .ddt-frame-picker-body{grid-template-columns:1fr!important}
+  .ddt-frame-picker-rail{order:-1!important}
+  .ddt-frame-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+</style>
+
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.7.0-frame-integration-candidate';
+  const VERSION='2.7.1-contract-closure-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -117450,8 +117584,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-option.selected{b
   const FRAME_RPC='save_izin_avatar_frame';
   const FRAMES=Object.freeze({
     none:Object.freeze({id:'none',label:'None',back:null,front:null}),
-    halo_ring:Object.freeze({id:'halo_ring',label:'Halo Ring',back:'assets/frame/halo/halo_ring_back.webp',front:'assets/frame/halo/halo_ring_front.webp'}),
-    orb_ring:Object.freeze({id:'orb_ring',label:'Orb Ring',back:'assets/frame/orb/orb_ring_back.webp',front:'assets/frame/orb/orb_ring_front.webp'})
+    halo_ring:Object.freeze({id:'halo_ring',label:'Halo Ring',back:'assets/animal/frame/halo_ring_back.webp',front:'assets/animal/frame/halo_ring_front.webp'}),
+    orb_ring:Object.freeze({id:'orb_ring',label:'Orb Ring',back:'assets/animal/frame/orb_ring_back.webp',front:'assets/animal/frame/orb_ring_front.webp'})
   });
   const frameState=new Map();
   let hydrationFrame=0;
@@ -117575,7 +117709,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-option.selected{b
     const overlay=document.getElementById('animalEmojiPicker');if(!overlay?.classList.contains('show'))return;
     const body=ensurePickerLayout();const rail=body?.querySelector('.ddt-frame-picker-rail');const nama=targetPickerName();if(!rail||!nama)return;
     const item=pickerAnimalItem();const current=frameForName(nama);rail.replaceChildren();
-    const head=document.createElement('div');head.className='ddt-frame-picker-rail-head';head.innerHTML='<div><strong>FRAME</strong><span>Frame personal · tersimpan langsung</span></div>';rail.appendChild(head);
+    const head=document.createElement('div');head.className='ddt-frame-picker-rail-head';head.innerHTML='<strong>Frame</strong>';rail.appendChild(head);
     const frameGrid=document.createElement('div');frameGrid.className='ddt-frame-grid';
     ['none','halo_ring','orb_ring'].forEach(frameId=>{
       const frame=FRAMES[frameId];const btn=document.createElement('button');btn.type='button';btn.className=`ddt-frame-option ${current===frameId?'selected':''}`;btn.dataset.ddtFrameId=frameId;
@@ -117625,7 +117759,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-option.selected{b
     version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
-    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/frame/',embeddedAssets:false,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,refresh:queueHydration,frameFor:nama=>frameForName(nama)
   });
   loadFrames();startRealtime();queueHydration();
 })();
