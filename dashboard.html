@@ -50397,6 +50397,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dataIzin[nama].tanggal = null;
                 dataIzin[nama].selesai = null;
                 dataIzin[nama].emoticon = null;
+                dataIzin[nama].avatar_frame = dataIzin[nama].avatar_frame || 'none';
             });
 
             records.forEach(item => {
@@ -50412,6 +50413,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dataIzin[item.nama].tanggal = item.tanggal || null;
                 dataIzin[item.nama].selesai = item.selesai || null;
                 dataIzin[item.nama].emoticon = item.emoticon || null;
+                dataIzin[item.nama].avatar_frame = item.avatar_frame || 'none';
 
                 if (item.role) {
                     dataIzin[item.nama].role = item.role;
@@ -50444,7 +50446,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 try {
                     const { data, error } = await supabaseDashboard
                         .from('izin_anggota')
-                        .select('nama, status, mulai, selesai, tanggal, role, emoticon');
+                        .select('nama, status, mulai, selesai, tanggal, role, emoticon, avatar_frame');
 
                     if (error) {
                         console.error('Gagal sinkronisasi izin ringan:', error);
@@ -51040,7 +51042,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                     selesai: null,
                                     tanggal: null,
                                     role: newRecord.role || 'cs',
-                                    emoticon: null
+                                    emoticon: null,
+                                    avatar_frame: newRecord.avatar_frame || 'none'
                                 };
 
                                 if (!daftarAnggota.includes(nama)) {
@@ -51058,6 +51061,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             dataIzin[nama].tanggal = newRecord.tanggal || null;
                             dataIzin[nama].selesai = newRecord.selesai || null;
                             dataIzin[nama].emoticon = newRecord.emoticon || null;
+                            dataIzin[nama].avatar_frame = newRecord.avatar_frame || 'none';
 
                             if (newRecord.role) {
                                 dataIzin[nama].role = newRecord.role;
@@ -51071,6 +51075,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                 dataIzin[nama].tanggal = null;
                                 dataIzin[nama].selesai = null;
                                 dataIzin[nama].emoticon = null;
+                                dataIzin[nama].avatar_frame = 'none';
                             }
                         }
 
@@ -51626,7 +51631,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     historyPromise,
                     supabaseDashboard
                         .from('izin_anggota')
-                        .select('nama, status, mulai, selesai, tanggal, role, emoticon'),
+                        .select('nama, status, mulai, selesai, tanggal, role, emoticon, avatar_frame'),
                     supabaseDashboard
                         .from('vouchers')
                         .select('nama, jumlah'),
@@ -53716,6 +53721,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             if (startLock[formattedNama]) return;
 
             startLock[formattedNama] = true;
+            const stableAvatarWarmPromise=globalThis.DDTStableAvatarV276?.prewarm?.(formattedNama)||Promise.resolve();
             const startButtons = document.querySelectorAll(`.btn-action.start[data-nama="${formattedNama}"]`);
             startButtons.forEach(btn => {
                 btn.disabled = true;
@@ -53786,6 +53792,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         );
                     }
 
+                    await Promise.race([
+                        stableAvatarWarmPromise,
+                        new Promise(resolve=>setTimeout(resolve,260))
+                    ]);
                     renderAll();
                     updateCurrentCounts();
                     showToast(`${formattedNama} mulai izin!`, 'info');
@@ -53799,6 +53809,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 data.emoticon = activeEmojiValue;
                 dataIzin[formattedNama] = data;
                 isJackpotShown[formattedNama] = false;
+                await Promise.race([
+                    stableAvatarWarmPromise,
+                    new Promise(resolve=>setTimeout(resolve,260))
+                ]);
                 renderAll();
                 updateCurrentCounts();
                 showToast(`${formattedNama} mulai izin!`, 'info');
@@ -54104,6 +54118,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         // RENDER LIVE IZIN
         // ============================================================
         function renderLiveIzin() {
+            const preservedLiveAvatars=globalThis.DDTStableAvatarV276?.captureStableNodes?.(
+                document,'#tab-monitoring .live-card-col[data-nama]','.visual-fun-col'
+            )||null;
+
             const roleMap = {
                 csline: document.getElementById('liveCsline'),
                 cs: document.getElementById('liveCs'),
@@ -54186,6 +54204,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         </article>`;
                 }).join('');
             });
+
+            globalThis.DDTStableAvatarV276?.restoreStableNodes?.(
+                document,'#tab-monitoring .live-card-col[data-nama]','.visual-fun-col',preservedLiveAvatars
+            );
 
             const liveCount = document.getElementById('liveCount');
             if (liveCount) liveCount.innerHTML = `<span>${totalIzin}</span> anggota sedang izin`;
@@ -54326,6 +54348,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const isLeaderOrCsLine =
                 currentUserRole === 'leader' ||
                 currentUserRole === 'csline';
+
+            const preservedTableAvatars=globalThis.DDTStableAvatarV276?.captureStableNodes?.(
+                tbody,'tr[data-nama]','.member-avatar'
+            )||null;
 
             tbody.innerHTML = filtered.map(nama => {
                 const data = dataIzin[nama];
@@ -54582,6 +54608,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     </tr>
                 `;
             }).join('');
+
+            globalThis.DDTStableAvatarV276?.restoreStableNodes?.(
+                tbody,'tr[data-nama]','.member-avatar',preservedTableAvatars
+            );
 
             document.querySelectorAll('.btn-action.start:disabled').forEach(function(btn) {
                 btn.removeEventListener('mouseenter', handleStartMouseEnter);
@@ -115912,6 +115942,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     }catch{return null}
   }
   function hydrateTable(){
+    if(globalThis.DDTStableAvatarV276?.ownsLegacyHydration===true)return;
     document.querySelectorAll('#tab-monitoring #dashboardTableBody tr[data-nama]').forEach(row=>{
       const nama=row.dataset.nama||'';
       const avatar=row.querySelector('.member-avatar');
@@ -115929,6 +115960,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     });
   }
   function hydrateLive(){
+    if(globalThis.DDTStableAvatarV276?.ownsLegacyHydration===true)return;
     document.querySelectorAll('#tab-monitoring .live-card-col[data-nama]').forEach(card=>{
       const nama=card.dataset.nama||'';
       const slot=card.querySelector('.visual-fun-col');
@@ -115938,6 +115970,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     });
   }
   function hydrateAps(){
+    if(globalThis.DDTStableAvatarV276?.ownsLegacyHydration===true)return;
     const slot=document.getElementById('aps-avatar');
     const name=document.getElementById('aps-name')?.textContent?.trim()||'';
     if(!slot||!name)return;
@@ -117748,7 +117781,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.7.5-stable-paint-progress-asset-masked-motion-candidate';
+  const VERSION='2.7.6-render-ownership-light-material-hover-motion-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -117775,7 +117808,9 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   }
   function validFrame(value){return Object.prototype.hasOwnProperty.call(FRAMES,String(value||'').toLowerCase())}
   function frameForName(nama){
-    const value=String(frameState.get(normalizeName(nama))||'none').toLowerCase();
+    const formatted=normalizeName(nama);
+    const coreValue=String(dataIzin?.[formatted]?.avatar_frame||'').toLowerCase();
+    const value=coreValue||String(frameState.get(formatted)||'none').toLowerCase();
     return validFrame(value)?value:'none';
   }
   function catalogMap(){
@@ -117832,9 +117867,16 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     back.className='ddt-avatar-frame-layer ddt-avatar-frame-back';back.src=frame.back;back.alt='';back.decoding='async';back.draggable=false;
     const front=document.createElement('img');
     front.className='ddt-avatar-frame-layer ddt-avatar-frame-front';front.src=frame.front;front.alt='';front.decoding='async';front.draggable=false;
-    const motion=document.createElement('span');
-    motion.className='ddt-avatar-frame-motion';motion.setAttribute('aria-hidden','true');
-    host.insertBefore(depth,animal);host.insertBefore(back,animal);host.appendChild(front);host.appendChild(motion);host.classList.add('ddt-frame-active');
+    const motionBack=document.createElement('span');
+    motionBack.className='ddt-avatar-frame-motion ddt-avatar-frame-motion-back';motionBack.setAttribute('aria-hidden','true');
+    const motionFront=document.createElement('span');
+    motionFront.className='ddt-avatar-frame-motion ddt-avatar-frame-motion-front';motionFront.setAttribute('aria-hidden','true');
+    host.insertBefore(depth,animal);
+    host.insertBefore(back,animal);
+    host.insertBefore(motionBack,animal);
+    host.appendChild(front);
+    host.appendChild(motionFront);
+    host.classList.add('ddt-frame-active');
   }
   function hydrateLiveCards(){
     document.querySelectorAll('#tab-monitoring .live-card-col[data-nama]').forEach(card=>applyFrameToHost(card.querySelector('.visual-fun-col'),normalizeName(card.dataset.nama||''),'live'));
@@ -117926,19 +117968,32 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   async function saveFrame(nama,frameId){
     const formatted=normalizeName(nama);if(!formatted||!validFrame(frameId)||pickerBusy)return;
     const previous=frameForName(formatted);if(previous===frameId)return;
-    pickerBusy=true;frameState.set(formatted,frameId);queueHydration();document.querySelectorAll('.ddt-frame-option').forEach(btn=>btn.disabled=true);
+    pickerBusy=true;
+    const previousCoreFrame=dataIzin?.[formatted]?.avatar_frame||previous;
+    frameState.set(formatted,frameId);
+    if(dataIzin?.[formatted])dataIzin[formatted].avatar_frame=frameId;
+    queueHydration();
+    document.querySelectorAll('.ddt-frame-option').forEach(btn=>btn.disabled=true);
     try{
       const {error}=await supabaseDashboard.rpc(FRAME_RPC,{p_nama:formatted,p_avatar_frame:frameId});if(error)throw error;
       if(typeof showToast==='function')showToast(`Frame ${FRAMES[frameId].label} untuk ${formatted} berhasil diperbarui.`,'success',2200);
     }catch(error){
-      frameState.set(formatted,previous);queueHydration();if(typeof showToast==='function')showToast('Frame belum tersimpan. Silakan coba lagi.','warning',3200);console.error('Gagal menyimpan avatar frame:',error);
+      frameState.set(formatted,previous);
+      if(dataIzin?.[formatted])dataIzin[formatted].avatar_frame=previousCoreFrame||previous;
+      queueHydration();
+      if(typeof showToast==='function')showToast('Frame belum tersimpan. Silakan coba lagi.','warning',3200);
+      console.error('Gagal menyimpan avatar frame:',error);
     }finally{pickerBusy=false;renderFrameRail(true)}
   }
   function startRealtime(){
     try{
       frameChannel=supabaseDashboard.channel('ddt-avatar-frame-v2-7').on('postgres_changes',{event:'*',schema:'public',table:'izin_anggota'},payload=>{
         const row=payload?.new;const nama=normalizeName(row?.nama||'');if(!nama||typeof row?.avatar_frame==='undefined')return;
-        const frame=String(row.avatar_frame||'none').toLowerCase();frameState.set(nama,validFrame(frame)?frame:'none');queueHydration();
+        const frame=String(row.avatar_frame||'none').toLowerCase();
+        const normalizedFrame=validFrame(frame)?frame:'none';
+        frameState.set(nama,normalizedFrame);
+        if(dataIzin?.[nama])dataIzin[nama].avatar_frame=normalizedFrame;
+        queueHydration();
       }).subscribe();
     }catch(error){console.warn('Avatar frame realtime gagal:',error?.message||error)}
   }
@@ -117957,7 +118012,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
-    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
   });
   loadFrames();startRealtime();queueHydration();
 })();
@@ -118505,8 +118560,11 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
 
   function frameFor(nama,context){
     if(context==='table')return 'none';
-    let value='none';
-    try{value=globalThis.DDTAvatarFrameIntegrationV27?.frameFor?.(normalized(nama))||'none'}catch{}
+    const formatted=normalized(nama);
+    let value=String(dataIzin?.[formatted]?.avatar_frame||'').toLowerCase();
+    if(!Object.prototype.hasOwnProperty.call(FRAME_ASSETS,value)){
+      try{value=globalThis.DDTAvatarFrameIntegrationV27?.frameFor?.(formatted)||'none'}catch{value='none'}
+    }
     return Object.prototype.hasOwnProperty.call(FRAME_ASSETS,value)?value:'none';
   }
 
@@ -118535,9 +118593,10 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
     return [
       '<span class="ddt-avatar-frame-depth" aria-hidden="true"></span>',
       `<img class="ddt-avatar-frame-layer ddt-avatar-frame-back" src="${esc(frame.back)}" alt="" decoding="async" draggable="false">`,
+      '<span class="ddt-avatar-frame-motion ddt-avatar-frame-motion-back" aria-hidden="true"></span>',
       animal,
       `<img class="ddt-avatar-frame-layer ddt-avatar-frame-front" src="${esc(frame.front)}" alt="" decoding="async" draggable="false">`,
-      '<span class="ddt-avatar-frame-motion" aria-hidden="true"></span>'
+      '<span class="ddt-avatar-frame-motion ddt-avatar-frame-motion-front" aria-hidden="true"></span>'
     ].join('');
   }
 
@@ -118605,6 +118664,64 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
     return {handled:true,...next};
   }
 
+  function captureStableNodes(root,itemSelector,avatarSelector){
+    const map=new Map();
+    root?.querySelectorAll?.(itemSelector)?.forEach(item=>{
+      const nama=normalized(item.dataset?.nama||'');
+      const avatar=item.querySelector(avatarSelector);
+      if(nama&&avatar?.dataset?.ddtStableAvatar)map.set(nama,avatar);
+    });
+    return map;
+  }
+
+  function syncAttributes(from,to){
+    [...to.attributes].forEach(attr=>to.removeAttribute(attr.name));
+    [...from.attributes].forEach(attr=>to.setAttribute(attr.name,attr.value));
+  }
+
+  function restoreStableNodes(root,itemSelector,avatarSelector,map){
+    if(!map?.size)return;
+    root?.querySelectorAll?.(itemSelector)?.forEach(item=>{
+      const nama=normalized(item.dataset?.nama||'');
+      const fresh=item.querySelector(avatarSelector);
+      const old=map.get(nama);
+      if(!fresh||!old)return;
+      if(fresh.dataset?.ddtStableAvatar&&old.dataset?.ddtStableAvatar===fresh.dataset.ddtStableAvatar){
+        syncAttributes(fresh,old);
+        fresh.replaceWith(old);
+      }
+    });
+  }
+
+  function imageReady(url){
+    if(!url)return Promise.resolve();
+    return new Promise(resolve=>{
+      const img=new Image();
+      img.decoding='async';
+      let finished=false;
+      const done=()=>{if(finished)return;finished=true;resolve()};
+      img.onload=async()=>{
+        try{if(typeof img.decode==='function')await img.decode()}catch{}
+        done();
+      };
+      img.onerror=done;
+      img.src=url;
+      if(img.complete)queueMicrotask(done);
+    });
+  }
+
+  function prewarm(nama){
+    const next=parts(nama,'live');
+    if(!next.key||!next.item)return Promise.resolve();
+    const urls=[next.item.src];
+    if(next.frameId!=='none'){
+      const frame=FRAME_ASSETS[next.frameId];
+      if(frame?.back)urls.push(frame.back);
+      if(frame?.front)urls.push(frame.front);
+    }
+    return Promise.all([...new Set(urls)].map(imageReady));
+  }
+
   /* Pre-existing nodes are normalized once after controller availability.
      No asset fan-out/preload is performed. */
   function repaintExisting(){
@@ -118620,14 +118737,20 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
     if(aps&&apsName&&apsName!=='—')paintHost(aps,apsName,'aps');
   }
 
-  window.DDTStableAvatarV275=Object.freeze({
-    version:'2.7.5',
+  const STABLE_API=Object.freeze({
+    version:'2.7.6',
+    ownsLegacyHydration:true,
     parts,
     paintHost,
     repaintExisting,
-    noAssetPreload:true,
+    captureStableNodes,
+    restoreStableNodes,
+    prewarm,
+    noGlobalAssetPreload:true,
     frameAssets:FRAME_ASSETS
   });
+  window.DDTStableAvatarV276=STABLE_API;
+  window.DDTStableAvatarV275=STABLE_API;
 
   repaintExisting();
 })();
@@ -118845,6 +118968,160 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
 #ddtAvatarPopoverVisual[data-ddt-stable-avatar]{
   text-rendering:geometricPrecision;
 }
+</style>
+
+
+<style id="ddt-v2-7-6-final-authority-style">
+/* User Card: duration only. */
+#tab-monitoring .live-card-col .timer-col{gap:0!important}
+#tab-monitoring .live-card-col .timer-col::after{display:none!important;content:none!important}
+#tab-monitoring .live-card-col .live-mini-progress{width:100%!important;margin-top:5px!important}
+
+/* Light-theme material is frame-specific, not generic. */
+html:not([data-theme="dark"]) .ddt-frame-active > .ddt-avatar-frame-depth{
+  background:none!important;
+  box-shadow:none!important;
+}
+html:not([data-theme="dark"]) .ddt-frame-halo_ring > .ddt-avatar-frame-depth{
+  inset:14%!important;
+  border-radius:50%!important;
+  transform:none!important;
+  background:
+    radial-gradient(circle at 50% 38%,rgba(255,255,255,.02) 0 48%,rgba(86,170,207,.045) 60%,rgba(44,116,151,.095) 76%,rgba(24,78,105,.15) 100%)!important;
+  box-shadow:inset 0 -8px 15px rgba(21,73,101,.11),inset 0 5px 11px rgba(121,222,247,.055)!important;
+}
+html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-depth{
+  inset:18% 10% 14%!important;
+  border-radius:50%!important;
+  transform:rotate(-7deg)!important;
+  background:
+    radial-gradient(ellipse at 36% 45%,rgba(62,210,241,.085) 0 12%,transparent 38%),
+    radial-gradient(ellipse at 70% 50%,rgba(157,88,221,.09) 0 11%,transparent 37%),
+    radial-gradient(ellipse at 50% 48%,rgba(255,255,255,.025) 0 46%,rgba(72,72,126,.055) 63%,rgba(48,45,103,.12) 82%,rgba(31,31,77,.16) 100%)!important;
+  box-shadow:inset 0 -7px 14px rgba(44,38,91,.11),inset -7px 2px 12px rgba(109,69,170,.045),inset 7px 0 12px rgba(56,174,207,.04)!important;
+}
+html[data-theme="dark"] .ddt-frame-halo_ring > .ddt-avatar-frame-depth{inset:14%!important;transform:none!important}
+html[data-theme="dark"] .ddt-frame-orb_ring > .ddt-avatar-frame-depth{inset:18% 10% 14%!important;transform:rotate(-7deg)!important}
+
+/* Back motion lives below animal; Front motion lives above. */
+.ddt-avatar-frame-motion{
+  position:absolute!important;inset:0!important;pointer-events:none!important;user-select:none!important;
+  background-repeat:no-repeat!important;background-size:260% 180%!important;
+  -webkit-mask-repeat:no-repeat!important;mask-repeat:no-repeat!important;
+  -webkit-mask-position:center!important;mask-position:center!important;
+  -webkit-mask-size:contain!important;mask-size:contain!important;
+  border-radius:0!important;filter:none!important;transform:none!important;
+}
+.ddt-avatar-frame-motion-back{z-index:2!important}
+.ddt-avatar-frame-motion-front{z-index:5!important}
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{display:block!important}
+#tab-monitoring .live-card-col .ddt-avatar-frame-motion{display:none!important}
+
+/* Halo exact masks. */
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back{
+  background-image:linear-gradient(112deg,transparent 0 34%,rgba(194,244,255,.08) 40%,rgba(241,254,255,.76) 48%,rgba(95,219,255,.30) 54%,transparent 62% 100%)!important;
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+  mask-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front{
+  background-image:linear-gradient(112deg,transparent 0 35%,rgba(217,250,255,.11) 42%,rgba(255,255,255,.92) 49%,rgba(91,225,255,.38) 55%,transparent 63% 100%)!important;
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+  mask-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+}
+
+/* Orb exact masks. Back can no longer paint over the animal. */
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back{
+  background-image:linear-gradient(103deg,transparent 0 31%,rgba(104,225,255,.08) 38%,rgba(229,250,255,.78) 47%,rgba(202,117,255,.45) 53%,rgba(101,104,255,.11) 60%,transparent 68% 100%)!important;
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+  mask-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front{
+  background-image:linear-gradient(103deg,transparent 0 32%,rgba(111,231,255,.11) 39%,rgba(246,253,255,.95) 48%,rgba(221,117,255,.62) 54%,rgba(106,105,255,.15) 61%,transparent 69% 100%)!important;
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+  mask-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+}
+
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back{animation:ddtV276HaloSweep 7.8s ease-in-out infinite!important}
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front{animation:ddtV276HaloSweep 7.8s ease-in-out -1.05s infinite!important}
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back{animation:ddtV276OrbSweep 6.2s ease-in-out infinite!important}
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front{animation:ddtV276OrbSweep 6.2s ease-in-out -.75s infinite!important}
+}
+@keyframes ddtV276HaloSweep{
+  0%,12%{opacity:.05;background-position:145% 50%}29%{opacity:.50}49%{opacity:.72;background-position:-45% 50%}64%{opacity:.24}80%,100%{opacity:.05;background-position:-70% 50%}
+}
+@keyframes ddtV276OrbSweep{
+  0%,10%{opacity:.07;background-position:145% 50%}29%{opacity:.53}49%{opacity:.76;background-position:-42% 50%}65%{opacity:.26}82%,100%{opacity:.05;background-position:-68% 50%}
+}
+
+/* Frame picker hover/focus motion uses the same exact WebP masks. */
+.ddt-frame-tile-visual.halo_ring{
+  background:radial-gradient(circle at 50% 44%,transparent 0 52%,rgba(55,128,160,.06) 72%,rgba(26,82,107,.105) 100%)!important;border-radius:50%;
+}
+.ddt-frame-tile-visual.orb_ring{
+  background:radial-gradient(ellipse at 37% 47%,rgba(68,211,239,.06),transparent 36%),radial-gradient(ellipse at 70% 50%,rgba(157,88,221,.07),transparent 36%),radial-gradient(ellipse,transparent 0 54%,rgba(52,51,105,.09) 100%)!important;border-radius:50%;
+}
+.ddt-frame-tile-visual.halo_ring::before,
+.ddt-frame-tile-visual.orb_ring::before,
+.ddt-frame-tile-visual.halo_ring::after,
+.ddt-frame-tile-visual.orb_ring::after{
+  content:""!important;position:absolute!important;inset:0!important;pointer-events:none!important;opacity:0!important;
+  background-repeat:no-repeat!important;background-size:250% 170%!important;
+  -webkit-mask-repeat:no-repeat!important;mask-repeat:no-repeat!important;
+  -webkit-mask-position:center!important;mask-position:center!important;
+  -webkit-mask-size:contain!important;mask-size:contain!important;
+  box-shadow:none!important;border-radius:0!important;
+}
+.ddt-frame-tile-visual::before{z-index:2!important}
+.ddt-frame-tile-visual::after{z-index:5!important}
+.ddt-frame-tile-back{z-index:1!important}
+.ddt-frame-tile-animal{z-index:3!important}
+.ddt-frame-tile-front{z-index:4!important}
+
+.ddt-frame-tile-visual.halo_ring::before{
+  background-image:linear-gradient(112deg,transparent 32%,rgba(226,253,255,.80) 48%,rgba(93,222,255,.28) 54%,transparent 66%)!important;
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_back.webp")!important;mask-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+}
+.ddt-frame-tile-visual.halo_ring::after{
+  background-image:linear-gradient(112deg,transparent 33%,rgba(255,255,255,.94) 49%,rgba(92,225,255,.38) 55%,transparent 67%)!important;
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_front.webp")!important;mask-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+}
+.ddt-frame-tile-visual.orb_ring::before{
+  background-image:linear-gradient(103deg,transparent 30%,rgba(224,249,255,.78) 47%,rgba(205,115,255,.45) 54%,transparent 69%)!important;
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_back.webp")!important;mask-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+}
+.ddt-frame-tile-visual.orb_ring::after{
+  background-image:linear-gradient(103deg,transparent 30%,rgba(248,254,255,.95) 48%,rgba(222,118,255,.60) 55%,transparent 70%)!important;
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_front.webp")!important;mask-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+}
+@media(prefers-reduced-motion:no-preference){
+  .ddt-frame-option:hover .ddt-frame-tile-visual.halo_ring::before,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.halo_ring::before,
+  .ddt-frame-option:hover .ddt-frame-tile-visual.halo_ring::after,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.halo_ring::after{animation:ddtV276TileHoverSweep 1.65s ease-in-out infinite!important}
+  .ddt-frame-option:hover .ddt-frame-tile-visual.orb_ring::before,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.orb_ring::before,
+  .ddt-frame-option:hover .ddt-frame-tile-visual.orb_ring::after,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.orb_ring::after{animation:ddtV276TileHoverSweep 1.45s ease-in-out infinite!important}
+}
+@keyframes ddtV276TileHoverSweep{
+  0%{opacity:.10;background-position:135% 50%}45%{opacity:.82;background-position:-35% 50%}100%{opacity:.12;background-position:-65% 50%}
+}
+
+/* Slightly lighter popup frame weight; WebP geometry unchanged. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-back,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-back{opacity:.84!important}
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-front,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-front{opacity:.88!important}
 </style>
 
 </body>
