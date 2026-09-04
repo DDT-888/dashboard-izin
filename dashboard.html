@@ -54173,7 +54173,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         <article class="live-card-col ${stateClass}" data-nama="${item.nama}">
                             <div class="live-card-main">
                                 <span class="visual-fun-col" aria-hidden="true">${liveAvatarContent}</span>
-                                <span class="nama" title="${item.nama}">${item.nama}</span>
+                                <span class="nama">${item.nama}</span>
                                 <span class="timer-col ${isOverLimit ? 'over-limit' : ''}" data-start="${item.mulai}">${menit}m ${detik}s</span>
                             </div>
                             <div class="live-card-meta">
@@ -116434,15 +116434,15 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
 #tab-monitoring .live-card-col{
   position:relative!important;
   display:grid!important;
-  grid-template-columns:44px minmax(0,1fr) 76px!important;
-  grid-template-rows:21px 21px!important;
+  grid-template-columns:44px minmax(0,1fr) 96px!important;
+  grid-template-rows:23px 23px!important;
   column-gap:8px!important;
   row-gap:2px!important;
 
-  height:58px!important;
-  min-height:58px!important;
-  max-height:58px!important;
-  padding:6px 9px!important;
+  height:62px!important;
+  min-height:62px!important;
+  max-height:62px!important;
+  padding:7px 9px!important;
   box-sizing:border-box!important;
   align-items:center!important;
   overflow:hidden!important;
@@ -116553,9 +116553,9 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
   align-self:center!important;
   justify-self:end!important;
 
-  width:76px!important;
+  width:96px!important;
   min-width:0!important;
-  max-width:76px!important;
+  max-width:96px!important;
   height:3px!important;
   margin:0!important;
 }
@@ -116571,7 +116571,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
 /* Narrow screens: footprint is unchanged; only horizontal lanes tighten. */
 @media(max-width:760px){
   #tab-monitoring .live-card-col{
-    grid-template-columns:42px minmax(0,1fr) 62px!important;
+    grid-template-columns:42px minmax(0,1fr) 74px!important;
     column-gap:7px!important;
   }
 
@@ -116586,8 +116586,8 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
   }
 
   #tab-monitoring .live-card-col .live-mini-progress{
-    width:62px!important;
-    max-width:62px!important;
+    width:74px!important;
+    max-width:74px!important;
   }
 }
 </style>
@@ -117668,16 +117668,55 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   box-shadow:none;
 }
 
-/* Subtle premium effect only on large popup contexts. */
+/* ================================================================
+   Premium FX — ONLY Popup AVATAR + Popup START.
+   User Card intentionally remains static.
+   ================================================================ */
+
+/* HALO: ceremonial luminous breathing + restrained highlight lift. */
 @media (prefers-reduced-motion:no-preference){
-  #ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-back,
-  #aps-avatar.ddt-frame-active > .ddt-avatar-frame-back{
-    animation:ddtFrameAmbientBreath 7.5s ease-in-out infinite;
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-back,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-back{
+    animation:ddtHaloBackBreath 6.8s ease-in-out infinite;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-front,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-front{
+    animation:ddtHaloFrontLustre 5.4s ease-in-out infinite;
+  }
+
+  /* ORB: cosmic node/glow pulse. Geometry does not move. */
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-back,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-back{
+    animation:ddtOrbBackPulse 7.4s ease-in-out infinite;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-front,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-front{
+    animation:ddtOrbFrontGlint 4.9s ease-in-out infinite;
   }
 }
-@keyframes ddtFrameAmbientBreath{
-  0%,100%{opacity:.94}
-  50%{opacity:1}
+
+@keyframes ddtHaloBackBreath{
+  0%,100%{opacity:.92;filter:saturate(1.02) brightness(.99) drop-shadow(0 2px 4px rgba(33,133,180,.14))}
+  50%{opacity:1;filter:saturate(1.10) brightness(1.055) drop-shadow(0 3px 7px rgba(33,133,180,.24))}
+}
+@keyframes ddtHaloFrontLustre{
+  0%,100%{opacity:.95;filter:saturate(1.03) brightness(1)}
+  46%{opacity:1;filter:saturate(1.12) brightness(1.08)}
+  62%{opacity:.98;filter:saturate(1.06) brightness(1.025)}
+}
+@keyframes ddtOrbBackPulse{
+  0%,100%{opacity:.91;filter:saturate(1.03) brightness(.99) drop-shadow(0 2px 4px rgba(91,75,189,.14))}
+  50%{opacity:1;filter:saturate(1.13) brightness(1.065) drop-shadow(0 3px 8px rgba(91,75,189,.26))}
+}
+@keyframes ddtOrbFrontGlint{
+  0%,100%{opacity:.94;filter:saturate(1.04) brightness(1)}
+  38%{opacity:1;filter:saturate(1.15) brightness(1.10)}
+  56%{opacity:.97;filter:saturate(1.08) brightness(1.035)}
+}
+
+/* Keep all active-list cards static even if a browser reuses classes. */
+#tab-monitoring .live-card-col .ddt-avatar-frame-layer{
+  animation:none!important;
 }
 
 @media(max-width:760px){
@@ -117891,9 +117930,200 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
-    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
   });
   loadFrames();startRealtime();queueHydration();
+})();
+</script>
+
+
+<!-- DDT v2.7.3 User Card Tooltip + Refinement -->
+
+<style id="ddt-live-card-name-tooltip-v2-7-3-style">
+#ddtLiveCardNameTooltip{
+  position:fixed;
+  z-index:12120;
+  max-width:min(310px,calc(100vw - 20px));
+  padding:7px 10px;
+  border-radius:9px;
+  border:1px solid color-mix(in srgb,var(--accent) 18%,var(--border-color));
+  background:color-mix(in srgb,var(--bg-card) 95%,var(--bg-secondary));
+  color:var(--text-primary);
+  box-shadow:
+    0 12px 30px rgba(2,8,23,.16),
+    inset 0 1px 0 rgba(255,255,255,.045);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  font-size:9px;
+  font-weight:760;
+  line-height:1.35;
+  letter-spacing:.01em;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(3px) scale(.985);
+  transform-origin:center bottom;
+  transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+}
+#ddtLiveCardNameTooltip.show{
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0) scale(1);
+}
+#ddtLiveCardNameTooltip::after{
+  content:"";
+  position:absolute;
+  left:var(--ddt-tooltip-arrow-x,50%);
+  bottom:-5px;
+  width:9px;
+  height:9px;
+  transform:translateX(-50%) rotate(45deg);
+  background:inherit;
+  border-right:1px solid color-mix(in srgb,var(--accent) 18%,var(--border-color));
+  border-bottom:1px solid color-mix(in srgb,var(--accent) 18%,var(--border-color));
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] #ddtLiveCardNameTooltip{
+  background:#121612;
+  color:#e8eee7;
+  border-color:#354234;
+  box-shadow:0 12px 30px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.025);
+}
+html[data-theme="dark"][data-theme-variant="venom"] #ddtLiveCardNameTooltip::after{
+  border-right-color:#354234;
+  border-bottom-color:#354234;
+}
+
+/* Name itself remains calm; tooltip is only for actual ellipsis overflow. */
+#tab-monitoring .live-card-col .nama{
+  cursor:default!important;
+}
+</style>
+
+
+<script id="ddt-live-card-name-tooltip-v2-7-3-controller">
+(()=>{
+  'use strict';
+
+  let tooltip=null;
+  let activeTarget=null;
+
+  function ensureTooltip(){
+    if(tooltip&&tooltip.isConnected)return tooltip;
+    tooltip=document.createElement('div');
+    tooltip.id='ddtLiveCardNameTooltip';
+    tooltip.setAttribute('role','tooltip');
+    tooltip.setAttribute('aria-hidden','true');
+    document.body.appendChild(tooltip);
+    return tooltip;
+  }
+
+  function isTruncated(el){
+    if(!el)return false;
+    return (el.scrollWidth-el.clientWidth)>1;
+  }
+
+  function hide(){
+    if(!tooltip)return;
+    tooltip.classList.remove('show');
+    tooltip.setAttribute('aria-hidden','true');
+    activeTarget=null;
+  }
+
+  function position(target){
+    if(!tooltip||!target)return;
+    const r=target.getBoundingClientRect();
+    const tr=tooltip.getBoundingClientRect();
+    const pad=8;
+    let left=r.left+(r.width/2)-(tr.width/2);
+    left=Math.max(pad,Math.min(left,window.innerWidth-tr.width-pad));
+
+    let top=r.top-tr.height-9;
+    let above=true;
+    if(top<pad){
+      top=r.bottom+9;
+      above=false;
+    }
+    tooltip.style.left=`${Math.round(left)}px`;
+    tooltip.style.top=`${Math.round(top)}px`;
+
+    const arrowX=Math.max(10,Math.min(tr.width-10,(r.left+r.width/2)-left));
+    tooltip.style.setProperty('--ddt-tooltip-arrow-x',`${Math.round(arrowX)}px`);
+    tooltip.style.transformOrigin=above?'center bottom':'center top';
+
+    /* For below placement, hide the default lower arrow rather than adding
+       a second visual language. This is a rare viewport-edge case. */
+    tooltip.dataset.placement=above?'top':'bottom';
+  }
+
+  function show(target){
+    if(!isTruncated(target)){
+      hide();
+      return;
+    }
+    const text=(target.textContent||'').trim();
+    if(!text){
+      hide();
+      return;
+    }
+    const tip=ensureTooltip();
+    activeTarget=target;
+    tip.textContent=text;
+    tip.setAttribute('aria-hidden','false');
+    tip.classList.add('show');
+    requestAnimationFrame(()=>position(target));
+  }
+
+  document.addEventListener('mouseover',event=>{
+    const target=event.target.closest?.('#tab-monitoring .live-card-col .nama');
+    if(!target)return;
+    if(target===activeTarget)return;
+    show(target);
+  },true);
+
+  document.addEventListener('mouseout',event=>{
+    const target=event.target.closest?.('#tab-monitoring .live-card-col .nama');
+    if(!target)return;
+    const to=event.relatedTarget;
+    if(to&&target.contains(to))return;
+    hide();
+  },true);
+
+  document.addEventListener('focusin',event=>{
+    const target=event.target.closest?.('#tab-monitoring .live-card-col .nama');
+    if(target)show(target);
+  },true);
+  document.addEventListener('focusout',event=>{
+    if(event.target.closest?.('#tab-monitoring .live-card-col .nama'))hide();
+  },true);
+
+  window.addEventListener('resize',hide,{passive:true});
+  document.addEventListener('scroll',hide,true);
+
+  /* Defensive cleanup if older cached markup still carries browser titles. */
+  function stripNativeTitles(root=document){
+    root.querySelectorAll?.('#tab-monitoring .live-card-col .nama[title]').forEach(el=>el.removeAttribute('title'));
+  }
+  stripNativeTitles();
+
+  const observer=new MutationObserver(mutations=>{
+    for(const mutation of mutations){
+      for(const node of mutation.addedNodes){
+        if(node.nodeType!==1)continue;
+        if(node.matches?.('#tab-monitoring .live-card-col .nama[title]'))node.removeAttribute('title');
+        stripNativeTitles(node);
+      }
+    }
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
+
+  window.DDTLiveCardNameTooltipV273=Object.freeze({
+    overflowOnly:true,
+    nativeTitleRemoved:true,
+    themed:true
+  });
 })();
 </script>
 
