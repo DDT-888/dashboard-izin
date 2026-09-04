@@ -53780,18 +53780,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     dataIzin[formattedNama] = data;
                     isJackpotShown[formattedNama] = false;
 
-                    try {
-                        await saveIzinEmoticonRpcV1(
-                            formattedNama,
-                            activeEmojiValue
-                        );
-                    } catch (syncError) {
-                        console.warn(
-                            'Emoticon belum tersinkron:',
-                            syncError?.message || syncError
-                        );
-                    }
-
                     await Promise.race([
                         stableAvatarWarmPromise,
                         new Promise(resolve=>setTimeout(resolve,260))
@@ -53946,7 +53934,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         );
 
                         await loadDataFromDatabase(true);
-                        await syncPreferredAnimalRecord(formattedNama);
                         renderAll();
                         return;
                     }
@@ -53974,7 +53961,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 currentData.role = role;
                 currentData.emoticon = getPreferredAnimalStorageValue(formattedNama);
                 dataIzin[formattedNama] = currentData;
-                await syncPreferredAnimalRecord(formattedNama);
 
                 // Hindari duplikat pada state lokal bila Realtime/full sync datang bersamaan.
                 const alreadyInLocalHistory = historyData.some(entry =>
@@ -116889,6 +116875,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   let activeTrigger=null;
   let popover=null;
   let closeTimer=0;
+  let viewportMutationGraceUntil=0;
 
   function catalogMap(){
     const catalog=Array.isArray(window.DDTAnimalIntegrationV2?.catalog)
@@ -116990,6 +116977,23 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   function triggerName(trigger){
     const host=trigger?.closest?.('tr[data-nama],.live-card-col[data-nama]');
     return normalizedName(host?.dataset?.nama || '');
+  }
+
+  function resolveActiveTrigger(){
+    if(activeTrigger?.isConnected)return activeTrigger;
+    if(!activeName)return null;
+
+    const candidates=[
+      ...document.querySelectorAll('#tab-monitoring tr[data-nama]'),
+      ...document.querySelectorAll('#tab-monitoring .live-card-col[data-nama]')
+    ];
+    const host=candidates.find(node=>normalizedName(node.dataset?.nama||'')===activeName);
+    activeTrigger=host?.querySelector?.('.member-avatar,.visual-fun-col')||null;
+    return activeTrigger;
+  }
+
+  function markViewportMutationGrace(){
+    viewportMutationGraceUntil=performance.now()+340;
   }
 
   function positionPopover(trigger){
@@ -117132,13 +117136,41 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   },true);
 
   window.addEventListener('resize',()=>{
-    if(popover?.classList.contains('show') && activeTrigger?.isConnected){
-      positionPopover(activeTrigger);
+    markViewportMutationGrace();
+    const trigger=resolveActiveTrigger();
+    if(popover?.classList.contains('show') && trigger){
+      requestAnimationFrame(()=>positionPopover(trigger));
     }
   },{passive:true});
 
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',()=>{
+      markViewportMutationGrace();
+      const trigger=resolveActiveTrigger();
+      if(popover?.classList.contains('show') && trigger){
+        requestAnimationFrame(()=>positionPopover(trigger));
+      }
+    },{passive:true});
+
+    window.visualViewport.addEventListener('scroll',()=>{
+      markViewportMutationGrace();
+      const trigger=resolveActiveTrigger();
+      if(popover?.classList.contains('show') && trigger){
+        requestAnimationFrame(()=>positionPopover(trigger));
+      }
+    },{passive:true});
+  }
+
   window.addEventListener('scroll',()=>{
-    if(popover?.classList.contains('show'))closeAvatarPopover(false);
+    if(!popover?.classList.contains('show'))return;
+
+    if(performance.now() <= viewportMutationGraceUntil){
+      const trigger=resolveActiveTrigger();
+      if(trigger)requestAnimationFrame(()=>positionPopover(trigger));
+      return;
+    }
+
+    closeAvatarPopover(false);
   },{passive:true,capture:true});
 
   let triggerSyncFrame=0;
@@ -117781,7 +117813,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.7.6-render-ownership-light-material-hover-motion-candidate';
+  const VERSION='2.7.7-persistence-render-zoom-motion-closure-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -118012,7 +118044,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
-    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
   });
   loadFrames();startRealtime();queueHydration();
 })();
@@ -119123,6 +119155,188 @@ html[data-theme="dark"] .ddt-frame-orb_ring > .ddt-avatar-frame-depth{inset:18% 
 #ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-front,
 #aps-avatar.ddt-frame-active > .ddt-avatar-frame-front{opacity:.88!important}
 </style>
+
+
+<style id="ddt-v2-7-7-motion-visibility-closure">
+/* Popup motion: exact transparent frame duplicates + masked sweep. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
+  animation:none!important;
+  opacity:0;
+  background-size:contain!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+}
+
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back{
+  background-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+  filter:brightness(1.24) saturate(1.12) drop-shadow(0 0 4px rgba(90,218,255,.20))!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front{
+  background-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+  filter:brightness(1.30) saturate(1.14) drop-shadow(0 0 5px rgba(105,229,255,.24))!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back{
+  background-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+  filter:brightness(1.23) saturate(1.13) drop-shadow(0 0 4px rgba(106,101,255,.17))!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front{
+  background-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+  filter:brightness(1.31) saturate(1.16) drop-shadow(0 0 5px rgba(193,107,255,.22))!important;
+}
+
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion::after,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:0;
+  background-repeat:no-repeat;
+  background-size:245% 160%;
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  mask-position:center;
+  -webkit-mask-size:contain;
+  mask-size:contain;
+}
+
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back::after,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back::after{
+  background-image:linear-gradient(112deg,transparent 31%,rgba(228,253,255,.10) 40%,rgba(255,255,255,.92) 49%,rgba(83,219,255,.42) 55%,transparent 66%);
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_back.webp");
+  mask-image:url("assets/animal/frame/halo_ring_back.webp");
+}
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front::after,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front::after{
+  background-image:linear-gradient(112deg,transparent 32%,rgba(235,254,255,.13) 41%,rgba(255,255,255,.98) 49%,rgba(93,228,255,.48) 55%,transparent 67%);
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_front.webp");
+  mask-image:url("assets/animal/frame/halo_ring_front.webp");
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back::after,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back::after{
+  background-image:linear-gradient(103deg,transparent 29%,rgba(99,229,255,.12) 38%,rgba(240,253,255,.91) 47%,rgba(207,113,255,.56) 54%,rgba(103,103,255,.16) 61%,transparent 70%);
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_back.webp");
+  mask-image:url("assets/animal/frame/orb_ring_back.webp");
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front::after,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front::after{
+  background-image:linear-gradient(103deg,transparent 30%,rgba(109,234,255,.14) 39%,rgba(250,255,255,.99) 48%,rgba(225,116,255,.68) 55%,rgba(108,106,255,.18) 62%,transparent 71%);
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_front.webp");
+  mask-image:url("assets/animal/frame/orb_ring_front.webp");
+}
+
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back{
+    animation:ddtV277HaloBreath 6.9s ease-in-out infinite!important;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front{
+    animation:ddtV277HaloBreath 6.9s ease-in-out -.9s infinite!important;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back{
+    animation:ddtV277OrbBreath 5.8s ease-in-out infinite!important;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front{
+    animation:ddtV277OrbBreath 5.8s ease-in-out -.65s infinite!important;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion::after,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion::after{
+    animation:ddtV277MaskedSweep 7.4s ease-in-out infinite!important;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion::after,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion::after{
+    animation:ddtV277MaskedSweep 5.9s ease-in-out infinite!important;
+  }
+}
+@keyframes ddtV277HaloBreath{0%,100%{opacity:.05}45%{opacity:.23}58%{opacity:.17}}
+@keyframes ddtV277OrbBreath{0%,100%{opacity:.06}44%{opacity:.28}60%{opacity:.16}}
+@keyframes ddtV277MaskedSweep{
+  0%,12%{opacity:.04;background-position:145% 50%}
+  31%{opacity:.62}
+  50%{opacity:.86;background-position:-38% 50%}
+  65%{opacity:.28}
+  82%,100%{opacity:.03;background-position:-68% 50%}
+}
+@media(prefers-reduced-motion:reduce){
+  #ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+  #aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
+    opacity:.13!important;
+  }
+}
+
+/* Picker hover guaranteed fallback: actual frame layers visibly pulse. */
+.ddt-frame-tile-back,
+.ddt-frame-tile-front{
+  transition:filter .18s ease,opacity .18s ease!important;
+}
+.ddt-frame-option:hover .ddt-frame-tile-back,
+.ddt-frame-option:focus-visible .ddt-frame-tile-back{
+  filter:brightness(1.13) saturate(1.10) drop-shadow(0 0 3px rgba(93,210,255,.18))!important;
+  opacity:1!important;
+}
+.ddt-frame-option:hover .ddt-frame-tile-front,
+.ddt-frame-option:focus-visible .ddt-frame-tile-front{
+  filter:brightness(1.20) saturate(1.14) drop-shadow(0 0 4px rgba(170,126,255,.20))!important;
+  opacity:1!important;
+}
+@media(prefers-reduced-motion:no-preference){
+  .ddt-frame-option:hover .ddt-frame-tile-back,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-back,
+  .ddt-frame-option:hover .ddt-frame-tile-front,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-front{
+    animation:ddtV277TilePulse 1.55s ease-in-out infinite!important;
+  }
+}
+@keyframes ddtV277TilePulse{
+  0%,100%{filter:brightness(1.08) saturate(1.06) drop-shadow(0 0 2px rgba(113,212,255,.13))}
+  50%{filter:brightness(1.27) saturate(1.17) drop-shadow(0 0 5px rgba(160,126,255,.28))}
+}
+</style>
+
+
+<script id="ddt-avatar-persistence-guard-v2-7-7">
+(()=>{
+  'use strict';
+  const canonical=/^preferred:(?:zodiac|animal)_[a-z0-9_]+_(?:male|female)$/;
+
+  function validStored(value){
+    return typeof value==='string' && canonical.test(value);
+  }
+
+  function preserveFromLocalState(nama){
+    const formatted=typeof formatName==='function'?formatName(nama):String(nama||'').trim().toUpperCase();
+    const row=dataIzin?.[formatted];
+    if(!row || validStored(row.emoticon))return;
+
+    const preferred=typeof getPreferredAnimalStorageValue==='function'
+      ? getPreferredAnimalStorageValue(formatted)
+      : null;
+
+    if(validStored(preferred))row.emoticon=preferred;
+  }
+
+  function protectAll(){
+    Object.keys(dataIzin||{}).forEach(preserveFromLocalState);
+  }
+
+  window.DDTAvatarPersistenceGuardV277=Object.freeze({
+    protectAll,
+    preserveFromLocalState,
+    lifecycleWritesAvatar:false
+  });
+
+  protectAll();
+})();
+</script>
 
 </body>
 </html>
