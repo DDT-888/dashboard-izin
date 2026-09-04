@@ -54178,7 +54178,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             </div>
                             <div class="live-card-meta">
                                 <span class="live-status-label"><span class="live-status-dot"></span>${statusText}</span>
-                                <span class="live-mini-progress"><span style="width:${progress}%"></span></span>
+                                <span class="live-mini-progress" data-progress="${Math.round(progress)}"><span style="width:${progress}%"></span></span>
                             </div>
                         </article>`;
                 }).join('');
@@ -54212,8 +54212,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     card.classList.toggle('near-limit', isWarning);
                     const label = card.querySelector('.live-status-label');
                     if (label) label.lastChild.textContent = isOverLimit ? 'Melewati batas' : (isWarning ? 'Mendekati batas' : 'Sedang izin');
-                    const fill = card.querySelector('.live-mini-progress > span');
+                    const track = card.querySelector('.live-mini-progress');
+                    const fill = track?.querySelector(':scope > span');
                     if (fill) fill.style.width = `${progress}%`;
+                    if (track) track.dataset.progress = String(Math.round(progress));
                 }
             });
         }
@@ -116107,7 +116109,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     for(const mutation of mutations){
       const node=mutation.target?.nodeType===1?mutation.target:mutation.target?.parentElement;
       if(!node)continue;
-      if(node.closest?.('.ddt-frame-picker-rail,.ddt-avatar-frame-layer,.ddt-avatar-frame-depth'))continue;
+      if(node.closest?.('.ddt-frame-picker-rail,.ddt-avatar-frame-layer,.ddt-avatar-frame-depth,.ddt-avatar-frame-motion'))continue;
       if(node.closest?.('#tab-monitoring,#aps-layer,#ddtAvatarPopover,#animalEmojiPicker')){relevant=true;break}
     }
     if(relevant)queueHydration();
@@ -117729,7 +117731,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.7.2-frame-interaction-visual-depth-candidate';
+  const VERSION='2.7.4-usercard-recomposition-thin-premium-motion-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -117774,7 +117776,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   }
   function removeFrameLayers(host){
     if(!host)return;
-    host.querySelectorAll(':scope > .ddt-avatar-frame-layer, :scope > .ddt-avatar-frame-depth').forEach(node=>node.remove());
+    host.querySelectorAll(':scope > .ddt-avatar-frame-layer, :scope > .ddt-avatar-frame-depth, :scope > .ddt-avatar-frame-motion').forEach(node=>node.remove());
     [...host.classList].filter(c=>c.startsWith('ddt-frame-')).forEach(c=>{
       if(c!=='ddt-frame-context'&&c!=='ddt-frame-active'&&c!=='ddt-frame-neutral-avatar')host.classList.remove(c);
     });
@@ -117813,7 +117815,9 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     back.className='ddt-avatar-frame-layer ddt-avatar-frame-back';back.src=frame.back;back.alt='';back.decoding='async';back.draggable=false;
     const front=document.createElement('img');
     front.className='ddt-avatar-frame-layer ddt-avatar-frame-front';front.src=frame.front;front.alt='';front.decoding='async';front.draggable=false;
-    host.insertBefore(depth,animal);host.insertBefore(back,animal);host.appendChild(front);host.classList.add('ddt-frame-active');
+    const motion=document.createElement('span');
+    motion.className='ddt-avatar-frame-motion';motion.setAttribute('aria-hidden','true');
+    host.insertBefore(depth,animal);host.insertBefore(back,animal);host.appendChild(front);host.appendChild(motion);host.classList.add('ddt-frame-active');
   }
   function hydrateLiveCards(){
     document.querySelectorAll('#tab-monitoring .live-card-col[data-nama]').forEach(card=>applyFrameToHost(card.querySelector('.visual-fun-col'),normalizeName(card.dataset.nama||''),'live'));
@@ -117930,7 +117934,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
-    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
   });
   loadFrames();startRealtime();queueHydration();
 })();
@@ -118126,6 +118130,301 @@ html[data-theme="dark"][data-theme-variant="venom"] #ddtLiveCardNameTooltip::aft
   });
 })();
 </script>
+
+
+<style id="ddt-v2-7-4-user-card-motion-authority">
+/* ================================================================
+   v2.7.4 AUTHORITY
+   A. User Card = Avatar | Identity | Progress Module
+   B. Frame = visually lighter/thinner
+   C. Motion = visible but calm; Popup AVATAR + Popup START only
+   ================================================================ */
+
+/* ---------- A. USER CARD RECOMPOSITION ---------- */
+#tab-monitoring .live-card-col{
+  grid-template-columns:
+    44px
+    minmax(0,1fr)
+    clamp(116px,34%,140px)!important;
+  grid-template-rows:22px 20px!important;
+  column-gap:9px!important;
+  row-gap:2px!important;
+  height:62px!important;
+  min-height:62px!important;
+  max-height:62px!important;
+  padding:8px 10px!important;
+  align-items:center!important;
+}
+
+/* Avatar remains the locked 44px desktop. */
+#tab-monitoring .live-card-col .visual-fun-col,
+#tab-monitoring .live-card-col .visual-fun-col.ddt-animal-3d{
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  max-width:44px!important;
+  max-height:44px!important;
+  padding:1px!important;
+}
+
+/* Identity: slightly stronger hierarchy, still compact. */
+#tab-monitoring .live-card-col .nama{
+  grid-column:2!important;
+  grid-row:1!important;
+  align-self:end!important;
+  font-size:10.9px!important;
+  font-weight:800!important;
+  line-height:1.08!important;
+  letter-spacing:.012em!important;
+  color:var(--text-primary)!important;
+}
+#tab-monitoring .live-card-col .live-status-label{
+  grid-column:2!important;
+  grid-row:2!important;
+  align-self:start!important;
+  margin-top:2px!important;
+  font-size:8.2px!important;
+  font-weight:650!important;
+  line-height:1!important;
+  letter-spacing:.005em!important;
+}
+
+/* Right-side progress module: timer above, long rail below. */
+#tab-monitoring .live-card-col .timer-col{
+  grid-column:3!important;
+  grid-row:1!important;
+  align-self:end!important;
+  justify-self:end!important;
+  font-size:10.2px!important;
+  font-weight:800!important;
+  line-height:1!important;
+  letter-spacing:.018em!important;
+  font-variant-numeric:tabular-nums!important;
+  color:color-mix(in srgb,var(--text-primary) 88%,var(--text-muted))!important;
+}
+
+#tab-monitoring .live-card-col .live-mini-progress{
+  grid-column:3!important;
+  grid-row:2!important;
+  align-self:start!important;
+  justify-self:start!important;
+  position:relative!important;
+
+  width:calc(100% - 29px)!important;
+  max-width:none!important;
+  min-width:58px!important;
+  height:3px!important;
+  margin-top:5px!important;
+
+  border-radius:999px!important;
+  overflow:visible!important;
+  background:color-mix(in srgb,var(--border-color) 68%,transparent)!important;
+  box-shadow:inset 0 1px 1px rgba(8,29,42,.045)!important;
+}
+#tab-monitoring .live-card-col .live-mini-progress > span{
+  display:block!important;
+  height:100%!important;
+  border-radius:inherit!important;
+  min-width:2px!important;
+}
+#tab-monitoring .live-card-col .live-mini-progress::after{
+  content:attr(data-progress) "%";
+  position:absolute;
+  left:calc(100% + 7px);
+  top:50%;
+  transform:translateY(-51%);
+  width:22px;
+  text-align:left;
+  color:var(--text-muted);
+  font-size:7.7px;
+  font-weight:750;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+
+/* The card stays visually quiet; no decorative animation here. */
+#tab-monitoring .live-card-col .ddt-avatar-frame-motion{
+  display:none!important;
+}
+#tab-monitoring .live-card-col .ddt-avatar-frame-layer{
+  animation:none!important;
+}
+
+/* Narrow screens preserve the same hierarchy, with 42px avatar authority. */
+@media(max-width:760px){
+  #tab-monitoring .live-card-col{
+    grid-template-columns:
+      42px
+      minmax(0,1fr)
+      clamp(104px,32%,122px)!important;
+    column-gap:8px!important;
+    padding:8px 9px!important;
+  }
+  #tab-monitoring .live-card-col .visual-fun-col,
+  #tab-monitoring .live-card-col .visual-fun-col.ddt-animal-3d{
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    min-height:42px!important;
+    max-width:42px!important;
+    max-height:42px!important;
+  }
+  #tab-monitoring .live-card-col .nama{font-size:10.4px!important}
+  #tab-monitoring .live-card-col .timer-col{font-size:9.8px!important}
+}
+
+/* ---------- B. FRAME: VISUALLY THINNER / LIGHTER ---------- */
+/* True geometric thinning would require new WebPs.
+   This pass makes the locked WebPs perceptually lighter without changing them. */
+.ddt-frame-active > .ddt-avatar-frame-back{
+  opacity:.88;
+}
+.ddt-frame-active > .ddt-avatar-frame-front{
+  opacity:.90;
+}
+
+/* Light-theme material remains defined, but less dense. */
+html:not([data-theme="dark"]) .ddt-frame-halo_ring > .ddt-avatar-frame-back,
+html:not([data-theme="dark"]) .ddt-frame-halo_ring > .ddt-avatar-frame-front{
+  filter:saturate(1.03) contrast(1.015) drop-shadow(0 2px 4px rgba(30,111,155,.13))!important;
+}
+html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-back,
+html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
+  filter:saturate(1.045) contrast(1.02) drop-shadow(0 2px 5px rgba(73,66,166,.13))!important;
+}
+
+/* ---------- C. MOTION LAYER ---------- */
+.ddt-avatar-frame-motion{
+  display:none;
+  position:absolute;
+  inset:0;
+  z-index:5;
+  pointer-events:none;
+  user-select:none;
+  overflow:hidden;
+  border-radius:50%;
+  opacity:0;
+}
+
+/* Only large interaction contexts render premium motion. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
+  display:block;
+}
+
+/* HALO — thin rotating lustre, geometry itself does not rotate. */
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion{
+  inset:5%;
+  background:
+    conic-gradient(
+      from 0deg,
+      transparent 0deg 46deg,
+      rgba(255,255,255,.03) 68deg,
+      rgba(205,248,255,.68) 88deg,
+      rgba(115,222,255,.34) 104deg,
+      transparent 126deg 360deg
+    );
+  -webkit-mask:
+    radial-gradient(circle at 50% 50%,
+      transparent 0 61%,
+      #000 66% 72%,
+      transparent 77% 100%);
+  mask:
+    radial-gradient(circle at 50% 50%,
+      transparent 0 61%,
+      #000 66% 72%,
+      transparent 77% 100%);
+  filter:blur(.15px) drop-shadow(0 0 4px rgba(105,224,255,.22));
+}
+
+/* ORB — linear cosmic glint follows a static tilted elliptical corridor. */
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion{
+  inset:7% 1%;
+  border-radius:50%;
+  background:
+    linear-gradient(
+      105deg,
+      transparent 0 31%,
+      rgba(133,227,255,.08) 39%,
+      rgba(222,244,255,.72) 48%,
+      rgba(209,123,255,.52) 53%,
+      rgba(117,107,255,.12) 61%,
+      transparent 69% 100%
+    );
+  background-size:210% 100%;
+  -webkit-mask:
+    radial-gradient(ellipse at 50% 52%,
+      transparent 0 59%,
+      #000 64% 70%,
+      transparent 76% 100%);
+  mask:
+    radial-gradient(ellipse at 50% 52%,
+      transparent 0 59%,
+      #000 64% 70%,
+      transparent 76% 100%);
+  transform:rotate(-7deg);
+  filter:blur(.15px) drop-shadow(0 0 5px rgba(155,102,255,.20));
+}
+
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion{
+    animation:ddtV274HaloLustre 8.8s linear infinite;
+  }
+
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion{
+    animation:ddtV274OrbSweep 6.6s ease-in-out infinite;
+  }
+
+  /* Small brightness breath on actual frame, enough to make nodes feel alive.
+     No transform => locked frame geometry stays intact. */
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-front,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-front{
+    animation:ddtV274OrbNodePulse 4.8s ease-in-out infinite!important;
+  }
+}
+
+/* Disable earlier frame-layer motion; v2.7.4 motion layer owns the effect. */
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-back,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-back,
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-front,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-front,
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-back,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-back{
+  animation:none!important;
+}
+
+@keyframes ddtV274HaloLustre{
+  0%{opacity:.18;transform:rotate(0deg)}
+  18%{opacity:.48}
+  48%{opacity:.34}
+  72%{opacity:.55}
+  100%{opacity:.18;transform:rotate(360deg)}
+}
+@keyframes ddtV274OrbSweep{
+  0%,100%{opacity:.14;background-position:135% 50%}
+  18%{opacity:.42}
+  48%{opacity:.58;background-position:-32% 50%}
+  66%{opacity:.30}
+}
+@keyframes ddtV274OrbNodePulse{
+  0%,100%{opacity:.84}
+  48%{opacity:1}
+  62%{opacity:.91}
+}
+
+/* Reduced motion: premium material stays, movement does not. */
+@media(prefers-reduced-motion:reduce){
+  #ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+  #aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
+    opacity:.26;
+  }
+}
+</style>
 
 </body>
 </html>
