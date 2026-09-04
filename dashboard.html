@@ -117851,7 +117851,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.8.5-reopen-persistence-none-copy-closure-candidate';
+  const VERSION='2.8.6-none-presentation-hard-closure-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -118490,10 +118490,24 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     renderFrameRail(true);
   }
 
+  function enforceFrameColorVisibility(rail,current){
+    if(!rail)return;
+    const normalized=validFrame(current)?current:'none';
+    rail.dataset.ddtSelectedFrame=normalized;
+
+    if(normalized==='none'){
+      rail.querySelectorAll('.ddt-frame-color-control').forEach(node=>node.remove());
+      return false;
+    }
+
+    return true;
+  }
+
   function renderFrameRail(force=false){
     const overlay=document.getElementById('animalEmojiPicker');if(!overlay?.classList.contains('show'))return;
     const body=ensurePickerLayout();const rail=body?.querySelector('.ddt-frame-picker-rail');const nama=targetPickerName();if(!rail||!nama)return;
     const item=pickerAnimalItem();const current=frameForName(nama);
+    rail.dataset.ddtSelectedFrame=current;
     const renderKey=`${nama}|${item?.key||'none'}|${current}`;
     if(!force&&rail.dataset.ddtFrameRenderKey===renderKey)return;
     rail.dataset.ddtFrameRenderKey=renderKey;
@@ -118514,6 +118528,14 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       btn.addEventListener('click',(event)=>{
         event.preventDefault();
         event.stopPropagation();
+
+        /* Presentation authority must react synchronously.
+           None can never coexist visually with COLOR / Reset. */
+        rail.dataset.ddtSelectedFrame=frameId;
+        if(frameId==='none'){
+          rail.querySelectorAll('.ddt-frame-color-control').forEach(node=>node.remove());
+        }
+
         /* Motion preview remains HOLD until Color Profile is locked.
            No hover effect and no old effect language during this gate. */
         void saveFrame(nama,frameId);
@@ -118521,6 +118543,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       frameGrid.appendChild(btn);
     });
     rail.appendChild(frameGrid);
+    enforceFrameColorVisibility(rail,current);
 
     if(current!=='none'){
       const colorValue=colorForFrame(nama,current);
@@ -118658,6 +118681,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     if(!rail||!formatted)return;
 
     const current=frameForName(formatted);
+    rail.dataset.ddtSelectedFrame=current;
 
     rail.querySelectorAll('.ddt-frame-option[data-ddt-frame-id]').forEach(btn=>{
       const selected=btn.dataset.ddtFrameId===current;
@@ -118665,10 +118689,13 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       btn.setAttribute('aria-pressed',selected?'true':'false');
     });
 
+    enforceFrameColorVisibility(rail,current);
     let control=rail.querySelector('.ddt-frame-color-control');
 
     if(current==='none'){
-      if(control)control.remove();
+      const item=pickerAnimalItem();
+      rail.dataset.ddtFrameRenderKey=`${formatted}|${item?.key||'none'}|none`;
+      return;
     }else if(!control){
       /* None -> decorated frame is the only case that needs one structural render. */
       renderFrameRail(true);
@@ -118990,7 +119017,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
     colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:FRAME_COLOR_MIN,max:FRAME_COLOR_MAX,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
     refresh:queueHydration,
     refreshPicker:hydratePickerPreview,
     commitCompositionState,
@@ -121673,6 +121700,24 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
 <style id="ddt-v2-8-5-none-control-closure">
 .ddt-frame-color-control[hidden]{
   display:none!important;
+}
+</style>
+
+
+<style id="ddt-v2-8-6-none-presentation-hard-closure">
+/* NONE is a strict no-color state. These selectors are intentionally
+   redundant so delayed/stale DOM cannot expose COLOR or Reset. */
+.ddt-frame-picker-rail[data-ddt-selected-frame="none"] .ddt-frame-color-control,
+.ddt-frame-picker-rail:has(.ddt-frame-option[data-ddt-frame-id="none"].selected) .ddt-frame-color-control{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* There should be no residual vertical footprint even if a stale node
+   survives for a single frame before JS removes it. */
+.ddt-frame-picker-rail[data-ddt-selected-frame="none"]{
+  row-gap:0;
 }
 </style>
 
