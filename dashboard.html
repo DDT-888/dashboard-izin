@@ -46339,7 +46339,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             animalEmojiPickerTargetName = '';
         };
 
-        async function saveAnimalEmojiPreference(nama, emoji) {
+        async function saveAnimalEmojiPreference(nama, emoji, options = {}) {
             const formattedNama = formatName(nama);
             if (!dataIzin[formattedNama]) {
                 dataIzin[formattedNama] = {
@@ -46379,14 +46379,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             }
 
             renderAll();
-            closeAnimalEmojiPicker();
-            showToast(
-                emoji
-                    ? `Emoticon profil ${formattedNama} berhasil diperbarui.`
-                    : `Mode emoticon random diaktifkan untuk ${formattedNama}.`,
-                'success',
-                3000
-            );
+            if (options.closePicker !== false) closeAnimalEmojiPicker();
+            if (options.toast !== false) {
+                showToast(
+                    emoji
+                        ? `Emoticon profil ${formattedNama} berhasil diperbarui.`
+                        : `Mode emoticon random diaktifkan untuk ${formattedNama}.`,
+                    'success',
+                    3000
+                );
+            }
         }
 
         window.selectAnimalEmoji = function(emoji) {
@@ -115987,8 +115989,13 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
 
   window.selectDDTAnimal=async function(key){
     if(!animalEmojiPickerTargetName||!isCanonicalKey(key))return;
-    await saveAnimalEmojiPreference(animalEmojiPickerTargetName,key);
+    const targetName=animalEmojiPickerTargetName;
+    await saveAnimalEmojiPreference(targetName,key,{closePicker:false,toast:false});
+    const preview=document.getElementById('animalEmojiPickerPreview');
+    renderPreview(preview,key,targetName);
+    renderLibrary();
     queueHydration();
+    if(typeof showToast==='function')showToast(`Animal ${targetName} berhasil diperbarui.`,'success',2200);
   };
 
   window.openAnimalEmojiPicker=function(nama){
@@ -117290,6 +117297,337 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
 
   /* Start immediately. START itself also awaits a fresh sync if needed. */
   syncServerClock({samples:3});
+})();
+</script>
+
+
+
+<!-- DDT MONITORING FRAME INTEGRATION v2.7 -->
+
+<style id="ddt-avatar-frame-integration-v2-7-style">
+:root{
+  --ddt-frame-animal-scale:.78;
+  --ddt-frame-animal-y:-4%;
+}
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-context,
+#aps-avatar.ddt-frame-context,
+#ddtAvatarPopoverVisual.ddt-frame-context,
+#animalEmojiPickerPreview.ddt-frame-context{
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:visible!important;
+}
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-context > .ddt-animal-img,
+#aps-avatar.ddt-frame-context > .ddt-animal-img,
+#ddtAvatarPopoverVisual.ddt-frame-context > .ddt-animal-img,
+#animalEmojiPickerPreview.ddt-frame-context > .ddt-animal-img{
+  position:absolute!important;
+  inset:0!important;
+  z-index:3!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  transform:translateY(var(--ddt-frame-animal-y)) scale(var(--ddt-frame-animal-scale))!important;
+  transform-origin:center!important;
+  pointer-events:none!important;
+}
+.ddt-avatar-frame-layer{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  object-fit:contain!important;
+  transform-origin:center!important;
+  pointer-events:none!important;
+  user-select:none!important;
+}
+.ddt-avatar-frame-back{z-index:2!important}
+.ddt-avatar-frame-front{z-index:4!important}
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-active,
+#aps-avatar.ddt-frame-active,
+#ddtAvatarPopoverVisual.ddt-frame-active,
+#animalEmojiPickerPreview.ddt-frame-active{
+  padding:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+}
+.ddt-frame-halo_ring > .ddt-avatar-frame-back{transform:translateY(1.8%) scale(1)!important}
+.ddt-frame-halo_ring > .ddt-avatar-frame-front{transform:translateY(-1.1%) scale(1)!important}
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-back,
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-back,
+#animalEmojiPickerPreview.ddt-frame-orb_ring > .ddt-avatar-frame-back{
+  transform:translateY(-.4%) scale(1.05)!important;
+}
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-front,
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-front,
+#animalEmojiPickerPreview.ddt-frame-orb_ring > .ddt-avatar-frame-front{
+  transform:translateY(2.1%) scale(1.06)!important;
+}
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-orb_ring > .ddt-avatar-frame-back{
+  transform:translateY(-.3%) scale(1.02)!important;
+}
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-orb_ring > .ddt-avatar-frame-front{
+  transform:translateY(1.9%) scale(1.02)!important;
+}
+.ddt-frame-neutral-avatar{
+  display:grid!important;
+  place-items:center!important;
+  color:var(--text-muted)!important;
+  font-size:11px!important;
+  font-weight:850!important;
+  letter-spacing:.04em!important;
+  background:color-mix(in srgb,var(--bg-secondary) 78%,transparent)!important;
+  border:1px solid color-mix(in srgb,var(--border-color) 82%,transparent)!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+#aps-avatar.ddt-frame-neutral-avatar{font-size:18px!important}
+.animal-emoji-picker-dialog.ddt-frame-picker-enabled{
+  width:min(950px,calc(100vw - 28px))!important;
+}
+.ddt-frame-picker-body{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 196px;
+  gap:13px;
+  align-items:start;
+}
+.ddt-frame-picker-animal-pane{min-width:0}
+.ddt-frame-picker-rail{
+  min-width:0;
+  padding:10px;
+  border:1px solid color-mix(in srgb,var(--border-color) 82%,transparent);
+  border-radius:13px;
+  background:color-mix(in srgb,var(--bg-secondary) 56%,transparent);
+}
+.ddt-frame-picker-rail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}
+.ddt-frame-picker-rail-head strong{display:block;color:var(--text-primary);font-size:9px;font-weight:900;line-height:1.1;letter-spacing:.09em;text-transform:uppercase}
+.ddt-frame-picker-rail-head span{display:block;margin-top:3px;color:var(--text-muted);font-size:7.5px;font-weight:650;line-height:1.25}
+.ddt-frame-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.ddt-frame-option{
+  min-width:0;min-height:93px;display:grid;grid-template-rows:66px auto;place-items:center;gap:4px;padding:6px 4px;
+  border:1px solid color-mix(in srgb,var(--border-color) 88%,transparent);border-radius:11px;
+  background:color-mix(in srgb,var(--bg-card) 86%,transparent);color:var(--text-muted);cursor:pointer;
+  transition:border-color .16s ease,background .16s ease,transform .16s ease,box-shadow .16s ease;
+}
+.ddt-frame-option:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--accent) 40%,var(--border-color));background:color-mix(in srgb,var(--accent) 5%,var(--bg-card))}
+.ddt-frame-option.selected{color:var(--text-primary);border-color:color-mix(in srgb,var(--accent) 54%,var(--border-color));background:color-mix(in srgb,var(--accent) 9%,var(--bg-card));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 8%,transparent)}
+.ddt-frame-option[disabled]{opacity:.58;cursor:wait;transform:none}
+.ddt-frame-option-label{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:7.7px;font-weight:850;line-height:1.1}
+.ddt-frame-tile-visual{position:relative;width:66px;height:66px;isolation:isolate}
+.ddt-frame-tile-visual > img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;pointer-events:none}
+.ddt-frame-tile-animal{z-index:3;transform:translateY(var(--ddt-frame-animal-y)) scale(var(--ddt-frame-animal-scale))}
+.ddt-frame-tile-back{z-index:2}.ddt-frame-tile-front{z-index:4}
+.ddt-frame-tile-visual.halo_ring .ddt-frame-tile-back{transform:translateY(1.8%) scale(1)}
+.ddt-frame-tile-visual.halo_ring .ddt-frame-tile-front{transform:translateY(-1.1%) scale(1)}
+.ddt-frame-tile-visual.orb_ring .ddt-frame-tile-back{transform:translateY(-.4%) scale(1.05)}
+.ddt-frame-tile-visual.orb_ring .ddt-frame-tile-front{transform:translateY(2.1%) scale(1.06)}
+.ddt-frame-none-mark{position:absolute;inset:14px;z-index:4;display:grid;place-items:center;border:1px dashed color-mix(in srgb,var(--text-muted) 40%,transparent);border-radius:50%;color:var(--text-muted);font-size:15px;font-weight:800;line-height:1}
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-picker-rail{background:#151a15;border-color:#303830}
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-option{background:#121612;border-color:#303830}
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-option.selected{border-color:#44d62c;background:rgba(68,214,44,.07);box-shadow:0 0 0 2px rgba(68,214,44,.055)}
+@media(max-width:760px){
+  .ddt-frame-picker-body{grid-template-columns:1fr}
+  .ddt-frame-picker-rail{order:-1}
+  .ddt-frame-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ddt-frame-option{min-height:86px;grid-template-rows:59px auto}
+  .ddt-frame-tile-visual{width:59px;height:59px}
+}
+</style>
+
+
+<script id="ddt-avatar-frame-integration-v2-7-controller">
+(()=>{
+  'use strict';
+  const VERSION='2.7.0-frame-integration-candidate';
+  const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
+  const ANIMAL_SCALE=.78;
+  const ANIMAL_Y=-4;
+  const FRAME_STORAGE_COLUMN='avatar_frame';
+  const FRAME_RPC='save_izin_avatar_frame';
+  const FRAMES=Object.freeze({
+    none:Object.freeze({id:'none',label:'None',back:null,front:null}),
+    halo_ring:Object.freeze({id:'halo_ring',label:'Halo Ring',back:'assets/frame/halo/halo_ring_back.webp',front:'assets/frame/halo/halo_ring_front.webp'}),
+    orb_ring:Object.freeze({id:'orb_ring',label:'Orb Ring',back:'assets/frame/orb/orb_ring_back.webp',front:'assets/frame/orb/orb_ring_front.webp'})
+  });
+  const frameState=new Map();
+  let hydrationFrame=0;
+  let pickerBusy=false;
+  let frameChannel=null;
+
+  function normalizeName(value){
+    try{return typeof formatName==='function'?formatName(value):String(value||'').trim().toUpperCase()}
+    catch{return String(value||'').trim().toUpperCase()}
+  }
+  function initials(value){
+    const parts=normalizeName(value).split(/\s+/).filter(Boolean);
+    if(!parts.length)return '—';
+    return (parts.length===1?parts[0].slice(0,2):parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  }
+  function validFrame(value){return Object.prototype.hasOwnProperty.call(FRAMES,String(value||'').toLowerCase())}
+  function frameForName(nama){
+    const value=String(frameState.get(normalizeName(nama))||'none').toLowerCase();
+    return validFrame(value)?value:'none';
+  }
+  function catalogMap(){
+    const list=Array.isArray(globalThis.DDTAnimalIntegrationV2?.catalog)?globalThis.DDTAnimalIntegrationV2.catalog:[];
+    return new Map(list.map(item=>[item.key,item]));
+  }
+  function animalKeyForName(nama){
+    const formatted=normalizeName(nama);
+    try{const value=getAnimalEmojiForDisplay(formatted,dataIzin?.[formatted]);return catalogMap().has(value)?value:null}catch{return null}
+  }
+  function animalItemForName(nama){const key=animalKeyForName(nama);return key?catalogMap().get(key)||null:null}
+  function targetPickerName(){
+    try{if(typeof animalEmojiPickerTargetName!=='undefined')return normalizeName(animalEmojiPickerTargetName)}catch{}
+    return '';
+  }
+  function removeFrameLayers(host){
+    if(!host)return;
+    host.querySelectorAll(':scope > .ddt-avatar-frame-layer').forEach(node=>node.remove());
+    [...host.classList].filter(c=>c.startsWith('ddt-frame-')).forEach(c=>{
+      if(c!=='ddt-frame-context'&&c!=='ddt-frame-active'&&c!=='ddt-frame-neutral-avatar')host.classList.remove(c);
+    });
+    host.classList.remove('ddt-frame-active');
+  }
+  function setNeutral(host,nama){
+    if(!host)return;
+    removeFrameLayers(host);
+    host.classList.remove('ddt-frame-context','ddt-frame-active');
+    host.classList.add('ddt-frame-neutral-avatar');
+    delete host.dataset.ddtFrameId;
+    if(host.querySelector(':scope > .ddt-animal-img'))return;
+    const next=initials(nama);
+    if(host.textContent!==next)host.replaceChildren(document.createTextNode(next));
+  }
+  function applyFrameToHost(host,nama,context='large'){
+    if(!host)return;
+    const animal=host.querySelector(':scope > .ddt-animal-img');
+    if(!animal){
+      if(context==='live'||context==='aps')setNeutral(host,nama);
+      else{removeFrameLayers(host);host.classList.remove('ddt-frame-context','ddt-frame-neutral-avatar')}
+      return;
+    }
+    host.classList.remove('ddt-frame-neutral-avatar');
+    host.classList.add('ddt-frame-context');
+    const frameId=frameForName(nama);
+    if(host.dataset.ddtFrameId===frameId&&(frameId==='none'||(host.querySelector(':scope > .ddt-avatar-frame-back')&&host.querySelector(':scope > .ddt-avatar-frame-front'))))return;
+    removeFrameLayers(host);
+    host.dataset.ddtFrameId=frameId;
+    host.classList.add(`ddt-frame-${frameId}`);
+    const frame=FRAMES[frameId];
+    if(!frame||frameId==='none')return;
+    const back=document.createElement('img');
+    back.className='ddt-avatar-frame-layer ddt-avatar-frame-back';back.src=frame.back;back.alt='';back.decoding='async';back.draggable=false;
+    const front=document.createElement('img');
+    front.className='ddt-avatar-frame-layer ddt-avatar-frame-front';front.src=frame.front;front.alt='';front.decoding='async';front.draggable=false;
+    host.insertBefore(back,animal);host.appendChild(front);host.classList.add('ddt-frame-active');
+  }
+  function hydrateLiveCards(){
+    document.querySelectorAll('#tab-monitoring .live-card-col[data-nama]').forEach(card=>applyFrameToHost(card.querySelector('.visual-fun-col'),normalizeName(card.dataset.nama||''),'live'));
+  }
+  function hydrateAps(){
+    const host=document.getElementById('aps-avatar');const nama=normalizeName(document.getElementById('aps-name')?.textContent||'');
+    if(host&&nama)applyFrameToHost(host,nama,'aps');
+  }
+  function hydratePopover(){
+    const host=document.getElementById('ddtAvatarPopoverVisual');const nama=normalizeName(document.getElementById('ddtAvatarPopoverName')?.textContent||'');
+    if(!host||!nama)return;
+    applyFrameToHost(host,nama,'popover');
+    const meta=document.getElementById('ddtAvatarPopoverMeta');const item=animalItemForName(nama);
+    if(meta){
+      if(item){const frameId=frameForName(nama);const frameLabel=frameId==='none'?'':` · ${FRAMES[frameId]?.label||frameId}`;meta.textContent=`${item.label} · ${item.gender==='male'?'Male':'Female'}${frameLabel}`}
+      else meta.textContent='Belum memilih avatar';
+    }
+  }
+  function pickerAnimalItem(){
+    const nama=targetPickerName();if(!nama)return null;
+    const key=(()=>{try{return getPreferredAnimalEmoji(nama)||animalKeyForName(nama)}catch{return animalKeyForName(nama)}})();
+    return key?catalogMap().get(key)||null:null;
+  }
+  function makeTileVisual(frameId,item){
+    const visual=document.createElement('span');visual.className=`ddt-frame-tile-visual ${frameId}`;
+    if(frameId!=='none'){const frame=FRAMES[frameId];const back=document.createElement('img');back.className='ddt-frame-tile-back';back.src=frame.back;back.alt='';back.decoding='async';back.draggable=false;visual.appendChild(back)}
+    if(item?.src){const animal=document.createElement('img');animal.className='ddt-frame-tile-animal';animal.src=item.src;animal.alt='';animal.decoding='async';animal.loading='lazy';animal.draggable=false;visual.appendChild(animal)}
+    else{const mark=document.createElement('span');mark.className='ddt-frame-none-mark';mark.textContent='·';visual.appendChild(mark)}
+    if(frameId!=='none'){const frame=FRAMES[frameId];const front=document.createElement('img');front.className='ddt-frame-tile-front';front.src=frame.front;front.alt='';front.decoding='async';front.draggable=false;visual.appendChild(front)}
+    return visual;
+  }
+  function ensurePickerLayout(){
+    const overlay=document.getElementById('animalEmojiPicker');const dialog=overlay?.querySelector('.animal-emoji-picker-dialog');const animalGrid=document.getElementById('animalEmojiPickerGrid');
+    if(!overlay||!dialog||!animalGrid)return null;
+    dialog.classList.add('ddt-frame-picker-enabled');
+    const randomBtn=dialog.querySelector('.animal-emoji-random-button');if(randomBtn){const spans=randomBtn.querySelectorAll('span');if(spans.length>1)spans[1].textContent='Acak Animal'}
+    let body=dialog.querySelector('.ddt-frame-picker-body');
+    if(!body){
+      body=document.createElement('div');body.className='ddt-frame-picker-body';
+      const pane=document.createElement('div');pane.className='ddt-frame-picker-animal-pane';
+      const rail=document.createElement('aside');rail.className='ddt-frame-picker-rail';rail.setAttribute('aria-label','Pilihan frame avatar');
+      body.append(pane,rail);dialog.insertBefore(body,dialog.querySelector('.animal-emoji-picker-footer'));
+      const tabs=dialog.querySelector('.ddt-animal-tabs');if(tabs)pane.appendChild(tabs);pane.appendChild(animalGrid);
+    }
+    return body;
+  }
+  function renderFrameRail(){
+    const overlay=document.getElementById('animalEmojiPicker');if(!overlay?.classList.contains('show'))return;
+    const body=ensurePickerLayout();const rail=body?.querySelector('.ddt-frame-picker-rail');const nama=targetPickerName();if(!rail||!nama)return;
+    const item=pickerAnimalItem();const current=frameForName(nama);rail.replaceChildren();
+    const head=document.createElement('div');head.className='ddt-frame-picker-rail-head';head.innerHTML='<div><strong>FRAME</strong><span>Frame personal · tersimpan langsung</span></div>';rail.appendChild(head);
+    const frameGrid=document.createElement('div');frameGrid.className='ddt-frame-grid';
+    ['none','halo_ring','orb_ring'].forEach(frameId=>{
+      const frame=FRAMES[frameId];const btn=document.createElement('button');btn.type='button';btn.className=`ddt-frame-option ${current===frameId?'selected':''}`;btn.dataset.ddtFrameId=frameId;
+      btn.setAttribute('aria-pressed',current===frameId?'true':'false');btn.setAttribute('aria-label',`Pilih frame ${frame.label}`);btn.appendChild(makeTileVisual(frameId,item));
+      const label=document.createElement('span');label.className='ddt-frame-option-label';label.textContent=frame.label;btn.appendChild(label);btn.addEventListener('click',()=>saveFrame(nama,frameId));frameGrid.appendChild(btn);
+    });
+    rail.appendChild(frameGrid);
+  }
+  function hydratePickerPreview(){
+    const overlay=document.getElementById('animalEmojiPicker');if(!overlay?.classList.contains('show'))return;
+    const nama=targetPickerName();const host=document.getElementById('animalEmojiPickerPreview');if(host&&nama)applyFrameToHost(host,nama,'picker');renderFrameRail();
+  }
+  function hydrateAll(){hydrationFrame=0;hydrateLiveCards();hydrateAps();hydratePopover();hydratePickerPreview()}
+  function queueHydration(){if(hydrationFrame)return;hydrationFrame=requestAnimationFrame(hydrateAll)}
+  async function loadFrames(){
+    try{
+      const {data,error}=await supabaseDashboard.from('izin_anggota').select('nama, avatar_frame');if(error)throw error;
+      (Array.isArray(data)?data:[]).forEach(row=>{const nama=normalizeName(row?.nama||'');if(!nama)return;const frame=String(row?.avatar_frame||'none').toLowerCase();frameState.set(nama,validFrame(frame)?frame:'none')});
+      queueHydration();
+    }catch(error){console.warn('Avatar frame initial load gagal:',error?.message||error)}
+  }
+  async function saveFrame(nama,frameId){
+    const formatted=normalizeName(nama);if(!formatted||!validFrame(frameId)||pickerBusy)return;
+    const previous=frameForName(formatted);if(previous===frameId)return;
+    pickerBusy=true;frameState.set(formatted,frameId);queueHydration();document.querySelectorAll('.ddt-frame-option').forEach(btn=>btn.disabled=true);
+    try{
+      const {error}=await supabaseDashboard.rpc(FRAME_RPC,{p_nama:formatted,p_avatar_frame:frameId});if(error)throw error;
+      if(typeof showToast==='function')showToast(`Frame ${FRAMES[frameId].label} untuk ${formatted} berhasil diperbarui.`,'success',2200);
+    }catch(error){
+      frameState.set(formatted,previous);queueHydration();if(typeof showToast==='function')showToast('Frame belum tersimpan. Silakan coba lagi.','warning',3200);console.error('Gagal menyimpan avatar frame:',error);
+    }finally{pickerBusy=false;renderFrameRail()}
+  }
+  function startRealtime(){
+    try{
+      frameChannel=supabaseDashboard.channel('ddt-avatar-frame-v2-7').on('postgres_changes',{event:'*',schema:'public',table:'izin_anggota'},payload=>{
+        const row=payload?.new;const nama=normalizeName(row?.nama||'');if(!nama||typeof row?.avatar_frame==='undefined')return;
+        const frame=String(row.avatar_frame||'none').toLowerCase();frameState.set(nama,validFrame(frame)?frame:'none');queueHydration();
+      }).subscribe();
+    }catch(error){console.warn('Avatar frame realtime gagal:',error?.message||error)}
+  }
+  const observer=new MutationObserver(mutations=>{
+    let relevant=false;for(const mutation of mutations){const node=mutation.target?.nodeType===1?mutation.target:mutation.target?.parentElement;if(node?.closest?.('#tab-monitoring,#aps-layer,#ddtAvatarPopover,#animalEmojiPicker')){relevant=true;break}}
+    if(relevant)queueHydration();
+  });
+  observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','aria-hidden']});
+  window.DDTAvatarFrameIntegrationV27=Object.freeze({
+    version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
+    contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
+    frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/frame/',embeddedAssets:false,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+  });
+  loadFrames();startRealtime();queueHydration();
 })();
 </script>
 
