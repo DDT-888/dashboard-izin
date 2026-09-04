@@ -117851,7 +117851,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.8.6-none-presentation-hard-closure-candidate';
+  const VERSION='2.9.0-motion-v1-color-aware-travelling-light-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -118132,6 +118132,44 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     });
   }
 
+  function motionV1Profile(frameId,profile){
+    const v=Number(profile?.value??FRAME_COLOR_DEFAULT);
+    const isWhite=v>100;
+    const isDark=v<0;
+    const isDeepDark=v<-20;
+
+    let edge=profile?.glow || 'rgba(106,220,255,.30)';
+    if(isWhite){
+      edge=frameId==='orb_ring'
+        ? 'hsla(242,72%,72%,.42)'
+        : 'hsla(202,78%,66%,.40)';
+    }else if(isDark){
+      edge=frameId==='orb_ring'
+        ? 'hsla(218,28%,88%,.34)'
+        : 'hsla(205,24%,91%,.32)';
+    }
+
+    let brightness=frameId==='orb_ring'?2.18:2.10;
+    let contrast=frameId==='orb_ring'?1.24:1.20;
+    let opacity=frameId==='orb_ring'?.94:.90;
+
+    if(isWhite){
+      brightness=frameId==='orb_ring'?1.62:1.56;
+      contrast=frameId==='orb_ring'?1.34:1.30;
+      opacity=frameId==='orb_ring'?.78:.74;
+    }else if(isDeepDark){
+      brightness=frameId==='orb_ring'?2.48:2.38;
+      contrast=frameId==='orb_ring'?1.34:1.30;
+      opacity=.98;
+    }else if(isDark){
+      brightness=frameId==='orb_ring'?2.34:2.26;
+      contrast=frameId==='orb_ring'?1.30:1.27;
+      opacity=frameId==='orb_ring'?.97:.94;
+    }
+
+    return Object.freeze({edge,brightness,contrast,opacity});
+  }
+
   function frameMaterialFilter(profile){
     return [
       `hue-rotate(${profile.hue.toFixed(2)}deg)`,
@@ -118175,6 +118213,12 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     element.style.setProperty('--ddt-frame-profile-depth-bright',profile.depthBright.toFixed(3));
     element.style.setProperty('--ddt-frame-profile-glow',profile.glow);
     element.style.setProperty('--ddt-frame-profile-glow-soft',profile.glowSoft);
+
+    const motion=motionV1Profile(frameId,profile);
+    element.style.setProperty('--ddt-motion-v1-edge',motion.edge);
+    element.style.setProperty('--ddt-motion-v1-brightness',motion.brightness.toFixed(3));
+    element.style.setProperty('--ddt-motion-v1-contrast',motion.contrast.toFixed(3));
+    element.style.setProperty('--ddt-motion-v1-opacity',motion.opacity.toFixed(3));
 
     /* Inline-important material ownership closes popup/START propagation.
        Older theme/effect rules can no longer overwrite the selected profile. */
@@ -118372,7 +118416,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   }
   function removeFrameLayers(host){
     if(!host)return;
-    host.querySelectorAll(':scope > .ddt-avatar-frame-layer, :scope > .ddt-avatar-frame-depth, :scope > .ddt-avatar-frame-motion').forEach(node=>node.remove());
+    host.querySelectorAll(':scope > .ddt-avatar-frame-layer, :scope > .ddt-avatar-frame-depth, :scope > .ddt-avatar-frame-motion, :scope > .ddt-motion-v1').forEach(node=>node.remove());
     [...host.classList].filter(c=>c.startsWith('ddt-frame-')).forEach(c=>{
       if(c!=='ddt-frame-context'&&c!=='ddt-frame-active'&&c!=='ddt-frame-neutral-avatar')host.classList.remove(c);
     });
@@ -118399,7 +118443,22 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     host.classList.remove('ddt-frame-neutral-avatar');
     host.classList.add('ddt-frame-context');
     const frameId=frameForName(nama);
-    if(host.dataset.ddtFrameId===frameId&&(frameId==='none'||(host.querySelector(':scope > .ddt-avatar-frame-back')&&host.querySelector(':scope > .ddt-avatar-frame-front')))){
+    const motionContext=context==='aps'||context==='popover';
+    const hasMotionV1=
+      host.querySelector(':scope > .ddt-motion-v1-back') &&
+      host.querySelector(':scope > .ddt-motion-v1-front');
+
+    if(
+      host.dataset.ddtFrameId===frameId &&
+      (
+        frameId==='none' ||
+        (
+          host.querySelector(':scope > .ddt-avatar-frame-back') &&
+          host.querySelector(':scope > .ddt-avatar-frame-front') &&
+          (!motionContext || hasMotionV1)
+        )
+      )
+    ){
       if(frameId!=='none')applyColorProfile(host,nama,frameId);
       return;
     }
@@ -118418,11 +118477,34 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     motionBack.className='ddt-avatar-frame-motion ddt-avatar-frame-motion-back';motionBack.setAttribute('aria-hidden','true');
     const motionFront=document.createElement('span');
     motionFront.className='ddt-avatar-frame-motion ddt-avatar-frame-motion-front';motionFront.setAttribute('aria-hidden','true');
+
+    let travelBack=null;
+    let travelFront=null;
+    if(motionContext){
+      travelBack=document.createElement('img');
+      travelBack.className='ddt-motion-v1 ddt-motion-v1-back';
+      travelBack.src=frame.back;
+      travelBack.alt='';
+      travelBack.decoding='async';
+      travelBack.draggable=false;
+      travelBack.setAttribute('aria-hidden','true');
+
+      travelFront=document.createElement('img');
+      travelFront.className='ddt-motion-v1 ddt-motion-v1-front';
+      travelFront.src=frame.front;
+      travelFront.alt='';
+      travelFront.decoding='async';
+      travelFront.draggable=false;
+      travelFront.setAttribute('aria-hidden','true');
+    }
+
     host.insertBefore(depth,animal);
     host.insertBefore(back,animal);
     host.insertBefore(motionBack,animal);
+    if(travelBack)host.insertBefore(travelBack,animal);
     host.appendChild(front);
     host.appendChild(motionFront);
+    if(travelFront)host.appendChild(travelFront);
     host.classList.add('ddt-frame-active');
     applyColorProfile(host,nama,frameId);
   }
@@ -118453,10 +118535,45 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const visual=document.createElement('span');
     visual.className=`ddt-frame-tile-visual ${frameId}`;
     visual.dataset.ddtFrameId=frameId;
-    if(frameId!=='none'){const frame=FRAMES[frameId];const back=document.createElement('img');back.className='ddt-frame-tile-back';back.src=frame.back;back.alt='';back.decoding='async';back.draggable=false;visual.appendChild(back)}
-    if(item?.src){const animal=document.createElement('img');animal.className='ddt-frame-tile-animal';animal.src=item.src;animal.alt='';animal.decoding='async';animal.loading='lazy';animal.draggable=false;visual.appendChild(animal)}
-    else{const mark=document.createElement('span');mark.className='ddt-frame-none-mark';mark.textContent='·';visual.appendChild(mark)}
-    if(frameId!=='none'){const frame=FRAMES[frameId];const front=document.createElement('img');front.className='ddt-frame-tile-front';front.src=frame.front;front.alt='';front.decoding='async';front.draggable=false;visual.appendChild(front)}
+    if(frameId!=='none'){
+      const frame=FRAMES[frameId];
+      const back=document.createElement('img');
+      back.className='ddt-frame-tile-back';
+      back.src=frame.back;back.alt='';back.decoding='async';back.draggable=false;
+      visual.appendChild(back);
+
+      const travelBack=document.createElement('img');
+      travelBack.className='ddt-motion-v1-tile ddt-motion-v1-tile-back';
+      travelBack.src=frame.back;travelBack.alt='';travelBack.decoding='async';travelBack.draggable=false;
+      travelBack.setAttribute('aria-hidden','true');
+      visual.appendChild(travelBack);
+    }
+
+    if(item?.src){
+      const animal=document.createElement('img');
+      animal.className='ddt-frame-tile-animal';
+      animal.src=item.src;animal.alt='';animal.decoding='async';animal.loading='lazy';animal.draggable=false;
+      visual.appendChild(animal);
+    }else{
+      const mark=document.createElement('span');
+      mark.className='ddt-frame-none-mark';
+      mark.textContent='·';
+      visual.appendChild(mark);
+    }
+
+    if(frameId!=='none'){
+      const frame=FRAMES[frameId];
+      const front=document.createElement('img');
+      front.className='ddt-frame-tile-front';
+      front.src=frame.front;front.alt='';front.decoding='async';front.draggable=false;
+      visual.appendChild(front);
+
+      const travelFront=document.createElement('img');
+      travelFront.className='ddt-motion-v1-tile ddt-motion-v1-tile-front';
+      travelFront.src=frame.front;travelFront.alt='';travelFront.decoding='async';travelFront.draggable=false;
+      travelFront.setAttribute('aria-hidden','true');
+      visual.appendChild(travelFront);
+    }
     if(frameId!=='none')applyColorProfileToElement(visual,frameId,colorForFrame(nama,frameId));
     return visual;
   }
@@ -118476,18 +118593,27 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     return body;
   }
   function triggerFrameEffectPreview(frameId){
-    if(!validFrame(frameId) || frameId==='none')return;
-    frameEffectPreviewId=frameId;
-    frameEffectPreviewUntil=performance.now()+2600;
+    if(!validFrame(frameId)||frameId==='none')return;
+
+    const rail=document.querySelector('#animalEmojiPicker .ddt-frame-picker-rail');
+    if(!rail)return;
+
+    rail.querySelectorAll('.ddt-frame-option.ddt-motion-v1-preview').forEach(node=>{
+      node.classList.remove('ddt-motion-v1-preview');
+    });
+
+    const button=rail.querySelector(`.ddt-frame-option[data-ddt-frame-id="${frameId}"]`);
+    if(!button)return;
+
+    /* Force a clean restart even when the already-selected frame is clicked again. */
+    button.classList.remove('ddt-motion-v1-preview');
+    void button.offsetWidth;
+    button.classList.add('ddt-motion-v1-preview');
 
     if(frameEffectPreviewTimer)clearTimeout(frameEffectPreviewTimer);
     frameEffectPreviewTimer=setTimeout(()=>{
-      frameEffectPreviewId='';
-      frameEffectPreviewUntil=0;
-      renderFrameRail(true);
-    },2650);
-
-    renderFrameRail(true);
+      button.classList.remove('ddt-motion-v1-preview');
+    },1900);
   }
 
   function enforceFrameColorVisibility(rail,current){
@@ -118536,9 +118662,12 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
           rail.querySelectorAll('.ddt-frame-color-control').forEach(node=>node.remove());
         }
 
-        /* Motion preview remains HOLD until Color Profile is locked.
-           No hover effect and no old effect language during this gate. */
+        /* Staging stays synchronous / zero-write.
+           Motion v1 preview runs only after CLICK, never on hover. */
         void saveFrame(nama,frameId);
+        if(frameId!=='none'){
+          requestAnimationFrame(()=>triggerFrameEffectPreview(frameId));
+        }
       });
       frameGrid.appendChild(btn);
     });
@@ -119017,7 +119146,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
     colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:FRAME_COLOR_MIN,max:FRAME_COLOR_MAX,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,motionV1ColorAwareTravellingLightV290:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
     refresh:queueHydration,
     refreshPicker:hydratePickerPreview,
     commitCompositionState,
@@ -121718,6 +121847,200 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
    survives for a single frame before JS removes it. */
 .ddt-frame-picker-rail[data-ddt-selected-frame="none"]{
   row-gap:0;
+}
+</style>
+
+
+<style id="ddt-v2-9-0-motion-v1-color-aware-travelling-light">
+/* ================================================================
+   v2.9.0 — MOTION V1: COLOR-AWARE TRAVELLING LIGHT
+
+   One visual language:
+   white/specular core + Color Profile edge glow.
+   Back and Front share the SAME orbital phase, creating one highlight.
+   ================================================================ */
+
+/* Retire all legacy sweep/mask motion. It must not compete with Motion v1. */
+#ddtAvatarPopoverVisual > .ddt-avatar-frame-motion,
+#aps-avatar > .ddt-avatar-frame-motion{
+  display:none!important;
+  animation:none!important;
+  opacity:0!important;
+}
+
+/* Explicit stacking authority. */
+.ddt-frame-context.ddt-frame-active > .ddt-avatar-frame-back{z-index:1!important}
+.ddt-frame-context.ddt-frame-active > .ddt-motion-v1-back{z-index:2!important}
+.ddt-frame-context.ddt-frame-active > .ddt-animal-img{z-index:3!important}
+.ddt-frame-context.ddt-frame-active > .ddt-avatar-frame-front{z-index:4!important}
+.ddt-frame-context.ddt-frame-active > .ddt-motion-v1-front{z-index:5!important}
+
+/* Actual WebP duplicate: no mask dependency, no pseudo-element dependency. */
+.ddt-motion-v1{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  pointer-events:none!important;
+  user-select:none!important;
+  -webkit-user-drag:none!important;
+  opacity:0;
+  will-change:clip-path,opacity;
+  filter:
+    grayscale(1)
+    saturate(0)
+    brightness(var(--ddt-motion-v1-brightness,2.1))
+    contrast(var(--ddt-motion-v1-contrast,1.2))
+    drop-shadow(0 0 1.2px rgba(255,255,255,.88))
+    drop-shadow(0 0 4.5px var(--ddt-motion-v1-edge,rgba(102,220,255,.38)))!important;
+}
+
+/* Geometry remains exactly locked to each frame layer. */
+.ddt-frame-halo_ring > .ddt-motion-v1-back{
+  transform:translateY(1.8%) scale(1)!important;
+}
+.ddt-frame-halo_ring > .ddt-motion-v1-front{
+  transform:translateY(-1.1%) scale(1)!important;
+}
+
+#aps-avatar.ddt-frame-orb_ring > .ddt-motion-v1-back,
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-motion-v1-back{
+  transform:translateY(-.4%) scale(1.05)!important;
+}
+#aps-avatar.ddt-frame-orb_ring > .ddt-motion-v1-front,
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-motion-v1-front{
+  transform:translateY(2.1%) scale(1.06)!important;
+}
+
+/* A circular specular window travels around the perimeter.
+   The WebP alpha clips the light to actual frame pixels. */
+@keyframes ddtMotionV1HaloOrbit{
+  0%{
+    opacity:0;
+    clip-path:circle(15% at 48% 3%);
+  }
+  5%{opacity:var(--ddt-motion-v1-opacity,.90)}
+  12%{clip-path:circle(15% at 76% 10%)}
+  24%{clip-path:circle(15% at 94% 32%)}
+  36%{clip-path:circle(15% at 96% 63%)}
+  48%{clip-path:circle(15% at 76% 90%)}
+  60%{clip-path:circle(15% at 48% 97%)}
+  72%{clip-path:circle(15% at 18% 88%)}
+  84%{clip-path:circle(15% at 4% 58%)}
+  94%{clip-path:circle(15% at 12% 24%)}
+  98%{opacity:var(--ddt-motion-v1-opacity,.90)}
+  100%{
+    opacity:0;
+    clip-path:circle(15% at 48% 3%);
+  }
+}
+
+@keyframes ddtMotionV1OrbOrbit{
+  0%{
+    opacity:0;
+    clip-path:circle(16% at 42% 5%);
+  }
+  5%{opacity:var(--ddt-motion-v1-opacity,.94)}
+  13%{clip-path:circle(16% at 74% 11%)}
+  25%{clip-path:circle(16% at 96% 34%)}
+  37%{clip-path:circle(16% at 91% 68%)}
+  49%{clip-path:circle(16% at 66% 92%)}
+  61%{clip-path:circle(16% at 33% 95%)}
+  73%{clip-path:circle(16% at 6% 74%)}
+  85%{clip-path:circle(16% at 3% 40%)}
+  94%{clip-path:circle(16% at 18% 14%)}
+  98%{opacity:var(--ddt-motion-v1-opacity,.94)}
+  100%{
+    opacity:0;
+    clip-path:circle(16% at 42% 5%);
+  }
+}
+
+/* Continuous, slow motion only in Popup AVATAR and Popup START. */
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-motion-v1,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-motion-v1{
+    animation:ddtMotionV1HaloOrbit 7.4s linear infinite!important;
+  }
+
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-motion-v1,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-motion-v1{
+    animation:ddtMotionV1OrbOrbit 6.0s linear infinite!important;
+  }
+}
+
+/* User Card is still strictly static and gets no Motion v1 IMG layers. */
+#tab-monitoring .live-card-col .ddt-motion-v1{
+  display:none!important;
+}
+
+/* ================================================================
+   FRAME PICKER — CLICK-ONLY PREVIEW
+   ================================================================ */
+.ddt-motion-v1-tile{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  pointer-events:none!important;
+  opacity:0;
+  will-change:clip-path,opacity;
+  filter:
+    grayscale(1)
+    saturate(0)
+    brightness(var(--ddt-motion-v1-brightness,2.1))
+    contrast(var(--ddt-motion-v1-contrast,1.2))
+    drop-shadow(0 0 1px rgba(255,255,255,.90))
+    drop-shadow(0 0 3.5px var(--ddt-motion-v1-edge,rgba(102,220,255,.38)))!important;
+}
+
+.ddt-frame-tile-back{z-index:1!important}
+.ddt-motion-v1-tile-back{z-index:2!important}
+.ddt-frame-tile-animal{z-index:3!important}
+.ddt-frame-tile-front{z-index:4!important}
+.ddt-motion-v1-tile-front{z-index:5!important}
+
+.ddt-frame-tile-visual.halo_ring > .ddt-motion-v1-tile-back{
+  transform:translateY(1.8%) scale(1)!important;
+}
+.ddt-frame-tile-visual.halo_ring > .ddt-motion-v1-tile-front{
+  transform:translateY(-1.1%) scale(1)!important;
+}
+.ddt-frame-tile-visual.orb_ring > .ddt-motion-v1-tile-back{
+  transform:translateY(-.4%) scale(1.05)!important;
+}
+.ddt-frame-tile-visual.orb_ring > .ddt-motion-v1-tile-front{
+  transform:translateY(2.1%) scale(1.06)!important;
+}
+
+/* Absolutely no premium motion on hover/focus. */
+.ddt-frame-option:hover .ddt-motion-v1-tile,
+.ddt-frame-option:focus-visible .ddt-motion-v1-tile{
+  animation:none!important;
+  opacity:0;
+}
+
+/* A click plays one accelerated sample of the exact same motion language. */
+@media(prefers-reduced-motion:no-preference){
+  .ddt-frame-option.ddt-motion-v1-preview .ddt-frame-tile-visual.halo_ring > .ddt-motion-v1-tile{
+    animation:ddtMotionV1HaloOrbit 1.55s linear 1!important;
+  }
+
+  .ddt-frame-option.ddt-motion-v1-preview .ddt-frame-tile-visual.orb_ring > .ddt-motion-v1-tile{
+    animation:ddtMotionV1OrbOrbit 1.40s linear 1!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ddt-motion-v1,
+  .ddt-motion-v1-tile{
+    display:none!important;
+    animation:none!important;
+  }
 }
 </style>
 
