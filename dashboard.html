@@ -117851,7 +117851,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.9.0-motion-v1-color-aware-travelling-light-candidate';
+  const VERSION='2.9.1-motion-v1-chromatic-specular-selected-loop-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -118139,35 +118139,38 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const isDeepDark=v<-20;
 
     let edge=profile?.glow || 'rgba(106,220,255,.30)';
-    if(isWhite){
-      edge=frameId==='orb_ring'
-        ? 'hsla(242,72%,72%,.42)'
-        : 'hsla(202,78%,66%,.40)';
-    }else if(isDark){
-      edge=frameId==='orb_ring'
-        ? 'hsla(218,28%,88%,.34)'
-        : 'hsla(205,24%,91%,.32)';
-    }
-
-    let brightness=frameId==='orb_ring'?2.18:2.10;
-    let contrast=frameId==='orb_ring'?1.24:1.20;
-    let opacity=frameId==='orb_ring'?.94:.90;
+    let boost=frameId==='orb_ring'?1.30:1.26;
+    let contrastBoost=frameId==='orb_ring'?1.08:1.06;
+    let opacity=frameId==='orb_ring'?.88:.84;
+    let coreAlpha=frameId==='orb_ring'?.36:.32;
 
     if(isWhite){
-      brightness=frameId==='orb_ring'?1.62:1.56;
-      contrast=frameId==='orb_ring'?1.34:1.30;
-      opacity=frameId==='orb_ring'?.78:.74;
+      edge=frameId==='orb_ring'
+        ? 'hsla(242,72%,72%,.38)'
+        : 'hsla(202,78%,66%,.36)';
+      boost=frameId==='orb_ring'?1.15:1.12;
+      contrastBoost=frameId==='orb_ring'?1.13:1.11;
+      opacity=frameId==='orb_ring'?.72:.68;
+      coreAlpha=.22;
     }else if(isDeepDark){
-      brightness=frameId==='orb_ring'?2.48:2.38;
-      contrast=frameId==='orb_ring'?1.34:1.30;
-      opacity=.98;
+      edge=frameId==='orb_ring'
+        ? 'hsla(218,30%,86%,.34)'
+        : 'hsla(205,26%,89%,.32)';
+      boost=frameId==='orb_ring'?1.52:1.46;
+      contrastBoost=frameId==='orb_ring'?1.13:1.11;
+      opacity=.94;
+      coreAlpha=.44;
     }else if(isDark){
-      brightness=frameId==='orb_ring'?2.34:2.26;
-      contrast=frameId==='orb_ring'?1.30:1.27;
-      opacity=frameId==='orb_ring'?.97:.94;
+      edge=frameId==='orb_ring'
+        ? 'hsla(218,30%,86%,.32)'
+        : 'hsla(205,25%,89%,.30)';
+      boost=frameId==='orb_ring'?1.42:1.36;
+      contrastBoost=frameId==='orb_ring'?1.11:1.09;
+      opacity=frameId==='orb_ring'?.92:.89;
+      coreAlpha=.40;
     }
 
-    return Object.freeze({edge,brightness,contrast,opacity});
+    return Object.freeze({edge,boost,contrastBoost,opacity,coreAlpha});
   }
 
   function frameMaterialFilter(profile){
@@ -118216,9 +118219,10 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 
     const motion=motionV1Profile(frameId,profile);
     element.style.setProperty('--ddt-motion-v1-edge',motion.edge);
-    element.style.setProperty('--ddt-motion-v1-brightness',motion.brightness.toFixed(3));
-    element.style.setProperty('--ddt-motion-v1-contrast',motion.contrast.toFixed(3));
+    element.style.setProperty('--ddt-motion-v1-boost',motion.boost.toFixed(3));
+    element.style.setProperty('--ddt-motion-v1-contrast-boost',motion.contrastBoost.toFixed(3));
     element.style.setProperty('--ddt-motion-v1-opacity',motion.opacity.toFixed(3));
+    element.style.setProperty('--ddt-motion-v1-core-alpha',motion.coreAlpha.toFixed(3));
 
     /* Inline-important material ownership closes popup/START propagation.
        Older theme/effect rules can no longer overwrite the selected profile. */
@@ -118598,22 +118602,16 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const rail=document.querySelector('#animalEmojiPicker .ddt-frame-picker-rail');
     if(!rail)return;
 
-    rail.querySelectorAll('.ddt-frame-option.ddt-motion-v1-preview').forEach(node=>{
-      node.classList.remove('ddt-motion-v1-preview');
+    rail.querySelectorAll('.ddt-frame-option.ddt-motion-v1-selected-loop').forEach(node=>{
+      node.classList.remove('ddt-motion-v1-selected-loop');
     });
 
     const button=rail.querySelector(`.ddt-frame-option[data-ddt-frame-id="${frameId}"]`);
     if(!button)return;
 
-    /* Force a clean restart even when the already-selected frame is clicked again. */
-    button.classList.remove('ddt-motion-v1-preview');
-    void button.offsetWidth;
-    button.classList.add('ddt-motion-v1-preview');
-
-    if(frameEffectPreviewTimer)clearTimeout(frameEffectPreviewTimer);
-    frameEffectPreviewTimer=setTimeout(()=>{
-      button.classList.remove('ddt-motion-v1-preview');
-    },1900);
+    /* Click activates a loop that remains alive while this frame is selected.
+       It is intentionally independent from hover/focus. */
+    button.classList.add('ddt-motion-v1-selected-loop');
   }
 
   function enforceFrameColorVisibility(rail,current){
@@ -118660,6 +118658,9 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         rail.dataset.ddtSelectedFrame=frameId;
         if(frameId==='none'){
           rail.querySelectorAll('.ddt-frame-color-control').forEach(node=>node.remove());
+          rail.querySelectorAll('.ddt-frame-option.ddt-motion-v1-selected-loop').forEach(node=>{
+            node.classList.remove('ddt-motion-v1-selected-loop');
+          });
         }
 
         /* Staging stays synchronous / zero-write.
@@ -118816,6 +118817,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       const selected=btn.dataset.ddtFrameId===current;
       btn.classList.toggle('selected',selected);
       btn.setAttribute('aria-pressed',selected?'true':'false');
+      if(!selected)btn.classList.remove('ddt-motion-v1-selected-loop');
     });
 
     enforceFrameColorVisibility(rail,current);
@@ -119146,7 +119148,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
     colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:FRAME_COLOR_MIN,max:FRAME_COLOR_MAX,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,motionV1ColorAwareTravellingLightV290:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,motionV1ColorAwareTravellingLightV290:true,motionV1ChromaticSpecularV291:true,pickerSelectedLoopV291:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
     refresh:queueHydration,
     refreshPicker:hydratePickerPreview,
     commitCompositionState,
@@ -122041,6 +122043,125 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
     display:none!important;
     animation:none!important;
   }
+}
+</style>
+
+
+<style id="ddt-v2-9-1-motion-v1-chromatic-specular">
+/* ================================================================
+   v2.9.1 — CHROMATIC SPECULAR CORRECTION
+
+   Motion clone keeps the SAME Color Profile as its base frame.
+   Travelling light is a local luminance/specular lift, not a white repaint.
+   ================================================================ */
+
+.ddt-motion-v1,
+.ddt-motion-v1-tile{
+  filter:
+    hue-rotate(var(--ddt-frame-profile-hue,0deg))
+    saturate(var(--ddt-frame-profile-sat,1))
+    brightness(
+      calc(
+        var(--ddt-frame-profile-bright,1) *
+        var(--ddt-motion-v1-boost,1.26)
+      )
+    )
+    contrast(
+      calc(
+        var(--ddt-frame-profile-contrast,1) *
+        var(--ddt-motion-v1-contrast-boost,1.06)
+      )
+    )
+    drop-shadow(
+      0 0 0.75px
+      rgba(255,255,255,var(--ddt-motion-v1-core-alpha,.32))
+    )
+    drop-shadow(
+      0 0 3.2px
+      var(--ddt-motion-v1-edge,rgba(102,220,255,.34))
+    )!important;
+}
+
+/* Smaller light window = reflection, not a painted patch. */
+@keyframes ddtMotionV1HaloOrbitChromatic{
+  0%{
+    opacity:0;
+    clip-path:circle(8.5% at 48% 3%);
+  }
+  5%{opacity:var(--ddt-motion-v1-opacity,.84)}
+  12%{clip-path:circle(8.5% at 76% 10%)}
+  24%{clip-path:circle(8.5% at 94% 32%)}
+  36%{clip-path:circle(8.5% at 96% 63%)}
+  48%{clip-path:circle(8.5% at 76% 90%)}
+  60%{clip-path:circle(8.5% at 48% 97%)}
+  72%{clip-path:circle(8.5% at 18% 88%)}
+  84%{clip-path:circle(8.5% at 4% 58%)}
+  94%{clip-path:circle(8.5% at 12% 24%)}
+  98%{opacity:var(--ddt-motion-v1-opacity,.84)}
+  100%{
+    opacity:0;
+    clip-path:circle(8.5% at 48% 3%);
+  }
+}
+
+@keyframes ddtMotionV1OrbOrbitChromatic{
+  0%{
+    opacity:0;
+    clip-path:circle(9.5% at 42% 5%);
+  }
+  5%{opacity:var(--ddt-motion-v1-opacity,.88)}
+  13%{clip-path:circle(9.5% at 74% 11%)}
+  25%{clip-path:circle(9.5% at 96% 34%)}
+  37%{clip-path:circle(9.5% at 91% 68%)}
+  49%{clip-path:circle(9.5% at 66% 92%)}
+  61%{clip-path:circle(9.5% at 33% 95%)}
+  73%{clip-path:circle(9.5% at 6% 74%)}
+  85%{clip-path:circle(9.5% at 3% 40%)}
+  94%{clip-path:circle(9.5% at 18% 14%)}
+  98%{opacity:var(--ddt-motion-v1-opacity,.88)}
+  100%{
+    opacity:0;
+    clip-path:circle(9.5% at 42% 5%);
+  }
+}
+
+/* Popup AVATAR + START remain continuous. */
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-motion-v1,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-motion-v1{
+    animation:ddtMotionV1HaloOrbitChromatic 7.4s linear infinite!important;
+  }
+
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-motion-v1,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-motion-v1{
+    animation:ddtMotionV1OrbOrbitChromatic 6.0s linear infinite!important;
+  }
+}
+
+/* Picker: click activates continuous loop for the selected frame only.
+   Hover/focus never activates motion. */
+.ddt-frame-option:hover .ddt-motion-v1-tile,
+.ddt-frame-option:focus-visible .ddt-motion-v1-tile{
+  animation:none!important;
+  opacity:0!important;
+}
+
+@media(prefers-reduced-motion:no-preference){
+  .ddt-frame-option.ddt-motion-v1-selected-loop
+  .ddt-frame-tile-visual.halo_ring > .ddt-motion-v1-tile{
+    animation:ddtMotionV1HaloOrbitChromatic 1.95s linear infinite!important;
+  }
+
+  .ddt-frame-option.ddt-motion-v1-selected-loop
+  .ddt-frame-tile-visual.orb_ring > .ddt-motion-v1-tile{
+    animation:ddtMotionV1OrbOrbitChromatic 1.75s linear infinite!important;
+  }
+}
+
+/* Fully retire previous one-shot preview class if stale DOM survives. */
+.ddt-frame-option.ddt-motion-v1-preview .ddt-motion-v1-tile{
+  animation:none!important;
+  opacity:0!important;
 }
 </style>
 
