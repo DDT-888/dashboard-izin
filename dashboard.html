@@ -64957,7 +64957,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <span>🎲</span>
                     <span>Acak Animal</span>
                 </button>
-                <span class="animal-emoji-picker-note">Pilih Animal, Frame, dan Color lalu Simpan.</span>
+                <span class="animal-emoji-picker-note">Pilih Animal, Frame, dan Color lalu klik Simpan.</span>
                 <button type="button" class="ddt-avatar-composer-save" id="ddtAvatarComposerSave" onclick="saveAvatarComposition()" disabled>
                     <span class="ddt-avatar-composer-save-label">Simpan</span>
                 </button>
@@ -116109,6 +116109,9 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     const overlay=document.getElementById('animalEmojiPicker');
     if(!overlay)return;
 
+    const existingRail=overlay.querySelector('.ddt-frame-picker-rail');
+    if(existingRail)delete existingRail.dataset.ddtFrameRenderKey;
+
     const dialog=overlay.querySelector('.animal-emoji-picker-dialog');
     const kicker=overlay.querySelector('.animal-emoji-picker-kicker');
     const title=document.getElementById('animalEmojiPickerTitle');
@@ -116125,7 +116128,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
       const spans=randomBtn.querySelectorAll('span');
       if(spans.length>1)spans[1].textContent='Acak Animal';
     }
-    if(note)note.textContent='Pilih Animal, Frame, dan Color lalu Simpan.';
+    if(note)note.textContent='Pilih Animal, Frame, dan Color lalu klik Simpan.';
 
     const selected=(()=>{
       const staged=globalThis.DDTAvatarComposerV284?.getStagedAnimal?.(formattedNama);
@@ -116434,7 +116437,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
 
     const note=overlay.querySelector('.animal-emoji-picker-note');
     if(note){
-      note.textContent='Pilihan tersimpan dan otomatis tersinkron untuk tampilan anggota.';
+      note.textContent='Pilih Animal, Frame, dan Color lalu klik Simpan.';
     }
   }
 
@@ -117848,7 +117851,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.8.4-staged-atomic-save-extended-neutral-candidate';
+  const VERSION='2.8.5-reopen-persistence-none-copy-closure-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -118665,7 +118668,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     let control=rail.querySelector('.ddt-frame-color-control');
 
     if(current==='none'){
-      if(control)control.hidden=true;
+      if(control)control.remove();
     }else if(!control){
       /* None -> decorated frame is the only case that needs one structural render. */
       renderFrameRail(true);
@@ -118873,6 +118876,24 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     scheduleFramePersistence(formatted);
   }
 
+  function persistedFrameForName(nama){
+    const formatted=normalizeName(nama);
+    if(framePersistedState.has(formatted)){
+      const value=String(framePersistedState.get(formatted)||'none').toLowerCase();
+      return validFrame(value)?value:'none';
+    }
+    const coreValue=String(dataIzin?.[formatted]?.avatar_frame||'none').toLowerCase();
+    return validFrame(coreValue)?coreValue:'none';
+  }
+
+  function persistedProfilesForName(nama){
+    const formatted=normalizeName(nama);
+    if(frameColorPersistedState.has(formatted)){
+      return normalizeColorProfiles(frameColorPersistedState.get(formatted));
+    }
+    return normalizeColorProfiles(dataIzin?.[formatted]?.avatar_frame_color_profiles);
+  }
+
   function commitCompositionState(nama,frameId,profiles){
     const formatted=normalizeName(nama);
     const normalizedFrame=validFrame(frameId)?frameId:'none';
@@ -118969,11 +118990,13 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
     colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:FRAME_COLOR_MIN,max:FRAME_COLOR_MAX,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
     refresh:queueHydration,
     refreshPicker:hydratePickerPreview,
     commitCompositionState,
     frameFor:nama=>frameForName(nama),
+    persistedFrameFor:nama=>persistedFrameForName(nama),
+    persistedProfilesFor:nama=>persistedProfilesForName(nama),
     colorFor:(nama,frameId=frameForName(nama))=>colorForFrame(nama,frameId),
     colorProfile:(frameId,value)=>frameColorProfile(frameId,value),
     applyColorToHost:(host,nama,frameId=frameForName(nama))=>applyColorProfile(host,nama,frameId),
@@ -121245,11 +121268,18 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
   }
 
   function persistedFrame(nama){
-    try{return globalThis.DDTAvatarFrameIntegrationV27?.frameFor?.(nama)||'none'}
-    catch{return 'none'}
+    try{
+      return globalThis.DDTAvatarFrameIntegrationV27?.persistedFrameFor?.(nama)
+        ?? globalThis.DDTAvatarFrameIntegrationV27?.frameFor?.(nama)
+        ?? 'none';
+    }catch{return 'none'}
   }
 
   function persistedProfiles(nama){
+    try{
+      const confirmed=globalThis.DDTAvatarFrameIntegrationV27?.persistedProfilesFor?.(nama);
+      if(confirmed)return normalizeProfiles(confirmed);
+    }catch{}
     const row=dataIzin?.[nama];
     return normalizeProfiles(row?.avatar_frame_color_profiles);
   }
@@ -121309,7 +121339,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
 
     if(saving)note('Menyimpan avatar…','saving');
     else if(dirty())note('Perubahan belum disimpan.','dirty');
-    else note('Pilih Animal, Frame, dan Color lalu Simpan.','clean');
+    else note('Pilih Animal, Frame, dan Color lalu klik Simpan.','clean');
   }
 
   function begin(nama){
@@ -121319,6 +121349,10 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
       persisted,
       staged:cloneSnapshot(persisted)
     };
+
+    const rail=document.querySelector('#animalEmojiPicker .ddt-frame-picker-rail');
+    if(rail)delete rail.dataset.ddtFrameRenderKey;
+
     syncSaveButton();
   }
 
@@ -121388,18 +121422,36 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
       });
       if(error)throw error;
 
-      /* Commit locally only after the single atomic server write succeeds. */
+      /* The returned server row is the commit authority.
+         This prevents reopening from using a request/local echo if the
+         server normalized or serialized a profile differently. */
+      const serverFrame=String(data?.avatar_frame||current.frame||'none');
+      const serverProfiles=normalizeProfiles(
+        data?.avatar_frame_color_profiles ?? current.profiles
+      );
+      const serverEmoticon=typeof data?.emoticon==='string' ? data.emoticon : encodeAnimal(current.animal);
+      const serverAnimal=serverEmoticon && serverEmoticon.startsWith('preferred:')
+        ? serverEmoticon.slice('preferred:'.length)
+        : current.animal;
+
+      const confirmed={
+        nama:current.nama,
+        animal:serverAnimal||null,
+        frame:serverFrame,
+        profiles:{...serverProfiles}
+      };
+
       if(typeof setStoredAnimalPreference==='function'){
-        setStoredAnimalPreference(current.nama,current.animal||null);
+        setStoredAnimalPreference(confirmed.nama,confirmed.animal||null);
       }
 
-      if(!dataIzin[current.nama]){
-        dataIzin[current.nama]={
+      if(!dataIzin[confirmed.nama]){
+        dataIzin[confirmed.nama]={
           status:'none',
           mulai:null,
           selesai:null,
           tanggal:null,
-          role:typeof getRoleForUser==='function'?getRoleForUser(current.nama):null,
+          role:typeof getRoleForUser==='function'?getRoleForUser(confirmed.nama):null,
           emoticon:null,
           avatar_frame:'none',
           avatar_frame_color:DEFAULT_COLOR,
@@ -121407,23 +121459,28 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
         };
       }
 
-      const row=dataIzin[current.nama];
-      row.emoticon=encodeAnimal(current.animal);
-      row.avatar_frame=current.frame;
-      row.avatar_frame_color_profiles={...current.profiles};
-      row.avatar_frame_color=current.frame!=='none' && Object.prototype.hasOwnProperty.call(current.profiles,current.frame)
-        ? Number(current.profiles[current.frame])
-        : DEFAULT_COLOR;
-      dataIzin[current.nama]=row;
+      const row=dataIzin[confirmed.nama];
+      row.emoticon=serverEmoticon;
+      row.avatar_frame=confirmed.frame;
+      row.avatar_frame_color_profiles={...confirmed.profiles};
+      row.avatar_frame_color=Number.isFinite(Number(data?.avatar_frame_color))
+        ? Number(data.avatar_frame_color)
+        : (
+            confirmed.frame!=='none' &&
+            Object.prototype.hasOwnProperty.call(confirmed.profiles,confirmed.frame)
+              ? Number(confirmed.profiles[confirmed.frame])
+              : DEFAULT_COLOR
+          );
+      dataIzin[confirmed.nama]=row;
 
       globalThis.DDTAvatarFrameIntegrationV27?.commitCompositionState?.(
-        current.nama,
-        current.frame,
-        current.profiles
+        confirmed.nama,
+        confirmed.frame,
+        confirmed.profiles
       );
 
-      state.persisted=cloneSnapshot(current);
-      state.staged=cloneSnapshot(current);
+      state.persisted=cloneSnapshot(confirmed);
+      state.staged=cloneSnapshot(confirmed);
       saving=false;
       syncSaveButton();
 
@@ -121609,6 +121666,13 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
     height:30px;
     padding:0 11px;
   }
+}
+</style>
+
+
+<style id="ddt-v2-8-5-none-control-closure">
+.ddt-frame-color-control[hidden]{
+  display:none!important;
 }
 </style>
 
