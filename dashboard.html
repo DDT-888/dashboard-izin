@@ -117164,13 +117164,10 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   window.addEventListener('scroll',()=>{
     if(!popover?.classList.contains('show'))return;
 
-    if(performance.now() <= viewportMutationGraceUntil){
-      const trigger=resolveActiveTrigger();
-      if(trigger)requestAnimationFrame(()=>positionPopover(trigger));
-      return;
-    }
-
-    closeAvatarPopover(false);
+    /* Scroll is no longer a close gesture for AVATAR.
+       Keep the popup open and follow its trigger. */
+    const trigger=resolveActiveTrigger();
+    if(trigger)requestAnimationFrame(()=>positionPopover(trigger));
   },{passive:true,capture:true});
 
   let triggerSyncFrame=0;
@@ -117181,8 +117178,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
       popover from a mutation. Its screen position stays frozen until:
       - user closes it,
       - user clicks another avatar,
-      - resize (intentional reposition),
-      - scroll (intentional close).
+      - resize / zoom / scroll (intentional reposition only).
     */
     if(triggerSyncFrame)return;
     triggerSyncFrame=requestAnimationFrame(()=>{
@@ -117813,7 +117809,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.7.7-persistence-render-zoom-motion-closure-candidate';
+  const VERSION='2.7.8-unified-frame-effect-scroll-safe-avatar-stability-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -117828,6 +117824,9 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   let hydrationFrame=0;
   let pickerBusy=false;
   let frameChannel=null;
+  let frameEffectPreviewId='';
+  let frameEffectPreviewUntil=0;
+  let frameEffectPreviewTimer=0;
 
   function normalizeName(value){
     try{return typeof formatName==='function'?formatName(value):String(value||'').trim().toUpperCase()}
@@ -117955,6 +117954,21 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     }
     return body;
   }
+  function triggerFrameEffectPreview(frameId){
+    if(!validFrame(frameId) || frameId==='none')return;
+    frameEffectPreviewId=frameId;
+    frameEffectPreviewUntil=performance.now()+2600;
+
+    if(frameEffectPreviewTimer)clearTimeout(frameEffectPreviewTimer);
+    frameEffectPreviewTimer=setTimeout(()=>{
+      frameEffectPreviewId='';
+      frameEffectPreviewUntil=0;
+      renderFrameRail(true);
+    },2650);
+
+    renderFrameRail(true);
+  }
+
   function renderFrameRail(force=false){
     const overlay=document.getElementById('animalEmojiPicker');if(!overlay?.classList.contains('show'))return;
     const body=ensurePickerLayout();const rail=body?.querySelector('.ddt-frame-picker-rail');const nama=targetPickerName();if(!rail||!nama)return;
@@ -117969,7 +117983,8 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       const frame=FRAMES[frameId];
       const btn=document.createElement('button');
       btn.type='button';
-      btn.className=`ddt-frame-option ${current===frameId?'selected':''}`;
+      const previewActive=frameEffectPreviewId===frameId && performance.now()<frameEffectPreviewUntil;
+      btn.className=`ddt-frame-option ${current===frameId?'selected':''} ${previewActive?'ddt-frame-effect-preview':''}`;
       btn.dataset.ddtFrameId=frameId;
       btn.setAttribute('aria-pressed',current===frameId?'true':'false');
       btn.setAttribute('aria-label',`Pilih frame ${frame.label}`);
@@ -117978,6 +117993,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       btn.addEventListener('click',(event)=>{
         event.preventDefault();
         event.stopPropagation();
+        triggerFrameEffectPreview(frameId);
         void saveFrame(nama,frameId);
       });
       frameGrid.appendChild(btn);
@@ -118044,7 +118060,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
-    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
   });
   loadFrames();startRealtime();queueHydration();
 })();
@@ -119337,6 +119353,284 @@ html[data-theme="dark"] .ddt-frame-orb_ring > .ddt-avatar-frame-depth{inset:18% 
   protectAll();
 })();
 </script>
+
+
+<style id="ddt-v2-7-8-unified-frame-effect-authority">
+/* ================================================================
+   v2.7.8 — ONE FRAME EFFECT SYSTEM
+   Popup AVATAR / START = continuous premium presentation.
+   Frame picker = same effect only on hover/focus/click-preview.
+   User Card remains static.
+   ================================================================ */
+
+/* ---------- GLOBAL EFFECT PRIMITIVES ---------- */
+@keyframes ddtV278HaloLayerEffect{
+  0%,100%{
+    opacity:.84;
+    filter:brightness(1.00) saturate(1.02) drop-shadow(0 0 1px rgba(84,214,255,.05));
+  }
+  38%{
+    opacity:.96;
+    filter:brightness(1.13) saturate(1.09) drop-shadow(0 0 5px rgba(91,222,255,.24));
+  }
+  56%{
+    opacity:.90;
+    filter:brightness(1.06) saturate(1.05) drop-shadow(0 0 3px rgba(91,222,255,.15));
+  }
+}
+
+@keyframes ddtV278OrbLayerEffect{
+  0%,100%{
+    opacity:.84;
+    filter:brightness(1.00) saturate(1.02) drop-shadow(0 0 1px rgba(139,104,255,.05));
+  }
+  40%{
+    opacity:.98;
+    filter:brightness(1.15) saturate(1.11) drop-shadow(0 0 5px rgba(129,111,255,.20));
+  }
+  58%{
+    opacity:.91;
+    filter:brightness(1.07) saturate(1.06) drop-shadow(0 0 3px rgba(199,111,255,.15));
+  }
+}
+
+@keyframes ddtV278MaskedSweep{
+  0%,13%{opacity:0;background-position:145% 50%}
+  27%{opacity:.34}
+  48%{opacity:.84;background-position:-38% 50%}
+  62%{opacity:.26}
+  78%,100%{opacity:0;background-position:-68% 50%}
+}
+
+/* ---------- POPUP AVATAR + POPUP START ---------- */
+/* Remove ownership from every older animation declaration. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-back,
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-front,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-back,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-front,
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion,
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion::after,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion::after{
+  animation:none!important;
+}
+
+/* Actual layers guarantee the effect is visible even if CSS mask support
+   is limited by the browser. Geometry never moves. */
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-back,
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-front,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-back,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-front{
+    animation:ddtV278HaloLayerEffect 6.8s ease-in-out infinite!important;
+  }
+
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-back,
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-front,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-back,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-front{
+    animation:ddtV278OrbLayerEffect 6.1s ease-in-out infinite!important;
+  }
+}
+
+/* Motion stack remains Back -> Animal -> Front.
+   Back highlight cannot cross over the animal. */
+.ddt-avatar-frame-motion-back{z-index:2!important}
+.ddt-avatar-frame-motion-front{z-index:5!important}
+
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
+  display:block!important;
+  inset:0!important;
+  opacity:1!important;
+  background:none!important;
+  filter:none!important;
+  transform:none!important;
+  pointer-events:none!important;
+}
+
+/* One masked sweep recipe; mask chooses Halo or Orb. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion::after,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  opacity:0;
+  pointer-events:none!important;
+  background:
+    linear-gradient(
+      105deg,
+      transparent 0 31%,
+      rgba(120,229,255,.10) 38%,
+      rgba(247,254,255,.95) 47%,
+      rgba(218,121,255,.58) 53%,
+      rgba(103,109,255,.12) 60%,
+      transparent 69% 100%
+    )!important;
+  background-size:245% 165%!important;
+  background-repeat:no-repeat!important;
+  -webkit-mask-repeat:no-repeat!important;
+  mask-repeat:no-repeat!important;
+  -webkit-mask-position:center!important;
+  mask-position:center!important;
+  -webkit-mask-size:contain!important;
+  mask-size:contain!important;
+}
+
+/* Exact asset alpha masks. */
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back::after,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back::after{
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+  mask-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front::after,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front::after{
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+  mask-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back::after,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back::after{
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+  mask-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front::after,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front::after{
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+  mask-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+}
+
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion::after,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion::after{
+    animation:ddtV278MaskedSweep 7.1s ease-in-out infinite!important;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion::after,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion::after{
+    animation:ddtV278MaskedSweep 5.9s ease-in-out infinite!important;
+  }
+}
+
+/* User Card intentionally stays quiet. */
+#tab-monitoring .live-card-col .ddt-avatar-frame-back,
+#tab-monitoring .live-card-col .ddt-avatar-frame-front,
+#tab-monitoring .live-card-col .ddt-avatar-frame-motion{
+  animation:none!important;
+}
+
+/* ---------- FRAME PICKER — SAME EFFECT ---------- */
+/* Remove old hover-specific visual language. */
+.ddt-frame-option .ddt-frame-tile-back,
+.ddt-frame-option .ddt-frame-tile-front,
+.ddt-frame-option .ddt-frame-tile-visual::before,
+.ddt-frame-option .ddt-frame-tile-visual::after{
+  animation:none!important;
+}
+
+/* Actual Back/Front layers use the SAME effect keyframes.
+   It activates only while hovered/focused or for ~2.6s after click. */
+@media(prefers-reduced-motion:no-preference){
+  .ddt-frame-option:hover .ddt-frame-tile-visual.halo_ring .ddt-frame-tile-back,
+  .ddt-frame-option:hover .ddt-frame-tile-visual.halo_ring .ddt-frame-tile-front,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.halo_ring .ddt-frame-tile-back,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.halo_ring .ddt-frame-tile-front,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.halo_ring .ddt-frame-tile-back,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.halo_ring .ddt-frame-tile-front{
+    animation:ddtV278HaloLayerEffect 1.75s ease-in-out infinite!important;
+  }
+
+  .ddt-frame-option:hover .ddt-frame-tile-visual.orb_ring .ddt-frame-tile-back,
+  .ddt-frame-option:hover .ddt-frame-tile-visual.orb_ring .ddt-frame-tile-front,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.orb_ring .ddt-frame-tile-back,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.orb_ring .ddt-frame-tile-front,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.orb_ring .ddt-frame-tile-back,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.orb_ring .ddt-frame-tile-front{
+    animation:ddtV278OrbLayerEffect 1.55s ease-in-out infinite!important;
+  }
+}
+
+/* Same masked sweep overlay for picker.
+   ::before = Back, ::after = Front so animal remains between them. */
+.ddt-frame-tile-visual.halo_ring::before,
+.ddt-frame-tile-visual.halo_ring::after,
+.ddt-frame-tile-visual.orb_ring::before,
+.ddt-frame-tile-visual.orb_ring::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  opacity:0;
+  pointer-events:none!important;
+  background:
+    linear-gradient(
+      105deg,
+      transparent 0 31%,
+      rgba(120,229,255,.10) 38%,
+      rgba(247,254,255,.95) 47%,
+      rgba(218,121,255,.58) 53%,
+      rgba(103,109,255,.12) 60%,
+      transparent 69% 100%
+    )!important;
+  background-size:235% 160%!important;
+  background-repeat:no-repeat!important;
+  -webkit-mask-repeat:no-repeat!important;
+  mask-repeat:no-repeat!important;
+  -webkit-mask-position:center!important;
+  mask-position:center!important;
+  -webkit-mask-size:contain!important;
+  mask-size:contain!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+.ddt-frame-tile-visual::before{z-index:2!important}
+.ddt-frame-tile-visual::after{z-index:5!important}
+.ddt-frame-tile-animal{z-index:3!important}
+.ddt-frame-tile-back{z-index:1!important}
+.ddt-frame-tile-front{z-index:4!important}
+
+.ddt-frame-tile-visual.halo_ring::before{
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+  mask-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+}
+.ddt-frame-tile-visual.halo_ring::after{
+  -webkit-mask-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+  mask-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+}
+.ddt-frame-tile-visual.orb_ring::before{
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+  mask-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+}
+.ddt-frame-tile-visual.orb_ring::after{
+  -webkit-mask-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+  mask-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+}
+
+@media(prefers-reduced-motion:no-preference){
+  .ddt-frame-option:hover .ddt-frame-tile-visual.halo_ring::before,
+  .ddt-frame-option:hover .ddt-frame-tile-visual.halo_ring::after,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.halo_ring::before,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.halo_ring::after,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.halo_ring::before,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.halo_ring::after{
+    animation:ddtV278MaskedSweep 1.85s ease-in-out infinite!important;
+  }
+
+  .ddt-frame-option:hover .ddt-frame-tile-visual.orb_ring::before,
+  .ddt-frame-option:hover .ddt-frame-tile-visual.orb_ring::after,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.orb_ring::before,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.orb_ring::after,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.orb_ring::before,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.orb_ring::after{
+    animation:ddtV278MaskedSweep 1.65s ease-in-out infinite!important;
+  }
+}
+
+/* Interaction hint only; does not create a second effect language. */
+.ddt-frame-option:hover,
+.ddt-frame-option:focus-visible,
+.ddt-frame-option.ddt-frame-effect-preview{
+  border-color:color-mix(in srgb,var(--accent) 48%,var(--border-color))!important;
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 7%,transparent)!important;
+}
+</style>
 
 </body>
 </html>
