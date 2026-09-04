@@ -117809,7 +117809,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.7.8-unified-frame-effect-scroll-safe-avatar-stability-candidate';
+  const VERSION='2.7.9-sweep-visibility-closure-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -118060,7 +118060,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     version:VERSION,baselineSha256:BASELINE_SHA,animalAuthority:Object.freeze({scale:ANIMAL_SCALE,yPercent:ANIMAL_Y,frameIndependent:true}),tableDecorativeFrame:false,
     contexts:Object.freeze(['AVATAR popover','Active Permit / START','User Card sedang izin','Animal picker preview']),
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
-    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
+    storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,refresh:queueHydration,frameFor:nama=>frameForName(nama)
   });
   loadFrames();startRealtime();queueHydration();
 })();
@@ -119630,6 +119630,258 @@ html[data-theme="dark"] .ddt-frame-orb_ring > .ddt-avatar-frame-depth{inset:18% 
   border-color:color-mix(in srgb,var(--accent) 48%,var(--border-color))!important;
   box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 7%,transparent)!important;
 }
+</style>
+
+
+<style id="ddt-v2-7-9-sweep-visibility-closure">
+/* ================================================================
+   v2.7.9 — SWEEP VISIBILITY CLOSURE
+   SAME agreed visual language:
+   Halo = calm breath + white/cyan travelling light.
+   Orb  = cosmic breath + white/cyan-magenta travelling light.
+   ================================================================ */
+
+/* Older sweep pseudo-elements are disabled. Base layer pulse from v2.7.8 stays. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion::after,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion::after{
+  display:none!important;
+  animation:none!important;
+}
+
+/* The motion span itself becomes a transparent duplicate of the exact frame WebP.
+   A moving clip band reveals only a narrow travelling section of that real frame. */
+#ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
+  display:block!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:contain!important;
+  opacity:0;
+  pointer-events:none!important;
+  will-change:clip-path,opacity,filter;
+}
+
+/* Exact source image per layer. */
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back{
+  background-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front{
+  background-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back{
+  background-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+}
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front{
+  background-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+}
+
+/* Same physical stack: Back sweep behind animal, Front sweep above. */
+.ddt-avatar-frame-motion-back{z-index:2!important}
+.ddt-avatar-frame-motion-front{z-index:5!important}
+
+/* HALO highlight material: neutral white core + cool cyan edge. */
+#ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion{
+  filter:
+    brightness(1.55)
+    saturate(.84)
+    contrast(1.05)
+    drop-shadow(0 0 4px rgba(193,246,255,.38))
+    drop-shadow(0 0 7px rgba(82,220,255,.18))!important;
+}
+
+/* ORB highlight material: white core with restrained cyan/violet energy. */
+#ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion,
+#aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion{
+  filter:
+    brightness(1.52)
+    saturate(1.05)
+    contrast(1.06)
+    drop-shadow(0 0 4px rgba(210,246,255,.30))
+    drop-shadow(0 0 7px rgba(184,111,255,.18))!important;
+}
+
+/* Moving clip-band:
+   starts left of the frame and crosses to the right.
+   The WebP alpha itself defines the final visible geometry. */
+@media(prefers-reduced-motion:no-preference){
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-back{
+    animation:ddtV279HaloSweep 7.6s ease-in-out infinite!important;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front,
+  #aps-avatar.ddt-frame-halo_ring > .ddt-avatar-frame-motion-front{
+    animation:ddtV279HaloSweep 7.6s ease-in-out -.95s infinite!important;
+  }
+
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-back{
+    animation:ddtV279OrbSweep 6.2s ease-in-out infinite!important;
+  }
+  #ddtAvatarPopoverVisual.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front,
+  #aps-avatar.ddt-frame-orb_ring > .ddt-avatar-frame-motion-front{
+    animation:ddtV279OrbSweep 6.2s ease-in-out -.72s infinite!important;
+  }
+}
+
+@keyframes ddtV279HaloSweep{
+  0%,10%{
+    opacity:0;
+    clip-path:polygon(-18% -10%, 0% -10%, -12% 110%, -30% 110%);
+  }
+  20%{opacity:.24}
+  36%{
+    opacity:.82;
+    clip-path:polygon(18% -10%, 38% -10%, 25% 110%, 5% 110%);
+  }
+  50%{
+    opacity:.96;
+    clip-path:polygon(46% -10%, 68% -10%, 55% 110%, 33% 110%);
+  }
+  64%{
+    opacity:.70;
+    clip-path:polygon(73% -10%, 94% -10%, 81% 110%, 60% 110%);
+  }
+  78%{
+    opacity:.18;
+    clip-path:polygon(101% -10%, 121% -10%, 108% 110%, 88% 110%);
+  }
+  88%,100%{
+    opacity:0;
+    clip-path:polygon(124% -10%, 142% -10%, 129% 110%, 111% 110%);
+  }
+}
+
+@keyframes ddtV279OrbSweep{
+  0%,9%{
+    opacity:0;
+    clip-path:polygon(-20% -10%, 2% -10%, -11% 110%, -33% 110%);
+  }
+  19%{opacity:.28}
+  34%{
+    opacity:.82;
+    clip-path:polygon(16% -10%, 40% -10%, 27% 110%, 3% 110%);
+  }
+  49%{
+    opacity:1;
+    clip-path:polygon(45% -10%, 70% -10%, 57% 110%, 32% 110%);
+  }
+  64%{
+    opacity:.76;
+    clip-path:polygon(73% -10%, 98% -10%, 85% 110%, 60% 110%);
+  }
+  79%{
+    opacity:.18;
+    clip-path:polygon(103% -10%, 126% -10%, 113% 110%, 90% 110%);
+  }
+  88%,100%{
+    opacity:0;
+    clip-path:polygon(127% -10%, 146% -10%, 133% 110%, 114% 110%);
+  }
+}
+
+/* Reduced motion keeps a subtle static material lift rather than movement. */
+@media(prefers-reduced-motion:reduce){
+  #ddtAvatarPopoverVisual.ddt-frame-active > .ddt-avatar-frame-motion,
+  #aps-avatar.ddt-frame-active > .ddt-avatar-frame-motion{
+    opacity:.10!important;
+    clip-path:polygon(42% -10%, 62% -10%, 49% 110%, 29% 110%)!important;
+  }
+}
+
+/* ================================================================
+   FRAME PICKER — SAME SWEEP, triggered by hover/focus/click-preview.
+   Existing pulse stays; this restores the moving white light as well.
+   ================================================================ */
+
+/* Disable prior pseudo masked-gradient animations. */
+.ddt-frame-option .ddt-frame-tile-visual::before,
+.ddt-frame-option .ddt-frame-tile-visual::after{
+  animation:none!important;
+}
+
+/* Exact WebP duplicates for hover/click sweep. */
+.ddt-frame-tile-visual.halo_ring::before{
+  background-image:url("assets/animal/frame/halo_ring_back.webp")!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:contain!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+  filter:
+    brightness(1.55)
+    saturate(.84)
+    drop-shadow(0 0 4px rgba(111,226,255,.25))!important;
+}
+.ddt-frame-tile-visual.halo_ring::after{
+  background-image:url("assets/animal/frame/halo_ring_front.webp")!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:contain!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+  filter:
+    brightness(1.60)
+    saturate(.82)
+    drop-shadow(0 0 4px rgba(120,230,255,.28))!important;
+}
+.ddt-frame-tile-visual.orb_ring::before{
+  background-image:url("assets/animal/frame/orb_ring_back.webp")!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:contain!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+  filter:
+    brightness(1.55)
+    saturate(1.05)
+    drop-shadow(0 0 4px rgba(144,120,255,.24))!important;
+}
+.ddt-frame-tile-visual.orb_ring::after{
+  background-image:url("assets/animal/frame/orb_ring_front.webp")!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:contain!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+  filter:
+    brightness(1.60)
+    saturate(1.08)
+    drop-shadow(0 0 4px rgba(199,118,255,.27))!important;
+}
+
+/* Hover/focus/click-preview runs the SAME motion language,
+   only faster so the user can understand the frame effect immediately. */
+@media(prefers-reduced-motion:no-preference){
+  .ddt-frame-option:hover .ddt-frame-tile-visual.halo_ring::before,
+  .ddt-frame-option:hover .ddt-frame-tile-visual.halo_ring::after,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.halo_ring::before,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.halo_ring::after,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.halo_ring::before,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.halo_ring::after{
+    animation:ddtV279HaloSweep 1.9s ease-in-out infinite!important;
+  }
+
+  .ddt-frame-option:hover .ddt-frame-tile-visual.orb_ring::before,
+  .ddt-frame-option:hover .ddt-frame-tile-visual.orb_ring::after,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.orb_ring::before,
+  .ddt-frame-option:focus-visible .ddt-frame-tile-visual.orb_ring::after,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.orb_ring::before,
+  .ddt-frame-option.ddt-frame-effect-preview .ddt-frame-tile-visual.orb_ring::after{
+    animation:ddtV279OrbSweep 1.7s ease-in-out infinite!important;
+  }
+}
+
+/* Keep stack semantics identical to popup:
+   Back sweep -> Animal -> Front sweep. */
+.ddt-frame-tile-visual::before{z-index:2!important}
+.ddt-frame-tile-animal{z-index:3!important}
+.ddt-frame-tile-front{z-index:4!important}
+.ddt-frame-tile-visual::after{z-index:5!important}
 </style>
 
 </body>
