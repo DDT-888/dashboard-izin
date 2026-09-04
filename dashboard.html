@@ -46307,7 +46307,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         window.openAnimalEmojiPicker = function(nama) {
             const formattedNama = formatName(nama);
             if (!canEditMemberAnimalEmoji(formattedNama)) {
-                showToast('Emoticon hanya dapat diubah untuk profil sendiri.', 'warning', 3000);
                 return;
             }
 
@@ -46372,25 +46371,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     );
                 } catch (error) {
                     console.error('Gagal menyimpan emoticon:', error);
-                    showToast(
-                        'Pilihan tersimpan di perangkat, tetapi belum tersinkron ke database.',
-                        'warning',
-                        4000
-                    );
                 }
             }
 
             renderAll();
             if (options.closePicker !== false) closeAnimalEmojiPicker();
-            if (options.toast !== false) {
-                showToast(
-                    emoji
-                        ? `Animal ${formattedNama} berhasil diperbarui.`
-                        : `Pilihan animal ${formattedNama} dihapus.`,
-                    'success',
-                    3000
-                );
-            }
         }
 
         window.selectAnimalEmoji = function(emoji) {
@@ -116096,13 +116081,11 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     renderPreview(preview,key,targetName);
     renderLibrary();
     queueHydration();
-    if(typeof showToast==='function')showToast(`Animal ${targetName} berhasil diperbarui.`,'success',2200);
   };
 
   window.openAnimalEmojiPicker=function(nama){
     const formattedNama=formatName(nama);
     if(!canEditMemberAnimalEmoji(formattedNama)){
-      showToast('Animal hanya dapat diubah sesuai permission profil.', 'warning', 3000);
       return;
     }
 
@@ -117847,7 +117830,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 <script id="ddt-avatar-frame-integration-v2-7-controller">
 (()=>{
   'use strict';
-  const VERSION='2.8.1-per-frame-color-propagation-click-only-candidate';
+  const VERSION='2.8.2-rapid-switch-reset-extended-color-silent-selection-candidate';
   const BASELINE_SHA='99977483667bd26f166879183737b2414d36c7db0b1e0d6a0094bfa49fa5a25f';
   const ANIMAL_SCALE=.78;
   const ANIMAL_Y=-4;
@@ -117865,6 +117848,10 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   const frameState=new Map();
   const frameColorState=new Map();
   const frameColorPersistedState=new Map();
+  const framePersistedState=new Map();
+  const frameDesiredState=new Map();
+  const frameSaveTimers=new Map();
+  const frameSaveActive=new Set();
   let hydrationFrame=0;
   let pickerBusy=false;
   let frameChannel=null;
@@ -117927,12 +117914,13 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const a=Math.abs(x);
 
     if(frameId==='orb_ring'){
-      const hue=x*95;
-      const sat=1+(a*.18)+(Math.max(x,0)*.06);
-      const bright=1-(x*.035)+(a*.01);
-      const contrast=1+(a*.06);
-      const glowHue=190+(v*1.25);
-      const glowAlpha=.16+(a*.10);
+      /* Expanded Orb gamut: nearly full cosmic spectrum while 50 stays master. */
+      const hue=x*170;
+      const sat=1+(a*.28)+(Math.max(x,0)*.08);
+      const bright=1-(x*.025)+(a*.018);
+      const contrast=1+(a*.075);
+      const glowHue=(238+hue+360)%360;
+      const glowAlpha=.16+(a*.13);
       return Object.freeze({
         value:v,
         hue,
@@ -117947,12 +117935,13 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       });
     }
 
-    const hue=x*72;
-    const sat=1+(a*.12)+(Math.max(x,0)*.05);
-    const bright=1-(x*.04)+(a*.008);
-    const contrast=1+(a*.045);
-    const glowHue=192+(v*.73);
-    const glowAlpha=.13+(a*.08);
+    /* Expanded Halo gamut, deliberately softer than Orb. */
+    const hue=x*150;
+    const sat=1+(a*.19)+(Math.max(x,0)*.06);
+    const bright=1-(x*.028)+(a*.012);
+    const contrast=1+(a*.055);
+    const glowHue=(204+hue+360)%360;
+    const glowAlpha=.13+(a*.105);
     return Object.freeze({
       value:v,
       hue,
@@ -118140,15 +118129,16 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
 
       applyColorToRendered(formatted);
       syncColorControl(formatted);
-      if(typeof showToast==='function'){
-        showToast('Color Profile belum tersimpan. Silakan coba lagi.','warning',3000);
-      }
       console.error('Gagal menyimpan Color Profile avatar:',error);
     }
   }
 
   function frameForName(nama){
     const formatted=normalizeName(nama);
+    if(frameDesiredState.has(formatted)){
+      const desired=String(frameDesiredState.get(formatted)||'none').toLowerCase();
+      return validFrame(desired)?desired:'none';
+    }
     const coreValue=String(dataIzin?.[formatted]?.avatar_frame||'').toLowerCase();
     const value=coreValue||String(frameState.get(formatted)||'none').toLowerCase();
     return validFrame(value)?value:'none';
@@ -118355,7 +118345,32 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         void saveColorProfile(nama,current,event.currentTarget.value);
       });
 
-      colorControl.append(colorLabel,colorInput);
+      const resetButton=document.createElement('button');
+      resetButton.type='button';
+      resetButton.className='ddt-frame-color-reset';
+      resetButton.setAttribute('aria-label','Reset');
+      resetButton.setAttribute('data-tooltip','Reset');
+      resetButton.innerHTML=`
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+      `;
+
+      resetButton.addEventListener('pointerdown',event=>event.stopPropagation());
+      resetButton.addEventListener('click',event=>{
+        event.preventDefault();
+        event.stopPropagation();
+
+        colorInput.value=String(FRAME_COLOR_DEFAULT);
+        colorInput.setAttribute('aria-valuetext',`Color Profile ${FRAME_COLOR_DEFAULT}`);
+        colorControl.style.setProperty('--ddt-frame-color-position',`${FRAME_COLOR_DEFAULT}%`);
+
+        setColorOptimistic(nama,current,FRAME_COLOR_DEFAULT);
+        void saveColorProfile(nama,current,FRAME_COLOR_DEFAULT);
+      });
+
+      colorControl.append(colorLabel,colorInput,resetButton);
       rail.appendChild(colorControl);
     }
   }
@@ -118387,6 +118402,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         }
 
         frameState.set(nama,normalizedFrame);
+        framePersistedState.set(nama,normalizedFrame);
         frameColorState.set(nama,{...profiles});
         frameColorPersistedState.set(nama,{...profiles});
 
@@ -118399,29 +118415,110 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       queueHydration();
     }catch(error){console.warn('Avatar frame initial load gagal:',error?.message||error)}
   }
-  async function saveFrame(nama,frameId){
-    const formatted=normalizeName(nama);if(!formatted||!validFrame(frameId)||pickerBusy)return;
-    const previous=frameForName(formatted);if(previous===frameId)return;
-    pickerBusy=true;
-    const previousCoreFrame=dataIzin?.[formatted]?.avatar_frame||previous;
+  function applyFrameIntent(nama,frameId){
+    const formatted=normalizeName(nama);
+    if(!formatted||!validFrame(frameId))return;
+
+    frameDesiredState.set(formatted,frameId);
     frameState.set(formatted,frameId);
+
     if(dataIzin?.[formatted]){
       dataIzin[formatted].avatar_frame=frameId;
       dataIzin[formatted].avatar_frame_color=colorForFrame(formatted,frameId);
     }
+
     queueHydration();
-    document.querySelectorAll('.ddt-frame-option').forEach(btn=>btn.disabled=true);
-    try{
-      const {error}=await supabaseDashboard.rpc(FRAME_RPC,{p_nama:formatted,p_avatar_frame:frameId});if(error)throw error;
-      if(typeof showToast==='function')showToast(`Frame ${FRAMES[frameId].label} untuk ${formatted} berhasil diperbarui.`,'success',2200);
-    }catch(error){
-      frameState.set(formatted,previous);
-      if(dataIzin?.[formatted])dataIzin[formatted].avatar_frame=previousCoreFrame||previous;
-      queueHydration();
-      if(typeof showToast==='function')showToast('Frame belum tersimpan. Silakan coba lagi.','warning',3200);
-      console.error('Gagal menyimpan avatar frame:',error);
-    }finally{pickerBusy=false;renderFrameRail(true)}
+    renderFrameRail(true);
   }
+
+  function scheduleFramePersistence(nama){
+    const formatted=normalizeName(nama);
+    if(!formatted)return;
+
+    const oldTimer=frameSaveTimers.get(formatted);
+    if(oldTimer)clearTimeout(oldTimer);
+
+    frameSaveTimers.set(formatted,setTimeout(()=>{
+      frameSaveTimers.delete(formatted);
+      void flushFramePersistence(formatted);
+    },150));
+  }
+
+  async function flushFramePersistence(nama){
+    const formatted=normalizeName(nama);
+    if(!formatted||frameSaveActive.has(formatted))return;
+
+    const desired=frameDesiredState.get(formatted);
+    if(typeof desired==='undefined')return;
+
+    const target=validFrame(desired)?desired:'none';
+    frameSaveActive.add(formatted);
+
+    try{
+      const {error}=await supabaseDashboard.rpc(FRAME_RPC,{
+        p_nama:formatted,
+        p_avatar_frame:target
+      });
+      if(error)throw error;
+
+      framePersistedState.set(formatted,target);
+
+      /* If the user changed selection while this RPC was running,
+         immediately persist the newest intent after this one completes. */
+      const latest=frameDesiredState.get(formatted);
+      if(typeof latest!=='undefined' && latest!==target){
+        return;
+      }
+
+      frameState.set(formatted,target);
+      if(dataIzin?.[formatted]){
+        dataIzin[formatted].avatar_frame=target;
+        dataIzin[formatted].avatar_frame_color=colorForFrame(formatted,target);
+      }
+      frameDesiredState.delete(formatted);
+    }catch(error){
+      console.error('Gagal menyimpan avatar frame:',error);
+
+      const latest=frameDesiredState.get(formatted);
+      if(typeof latest==='undefined' || latest===target){
+        const rollback=framePersistedState.has(formatted)
+          ? framePersistedState.get(formatted)
+          : 'none';
+
+        frameDesiredState.delete(formatted);
+        frameState.set(formatted,rollback);
+
+        if(dataIzin?.[formatted]){
+          dataIzin[formatted].avatar_frame=rollback;
+          dataIzin[formatted].avatar_frame_color=colorForFrame(formatted,rollback);
+        }
+      }
+    }finally{
+      frameSaveActive.delete(formatted);
+
+      const latest=frameDesiredState.get(formatted);
+      if(typeof latest!=='undefined' && latest!==framePersistedState.get(formatted)){
+        queueMicrotask(()=>void flushFramePersistence(formatted));
+      }else if(typeof latest!=='undefined' && latest===framePersistedState.get(formatted)){
+        frameDesiredState.delete(formatted);
+      }
+
+      queueHydration();
+      renderFrameRail(true);
+    }
+  }
+
+  async function saveFrame(nama,frameId){
+    const formatted=normalizeName(nama);
+    if(!formatted||!validFrame(frameId))return;
+
+    const current=frameForName(formatted);
+    if(current===frameId && !frameSaveActive.has(formatted) && !frameSaveTimers.has(formatted))return;
+
+    applyFrameIntent(formatted,frameId);
+    scheduleFramePersistence(formatted);
+  }
+
   function startRealtime(){
     try{
       frameChannel=supabaseDashboard.channel('ddt-avatar-frame-v2-7').on('postgres_changes',{event:'*',schema:'public',table:'izin_anggota'},payload=>{
@@ -118431,9 +118528,24 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
         if(typeof row?.avatar_frame!=='undefined'){
           const frame=String(row.avatar_frame||'none').toLowerCase();
           const normalizedFrame=validFrame(frame)?frame:'none';
-          frameState.set(nama,normalizedFrame);
-          if(dataIzin?.[nama])dataIzin[nama].avatar_frame=normalizedFrame;
-          needsHydration=true;
+          const localIntent=frameDesiredState.get(nama);
+          const localPending=frameSaveActive.has(nama)||frameSaveTimers.has(nama);
+
+          framePersistedState.set(nama,normalizedFrame);
+
+          /* A realtime echo from an older click must not pull the UI backward
+             while a newer local selection is waiting to persist. */
+          if(!(localPending && typeof localIntent!=='undefined' && normalizedFrame!==localIntent)){
+            frameState.set(nama,normalizedFrame);
+            if(dataIzin?.[nama]){
+              dataIzin[nama].avatar_frame=normalizedFrame;
+              dataIzin[nama].avatar_frame_color=colorForFrame(nama,normalizedFrame);
+            }
+            if(localIntent===normalizedFrame && !frameSaveActive.has(nama) && !frameSaveTimers.has(nama)){
+              frameDesiredState.delete(nama);
+            }
+            needsHydration=true;
+          }
         }
 
         if(typeof row?.avatar_frame_color_profiles!=='undefined'){
@@ -118479,7 +118591,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
     colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:0,max:100,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,
     refresh:queueHydration,
     frameFor:nama=>frameForName(nama),
     colorFor:(nama,frameId=frameForName(nama))=>colorForFrame(nama,frameId),
@@ -120560,6 +120672,98 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
 
 /* Actual frame/tile layer filters are applied inline !important by
    Color Profile controller, making Popup AVATAR / START propagation robust. */
+</style>
+
+
+<style id="ddt-v2-8-2-color-stability-style">
+/* ================================================================
+   v2.8.2 — Rapid Switch + Reset + Extended Atmosphere
+   ================================================================ */
+
+.ddt-frame-color-control{
+  grid-template-columns:auto minmax(0,1fr) 20px!important;
+  gap:8px!important;
+}
+
+.ddt-frame-color-reset{
+  width:20px;
+  height:20px;
+  min-width:20px;
+  padding:0;
+  display:inline-grid;
+  place-items:center;
+  border:1px solid color-mix(in srgb,var(--border-color) 84%,transparent);
+  border-radius:6px;
+  background:color-mix(in srgb,var(--bg-card) 91%,transparent);
+  color:var(--text-muted);
+  cursor:pointer;
+  transition:
+    color .14s ease,
+    border-color .14s ease,
+    background-color .14s ease,
+    transform .12s ease;
+}
+
+.ddt-frame-color-reset svg{
+  width:10px;
+  height:10px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.ddt-frame-color-reset:hover,
+.ddt-frame-color-reset:focus-visible{
+  color:var(--text-primary);
+  border-color:color-mix(in srgb,var(--accent) 42%,var(--border-color));
+  background:color-mix(in srgb,var(--accent) 7%,var(--bg-card));
+  outline:none;
+}
+
+.ddt-frame-color-reset:active{
+  transform:scale(.94);
+}
+
+/* Expanded profile tracks: more visual range, still curated rather than raw rainbow. */
+.ddt-frame-color-control.halo_ring{
+  --ddt-frame-color-track:
+    linear-gradient(90deg,
+      #79e7b7 0%,
+      #80f2ee 15%,
+      #65d9f6 30%,
+      #51c6ef 50%,
+      #6c91f2 65%,
+      #9a75ed 80%,
+      #e38bc7 100%)!important;
+}
+
+.ddt-frame-color-control.orb_ring{
+  --ddt-frame-color-track:
+    linear-gradient(90deg,
+      #72e09b 0%,
+      #46e6da 14%,
+      #43bce9 28%,
+      #716fe6 50%,
+      #a45ee0 66%,
+      #df62b8 82%,
+      #ee8c73 100%)!important;
+}
+
+/* No premium hover effect on frame tiles.
+   Hover remains selection affordance only. */
+.ddt-frame-option:hover .ddt-frame-tile-back,
+.ddt-frame-option:hover .ddt-frame-tile-front,
+.ddt-frame-option:focus-visible .ddt-frame-tile-back,
+.ddt-frame-option:focus-visible .ddt-frame-tile-front{
+  animation:none!important;
+}
+
+/* Keep buttons clickable during rapid switching. */
+.ddt-frame-option{
+  pointer-events:auto!important;
+}
 </style>
 
 </body>
