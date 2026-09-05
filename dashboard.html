@@ -127939,15 +127939,18 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.13',
-  source:'Ticker + Office Safety v1.5',
+  version:'1.1.14',
+  source:'Ticker Interaction/Visual v1.6',
   targetedCorrection:Object.freeze({
-    tickerSmoothnessAuthority:'v1.5 isolation/progress hardening preserved',
-    tickerHoverPause:'restored on ticker wrapper',
-    tickerCopyInteraction:'pointer events + user-select restored',
-    tickerLiveVisual:'rich static glow + transform/opacity pulse',
-    tickerNoAnimatedBoxShadow:'preserved',
-    officeDisplayFailSafe:'PASS / immutable snapshot only'
+    tickerSmoothness:'PRESERVED',
+    tickerHoverPause:'PRESERVED',
+    tickerCopyInteraction:'PRESERVED',
+    liveDotVisual:'old breathing character restored',
+    liveDotRhythm:'1.5s / scale 1-.7-1 / opacity 1-.6-1',
+    liveDotGlow:'single compositor helper; no radar rings',
+    animatedBoxShadow:'NOT USED',
+    venomDotColorAuthority:'PRESERVED',
+    officeDisplayFailSafe:'PRESERVED / PASS'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -130883,16 +130886,18 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
 </style>
 
 
-<style id="ddt-ticker-v1-6-interaction-visual-restoration">
+<style id="ddt-ticker-v1-7-live-dot-visual-recovery">
 /* ================================================================
-   TICKER LIVE v1.6
-   Preserve v1.5 smoothness hardening while restoring:
-   - hover pause
-   - text selection / copy
-   - richer LIVE glow appearance
+   TICKER LIVE v1.7 — LIVE DOT VISUAL RECOVERY
+
+   Scope:
+   - preserve v1.6 smoothness
+   - preserve hover pause + text copy
+   - restore old "breathing dot" visual character
+   - do NOT restore animated box-shadow
    ================================================================ */
 
-/* Keep the proven paint/layout isolation. */
+/* Keep proven smoothness isolation. */
 html body #tab-monitoring .ticker-wrapper{
   isolation:isolate!important;
   contain:layout paint style!important;
@@ -130900,7 +130905,6 @@ html body #tab-monitoring .ticker-wrapper{
   backface-visibility:hidden!important;
 }
 
-/* Moving text remains compositor-owned, but is interactive again. */
 html body #tab-monitoring
 #tickerTrack.ddt-ticker-seamless-track{
   will-change:transform!important;
@@ -130912,12 +130916,7 @@ html body #tab-monitoring
   cursor:text;
 }
 
-/*
- * RESTORED INTERACTION:
- * Pause only while pointer is actually inside the ticker text viewport.
- * This does not change geometry/endpoints, so it does not reintroduce the
- * prior resize/layout hitch.
- */
+/* Approved hover pause behavior. */
 html body #tab-monitoring .ticker-wrapper:hover
 #tickerTrack.ddt-ticker-motion-ready{
   animation-play-state:paused!important;
@@ -130928,7 +130927,7 @@ html body #tab-monitoring .ticker-wrapper:not(:hover)
   animation-play-state:running!important;
 }
 
-/* Speaker keeps its original visual pulse on its own compositor layer. */
+/* Speaker remains compositor-owned. */
 html body #tab-monitoring .ticker-icon{
   will-change:transform,opacity!important;
   backface-visibility:hidden!important;
@@ -130936,86 +130935,120 @@ html body #tab-monitoring .ticker-icon{
 }
 
 /*
- * LIVE DOT:
- * restore the richer glowing look without animating box-shadow every frame.
- * Static shadows provide the visual depth; only pseudo-ring scale/opacity moves.
+ * OLD VISUAL CHARACTER:
+ * Original dot:
+ *   7x7px
+ *   1.5s ease-in-out
+ *   scale 1 -> .7 -> 1
+ *   opacity 1 -> .6 -> 1
+ *
+ * Keep exactly that breathing rhythm.
+ * Background color is deliberately NOT overridden here so existing
+ * theme authorities remain intact (including Venom Green).
  */
 html body #tab-monitoring .ticker-badge .live-dot{
   position:relative!important;
-  animation:none!important;
-  opacity:1!important;
-  transform:translateZ(0)!important;
-  background:#4caf50!important;
-  border-radius:999px!important;
+  width:7px!important;
+  height:7px!important;
+  margin-right:6px!important;
+  border-radius:50%!important;
+
+  /*
+   * Static base glow only.
+   * No per-frame box-shadow interpolation.
+   */
   box-shadow:
-    0 0 0 1px rgba(76,175,80,.22),
-    0 0 7px rgba(76,175,80,.62),
-    0 0 14px rgba(76,175,80,.24)
+    0 0 12px rgba(0,230,118,.20)
     !important;
-  will-change:auto!important;
-}
 
-html body #tab-monitoring .ticker-badge .live-dot::before,
-html body #tab-monitoring .ticker-badge .live-dot::after{
-  content:""!important;
-  position:absolute!important;
-  border-radius:999px!important;
-  pointer-events:none!important;
   will-change:transform,opacity!important;
-  transform:translateZ(0);
-}
+  backface-visibility:hidden!important;
+  transform-origin:center center!important;
 
-html body #tab-monitoring .ticker-badge .live-dot::before{
-  inset:-2px!important;
-  border:1px solid rgba(96,224,111,.40)!important;
-  background:rgba(76,175,80,.08)!important;
   animation:
-    ddtTickerLiveDotInnerPulseV16
-    1.4s
+    ddtTickerLiveDotBreathV17
+    1.5s
     ease-in-out
     infinite!important;
 }
 
+/*
+ * Single glow helper replaces the old animated box-shadow expansion.
+ * It follows the same midpoint timing without creating radar rings.
+ */
+html body #tab-monitoring .ticker-badge .live-dot::before{
+  content:none!important;
+  display:none!important;
+}
+
 html body #tab-monitoring .ticker-badge .live-dot::after{
-  inset:-4px!important;
-  background:rgba(76,175,80,.24)!important;
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:100%!important;
+  height:100%!important;
+  border-radius:50%!important;
+  background:rgba(0,230,118,.22)!important;
+  pointer-events:none!important;
+  z-index:-1!important;
+
+  will-change:transform,opacity!important;
+  backface-visibility:hidden!important;
+  transform-origin:center center!important;
+
   animation:
-    ddtTickerLiveDotOuterPulseV16
-    1.55s
-    ease-out
+    ddtTickerLiveDotGlowV17
+    1.5s
+    ease-in-out
     infinite!important;
 }
 
-@keyframes ddtTickerLiveDotInnerPulseV16{
+@keyframes ddtTickerLiveDotBreathV17{
   0%,100%{
-    transform:scale(.88) translateZ(0);
-    opacity:.28;
+    transform:scale(1) translateZ(0);
+    opacity:1;
   }
   50%{
-    transform:scale(1.18) translateZ(0);
-    opacity:.72;
+    transform:scale(.7) translateZ(0);
+    opacity:.6;
   }
 }
 
-@keyframes ddtTickerLiveDotOuterPulseV16{
-  0%{
-    transform:scale(.72) translateZ(0);
-    opacity:.38;
+@keyframes ddtTickerLiveDotGlowV17{
+  0%,100%{
+    transform:
+      translate3d(-50%,-50%,0)
+      scale(1.35);
+    opacity:.16;
   }
-  72%,100%{
-    transform:scale(1.72) translateZ(0);
-    opacity:0;
+  50%{
+    transform:
+      translate3d(-50%,-50%,0)
+      scale(2.55);
+    opacity:.34;
   }
 }
 
-/* Allow copying formatted ticker text without changing its visual spacing. */
+/*
+ * Venom keeps its old matte-green theme identity.
+ * Only the glow helper follows Venom's green hue.
+ */
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring .ticker-badge .live-dot::after,
+html[data-selected-theme="venom"] body
+#tab-monitoring .ticker-badge .live-dot::after{
+  background:rgba(68,214,44,.20)!important;
+}
+
+/* Copy/select remains available. */
 html body #tab-monitoring #tickerTrack .ticker-item{
   pointer-events:auto!important;
   user-select:text!important;
   -webkit-user-select:text!important;
 }
 
-/* Office fail-safe remains neutral and authoritative. */
+/* Office fail-safe remains untouched. */
 #tab-monitoring .ddt-office-limit-pending{
   color:var(--text-muted)!important;
   opacity:.72!important;
