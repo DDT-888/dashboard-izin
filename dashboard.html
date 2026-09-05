@@ -117002,6 +117002,17 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
     document.body.appendChild(popover);
 
     popover.querySelector('.ddt-avatar-popover-close')?.addEventListener('click',()=>closeAvatarPopover(true));
+
+    /* v2.10.2 — same Character Identity tooltip as Animal Picker.
+       Anchored to the whole popup so desktop placement prefers the right side. */
+    popover.addEventListener('mouseenter',()=>{
+      const nama=popover.querySelector('#ddtAvatarPopoverName')?.textContent||'';
+      if(!nama)return;
+      globalThis.DDTCharacterIdentityV1?.showNameTooltip?.(popover,nama);
+    });
+    popover.addEventListener('mouseleave',()=>{
+      globalThis.DDTCharacterIdentityV1?.hidePickerTooltip?.(popover);
+    });
     popover.querySelector('#ddtAvatarPopoverEdit')?.addEventListener('click',()=>{
       const nama=activeName;
       if(!nama || !canEdit(nama) || !directOpenAnimalPicker)return;
@@ -117177,6 +117188,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   }
 
   function closeAvatarPopover(returnFocus=false){
+    globalThis.DDTCharacterIdentityV1?.hidePickerTooltip?.();
     const node=popover;
     if(!node)return;
     const focusTarget=activeTrigger;
@@ -123329,6 +123341,25 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
     },110);
   }
 
+
+  function showNameTooltip(anchor,nama){
+    const formatted=normalizeName(nama);
+    if(!anchor||!formatted)return;
+
+    let key=null;
+    try{
+      key=globalThis.DDTStableAvatarV275?.parts?.(formatted,'popover')?.key||null;
+    }catch{}
+
+    if(!key){
+      try{
+        key=getAnimalEmojiForDisplay(formatted,dataIzin?.[formatted])||null;
+      }catch{}
+    }
+
+    if(key)showPickerTooltip(anchor,key);
+  }
+
   function hidePickerTooltip(anchor=null){
     clearTimeout(pickerTooltipTimer);
     if(anchor && pickerTooltipAnchor && anchor!==pickerTooltipAnchor)return;
@@ -123355,6 +123386,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
     forName,
     refresh:queueRefresh,
     showPickerTooltip,
+    showNameTooltip,
     hidePickerTooltip,
     persistence:'static metadata; no Supabase query/write'
   });
@@ -123872,6 +123904,274 @@ window.DDTDashboardAvatarV2101=Object.freeze({
   deferred:Object.freeze({
     darkThemeMotionWhiteSpot:'HOLD — intentionally untouched in v2.10.1'
   })
+});
+</script>
+
+
+<style id="ddt-dashboard-avatar-v2-10-2-theme-reconciliation">
+/* ================================================================
+   v2.10.2 — DASHBOARD AVATAR / POPUP IDENTITY / THEME RECONCILIATION
+   Motion light on Venom Green / Cyber Dark remains HOLD.
+   No Motion keyframes, masks, filters, or timing are changed here.
+   ================================================================ */
+
+/* A. Dashboard — no Animal selected.
+   Transparent fill; quiet border close to the Welcome/Statistics surface. */
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar,
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible{
+  background:transparent!important;
+  background-image:none!important;
+  border:1px solid color-mix(
+    in srgb,
+    var(--welcome-text,currentColor) 14%,
+    transparent
+  )!important;
+  color:color-mix(
+    in srgb,
+    var(--welcome-text,currentColor) 54%,
+    transparent
+  )!important;
+  box-shadow:none!important;
+}
+
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible{
+  border-color:color-mix(
+    in srgb,
+    var(--welcome-text,currentColor) 22%,
+    transparent
+  )!important;
+  color:color-mix(
+    in srgb,
+    var(--welcome-text,currentColor) 68%,
+    transparent
+  )!important;
+}
+
+/* B. DDT Original — composer Save.
+   Matte corporate action; text matches PUSAT OPERASIONAL corporate-strong tone. */
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#ddtAvatarComposerSave{
+  min-width:76px!important;
+  height:32px!important;
+  padding:0 13px!important;
+  border:1px solid rgba(22,125,137,.28)!important;
+  border-radius:9px!important;
+  background:rgba(22,125,137,.085)!important;
+  color:#0f6672!important;
+  font-size:10px!important;
+  font-weight:760!important;
+  letter-spacing:0!important;
+  text-shadow:none!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.78),
+    0 4px 10px rgba(17,92,102,.055)!important;
+  filter:none!important;
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#ddtAvatarComposerSave:hover:not(:disabled){
+  background:rgba(22,125,137,.13)!important;
+  border-color:rgba(15,102,114,.38)!important;
+  color:#0f6672!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.82),
+    0 5px 12px rgba(17,92,102,.075)!important;
+  filter:none!important;
+  transform:translateY(-1px);
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#ddtAvatarComposerSave:active:not(:disabled){
+  transform:translateY(0)!important;
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#ddtAvatarComposerSave:disabled{
+  background:rgba(22,125,137,.045)!important;
+  border-color:rgba(22,125,137,.14)!important;
+  color:rgba(15,102,114,.48)!important;
+  box-shadow:none!important;
+  opacity:1!important;
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#ddtAvatarComposerSave .ddt-avatar-composer-save-label{
+  color:inherit!important;
+}
+
+/* C. Venom Green — explicit paint authority for new Avatar surfaces.
+   Prevent Cyber Dark surface/tint inheritance. */
+
+/* Dashboard Avatar: no Animal */
+html[data-theme="dark"][data-theme-variant="venom"]
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar,
+html[data-theme="dark"][data-theme-variant="venom"]
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+html[data-theme="dark"][data-theme-variant="venom"]
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible{
+  background:transparent!important;
+  background-image:none!important;
+  border-color:#2a332a!important;
+  color:#788676!important;
+  box-shadow:none!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+html[data-theme="dark"][data-theme-variant="venom"]
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible{
+  border-color:#354635!important;
+  color:#9bad97!important;
+}
+
+/* Dashboard Avatar: selected Animal / None frame */
+html[data-theme="dark"][data-theme-variant="venom"]
+#welcomeDashboardAvatar.ddt-frame-none{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]
+#welcomeDashboardAvatar.ddt-frame-none > .ddt-animal-img{
+  filter:drop-shadow(0 5px 8px rgba(0,0,0,.24))!important;
+}
+
+/* Popup AVATAR */
+html[data-theme="dark"][data-theme-variant="venom"] body .ddt-avatar-popover{
+  background:#111411!important;
+  background-image:none!important;
+  border:1px solid #2c392d!important;
+  color:#dbe6d8!important;
+  box-shadow:
+    0 18px 42px rgba(0,0,0,.42),
+    0 2px 8px rgba(0,0,0,.26),
+    inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body .ddt-avatar-popover-kicker{
+  color:#67b85b!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body .ddt-avatar-popover-close{
+  color:#7f907d!important;
+  background:#0d100d!important;
+  border-color:#293529!important;
+  box-shadow:none!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body .ddt-avatar-popover-close:hover{
+  color:#c7d5c3!important;
+  background:#151b15!important;
+  border-color:#3b513a!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+.ddt-avatar-popover-visual:not(.ddt-frame-active){
+  background:#101510!important;
+  border-color:#2c3a2d!important;
+  color:#788676!important;
+  box-shadow:none!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body .ddt-avatar-popover-name{
+  color:#edf4ea!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+.ddt-avatar-popover-identity strong{
+  color:#79bf70!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body .ddt-avatar-popover-edit{
+  border-color:#314731!important;
+  background:#151d15!important;
+  color:#a8c5a3!important;
+  box-shadow:none!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+.ddt-avatar-popover-edit:hover{
+  border-color:#477047!important;
+  background:#1a251a!important;
+  color:#d3e4cf!important;
+}
+
+/* ANIMAL IDENTITY rich tooltip — explicit Venom matte black/green. */
+html[data-theme="dark"][data-theme-variant="venom"] body
+.ddt-animal-identity-tooltip{
+  background:#111511!important;
+  background-image:none!important;
+  border:1px solid #304130!important;
+  color:#dce7d9!important;
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.46),
+    0 2px 8px rgba(0,0,0,.24),
+    inset 0 1px 0 rgba(255,255,255,.025)!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+.ddt-animal-identity-tooltip-title{
+  color:#78c96c!important;
+  text-shadow:none!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+.ddt-animal-identity-tooltip-traits{
+  color:#c1d2bd!important;
+  opacity:.82!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+.ddt-animal-identity-tooltip-description{
+  color:#82917f!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+.ddt-animal-identity-tooltip::before{
+  background:#44d62c!important;
+  box-shadow:none!important;
+  opacity:.72!important;
+}
+</style>
+
+
+<script id="ddt-dashboard-avatar-v2-10-2-build-marker">
+window.DDTDashboardAvatarV2102=Object.freeze({
+  version:'2.10.2',
+  source:'v2.10.1-clean-none-compact-popup-rich-identity-tooltip',
+  neutralDashboardAvatar:Object.freeze({
+    fill:'transparent',
+    border:'subtle / near welcome-card surface'
+  }),
+  popupAvatarIdentityTooltip:Object.freeze({
+    source:'same Character Identity tooltip as Animal Picker',
+    trigger:'hover Popup AVATAR',
+    preferredPlacement:'right'
+  }),
+  ddtOriginalComposerSave:'corporate matte / PUSAT OPERASIONAL text tone',
+  venomExplicitPaint:Object.freeze([
+    'Dashboard Avatar',
+    'Popup AVATAR',
+    'ANIMAL IDENTITY tooltip'
+  ]),
+  additionalSupabaseQuery:false,
+  additionalSupabaseWrite:false,
+  motionDarkThemeWhiteSpot:'HOLD / untouched'
 });
 </script>
 
