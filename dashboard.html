@@ -56998,23 +56998,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             );
         }
 
-        function normalizeTickerLeadingRunwayMarkup(value) {
-            /*
-             * Historical workaround:
-             * users prefixed ticker lines with many &emsp; / &nbsp; to
-             * make the first text appear near the LIVE badge.
-             *
-             * v1.1 owns this spacing natively, so ignore only LEADING
-             * spacing entities at render time. Stored settings are not
-             * mutated.
-             */
-            return String(value ?? '')
-                .replace(
-                    /^(?:(?:&emsp;|&nbsp;|&#8195;|&#160;)|\s)+/gi,
-                    ''
-                );
-        }
-
         function tickerMotionFingerprint(
             kind,
             items,
@@ -57057,6 +57040,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 return;
             }
 
+            /*
+             * ROOT CAUSE CORRECTION v1.2
+             *
+             * The entry position belongs to the VIEWPORT.
+             * The loop distance belongs to the CONTENT SEGMENT.
+             *
+             * Never add viewport width into segment A, otherwise a
+             * narrower Settings Preview and wider Monitoring ticker
+             * produce different cycle geometry.
+             */
             const viewport =
                 track.parentElement;
 
@@ -57068,26 +57061,12 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     ?.clientWidth ||
                 0;
 
-            if (
-                Number.isFinite(viewportWidth) &&
-                viewportWidth > 1
-            ) {
-                track.style.setProperty(
-                    '--ddt-ticker-entry-width',
-                    `${viewportWidth}px`
-                );
-            }
-
-            /*
-             * Measure AFTER the entry-runway variable is updated.
-             * Segment A and B have identical viewport-width runways.
-             */
-            const width =
+            const segmentWidth =
                 segment.getBoundingClientRect().width;
 
             if (
-                !Number.isFinite(width) ||
-                width <= 1
+                !Number.isFinite(segmentWidth) ||
+                segmentWidth <= 1
             ) {
                 return;
             }
@@ -57100,22 +57079,52 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const pixelsPerSecond =
                 tickerPixelsPerSecond(speed);
 
+            /*
+             * Duration depends ONLY on actual content distance.
+             * Container width affects only startX.
+             */
             const durationSeconds =
                 Math.max(
                     3,
-                    width /
+                    segmentWidth /
                     pixelsPerSecond
                 );
 
+            const startX =
+                Number.isFinite(viewportWidth) &&
+                viewportWidth > 1
+                    ? viewportWidth
+                    : 0;
+
+            const endX =
+                startX -
+                segmentWidth;
+
+            track.style.setProperty(
+                '--ddt-ticker-start-x',
+                `${startX}px`
+            );
+
+            track.style.setProperty(
+                '--ddt-ticker-end-x',
+                `${endX}px`
+            );
+
             track.style.setProperty(
                 '--ddt-ticker-shift',
-                `${-width}px`
+                `${-segmentWidth}px`
             );
 
             track.style.setProperty(
                 '--ddt-ticker-duration',
                 `${durationSeconds.toFixed(3)}s`
             );
+
+            track.dataset.tickerSegmentWidth =
+                segmentWidth.toFixed(3);
+
+            track.dataset.tickerPixelsPerSecond =
+                pixelsPerSecond.toFixed(3);
 
             track.classList.add(
                 'ddt-ticker-motion-ready'
@@ -57168,9 +57177,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     : []
                 )
                     .map(item =>
-                        normalizeTickerLeadingRunwayMarkup(
-                            item
-                        )
+                        String(item ?? '')
                     )
                     .filter(item =>
                         item.trim() !== ''
@@ -57273,11 +57280,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                 )
                                 : item;
 
-                        return `
-                            <span class="${itemClass}">
-                                ${content}
-                            </span>
-                        `;
+                        return `<span class="${itemClass}">${content}</span>`;
                     })
                     .join('');
 
@@ -57302,20 +57305,12 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
              */
             track.innerHTML = `
                 <span class="ddt-ticker-segment">
-                    <span
-                        class="ddt-ticker-entry-spacer"
-                        aria-hidden="true"
-                    ></span>
                     ${itemMarkup}
                 </span>
                 <span
                     class="ddt-ticker-segment"
                     aria-hidden="true"
                 >
-                    <span
-                        class="ddt-ticker-entry-spacer"
-                        aria-hidden="true"
-                    ></span>
                     ${itemMarkup}
                 </span>
             `;
@@ -127584,14 +127579,15 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.8',
-  source:'Ticker Smoothness v1.0 Targeted Correction',
+  version:'1.1.9',
+  source:'Ticker Smoothness v1.1 Live/Preview Parity',
   targetedCorrection:Object.freeze({
-    tickerLivePreviewSpeed:'same px/sec + same typography/padding',
-    tickerPreviewVertical:'top 50% / translateY -50%',
-    tickerEntry:'native viewport-width runway from left side of LIVE badge',
-    legacyLeadingEmsp:'ignored at render time; stored text untouched',
-    tickerLoop:'two identical segments preserved'
+    tickerSpeedParity:'container width removed from loop distance',
+    tickerEntry:'viewport start offset outside segment',
+    tickerDistance:'content segment width only',
+    tickerDuration:'content width / shared px-per-second',
+    tickerSpaces:'user spacing preserved; no emsp/nbsp stripping',
+    tickerPreviewVertical:'preserved'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -130259,42 +130255,38 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
 </style>
 
 
-<style id="ddt-ticker-v1-1-live-preview-parity">
+<style id="ddt-ticker-v1-2-exact-speed-parity">
 /* ================================================================
-   TICKER v1.1 — LIVE / SETTINGS PREVIEW PERCEPTUAL PARITY
+   TICKER v1.2 — EXACT LIVE / PREVIEW SPEED PARITY
+
+   Container width controls START POSITION only.
+   Segment content width controls DISTANCE + DURATION only.
    ================================================================ */
 
-/* Native runway: no more leading &emsp needed. */
-#tickerTrack .ddt-ticker-entry-spacer,
-#tickerSettingsPreviewTrack .ddt-ticker-entry-spacer{
-  display:block!important;
-  flex:0 0 var(--ddt-ticker-entry-width,0px)!important;
-  width:var(--ddt-ticker-entry-width,0px)!important;
-  min-width:var(--ddt-ticker-entry-width,0px)!important;
-  max-width:var(--ddt-ticker-entry-width,0px)!important;
-  height:1px!important;
-  pointer-events:none!important;
-}
-
-/* Live and Preview use the same item geometry.
-   Container width changes visibility/cycle length, NOT pixel velocity. */
+/* Same glyph geometry in Monitoring and Settings Preview. */
 #tickerTrack .ticker-item,
 #tickerSettingsPreviewTrack .settings-preview-item{
   display:inline-flex!important;
   align-items:center!important;
   flex:0 0 auto!important;
-  height:100%!important;
+  height:31px!important;
   min-height:31px!important;
   padding:0 30px!important;
   margin:0!important;
   gap:8px!important;
-  white-space:nowrap!important;
+
+  /*
+   * Preserve user-authored ordinary spaces as well as &nbsp;/&emsp;.
+   * The JS item markup is compact so only user spacing is preserved.
+   */
+  white-space:pre!important;
+
   font-size:13px!important;
   line-height:1!important;
   font-weight:400!important;
 }
 
-/* Match highlight weight too; otherwise glyph width differs. */
+/* Match highlight geometry between Preview and Live. */
 #tickerSettingsPreviewTrack .settings-preview-item .highlight,
 #tickerSettingsPreviewTrack .settings-preview-item .highlight-gold,
 #tickerSettingsPreviewTrack .settings-preview-item .highlight-red,
@@ -130307,13 +130299,111 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   font-weight:600!important;
 }
 
-/* Remove Preview-only gap/padding that made its measured segment different. */
+/* Exact segment geometry — no Preview-only rail padding/gap. */
+#tickerTrack > .ddt-ticker-segment,
 #tickerSettingsPreviewTrack > .ddt-ticker-segment{
+  display:flex!important;
+  align-items:center!important;
+  flex:0 0 auto!important;
+  width:max-content!important;
+  min-width:max-content!important;
+  max-width:none!important;
+  height:31px!important;
+  min-height:31px!important;
   gap:0!important;
   padding:0!important;
+  margin:0!important;
+  white-space:nowrap!important;
 }
 
-/* Preview viewport remains compact, but text is vertically centered exactly. */
+/* Remove obsolete v1.1 viewport spacer if stale DOM survives a hot reload. */
+#tickerTrack .ddt-ticker-entry-spacer,
+#tickerSettingsPreviewTrack .ddt-ticker-entry-spacer{
+  display:none!important;
+  width:0!important;
+  min-width:0!important;
+  max-width:0!important;
+  flex-basis:0!important;
+}
+
+/* Both tracks use the same 31px vertical contract. */
+#tickerTrack.ddt-ticker-seamless-track,
+#tickerSettingsPreviewTrack.ddt-ticker-seamless-track{
+  width:max-content!important;
+  min-width:max-content!important;
+  max-width:none!important;
+  height:31px!important;
+  min-height:31px!important;
+  gap:0!important;
+  padding:0!important;
+  margin:0!important;
+  will-change:transform!important;
+  backface-visibility:hidden!important;
+}
+
+#tickerSettingsPreviewTrack.settings-preview-track.ddt-ticker-seamless-track{
+  position:absolute!important;
+  left:0!important;
+  top:50%!important;
+  align-items:center!important;
+}
+
+/*
+ * IMPORTANT:
+ * Start and end X are explicit pixel coordinates.
+ * Their difference is ALWAYS exactly one content-segment width.
+ */
+@keyframes ddtTickerLiveSeamlessX{
+  from{
+    transform:translate3d(
+      var(--ddt-ticker-start-x,0px),
+      -50%,
+      0
+    );
+  }
+  to{
+    transform:translate3d(
+      var(--ddt-ticker-end-x,0px),
+      -50%,
+      0
+    );
+  }
+}
+
+@keyframes ddtTickerPreviewSeamlessX{
+  from{
+    transform:translate3d(
+      var(--ddt-ticker-start-x,0px),
+      -50%,
+      0
+    );
+  }
+  to{
+    transform:translate3d(
+      var(--ddt-ticker-end-x,0px),
+      -50%,
+      0
+    );
+  }
+}
+
+#tickerTrack.ddt-ticker-motion-ready{
+  animation:
+    ddtTickerLiveSeamlessX
+    var(--ddt-ticker-duration,30s)
+    linear
+    infinite!important;
+}
+
+#tickerSettingsPreviewTrack.ddt-ticker-motion-ready{
+  animation:
+    ddtTickerPreviewSeamlessX
+    var(--ddt-ticker-duration,30s)
+    linear
+    infinite!important;
+}
+
+/* Preview viewport remains compact and vertically centered. */
 #tab-settings .settings-preview-window{
   position:relative!important;
   height:31px!important;
@@ -130321,39 +130411,6 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   overflow:hidden!important;
 }
 
-#tickerSettingsPreviewTrack.settings-preview-track.ddt-ticker-seamless-track{
-  position:absolute!important;
-  left:0!important;
-  top:50%!important;
-  height:31px!important;
-  min-height:31px!important;
-  padding:0!important;
-  margin:0!important;
-  align-items:center!important;
-}
-
-/* Both moving layers share the exact same Y-axis contract. */
-@keyframes ddtTickerPreviewSeamlessX{
-  from{
-    transform:translate3d(0,-50%,0);
-  }
-  to{
-    transform:translate3d(
-      var(--ddt-ticker-shift),
-      -50%,
-      0
-    );
-  }
-}
-
-/* Ensure every Preview segment centers its children. */
-#tickerSettingsPreviewTrack > .ddt-ticker-segment{
-  min-height:31px!important;
-  height:31px!important;
-  align-items:center!important;
-}
-
-/* Empty state is also centered. */
 #tickerSettingsPreviewTrack:not(.ddt-ticker-motion-ready)
 .settings-preview-empty{
   display:inline-flex!important;
@@ -130362,6 +130419,13 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   min-height:31px!important;
   padding:0 11px!important;
   line-height:1!important;
+}
+
+/* Existing intentional live hover pause remains. */
+html:not([data-mi-frozen-presentation="mecha-ivory"])
+.ticker-container .ticker-wrapper:hover
+#tickerTrack.ddt-ticker-motion-ready{
+  animation-play-state:paused!important;
 }
 </style>
 
