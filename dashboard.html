@@ -98159,9 +98159,8 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
         if (shiftWorkspaceMode === 'draft') {
             const canEdit = canEditWorkspace();
             actionWrap.insertAdjacentHTML(
-                'beforeend',
+                'afterbegin',
                 `
-                <span class="shift-workspace-action-divider" aria-hidden="true"></span>
                 <button type="button" class="btn-shift action-neutral shift-workspace-context-action shift-copy-active" ${!canEdit ? 'disabled' : ''}>
                     <span class="button-icon">${ICONS.copy}</span>
                     <span>Salin Shift Aktif</span>
@@ -98169,7 +98168,8 @@ body.shift-staff-pointer-drag-active #tab-shifts * {
                 <button type="button" class="btn-shift action-primary shift-workspace-context-action shift-publish-draft" ${!canEdit ? 'disabled' : ''}>
                     <span class="button-icon">${ICONS.publish}</span>
                     <span>Publikasikan</span>
-                </button>`
+                </button>
+                <span class="shift-workspace-action-divider" aria-hidden="true"></span>`
             );
 
             actionWrap.querySelector('.shift-copy-active')?.addEventListener('click', event => copyActiveIntoDraft(event.currentTarget));
@@ -126242,7 +126242,7 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
           </div>
 
           <div class="section-desc">
-            Lokasi Office dan Durasi wajib diisi berpasangan. Maksimal 3 Office.
+            Lokasi Office dan Durasi wajib diisi berpasangan.
           </div>
         </div>
 
@@ -128399,18 +128399,18 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.17',
-  source:'Monitoring v1.9 LIVE Dot Contrast Refinement',
+  version:'1.1.18',
+  source:'Monitoring v1.10 Live Badge Visual Recovery',
   targetedRefinement:Object.freeze({
+    liveBadge:'Rose Gold contrast added only',
+    usersInlineEdit:'JOIN SMB / JOIN DDT / Tgl Nonaktif compact geometry',
+    officeDuration:'description shortened + separator spacing',
+    officeVenom:'labels + save action reconciled to Venom Settings',
+    sessionSecurity:'Auto Logout checkbox compacted',
+    shiftToolbar:'Draft context actions moved left; 4 utilities remain rightmost',
     poipetProgressAuthority:'PASS / unchanged',
     tickerSmoothness:'PASS / unchanged',
-    hoverPause:'PASS / unchanged',
-    liveDot:'4px visual recovery / small-expand-small',
-    liveDotRhythm:'1.5s ease-in-out',
-    liveDotGlow:'single compositor helper / no animated box-shadow',
-    liveTextContrast:'near-white recovery for Pink/Emerald/Purple/Ocean',
-    officeDisplayFailSafe:'PASS / unchanged',
-    backendChanged:false
+    officeDisplayFailSafe:'PASS / unchanged'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -131845,6 +131845,326 @@ html[data-theme="ocean"] body
   text-shadow:
     0 1px 0 rgba(0,0,0,.12)
     !important;
+}
+</style>
+
+
+<style id="ddt-ui-v1-11-targeted-refinement">
+/* ================================================================
+   v1.11 TARGETED UI REFINEMENT
+   PASS authorities are intentionally untouched.
+   ================================================================ */
+
+/* ---------------------------------------------------------------
+   1. LIVE — add Rose Gold contrast only.
+   Pink/Emerald/Purple/Ocean v1.10 remain unchanged.
+   --------------------------------------------------------------- */
+html[data-selected-theme="rose-gold"] body
+#tab-monitoring .ticker-badge,
+html[data-theme="rose-gold"] body
+#tab-monitoring .ticker-badge{
+  color:#fff8f5!important;
+  font-weight:760!important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.11)
+    !important;
+}
+
+/* ---------------------------------------------------------------
+   2. USERS — FINAL COMPACT INLINE EDIT GEOMETRY
+   Only remaining narrow date columns:
+   JOIN SMB / JOIN DDT / Tgl Nonaktif.
+   --------------------------------------------------------------- */
+
+/* Lock edited TD to its existing column footprint. */
+#tab-users .employee-users-table tbody td:has(
+  > .employee-inline-cell-editing[data-inline-field="join_smb_date"]
+),
+#tab-users .employee-users-table tbody td:has(
+  > .employee-inline-cell-editing[data-inline-field="join_site_date"]
+){
+  width:112px!important;
+  min-width:112px!important;
+  max-width:112px!important;
+  box-sizing:border-box!important;
+}
+
+#tab-users .employee-inactive-table tbody td:has(
+  > .employee-inline-cell-editing[data-lifecycle-field="inactive_at"]
+){
+  width:126px!important;
+  min-width:126px!important;
+  max-width:126px!important;
+  box-sizing:border-box!important;
+}
+
+/* Wrapper stays entirely inside the original TD. */
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+){
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  min-inline-size:0!important;
+  box-sizing:border-box!important;
+  padding:0 15px 0 0!important;
+  margin:0!important;
+}
+
+/* Compact date control for the three narrow cells only. */
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+.employee-segmented-date-control{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 12px!important;
+  gap:1px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+/* DD / MM / YYYY can shrink below the old min-content threshold. */
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+.employee-date-segments{
+  display:grid!important;
+  grid-template-columns:
+    minmax(11px,.60fr)
+    3px
+    minmax(11px,.60fr)
+    3px
+    minmax(22px,1fr)
+    !important;
+  gap:0!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+}
+
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+.employee-date-segment{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:22px!important;
+  padding:0!important;
+  font-size:8.2px!important;
+  line-height:22px!important;
+}
+
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+.employee-date-separator{
+  width:3px!important;
+  min-width:3px!important;
+  max-width:3px!important;
+  font-size:8px!important;
+  line-height:22px!important;
+}
+
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+.employee-segmented-date-picker{
+  width:12px!important;
+  min-width:12px!important;
+  max-width:12px!important;
+  height:20px!important;
+  min-height:20px!important;
+  padding:0!important;
+  margin:1px 0 0!important;
+}
+
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+.employee-segmented-date-picker svg{
+  width:8px!important;
+  height:8px!important;
+}
+
+/* Save check remains overlay and is reduced a little more. */
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+> .employee-inline-edit-actions{
+  position:absolute!important;
+  top:50%!important;
+  right:0!important;
+  transform:translateY(-50%)!important;
+  width:14px!important;
+  height:14px!important;
+  min-width:14px!important;
+  max-width:14px!important;
+  margin:0!important;
+  padding:0!important;
+  z-index:4!important;
+}
+
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+> .employee-inline-edit-actions .save{
+  width:14px!important;
+  height:14px!important;
+  min-width:14px!important;
+  max-width:14px!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:4px!important;
+  box-shadow:none!important;
+}
+
+#tab-users .employee-users-table
+.employee-inline-cell-editing:is(
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"],
+  [data-lifecycle-field="inactive_at"]
+)
+> .employee-inline-edit-actions .save svg{
+  width:8px!important;
+  height:8px!important;
+}
+
+/* ---------------------------------------------------------------
+   3. SETTINGS — OFFICE DURATION
+   Matrix/input geometry remains unchanged.
+   --------------------------------------------------------------- */
+
+/* Give the copy some air before the matrix separator. */
+html body #tab-settings .ddt-office-duration-head{
+  margin-bottom:4px!important;
+}
+
+/* Venom column labels must read as Venom, not inherited Cyber muted. */
+html[data-selected-theme="venom"] body
+#tab-settings .ddt-office-duration-columns > span,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings .ddt-office-duration-columns > span{
+  color:#91a58d!important;
+  text-shadow:none!important;
+}
+
+/* Venom Office save button = exact Settings primary action language. */
+html[data-selected-theme="venom"] body
+#tab-settings #ddtSaveOfficeDuration.settings-save-duration,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings #ddtSaveOfficeDuration.settings-save-duration{
+  color:#050505!important;
+  background:var(--rz-green,#44d62c)!important;
+  background-image:none!important;
+  border-color:var(--rz-green,#44d62c)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#tab-settings #ddtSaveOfficeDuration.settings-save-duration:hover:not(:disabled),
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings #ddtSaveOfficeDuration.settings-save-duration:hover:not(:disabled){
+  color:#050505!important;
+  background:var(--rz-green-hover,#58e342)!important;
+  border-color:var(--rz-green-hover,#58e342)!important;
+  box-shadow:0 9px 20px rgba(68,214,44,.14)!important;
+}
+
+/* ---------------------------------------------------------------
+   4. SETTINGS — SESSION SECURITY
+   Auto Logout native checkbox is slightly more compact.
+   --------------------------------------------------------------- */
+html body #tab-settings
+.settings-session-toggle #sessionAutoLogoutEnabled{
+  width:26px!important;
+  height:15px!important;
+  min-width:26px!important;
+  min-height:15px!important;
+  max-width:26px!important;
+  max-height:15px!important;
+  flex:0 0 26px!important;
+  margin:0!important;
+  vertical-align:middle!important;
+}
+
+/* ---------------------------------------------------------------
+   5. SHIFT — STABLE TOOLBAR POSITION
+   Four utility buttons stay rightmost in both Active and Draft.
+   Draft-only text actions live to their left.
+   --------------------------------------------------------------- */
+#tab-shifts
+.shift-workspace-toolbar-slot
+.shift-header-right{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+  margin-left:auto!important;
+  white-space:nowrap!important;
+}
+
+/* Explicit ordering is a safety net for rerenders. */
+#tab-shifts .shift-copy-active{
+  order:10!important;
+}
+
+#tab-shifts .shift-publish-draft{
+  order:20!important;
+}
+
+#tab-shifts
+.shift-workspace-action-divider:not(.shift-v12-summary-divider){
+  order:30!important;
+}
+
+#tab-shifts
+.shift-workspace-icon-action{
+  order:40!important;
+}
+
+/* All four utilities share the same final right-side footprint. */
+#tab-shifts
+.shift-workspace-toolbar-slot
+.shift-workspace-icon-action{
+  flex:0 0 34px!important;
+  width:34px!important;
+  min-width:34px!important;
+  max-width:34px!important;
 }
 </style>
 
