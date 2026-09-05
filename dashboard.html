@@ -125367,7 +125367,8 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       );
 
     /*
-     * Immutable server snapshot is always first authority.
+     * Immutable server snapshot is the ONLY authority for an
+     * active session's Batas.
      */
     if(
       Number.isFinite(snapshotThreshold)&&
@@ -125379,39 +125380,17 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     }
 
     /*
-     * A new Office-aware START can reach the UI a few milliseconds
-     * before this controller receives the izin_anggota realtime row.
-     *
-     * Old behavior painted LEGACY 1200 (20m) during that gap.
-     * That is the exact failure seen for NICO while Supabase already
-     * stored office_1 / POIPET / 960.
-     *
-     * Use the already-saved Data User Office only as a TEMPORARY
-     * presentation fallback and immediately re-fetch the immutable
-     * session snapshot from server.
+     * Fail-safe UI:
+     * if the realtime cache has not hydrated yet, do not guess 16m,
+     * 20m, or any current Office value. Show pending state and fetch
+     * the immutable server snapshot.
      */
-    const assignment=
-      userOffice(key);
-
-    if(
-      assignment?.valid&&
-      Number.isInteger(
-        assignment.config?.durationMinutes
-      )
-    ){
+    if(isActive(key)){
       queueActiveSnapshotRefresh();
-
-      return (
-        assignment.config.durationMinutes*
-        60
-      );
+      return null;
     }
 
-    /*
-     * Genuine legacy active sessions with no valid Office assignment
-     * retain the historical 20-minute authority.
-     */
-    return LEGACY_THRESHOLD_SECONDS;
+    return null;
   }
 
   function sessionOfficeName(nama){
@@ -125433,18 +125412,16 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     }
 
     /*
-     * New START sessions always receive an Office snapshot from
-     * server authority. During the short realtime hydration gap,
-     * use the already-saved Data User assignment instead of ever
-     * painting the old "Legacy" label.
+     * Active-session Office is immutable server data.
+     * Never substitute the user's CURRENT assignment because it may
+     * have changed after START.
      */
-    const assignment=
-      userOffice(key);
+    if(isActive(key)){
+      queueActiveSnapshotRefresh();
+      return '…';
+    }
 
-    return (
-      assignment?.config?.name||
-      '—'
-    );
+    return '—';
   }
 
   function isActive(nama){
@@ -125486,23 +125463,37 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
   }
 
   function formatDeadline(nama){
+    const key=fName(nama);
+
     const meta=
       state.activeSessions.get(
-        fName(nama)
+        key
       );
 
     const start=
       parseStart(
         meta?.mulai||
-        dataIzin?.[fName(nama)]?.mulai
+        dataIzin?.[key]?.mulai
       );
 
     if(!start)return '';
 
+    const threshold=
+      thresholdForActive(
+        key
+      );
+
+    if(
+      !Number.isFinite(threshold)||
+      threshold<=0
+    ){
+      return '';
+    }
+
     const deadline=
       new Date(
         start.getTime()+
-        thresholdForActive(nama)*1000
+        threshold*1000
       );
 
     return (
@@ -126788,20 +126779,45 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       return null;
     }
 
+    const threshold=
+      thresholdForActive(
+        nama
+      );
+
+    if(
+      !Number.isFinite(threshold)||
+      threshold<=0
+    ){
+      return {
+        pending:true,
+        deadline:'…',
+        minutes:null,
+        officeName:
+          sessionOfficeName(nama)
+      };
+    }
+
     const deadline=
       formatDeadline(nama);
 
     if(!deadline){
-      return null;
+      return {
+        pending:true,
+        deadline:'…',
+        minutes:null,
+        officeName:
+          sessionOfficeName(nama)
+      };
     }
 
     return {
+      pending:false,
       deadline,
       minutes:
         Math.max(
           1,
           Math.round(
-            thresholdForActive(nama)/
+            threshold/
             60
           )
         ),
@@ -126994,6 +127010,35 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
             limitCell.dataset.limitLabel='';
             limitCell.innerHTML='';
           }
+        }else if(limit.pending){
+          const label='…';
+          const tooltip=
+            'Memuat snapshot Batas sesi dari server.';
+
+          if(
+            limitCell.dataset.limitLabel!==
+              label||
+            limitCell.dataset.limitTooltip!==
+              tooltip
+          ){
+            limitCell.dataset.limitLabel=
+              label;
+
+            limitCell.dataset.limitTooltip=
+              tooltip;
+
+            limitCell.innerHTML=`
+              <span
+                class="ddt-office-limit ddt-office-limit-pending history-tooltip-target"
+                data-tooltip="${esc(tooltip)}"
+                data-tooltip-icon="clock"
+                tabindex="0"
+                aria-label="Memuat Batas sesi"
+              >
+                …
+              </span>
+            `;
+          }
         }else{
           const label=
             limit.deadline;
@@ -127113,6 +127158,52 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
         const threshold=
           thresholdForActive(nama);
 
+        if(
+          !Number.isFinite(threshold)||
+          threshold<=0
+        ){
+          const fill=
+            row.querySelector(
+              '.progress-bar-fill'
+            );
+
+          const text=
+            row.querySelector(
+              '.progress-text'
+            );
+
+          const timer=
+            row.querySelector(
+              '.timer-display'
+            );
+
+          if(fill){
+            fill.style.width='0%';
+            fill.classList.remove(
+              'full',
+              'warning',
+              'danger'
+            );
+          }
+
+          if(text){
+            text.textContent='…';
+            text.classList.remove(
+              'full'
+            );
+          }
+
+          timer
+            ?.classList.remove(
+              'over-limit'
+            );
+
+          row.dataset.officeSnapshotPending='1';
+          return;
+        }
+
+        delete row.dataset.officeSnapshotPending;
+
         const percent=
           Math.min(
             100,
@@ -127200,19 +127291,6 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
         const threshold=
           thresholdForActive(nama);
 
-        const percent=
-          Math.min(
-            100,
-            (elapsed/threshold)*100
-          );
-
-        const over=
-          elapsed>threshold;
-
-        const warning=
-          !over&&
-          percent>=70;
-
         const timer=
           card.querySelector(
             '.timer-col'
@@ -127232,6 +127310,56 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
           card.querySelector(
             '.live-status-label'
           );
+
+        if(
+          !Number.isFinite(threshold)||
+          threshold<=0
+        ){
+          if(timer){
+            timer.dataset.thresholdSeconds='';
+            timer.dataset.progress='';
+            timer.classList.remove(
+              'over-limit'
+            );
+          }
+
+          if(track){
+            track.dataset.progress='';
+          }
+
+          if(fill){
+            fill.style.width='0%';
+          }
+
+          card.classList.remove(
+            'over-limit',
+            'near-limit'
+          );
+
+          card.dataset.officeSnapshotPending='1';
+
+          if(label?.lastChild){
+            label.lastChild.textContent=
+              'Memuat batas';
+          }
+
+          return;
+        }
+
+        delete card.dataset.officeSnapshotPending;
+
+        const percent=
+          Math.min(
+            100,
+            (elapsed/threshold)*100
+          );
+
+        const over=
+          elapsed>threshold;
+
+        const warning=
+          !over&&
+          percent>=70;
 
         if(timer){
           timer.dataset.thresholdSeconds=
@@ -127396,6 +127524,50 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     const threshold=
       thresholdForActive(nama);
 
+    const limit=
+      document.getElementById(
+        'aps-limit'
+      );
+
+    const meta=
+      document.getElementById(
+        'aps-limit-meta'
+      );
+
+    const fill=
+      document.getElementById(
+        'aps-fill'
+      );
+
+    const consoleEl=
+      document.getElementById(
+        'aps-console'
+      );
+
+    if(
+      !Number.isFinite(threshold)||
+      threshold<=0
+    ){
+      if(limit){
+        limit.textContent='…';
+      }
+
+      if(meta){
+        meta.textContent='…';
+      }
+
+      if(fill){
+        fill.style.width='0%';
+      }
+
+      if(consoleEl){
+        consoleEl.dataset.timeState=
+          'loading';
+      }
+
+      return;
+    }
+
     const minutes=
       Math.max(
         1,
@@ -127430,26 +127602,6 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       new Date(
         start.getTime()+
         threshold*1000
-      );
-
-    const limit=
-      document.getElementById(
-        'aps-limit'
-      );
-
-    const meta=
-      document.getElementById(
-        'aps-limit-meta'
-      );
-
-    const fill=
-      document.getElementById(
-        'aps-fill'
-      );
-
-    const consoleEl=
-      document.getElementById(
-        'aps-console'
       );
 
     if(limit){
@@ -127671,7 +127823,24 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
     state.observer=
       new MutationObserver(
-        ()=>scheduleReconcile()
+        records=>{
+          const structural=
+            records.some(
+              record=>
+                [
+                  ...record.addedNodes,
+                  ...record.removedNodes
+                ].some(
+                  node=>
+                    node.nodeType===
+                    Node.ELEMENT_NODE
+                )
+            );
+
+          if(structural){
+            scheduleReconcile();
+          }
+        }
       );
 
     state.observer.observe(
@@ -127701,10 +127870,30 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     state.refreshTimer=
       setInterval(
         ()=>{
-          refreshMonitoringProgress();
-          refreshAps();
+          if(
+            typeof currentTab!=='undefined'&&
+            currentTab==='monitoring'
+          ){
+            requestAnimationFrame(
+              refreshMonitoringProgress
+            );
+          }
+
+          const apsLayer=
+            document.getElementById(
+              'aps-layer'
+            );
+
+          if(
+            apsLayer&&
+            !apsLayer.hidden
+          ){
+            requestAnimationFrame(
+              refreshAps
+            );
+          }
         },
-        350
+        1000
       );
 
     scheduleReconcile();
@@ -127750,15 +127939,17 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.11',
-  source:'Ticker Smoothness v1.3 Exact Cycle Duration',
-  targetedCorrection:Object.freeze({
-    tickerGeometry:'resize changes queued until offscreen animation boundary',
-    tickerResizeObserver:'viewport + segment observed; no mid-cycle endpoint mutation',
-    tickerReducedMotion:'exact configured duration preserved',
-    officeActiveThreshold:'server snapshot first; Office assignment temporary hydration fallback',
-    officeSnapshotRefresh:'automatic targeted refetch on missing realtime snapshot',
-    nicoProductionAudit:'server snapshot already correct at 960 seconds'
+  version:'1.1.12',
+  source:'Ticker + Office Snapshot v1.4',
+  targetedHardening:Object.freeze({
+    officeDisplayAuthority:'active session snapshot only',
+    officeSnapshotMissing:'show ellipsis + targeted refetch; never guess current Office duration',
+    officeProgressPending:'neutral state until immutable snapshot exists',
+    tickerHoverPause:'removed for Monitoring operational ticker',
+    tickerPaintIsolation:'wrapper contain + isolated compositor layer',
+    tickerLiveDot:'paint-heavy box-shadow animation replaced by transform/opacity pulse',
+    officeProgressCadence:'350ms -> 1000ms visible-only',
+    officeMutationObserver:'structural element changes only; ignore timer text churn'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -130690,6 +130881,96 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
       var(--ddt-ticker-duration,30s)
       !important;
   }
+}
+</style>
+
+
+<style id="ddt-ticker-v1-5-monitoring-smoothness-hardening">
+/* ================================================================
+   TICKER LIVE — MONITORING SMOOTHNESS HARDENING
+
+   Settings Preview is already smooth and remains unchanged.
+   ================================================================ */
+
+/* Operational ticker must never pause because of pointer hover. */
+html body #tab-monitoring .ticker-wrapper:hover
+#tickerTrack.ddt-ticker-motion-ready,
+html body #tab-monitoring
+#tickerTrack.ddt-ticker-motion-ready{
+  animation-play-state:running!important;
+}
+
+/*
+ * Isolate the ticker from Monitoring paint/layout churn produced by
+ * timers, progress rails and realtime card updates.
+ */
+html body #tab-monitoring .ticker-wrapper{
+  isolation:isolate!important;
+  contain:layout paint style!important;
+  transform:translateZ(0);
+  backface-visibility:hidden!important;
+}
+
+html body #tab-monitoring
+#tickerTrack.ddt-ticker-seamless-track{
+  will-change:transform!important;
+  backface-visibility:hidden!important;
+  transform-style:preserve-3d;
+  pointer-events:none!important;
+}
+
+/* Promote the speaker pulse separately from the text layer. */
+html body #tab-monitoring .ticker-icon{
+  will-change:transform,opacity!important;
+  backface-visibility:hidden!important;
+  transform:translateZ(0);
+}
+
+/*
+ * Old LIVE dot animation changed box-shadow every frame, which is a
+ * paint-heavy animation inside the same ticker container.
+ * Keep the pulse appearance using transform + opacity only.
+ */
+html body #tab-monitoring .ticker-badge .live-dot{
+  position:relative!important;
+  animation:none!important;
+  transform:none!important;
+  opacity:1!important;
+  box-shadow:0 0 8px rgba(76,175,80,.18)!important;
+  will-change:auto!important;
+}
+
+html body #tab-monitoring .ticker-badge .live-dot::after{
+  content:""!important;
+  position:absolute!important;
+  inset:-3px!important;
+  border-radius:999px!important;
+  background:rgba(76,175,80,.24)!important;
+  pointer-events:none!important;
+  will-change:transform,opacity!important;
+  animation:
+    ddtTickerLiveDotCompositorPulse
+    1.5s
+    ease-in-out
+    infinite!important;
+}
+
+@keyframes ddtTickerLiveDotCompositorPulse{
+  0%,100%{
+    transform:scale(.72);
+    opacity:.15;
+  }
+  50%{
+    transform:scale(1.55);
+    opacity:.52;
+  }
+}
+
+/* Snapshot pending is deliberately neutral; never show a guessed limit. */
+#tab-monitoring .ddt-office-limit-pending{
+  color:var(--text-muted)!important;
+  opacity:.72!important;
+  letter-spacing:.08em!important;
 }
 </style>
 
