@@ -56961,24 +56961,84 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
         const DDT_TICKER_REFERENCE_WIDTH_PX = 1000;
         const ddtTickerRenderState = new WeakMap();
-        const ddtTickerObservedTracks = new Set();
+        const ddtTickerObservedTracks = new WeakSet();
+        const ddtTickerPendingGeometry = new WeakSet();
+
+        function tickerTrackFromObservedTarget(target) {
+            if (!target) {
+                return null;
+            }
+
+            if (
+                target.classList?.contains(
+                    'ddt-ticker-seamless-track'
+                )
+            ) {
+                return target;
+            }
+
+            if (
+                target.classList?.contains(
+                    'ddt-ticker-segment'
+                )
+            ) {
+                return target.parentElement;
+            }
+
+            return (
+                target.querySelector?.(
+                    ':scope > .ddt-ticker-seamless-track'
+                ) ||
+                null
+            );
+        }
+
+        function queueSeamlessTickerMeasure(track) {
+            if (!track?.isConnected) {
+                return;
+            }
+
+            /*
+             * Never mutate animation endpoints while text is visible.
+             * Resize/layout changes are committed at the iteration
+             * boundary, where the ticker is fully offscreen.
+             */
+            if (
+                track.classList.contains(
+                    'ddt-ticker-motion-ready'
+                )
+            ) {
+                ddtTickerPendingGeometry.add(
+                    track
+                );
+                return;
+            }
+
+            measureSeamlessTickerTrack(
+                track
+            );
+        }
 
         const ddtTickerResizeObserver =
             typeof ResizeObserver === 'function'
                 ? new ResizeObserver(entries => {
                     entries.forEach(entry => {
-                        const track = entry.target;
-                        if (
-                            track &&
-                            track.classList.contains(
-                                'ddt-ticker-seamless-track'
-                            )
-                        ) {
-                            measureSeamlessTickerTrack(track);
+                        const track =
+                            tickerTrackFromObservedTarget(
+                                entry.target
+                            );
+
+                        if (track) {
+                            queueSeamlessTickerMeasure(
+                                track
+                            );
                         }
                     });
                 })
                 : null;
+
+        window.queueSeamlessTickerMeasure =
+            queueSeamlessTickerMeasure;
 
         function normalizeTickerMotionSpeed(value) {
             const numeric =
@@ -57137,10 +57197,17 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 return;
             }
 
-            ddtTickerObservedTracks.add(track);
+            ddtTickerObservedTracks.add(
+                track
+            );
 
-            ddtTickerResizeObserver
-                ?.observe(track);
+            const viewport =
+                track.parentElement;
+
+            if (viewport) {
+                ddtTickerResizeObserver
+                    ?.observe(viewport);
+            }
 
             const firstSegment =
                 track.querySelector(
@@ -57151,6 +57218,32 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 ddtTickerResizeObserver
                     ?.observe(firstSegment);
             }
+
+            track.addEventListener(
+                'animationiteration',
+                () => {
+                    if (
+                        !ddtTickerPendingGeometry.has(
+                            track
+                        )
+                    ) {
+                        return;
+                    }
+
+                    ddtTickerPendingGeometry.delete(
+                        track
+                    );
+
+                    /*
+                     * At iteration boundary the content has already
+                     * completed its offscreen-left journey, so geometry
+                     * can change without a visible hitch.
+                     */
+                    measureSeamlessTickerTrack(
+                        track
+                    );
+                }
+            );
         }
 
         function renderSeamlessTickerTrack(
@@ -57343,7 +57436,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                  */
                 setTimeout(
                     () =>
-                        measureSeamlessTickerTrack(
+                        queueSeamlessTickerMeasure(
                             track
                         ),
                     80
@@ -125051,7 +125144,8 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     channel:null,
     frame:0,
     refreshTimer:0,
-    originalMulaiIzin:null
+    originalMulaiIzin:null,
+    snapshotRefreshPending:false
   };
 
   function fName(value){
@@ -125231,19 +125325,92 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     };
   }
 
-  function thresholdForActive(nama){
-    const key=fName(nama);
-    const meta=state.activeSessions.get(key);
-    const threshold=
-      Number(meta?.threshold_at_event_seconds);
-
+  function queueActiveSnapshotRefresh(){
     if(
-      Number.isFinite(threshold)&&
-      threshold>0
+      state.snapshotRefreshPending||
+      typeof supabaseDashboard==='undefined'
     ){
-      return Math.floor(threshold);
+      return;
     }
 
+    state.snapshotRefreshPending=true;
+
+    setTimeout(
+      async()=>{
+        try{
+          await loadActiveSessions();
+          scheduleReconcile();
+        }catch(error){
+          console.warn(
+            'Office active snapshot refresh failed:',
+            error
+          );
+        }finally{
+          state.snapshotRefreshPending=false;
+        }
+      },
+      90
+    );
+  }
+
+  function thresholdForActive(nama){
+    const key=fName(nama);
+
+    const meta=
+      state.activeSessions.get(
+        key
+      );
+
+    const snapshotThreshold=
+      Number(
+        meta?.threshold_at_event_seconds
+      );
+
+    /*
+     * Immutable server snapshot is always first authority.
+     */
+    if(
+      Number.isFinite(snapshotThreshold)&&
+      snapshotThreshold>0
+    ){
+      return Math.floor(
+        snapshotThreshold
+      );
+    }
+
+    /*
+     * A new Office-aware START can reach the UI a few milliseconds
+     * before this controller receives the izin_anggota realtime row.
+     *
+     * Old behavior painted LEGACY 1200 (20m) during that gap.
+     * That is the exact failure seen for NICO while Supabase already
+     * stored office_1 / POIPET / 960.
+     *
+     * Use the already-saved Data User Office only as a TEMPORARY
+     * presentation fallback and immediately re-fetch the immutable
+     * session snapshot from server.
+     */
+    const assignment=
+      userOffice(key);
+
+    if(
+      assignment?.valid&&
+      Number.isInteger(
+        assignment.config?.durationMinutes
+      )
+    ){
+      queueActiveSnapshotRefresh();
+
+      return (
+        assignment.config.durationMinutes*
+        60
+      );
+    }
+
+    /*
+     * Genuine legacy active sessions with no valid Office assignment
+     * retain the historical 20-minute authority.
+     */
     return LEGACY_THRESHOLD_SECONDS;
   }
 
@@ -127453,6 +127620,18 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
                   key,
                   row
                 );
+
+                const snapshotThreshold=
+                  Number(
+                    row.threshold_at_event_seconds
+                  );
+
+                if(
+                  !Number.isFinite(snapshotThreshold)||
+                  snapshotThreshold<=0
+                ){
+                  queueActiveSnapshotRefresh();
+                }
               }
 
               scheduleReconcile();
@@ -127571,15 +127750,15 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.10',
-  source:'Ticker Smoothness v1.2 Exact Speed Parity',
+  version:'1.1.11',
+  source:'Ticker Smoothness v1.3 Exact Cycle Duration',
   targetedCorrection:Object.freeze({
-    tickerCycle:'single segment / right-offscreen to left-offscreen',
-    tickerSpeedSetting:'exact full journey duration',
-    tickerLivePreview:'same completion time by design',
-    tickerRepeat:'reset occurs only while fully offscreen',
-    tickerSpaces:'all user spacing preserved',
-    tickerPreviewVertical:'preserved'
+    tickerGeometry:'resize changes queued until offscreen animation boundary',
+    tickerResizeObserver:'viewport + segment observed; no mid-cycle endpoint mutation',
+    tickerReducedMotion:'exact configured duration preserved',
+    officeActiveThreshold:'server snapshot first; Office assignment temporary hydration fallback',
+    officeSnapshotRefresh:'automatic targeted refetch on missing realtime snapshot',
+    nicoProductionAudit:'server snapshot already correct at 960 seconds'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -130429,25 +130608,45 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
       if(
         live?.classList.contains(
           'ddt-ticker-seamless-track'
-        )&&
-        typeof measureSeamlessTickerTrack===
-          'function'
+        )
       ){
-        measureSeamlessTickerTrack(
-          live
-        );
+        if(
+          typeof queueSeamlessTickerMeasure===
+            'function'
+        ){
+          queueSeamlessTickerMeasure(
+            live
+          );
+        }else if(
+          typeof measureSeamlessTickerTrack===
+            'function'
+        ){
+          measureSeamlessTickerTrack(
+            live
+          );
+        }
       }
 
       if(
         preview?.classList.contains(
           'ddt-ticker-seamless-track'
-        )&&
-        typeof measureSeamlessTickerTrack===
-          'function'
+        )
       ){
-        measureSeamlessTickerTrack(
-          preview
-        );
+        if(
+          typeof queueSeamlessTickerMeasure===
+            'function'
+        ){
+          queueSeamlessTickerMeasure(
+            preview
+          );
+        }else if(
+          typeof measureSeamlessTickerTrack===
+            'function'
+        ){
+          measureSeamlessTickerTrack(
+            preview
+          );
+        }
       }
     });
   }
@@ -130479,6 +130678,20 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   );
 })();
 </script>
+
+
+<style id="ddt-ticker-v1-4-cycle-stability">
+/* Exact user speed remains authoritative in every OS motion preference.
+   The dashboard ticker is operational text, not decorative animation. */
+@media(prefers-reduced-motion:reduce){
+  #tickerTrack.ddt-ticker-motion-ready,
+  #tickerSettingsPreviewTrack.ddt-ticker-motion-ready{
+    animation-duration:
+      var(--ddt-ticker-duration,30s)
+      !important;
+  }
+}
+</style>
 
 </body>
 </html>
