@@ -127939,17 +127939,15 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.12',
-  source:'Ticker + Office Snapshot v1.4',
-  targetedHardening:Object.freeze({
-    officeDisplayAuthority:'active session snapshot only',
-    officeSnapshotMissing:'show ellipsis + targeted refetch; never guess current Office duration',
-    officeProgressPending:'neutral state until immutable snapshot exists',
-    tickerHoverPause:'removed for Monitoring operational ticker',
-    tickerPaintIsolation:'wrapper contain + isolated compositor layer',
-    tickerLiveDot:'paint-heavy box-shadow animation replaced by transform/opacity pulse',
-    officeProgressCadence:'350ms -> 1000ms visible-only',
-    officeMutationObserver:'structural element changes only; ignore timer text churn'
+  version:'1.1.13',
+  source:'Ticker + Office Safety v1.5',
+  targetedCorrection:Object.freeze({
+    tickerSmoothnessAuthority:'v1.5 isolation/progress hardening preserved',
+    tickerHoverPause:'restored on ticker wrapper',
+    tickerCopyInteraction:'pointer events + user-select restored',
+    tickerLiveVisual:'rich static glow + transform/opacity pulse',
+    tickerNoAnimatedBoxShadow:'preserved',
+    officeDisplayFailSafe:'PASS / immutable snapshot only'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -130885,25 +130883,16 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
 </style>
 
 
-<style id="ddt-ticker-v1-5-monitoring-smoothness-hardening">
+<style id="ddt-ticker-v1-6-interaction-visual-restoration">
 /* ================================================================
-   TICKER LIVE — MONITORING SMOOTHNESS HARDENING
-
-   Settings Preview is already smooth and remains unchanged.
+   TICKER LIVE v1.6
+   Preserve v1.5 smoothness hardening while restoring:
+   - hover pause
+   - text selection / copy
+   - richer LIVE glow appearance
    ================================================================ */
 
-/* Operational ticker must never pause because of pointer hover. */
-html body #tab-monitoring .ticker-wrapper:hover
-#tickerTrack.ddt-ticker-motion-ready,
-html body #tab-monitoring
-#tickerTrack.ddt-ticker-motion-ready{
-  animation-play-state:running!important;
-}
-
-/*
- * Isolate the ticker from Monitoring paint/layout churn produced by
- * timers, progress rails and realtime card updates.
- */
+/* Keep the proven paint/layout isolation. */
 html body #tab-monitoring .ticker-wrapper{
   isolation:isolate!important;
   contain:layout paint style!important;
@@ -130911,15 +130900,35 @@ html body #tab-monitoring .ticker-wrapper{
   backface-visibility:hidden!important;
 }
 
+/* Moving text remains compositor-owned, but is interactive again. */
 html body #tab-monitoring
 #tickerTrack.ddt-ticker-seamless-track{
   will-change:transform!important;
   backface-visibility:hidden!important;
   transform-style:preserve-3d;
-  pointer-events:none!important;
+  pointer-events:auto!important;
+  user-select:text!important;
+  -webkit-user-select:text!important;
+  cursor:text;
 }
 
-/* Promote the speaker pulse separately from the text layer. */
+/*
+ * RESTORED INTERACTION:
+ * Pause only while pointer is actually inside the ticker text viewport.
+ * This does not change geometry/endpoints, so it does not reintroduce the
+ * prior resize/layout hitch.
+ */
+html body #tab-monitoring .ticker-wrapper:hover
+#tickerTrack.ddt-ticker-motion-ready{
+  animation-play-state:paused!important;
+}
+
+html body #tab-monitoring .ticker-wrapper:not(:hover)
+#tickerTrack.ddt-ticker-motion-ready{
+  animation-play-state:running!important;
+}
+
+/* Speaker keeps its original visual pulse on its own compositor layer. */
 html body #tab-monitoring .ticker-icon{
   will-change:transform,opacity!important;
   backface-visibility:hidden!important;
@@ -130927,46 +130936,86 @@ html body #tab-monitoring .ticker-icon{
 }
 
 /*
- * Old LIVE dot animation changed box-shadow every frame, which is a
- * paint-heavy animation inside the same ticker container.
- * Keep the pulse appearance using transform + opacity only.
+ * LIVE DOT:
+ * restore the richer glowing look without animating box-shadow every frame.
+ * Static shadows provide the visual depth; only pseudo-ring scale/opacity moves.
  */
 html body #tab-monitoring .ticker-badge .live-dot{
   position:relative!important;
   animation:none!important;
-  transform:none!important;
   opacity:1!important;
-  box-shadow:0 0 8px rgba(76,175,80,.18)!important;
+  transform:translateZ(0)!important;
+  background:#4caf50!important;
+  border-radius:999px!important;
+  box-shadow:
+    0 0 0 1px rgba(76,175,80,.22),
+    0 0 7px rgba(76,175,80,.62),
+    0 0 14px rgba(76,175,80,.24)
+    !important;
   will-change:auto!important;
 }
 
+html body #tab-monitoring .ticker-badge .live-dot::before,
 html body #tab-monitoring .ticker-badge .live-dot::after{
   content:""!important;
   position:absolute!important;
-  inset:-3px!important;
   border-radius:999px!important;
-  background:rgba(76,175,80,.24)!important;
   pointer-events:none!important;
   will-change:transform,opacity!important;
+  transform:translateZ(0);
+}
+
+html body #tab-monitoring .ticker-badge .live-dot::before{
+  inset:-2px!important;
+  border:1px solid rgba(96,224,111,.40)!important;
+  background:rgba(76,175,80,.08)!important;
   animation:
-    ddtTickerLiveDotCompositorPulse
-    1.5s
+    ddtTickerLiveDotInnerPulseV16
+    1.4s
     ease-in-out
     infinite!important;
 }
 
-@keyframes ddtTickerLiveDotCompositorPulse{
+html body #tab-monitoring .ticker-badge .live-dot::after{
+  inset:-4px!important;
+  background:rgba(76,175,80,.24)!important;
+  animation:
+    ddtTickerLiveDotOuterPulseV16
+    1.55s
+    ease-out
+    infinite!important;
+}
+
+@keyframes ddtTickerLiveDotInnerPulseV16{
   0%,100%{
-    transform:scale(.72);
-    opacity:.15;
+    transform:scale(.88) translateZ(0);
+    opacity:.28;
   }
   50%{
-    transform:scale(1.55);
-    opacity:.52;
+    transform:scale(1.18) translateZ(0);
+    opacity:.72;
   }
 }
 
-/* Snapshot pending is deliberately neutral; never show a guessed limit. */
+@keyframes ddtTickerLiveDotOuterPulseV16{
+  0%{
+    transform:scale(.72) translateZ(0);
+    opacity:.38;
+  }
+  72%,100%{
+    transform:scale(1.72) translateZ(0);
+    opacity:0;
+  }
+}
+
+/* Allow copying formatted ticker text without changing its visual spacing. */
+html body #tab-monitoring #tickerTrack .ticker-item{
+  pointer-events:auto!important;
+  user-select:text!important;
+  -webkit-user-select:text!important;
+}
+
+/* Office fail-safe remains neutral and authoritative. */
 #tab-monitoring .ddt-office-limit-pending{
   color:var(--text-muted)!important;
   opacity:.72!important;
