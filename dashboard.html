@@ -128399,16 +128399,18 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.16',
-  source:'Monitoring Office Authority v1.8',
+  version:'1.1.17',
+  source:'Monitoring v1.9 LIVE Dot Contrast Refinement',
   targetedRefinement:Object.freeze({
     poipetProgressAuthority:'PASS / unchanged',
-    liveDot:'3px / softer breathing / exact vertical center',
-    liveTextContrast:'Pink + Emerald + Purple + Ocean use accent-strong',
-    tickerMotion:'UNCHANGED',
-    hoverPause:'UNCHANGED',
+    tickerSmoothness:'PASS / unchanged',
+    hoverPause:'PASS / unchanged',
+    liveDot:'4px visual recovery / small-expand-small',
+    liveDotRhythm:'1.5s ease-in-out',
+    liveDotGlow:'single compositor helper / no animated box-shadow',
+    liveTextContrast:'near-white recovery for Pink/Emerald/Purple/Ocean',
     officeDisplayFailSafe:'PASS / unchanged',
-    voucherTestCleanup:'production voucher_events cleaned separately'
+    backendChanged:false
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -131658,14 +131660,18 @@ html[data-selected-theme="venom"] body
 </style>
 
 
-<style id="ddt-monitoring-v1-9-live-dot-contrast-refinement">
+<style id="ddt-monitoring-v1-10-live-badge-visual-recovery">
 /* ================================================================
-   v1.9 — LIVE BADGE MICRO REFINEMENT
-   Scope only:
-   - LIVE dot 3px
-   - softer glow / breathing
-   - exact vertical centering
-   - stronger LIVE text contrast in Pink/Emerald/Purple/Ocean
+   v1.10 — LIVE BADGE VISUAL RECOVERY
+
+   Presentation-only authority:
+   - 4px breathing dot
+   - small -> expand -> small
+   - softer compositor glow
+   - exact vertical alignment
+   - high-contrast LIVE text for Pink/Emerald/Purple/Ocean
+
+   Ticker movement / hover / speed / Office logic are untouched.
    ================================================================ */
 
 html body #tab-monitoring .ticker-badge{
@@ -131675,19 +131681,21 @@ html body #tab-monitoring .ticker-badge{
   line-height:1!important;
 }
 
-/* 3px operational LIVE dot */
+/* ---------------------------------------------------------------
+   LIVE DOT — recover v1.3/v1.4 visual character
+   --------------------------------------------------------------- */
 html body #tab-monitoring
 .ticker-badge .live-dot{
   position:relative!important;
   display:inline-block!important;
-  flex:0 0 3px!important;
+  flex:0 0 4px!important;
 
-  width:3px!important;
-  height:3px!important;
-  min-width:3px!important;
-  min-height:3px!important;
-  max-width:3px!important;
-  max-height:3px!important;
+  width:4px!important;
+  height:4px!important;
+  min-width:4px!important;
+  min-height:4px!important;
+  max-width:4px!important;
+  max-height:4px!important;
 
   margin:0 5px 0 0!important;
   padding:0!important;
@@ -131698,8 +131706,11 @@ html body #tab-monitoring
 
   border-radius:50%!important;
 
+  /*
+   * Static glow only. No animated box-shadow.
+   */
   box-shadow:
-    0 0 5px rgba(0,230,118,.13)
+    0 0 6px rgba(0,230,118,.16)
     !important;
 
   transform-origin:center center!important;
@@ -131707,13 +131718,13 @@ html body #tab-monitoring
   backface-visibility:hidden!important;
 
   animation:
-    ddtTickerLiveDotBreathV19
-    1.6s
+    ddtTickerLiveDotBreathV110
+    1.5s
     ease-in-out
     infinite!important;
 }
 
-/* Keep only one very soft compositor glow helper. */
+/* One compositor glow helper only; no radar-ring look. */
 html body #tab-monitoring
 .ticker-badge .live-dot::before{
   content:none!important;
@@ -131727,11 +131738,11 @@ html body #tab-monitoring
   left:50%!important;
   top:50%!important;
 
-  width:3px!important;
-  height:3px!important;
+  width:4px!important;
+  height:4px!important;
   border-radius:50%!important;
 
-  background:rgba(0,230,118,.13)!important;
+  background:rgba(0,230,118,.16)!important;
   pointer-events:none!important;
 
   transform-origin:center center!important;
@@ -131739,75 +131750,101 @@ html body #tab-monitoring
   backface-visibility:hidden!important;
 
   animation:
-    ddtTickerLiveDotGlowV19
-    1.6s
+    ddtTickerLiveDotGlowV110
+    1.5s
     ease-in-out
     infinite!important;
 }
 
-@keyframes ddtTickerLiveDotBreathV19{
+/*
+ * Old feel: begin smaller, breathe outward, return smaller.
+ * This keeps the dot visually alive without becoming coarse.
+ */
+@keyframes ddtTickerLiveDotBreathV110{
   0%,100%{
-    transform:scale(1) translateZ(0);
-    opacity:.96;
+    transform:scale(.78) translateZ(0);
+    opacity:.74;
   }
   50%{
-    transform:scale(.84) translateZ(0);
-    opacity:.78;
+    transform:scale(1.18) translateZ(0);
+    opacity:1;
   }
 }
 
-@keyframes ddtTickerLiveDotGlowV19{
+@keyframes ddtTickerLiveDotGlowV110{
   0%,100%{
     transform:
       translate3d(-50%,-50%,0)
-      scale(1.25);
-    opacity:.08;
+      scale(1.10);
+    opacity:.07;
   }
   50%{
     transform:
       translate3d(-50%,-50%,0)
-      scale(2.15);
-    opacity:.18;
+      scale(2.10);
+    opacity:.20;
   }
 }
 
-/* Venom keeps its existing green identity with equally subtle glow. */
+/* Venom keeps its own green glow identity. */
 html[data-theme="dark"][data-theme-variant="venom"] body
 #tab-monitoring .ticker-badge .live-dot::after,
 html[data-selected-theme="venom"] body
 #tab-monitoring .ticker-badge .live-dot::after{
-  background:rgba(68,214,44,.13)!important;
+  background:rgba(68,214,44,.16)!important;
 }
 
+/* ---------------------------------------------------------------
+   LIVE TEXT — light-theme contrast recovery
+   --------------------------------------------------------------- */
+
 /*
- * Contrast correction for the four alternate light themes reported
- * difficult to read. Geometry and badge background stay unchanged.
+ * The previous accent-strong approach was too close to the ticker
+ * surface in these themes. Use near-white tones with a slight tint
+ * instead. This improves readability without changing badge geometry.
  */
 html[data-selected-theme="pink"] body
 #tab-monitoring .ticker-badge,
-html[data-selected-theme="emerald"] body
-#tab-monitoring .ticker-badge,
-html[data-selected-theme="purple"] body
-#tab-monitoring .ticker-badge,
-html[data-selected-theme="ocean"] body
+html[data-theme="pink"] body
 #tab-monitoring .ticker-badge{
-  color:var(--accent-strong)!important;
+  color:#fff8fc!important;
   font-weight:760!important;
-  text-shadow:none!important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.10)
+    !important;
 }
 
-/* Support rendered data-theme state as well as selected-theme state. */
-html[data-theme="pink"] body
+html[data-selected-theme="emerald"] body
 #tab-monitoring .ticker-badge,
 html[data-theme="emerald"] body
+#tab-monitoring .ticker-badge{
+  color:#f4fff8!important;
+  font-weight:760!important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.10)
+    !important;
+}
+
+html[data-selected-theme="purple"] body
 #tab-monitoring .ticker-badge,
 html[data-theme="purple"] body
+#tab-monitoring .ticker-badge{
+  color:#fbf7ff!important;
+  font-weight:760!important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.10)
+    !important;
+}
+
+html[data-selected-theme="ocean"] body
 #tab-monitoring .ticker-badge,
 html[data-theme="ocean"] body
 #tab-monitoring .ticker-badge{
-  color:var(--accent-strong)!important;
+  color:#f2fbff!important;
   font-weight:760!important;
-  text-shadow:none!important;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.12)
+    !important;
 }
 </style>
 
