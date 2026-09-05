@@ -44951,14 +44951,22 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         <div class="tab-content active" id="tab-dashboard">
             <div class="welcome-banner" id="welcomeBanner">
                 <div class="welcome-left">
-                    <span class="welcome-time-icon" id="welcomeTimeIcon" aria-hidden="true"></span>
+                    <button type="button"
+                            class="welcome-dashboard-avatar ddt-avatar-trigger"
+                            id="welcomeDashboardAvatar"
+                            aria-label="Lihat Avatar"
+                            data-tooltip="Lihat Avatar"
+                            data-tooltip-icon="user"></button>
                     <div class="text">
                         <div class="greeting" id="welcomeGreeting">Good Morning,</div>
                         <div class="welcome-identity-row">
                             <div class="username" id="welcomeUsername">User</div>
+                            <span class="welcome-character-separator" id="welcomeCharacterSeparator" aria-hidden="true" hidden>·</span>
+                            <span class="welcome-character-title" id="welcomeCharacterTitle" hidden></span>
                             <span class="welcome-role-divider" aria-hidden="true"></span>
                             <span class="badge-role kasir">Kasir</span>
                         </div>
+                        <div class="welcome-character-traits" id="welcomeCharacterTraits" hidden></div>
                     </div>
                 </div>
                 <div class="welcome-right">
@@ -116961,6 +116969,10 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
       <div class="ddt-avatar-popover-visual" id="ddtAvatarPopoverVisual"></div>
       <strong class="ddt-avatar-popover-name" id="ddtAvatarPopoverName"></strong>
       <span class="ddt-avatar-popover-meta" id="ddtAvatarPopoverMeta"></span>
+      <div class="ddt-avatar-popover-identity" id="ddtAvatarPopoverIdentity" hidden>
+        <strong id="ddtAvatarPopoverIdentityTitle"></strong>
+        <span id="ddtAvatarPopoverIdentityTraits"></span>
+      </div>
       <div class="ddt-avatar-popover-actions" id="ddtAvatarPopoverActions" hidden>
         <button type="button" class="ddt-avatar-popover-edit" id="ddtAvatarPopoverEdit">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.7 2.5a1.5 1.5 0 0 1 2.1 2.1L6 11.4 3 12l.6-3 7.1-6.5Z"/><path d="m9.7 3.5 2.8 2.8"/></svg>
@@ -117017,6 +117029,9 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   }
 
   function triggerName(trigger){
+    if(trigger?.id==='welcomeDashboardAvatar'){
+      return normalizedName(document.getElementById('welcomeUsername')?.textContent || '');
+    }
     const host=trigger?.closest?.('tr[data-nama],.live-card-col[data-nama]');
     return normalizedName(host?.dataset?.nama || '');
   }
@@ -117024,6 +117039,15 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   function resolveActiveTrigger(){
     if(activeTrigger?.isConnected)return activeTrigger;
     if(!activeName)return null;
+
+    const dashboardAvatar=document.getElementById('welcomeDashboardAvatar');
+    if(
+      dashboardAvatar &&
+      normalizedName(document.getElementById('welcomeUsername')?.textContent||'')===activeName
+    ){
+      activeTrigger=dashboardAvatar;
+      return activeTrigger;
+    }
 
     const candidates=[
       ...document.querySelectorAll('#tab-monitoring tr[data-nama]'),
@@ -117082,12 +117106,27 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
     const visual=node.querySelector('#ddtAvatarPopoverVisual');
     const nameNode=node.querySelector('#ddtAvatarPopoverName');
     const metaNode=node.querySelector('#ddtAvatarPopoverMeta');
+    const identityNode=node.querySelector('#ddtAvatarPopoverIdentity');
+    const identityTitle=node.querySelector('#ddtAvatarPopoverIdentityTitle');
+    const identityTraits=node.querySelector('#ddtAvatarPopoverIdentityTraits');
     const actions=node.querySelector('#ddtAvatarPopoverActions');
     const edit=node.querySelector('#ddtAvatarPopoverEdit');
 
     const visualState=renderVisual(visual,formatted);
     if(nameNode)nameNode.textContent=formatted;
     if(metaNode)metaNode.textContent=visualState?.meta || 'Belum memilih avatar';
+
+    const characterIdentity=globalThis.DDTCharacterIdentityV1?.forName?.(formatted)||null;
+    if(identityNode){
+      identityNode.hidden=!characterIdentity;
+      if(characterIdentity){
+        if(identityTitle)identityTitle.textContent=characterIdentity.title;
+        if(identityTraits)identityTraits.textContent=characterIdentity.traits.join(' · ');
+      }else{
+        if(identityTitle)identityTitle.textContent='';
+        if(identityTraits)identityTraits.textContent='';
+      }
+    }
 
     const editable=canEdit(formatted);
     if(actions)actions.hidden=!editable;
@@ -117141,11 +117180,20 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
       trigger.setAttribute('tabindex','0');
       trigger.setAttribute('aria-label',nama?`Lihat Avatar ${nama}`:'Lihat Avatar');
     });
+
+    const dashboardTrigger=document.getElementById('welcomeDashboardAvatar');
+    if(dashboardTrigger){
+      const nama=triggerName(dashboardTrigger);
+      dashboardTrigger.classList.add('ddt-avatar-trigger');
+      dashboardTrigger.setAttribute('aria-label',nama?`Lihat Avatar ${nama}`:'Lihat Avatar');
+      dashboardTrigger.dataset.tooltip='Lihat Avatar';
+      dashboardTrigger.dataset.tooltipIcon='user';
+    }
   }
 
   /* Capture click before the old inline picker action. No permission toast. */
   document.addEventListener('click',event=>{
-    const trigger=event.target?.closest?.('#tab-monitoring .member-avatar, #tab-monitoring .live-card-col .visual-fun-col');
+    const trigger=event.target?.closest?.('#tab-monitoring .member-avatar, #tab-monitoring .live-card-col .visual-fun-col, #welcomeDashboardAvatar');
     if(trigger){
       const nama=triggerName(trigger);
       if(nama){
@@ -117162,7 +117210,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
   },true);
 
   document.addEventListener('keydown',event=>{
-    const trigger=event.target?.closest?.('#tab-monitoring .live-card-col .visual-fun-col');
+    const trigger=event.target?.closest?.('#tab-monitoring .live-card-col .visual-fun-col, #welcomeDashboardAvatar');
     if(trigger && (event.key==='Enter' || event.key===' ')){
       event.preventDefault();
       event.stopPropagation();
@@ -118253,6 +118301,12 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       if(host&&host.classList.contains('ddt-frame-context'))applyColorProfile(host,formatted,currentFrame);
     });
 
+    const dashboardAvatar=document.getElementById('welcomeDashboardAvatar');
+    const dashboardName=normalizeName(document.getElementById('welcomeUsername')?.textContent||'');
+    if(dashboardAvatar&&dashboardName===formatted){
+      applyColorProfile(dashboardAvatar,formatted,currentFrame);
+    }
+
     const aps=document.getElementById('aps-avatar');
     const apsName=normalizeName(document.getElementById('aps-name')?.textContent||'');
     if(aps&&apsName===formatted)applyColorProfile(aps,formatted,currentFrame);
@@ -118447,7 +118501,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     host.classList.remove('ddt-frame-neutral-avatar');
     host.classList.add('ddt-frame-context');
     const frameId=frameForName(nama);
-    const motionContext=context==='aps'||context==='popover';
+    const motionContext=context==='aps'||context==='popover'||context==='dashboard';
     const hasMotionV1=
       host.querySelector(':scope > .ddt-motion-v1-back') &&
       host.querySelector(':scope > .ddt-motion-v1-front') &&
@@ -118537,6 +118591,11 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
   function hydrateAps(){
     const host=document.getElementById('aps-avatar');const nama=normalizeName(document.getElementById('aps-name')?.textContent||'');
     if(host&&nama)applyFrameToHost(host,nama,'aps');
+  }
+  function hydrateDashboard(){
+    const host=document.getElementById('welcomeDashboardAvatar');
+    const nama=normalizeName(document.getElementById('welcomeUsername')?.textContent||'');
+    if(host&&nama&&nama!=='USER')applyFrameToHost(host,nama,'dashboard');
   }
   function hydratePopover(){
     const host=document.getElementById('ddtAvatarPopoverVisual');const nama=normalizeName(document.getElementById('ddtAvatarPopoverName')?.textContent||'');
@@ -118894,6 +118953,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
       const run=()=>{
         hydrateLiveCards();
         hydrateAps();
+        hydrateDashboard();
         hydratePopover();
 
         const pickerName=targetPickerName();
@@ -118912,7 +118972,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     const overlay=document.getElementById('animalEmojiPicker');if(!overlay?.classList.contains('show'))return;
     const nama=targetPickerName();const host=document.getElementById('animalEmojiPickerPreview');if(host&&nama)applyFrameToHost(host,nama,'picker');renderFrameRail();
   }
-  function hydrateAll(){hydrationFrame=0;hydrateLiveCards();hydrateAps();hydratePopover();hydratePickerPreview()}
+  function hydrateAll(){hydrationFrame=0;hydrateLiveCards();hydrateAps();hydrateDashboard();hydratePopover();hydratePickerPreview()}
   function queueHydration(){if(hydrationFrame)return;hydrationFrame=requestAnimationFrame(hydrateAll)}
   async function loadFrames(){
     try{
@@ -119175,7 +119235,7 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     frames:Object.freeze({none:Object.freeze({label:'None'}),halo_ring:Object.freeze({label:'Halo Ring',status:'PASS_LOCKED'}),orb_ring:Object.freeze({label:'Orb Ring',status:'v7.2.2_PASS_LOCKED'})}),
     storage:Object.freeze({table:'izin_anggota',column:FRAME_STORAGE_COLUMN,rpc:FRAME_RPC}),
     colorAuthority:Object.freeze({legacyActiveColumn:FRAME_COLOR_STORAGE_COLUMN,profilesColumn:FRAME_COLOR_PROFILES_COLUMN,rpc:FRAME_COLOR_RPC,defaultValue:FRAME_COLOR_DEFAULT,min:FRAME_COLOR_MIN,max:FRAME_COLOR_MAX,profileNotHueOnly:true,perFrameIndependent:true}),
-    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,motionV1ColorAwareTravellingLightV290:true,motionV1ChromaticSpecularV291:true,pickerSelectedLoopV291:true,orbFrontContinuityV292:true,orbFrontHoldBridgeV293:true,orbLeftOccludedHandoffV294:true,orbLeftTunnelContinuityV295:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
+    assetRoot:'assets/animal/frame/',embeddedAssets:false,frameTileAnimalParity:true,lightThemeInnerDepth:true,largeContextAmbientEffect:true,frameSpecificPremiumFx:true,liveCardOverflowNameTooltip:true,userCardRecompositionV274:true,thinFrameMotionLayer:true,stablePaintV275:true,assetMaskedMotionV275:true,progressAlignmentV275:true,renderOwnershipV276:true,intentionalLightMaterialV276:true,frameHoverMotionV276:true,persistenceClosureV277:true,zoomSafePopoverV277:true,motionVisibilityV277:true,scrollSafePopoverV278:true,unifiedFrameEffectV278:true,frameClickEffectPreviewV278:true,sweepVisibilityClosureV279:true,dynamicColorAtmosphereV280:true,perFrameColorProfilesV281:true,popupStartColorPropagationV281:true,hoverEffectRemovedV281:true,rapidFrameSwitchLatestIntentV282:true,colorResetV282:true,extendedColorGamutV282:true,silentAnimalFrameSelectionV282:true,synchronousPickerSwitchV283:true,neutralAtmosphereExtensionV283:true,stagedAtomicSaveV284:true,extendedNeutralRangeV284:true,reopenPersistenceAuthorityV285:true,noneControlClosureV285:true,nonePresentationHardClosureV286:true,motionV1ColorAwareTravellingLightV290:true,motionV1ChromaticSpecularV291:true,pickerSelectedLoopV291:true,orbFrontContinuityV292:true,orbFrontHoldBridgeV293:true,orbLeftOccludedHandoffV294:true,orbLeftTunnelContinuityV295:true,dashboardAvatarIntegrationV2100:true,characterIdentityFoundationV2100:true,stagedAtomicSaveV284:true,neutralRangeV284:true,
     refresh:queueHydration,
     refreshPicker:hydratePickerPreview,
     commitCompositionState,
@@ -119915,6 +119975,12 @@ html:not([data-theme="dark"]) .ddt-frame-orb_ring > .ddt-avatar-frame-front{
     const aps=document.getElementById('aps-avatar');
     const apsName=document.getElementById('aps-name')?.textContent?.trim();
     if(aps&&apsName&&apsName!=='—')paintHost(aps,apsName,'aps');
+
+    const dashboardAvatar=document.getElementById('welcomeDashboardAvatar');
+    const dashboardName=document.getElementById('welcomeUsername')?.textContent?.trim();
+    if(dashboardAvatar&&dashboardName&&dashboardName!=='User'){
+      paintHost(dashboardAvatar,dashboardName,'dashboard');
+    }
   }
 
   const STABLE_API=Object.freeze({
@@ -122995,6 +123061,442 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
   }
 }
 </style>
+
+
+<script id="ddt-character-identity-v1-controller">
+(()=>{
+  'use strict';
+
+  const IDENTITIES=Object.freeze({
+    zodiac_rat:Object.freeze({title:'The Pathfinder',traits:Object.freeze(['Cerdik','Gesit','Inventif'])}),
+    zodiac_ox:Object.freeze({title:'The Pillar',traits:Object.freeze(['Teguh','Andal','Disiplin'])}),
+    zodiac_tiger:Object.freeze({title:'The Vanguard',traits:Object.freeze(['Berani','Tegas','Ambisius'])}),
+    zodiac_rabbit:Object.freeze({title:'The Diplomat',traits:Object.freeze(['Tenang','Peka','Elegan'])}),
+    zodiac_dragon:Object.freeze({title:'The Visionary',traits:Object.freeze(['Karismatik','Visioner','Berdaya'])}),
+    zodiac_snake:Object.freeze({title:'The Tactician',traits:Object.freeze(['Tajam','Intuitif','Terukur'])}),
+    zodiac_horse:Object.freeze({title:'The Explorer',traits:Object.freeze(['Bebas','Energik','Optimis'])}),
+    zodiac_goat:Object.freeze({title:'The Artisan',traits:Object.freeze(['Kreatif','Hangat','Harmonis'])}),
+    zodiac_monkey:Object.freeze({title:'The Innovator',traits:Object.freeze(['Cerdas','Lincah','Eksperimental'])}),
+    zodiac_rooster:Object.freeze({title:'The Sentinel',traits:Object.freeze(['Teliti','Percaya Diri','Disiplin'])}),
+    zodiac_dog:Object.freeze({title:'The Guardian',traits:Object.freeze(['Setia','Protektif','Tulus'])}),
+    zodiac_pig:Object.freeze({title:'The Harmonizer',traits:Object.freeze(['Ramah','Dermawan','Santai'])}),
+
+    animal_bear:Object.freeze({title:'The Protector',traits:Object.freeze(['Kuat','Tenang','Setia'])}),
+    animal_cat:Object.freeze({title:'The Observer',traits:Object.freeze(['Mandiri','Peka','Elegan'])}),
+    animal_owl:Object.freeze({title:'The Strategist',traits:Object.freeze(['Cerdas','Adaptif','Visioner'])}),
+    animal_eagle:Object.freeze({title:'The Commander',traits:Object.freeze(['Fokus','Berani','Visioner'])}),
+    animal_lion:Object.freeze({title:'The Sovereign',traits:Object.freeze(['Karismatik','Berani','Memimpin'])}),
+    animal_wolf:Object.freeze({title:'The Packmaster',traits:Object.freeze(['Loyal','Taktis','Tangguh'])}),
+    animal_fox:Object.freeze({title:'The Clever One',traits:Object.freeze(['Cerdik','Adaptif','Waspada'])}),
+    animal_panda:Object.freeze({title:'The Peacemaker',traits:Object.freeze(['Tenang','Hangat','Seimbang'])}),
+    animal_deer:Object.freeze({title:'The Gracekeeper',traits:Object.freeze(['Lembut','Waspada','Anggun'])}),
+    animal_dolphin:Object.freeze({title:'The Connector',traits:Object.freeze(['Sosial','Cerdas','Ceria'])}),
+    animal_elephant:Object.freeze({title:'The Sage',traits:Object.freeze(['Bijak','Setia','Berwibawa'])}),
+    animal_koala:Object.freeze({title:'The Calmkeeper',traits:Object.freeze(['Santai','Hangat','Konsisten'])}),
+    animal_penguin:Object.freeze({title:'The Companion',traits:Object.freeze(['Setia','Kompak','Tangguh'])}),
+    animal_shark:Object.freeze({title:'The Finisher',traits:Object.freeze(['Fokus','Tegas','Determinatif'])}),
+    animal_turtle:Object.freeze({title:'The Endurer',traits:Object.freeze(['Sabar','Stabil','Tangguh'])}),
+    animal_zebra:Object.freeze({title:'The Individualist',traits:Object.freeze(['Unik','Adaptif','Percaya Diri'])}),
+    animal_bat:Object.freeze({title:'The Navigator',traits:Object.freeze(['Intuitif','Adaptif','Tajam'])}),
+    animal_frog:Object.freeze({title:'The Improviser',traits:Object.freeze(['Lentur','Gesit','Optimis'])}),
+    animal_giraffe:Object.freeze({title:'The Lookout',traits:Object.freeze(['Visioner','Tenang','Waspada'])}),
+    animal_hedgehog:Object.freeze({title:'The Defender',traits:Object.freeze(['Mandiri','Waspada','Tangguh'])}),
+    animal_hippo:Object.freeze({title:'The Powerhouse',traits:Object.freeze(['Kuat','Tegas','Protektif'])}),
+    animal_otter:Object.freeze({title:'The Charmer',traits:Object.freeze(['Ceria','Kreatif','Sosial'])}),
+    animal_raccoon:Object.freeze({title:'The Problem Solver',traits:Object.freeze(['Cerdik','Adaptif','Tekun'])}),
+    animal_squirrel:Object.freeze({title:'The Planner',traits:Object.freeze(['Gesit','Rajin','Antisipatif'])})
+  });
+
+  function normalizeName(value){
+    try{return typeof formatName==='function'?formatName(value):String(value||'').trim().toUpperCase()}
+    catch{return String(value||'').trim().toUpperCase()}
+  }
+
+  function speciesFromKey(key){
+    return String(key||'').replace(/_(male|female)$/,'');
+  }
+
+  function forKey(key){
+    const species=speciesFromKey(key);
+    const identity=IDENTITIES[species]||null;
+    return identity?Object.freeze({species,...identity}):null;
+  }
+
+  function forName(nama){
+    const formatted=normalizeName(nama);
+    if(!formatted)return null;
+
+    try{
+      const parts=globalThis.DDTStableAvatarV275?.parts?.(formatted,'dashboard');
+      if(parts?.key)return forKey(parts.key);
+    }catch{}
+
+    try{
+      const key=getAnimalEmojiForDisplay(formatted,dataIzin?.[formatted])||null;
+      return key?forKey(key):null;
+    }catch{
+      return null;
+    }
+  }
+
+  function refreshDashboard(){
+    const nameNode=document.getElementById('welcomeUsername');
+    const avatar=document.getElementById('welcomeDashboardAvatar');
+    const titleNode=document.getElementById('welcomeCharacterTitle');
+    const traitsNode=document.getElementById('welcomeCharacterTraits');
+    const separator=document.getElementById('welcomeCharacterSeparator');
+    if(!nameNode||!avatar)return;
+
+    const nama=normalizeName(nameNode.textContent||'');
+    if(!nama||nama==='USER')return;
+
+    const stable=globalThis.DDTStableAvatarV275?.paintHost?.(avatar,nama,'dashboard');
+    const identity=stable?.key?forKey(stable.key):forName(nama);
+
+    if(titleNode){
+      titleNode.hidden=!identity;
+      titleNode.textContent=identity?.title||'';
+    }
+    if(traitsNode){
+      traitsNode.hidden=!identity;
+      traitsNode.textContent=identity?.traits?.join(' · ')||'';
+    }
+    if(separator)separator.hidden=!identity;
+
+    avatar.setAttribute('aria-label',`Lihat Avatar ${nama}`);
+    avatar.dataset.tooltip='Lihat Avatar';
+    avatar.dataset.tooltipIcon='user';
+
+    globalThis.DDTAvatarFrameIntegrationV27?.refresh?.();
+  }
+
+  let raf=0;
+  function queueRefresh(){
+    if(raf)return;
+    raf=requestAnimationFrame(()=>{
+      raf=0;
+      refreshDashboard();
+    });
+  }
+
+  const nameNode=document.getElementById('welcomeUsername');
+  if(nameNode){
+    new MutationObserver(queueRefresh).observe(nameNode,{
+      subtree:true,
+      childList:true,
+      characterData:true
+    });
+  }
+
+  const avatar=document.getElementById('welcomeDashboardAvatar');
+  if(avatar){
+    new MutationObserver(()=>{
+      const nama=normalizeName(document.getElementById('welcomeUsername')?.textContent||'');
+      const identity=forName(nama);
+      const titleNode=document.getElementById('welcomeCharacterTitle');
+      const traitsNode=document.getElementById('welcomeCharacterTraits');
+      const separator=document.getElementById('welcomeCharacterSeparator');
+
+      if(titleNode){
+        titleNode.hidden=!identity;
+        titleNode.textContent=identity?.title||'';
+      }
+      if(traitsNode){
+        traitsNode.hidden=!identity;
+        traitsNode.textContent=identity?.traits?.join(' · ')||'';
+      }
+      if(separator)separator.hidden=!identity;
+    }).observe(avatar,{
+      subtree:true,
+      childList:true,
+      attributes:true,
+      attributeFilter:['data-ddt-animal-key','data-ddt-frame-id','data-ddt-stable-avatar']
+    });
+  }
+
+  window.DDTCharacterIdentityV1=Object.freeze({
+    version:'1.0.0',
+    speciesCount:Object.keys(IDENTITIES).length,
+    identities:IDENTITIES,
+    forKey,
+    forName,
+    refresh:queueRefresh,
+    persistence:'static metadata; no Supabase query/write'
+  });
+
+  queueRefresh();
+  window.addEventListener('load',queueRefresh,{once:true});
+})();
+</script>
+
+
+<style id="ddt-dashboard-avatar-character-identity-v2-10-0-style">
+/* ================================================================
+   v2.10.0 — DASHBOARD AVATAR + CHARACTER IDENTITY + MICRO REFINEMENT
+   ================================================================ */
+
+/* ---- Dashboard Avatar ---- */
+#welcomeDashboardAvatar{
+  width:72px!important;
+  height:72px!important;
+  flex:0 0 72px!important;
+  min-width:72px!important;
+  padding:0!important;
+  position:relative!important;
+  display:grid!important;
+  place-items:center!important;
+  isolation:isolate!important;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--border-color) 72%,rgba(255,255,255,.18))!important;
+  border-radius:18px!important;
+  background:color-mix(in srgb,var(--bg-secondary) 44%,rgba(255,255,255,.08))!important;
+  color:var(--welcome-text,currentColor)!important;
+  font:inherit;
+  cursor:pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    0 8px 20px rgba(6,24,34,.08);
+  transition:
+    border-color .16s ease,
+    background-color .16s ease,
+    box-shadow .16s ease,
+    transform .16s ease;
+}
+
+#welcomeDashboardAvatar:hover,
+#welcomeDashboardAvatar:focus-visible{
+  border-color:color-mix(in srgb,var(--accent) 40%,var(--border-color))!important;
+  outline:none!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.11),
+    0 9px 22px rgba(6,24,34,.10),
+    0 0 0 2px color-mix(in srgb,var(--accent) 8%,transparent);
+}
+
+#welcomeDashboardAvatar:active{
+  transform:scale(.985);
+}
+
+/* Same framed-avatar geometry authority used by Monitoring / Popup. */
+#welcomeDashboardAvatar.ddt-frame-context{
+  overflow:visible!important;
+}
+
+#welcomeDashboardAvatar.ddt-frame-context > .ddt-animal-img{
+  position:absolute!important;
+  inset:0!important;
+  z-index:3!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  transform:
+    translateY(var(--ddt-frame-animal-y))
+    scale(var(--ddt-frame-animal-scale))!important;
+  transform-origin:center!important;
+  pointer-events:none!important;
+}
+
+#welcomeDashboardAvatar.ddt-frame-active{
+  padding:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* Orb base geometry for Dashboard matches large Popup authority. */
+#welcomeDashboardAvatar.ddt-frame-orb_ring > .ddt-avatar-frame-back{
+  transform:translateY(-.4%) scale(1.05)!important;
+}
+#welcomeDashboardAvatar.ddt-frame-orb_ring > .ddt-avatar-frame-front{
+  transform:translateY(2.1%) scale(1.06)!important;
+}
+#welcomeDashboardAvatar.ddt-frame-orb_ring > .ddt-motion-v1-back{
+  transform:translateY(-.4%) scale(1.05)!important;
+}
+#welcomeDashboardAvatar.ddt-frame-orb_ring > .ddt-motion-v1-front,
+#welcomeDashboardAvatar.ddt-frame-orb_ring > .ddt-motion-v1-tunnel{
+  transform:translateY(2.1%) scale(1.06)!important;
+}
+
+/* Motion v1 loops directly in Dashboard, per user authority. */
+@media(prefers-reduced-motion:no-preference){
+  #welcomeDashboardAvatar.ddt-frame-halo_ring > .ddt-motion-v1{
+    animation:ddtMotionV1HaloOrbitChromatic 7.4s linear infinite!important;
+  }
+
+  #welcomeDashboardAvatar.ddt-frame-orb_ring > .ddt-motion-v1-back{
+    animation:ddtMotionV1OrbBackTunnelV295 6s linear infinite!important;
+  }
+  #welcomeDashboardAvatar.ddt-frame-orb_ring > .ddt-motion-v1-tunnel{
+    animation:ddtMotionV1OrbTunnelV295 6s linear infinite!important;
+  }
+  #welcomeDashboardAvatar.ddt-frame-orb_ring > .ddt-motion-v1-front{
+    animation:ddtMotionV1OrbFrontTunnelV295 6s linear infinite!important;
+  }
+}
+
+/* ---- Dashboard 3-line Character Identity hierarchy ---- */
+#welcomeBanner .welcome-left{
+  gap:16px!important;
+}
+
+#welcomeBanner .welcome-left .text{
+  min-width:0!important;
+  gap:2px!important;
+}
+
+#welcomeBanner .welcome-identity-row{
+  min-width:0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  white-space:nowrap;
+}
+
+#welcomeBanner .welcome-character-separator{
+  flex:0 0 auto;
+  color:currentColor;
+  opacity:.38;
+  font-size:10px;
+  line-height:1;
+}
+
+#welcomeBanner .welcome-character-title{
+  min-width:0;
+  max-width:150px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--welcome-text,currentColor);
+  opacity:.72;
+  font-size:10.2px;
+  font-weight:720;
+  line-height:1.05;
+  letter-spacing:.012em;
+}
+
+#welcomeBanner .welcome-character-traits{
+  min-width:0;
+  max-width:410px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--welcome-text,currentColor);
+  opacity:.56;
+  font-size:8.7px;
+  font-weight:580;
+  line-height:1.12;
+  letter-spacing:.025em;
+}
+
+/* Preserve existing role divider visual authority; only spacing adapts. */
+#welcomeBanner .welcome-role-divider{
+  flex:0 0 auto;
+}
+
+/* ---- Popup Character Identity ---- */
+.ddt-avatar-popover-identity{
+  width:100%;
+  margin-top:3px;
+  padding-top:7px;
+  display:grid;
+  gap:3px;
+  border-top:1px solid color-mix(in srgb,var(--border-color) 66%,transparent);
+  text-align:center;
+}
+
+.ddt-avatar-popover-identity[hidden]{
+  display:none!important;
+}
+
+.ddt-avatar-popover-identity strong{
+  color:var(--text-primary);
+  font-size:9.5px;
+  font-weight:800;
+  line-height:1.1;
+  letter-spacing:.018em;
+}
+
+.ddt-avatar-popover-identity span{
+  color:var(--text-muted);
+  font-size:7.8px;
+  font-weight:620;
+  line-height:1.2;
+  letter-spacing:.025em;
+}
+
+/* ---- Micro refinement: live permit dot ---- */
+#tab-monitoring .live-status-dot{
+  width:4px!important;
+  height:4px!important;
+  flex:0 0 4px!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] #tab-monitoring .live-status-dot{
+  box-shadow:0 0 0 2px rgba(68,214,44,.075)!important;
+}
+
+/* ---- Micro refinement: None keeps canonical size but vertical center = 0 ---- */
+/* Framed authority remains 78% / Y -4%. Only frame=None is centered. */
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-none > .ddt-animal-img,
+#aps-avatar.ddt-frame-none > .ddt-animal-img,
+#ddtAvatarPopoverVisual.ddt-frame-none > .ddt-animal-img,
+#animalEmojiPickerPreview.ddt-frame-none > .ddt-animal-img,
+#welcomeDashboardAvatar.ddt-frame-none > .ddt-animal-img{
+  transform:translateY(0) scale(var(--ddt-frame-animal-scale))!important;
+}
+
+/* Frame picker None tile: same 78% animal scale, exact vertical center. */
+.ddt-frame-tile-visual.none > .ddt-frame-tile-animal{
+  transform:translateY(0) scale(var(--ddt-frame-animal-scale))!important;
+}
+
+/* Responsive: still large enough to read, without increasing card height. */
+@media(max-width:760px){
+  #welcomeDashboardAvatar{
+    width:62px!important;
+    height:62px!important;
+    flex-basis:62px!important;
+    min-width:62px!important;
+    border-radius:16px!important;
+  }
+
+  #welcomeBanner .welcome-left{
+    gap:12px!important;
+  }
+
+  #welcomeBanner .welcome-character-title{
+    max-width:112px;
+    font-size:9.4px;
+  }
+
+  #welcomeBanner .welcome-character-traits{
+    max-width:300px;
+    font-size:8.2px;
+  }
+}
+</style>
+
+
+<script id="ddt-dashboard-avatar-v2-10-0-build-marker">
+window.DDTDashboardAvatarV2100=Object.freeze({
+  version:'2.10.0',
+  source:'v2.9.5-left-tunnel-continuity-shared-hidden-corridor',
+  dashboardAvatarSize:Object.freeze({desktop:72,mobile:62}),
+  motionLoop:true,
+  sharedPopup:true,
+  sharedEditor:true,
+  characterIdentitySpecies:36,
+  dashboardTextLinesMax:3,
+  liveStatusDotPx:4,
+  framedAnimal:Object.freeze({scale:.78,yPercent:-4}),
+  noneAnimal:Object.freeze({scale:.78,yPercent:0}),
+  additionalSupabaseQuery:false,
+  additionalSupabaseWrite:false
+});
+</script>
 
 </body>
 </html>
