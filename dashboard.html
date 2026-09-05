@@ -55166,7 +55166,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 dayInput?.focus();
                 dayInput?.select();
             } else {
-                input?.focus();
+                try {
+                    input?.focus({
+                        preventScroll: true
+                    });
+                } catch {
+                    input?.focus();
+                }
             }
         };
 
@@ -55727,7 +55733,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                 <td>${index + 1}</td>
                                 <td><span class="nama-cell">${user.name}</span></td>
                                 <td><span class="role-tag ${user.role}">${roleLabel}</span></td>
-                                <td><span class="voucher-badge voucher-count-badge" data-voucher="${user.voucher}"><span class="icon">🎫</span><strong>${user.voucher}</strong></span></td>
+                                <td><span class="voucher-badge voucher-count-badge" data-voucher="${user.voucher}"><span class="voucher-active-ticket-icon">${ticketIcon}</span><strong>${user.voucher}</strong></span></td>
                                 <td><span class="voucher-audit-time">${earnedAt}</span></td>
                                 ${actionColumn}
                             </tr>`;
@@ -65618,8 +65624,29 @@ window.DASHBOARD_CS_EVALUATION_VERSION = 'V64.3';
             wrapper.classList.toggle('open', willOpen);
             trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
             if (willOpen) {
-                const active = menu.querySelector('.premium-select-option.active');
-                active?.scrollIntoView({ block: 'nearest' });
+                const active =
+                    menu.querySelector(
+                        '.premium-select-option.active'
+                    );
+
+                const isUsersInlineEditor =
+                    Boolean(
+                        wrapper.closest(
+                            '#tab-users .employee-inline-cell-editing[data-inline-field="training_status"], ' +
+                            '#tab-users .employee-inline-cell-editing[data-inline-field="office_id"]'
+                        )
+                    );
+
+                /*
+                 * Do not scroll the viewport/table when opening bottom-row
+                 * Training or Office editors. Their menus already choose
+                 * down/up direction independently.
+                 */
+                if (!isUsersInlineEditor) {
+                    active?.scrollIntoView({
+                        block: 'nearest'
+                    });
+                }
             }
         });
 
@@ -118675,8 +118702,19 @@ html[data-theme="dark"] .ddt-frame-tile-visual.orb_ring::before{
     if(!host)return;
     const animal=host.querySelector(':scope > .ddt-animal-img');
     if(!animal){
-      if(context==='live'||context==='aps')setNeutral(host,nama);
-      else{removeFrameLayers(host);host.classList.remove('ddt-frame-context','ddt-frame-neutral-avatar')}
+      if(
+        context==='live'||
+        context==='aps'||
+        context==='dashboard'
+      ){
+        setNeutral(host,nama);
+      }else{
+        removeFrameLayers(host);
+        host.classList.remove(
+          'ddt-frame-context',
+          'ddt-frame-neutral-avatar'
+        );
+      }
       return;
     }
     host.classList.remove('ddt-frame-neutral-avatar');
@@ -127121,19 +127159,16 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.2',
-  source:'Office Duration System v1.1.1',
+  version:'1.1.3',
+  source:'Office Duration System v1.1.2',
   refinements:Object.freeze({
-    historyDurationLimitDensity:'compact',
-    trainingEditor:'selection -> confirmation; no check button',
-    officeEditor:'selection -> confirmation; no check button',
-    exportAudit:'always visible; permission-disabled',
-    viewOnly:'small page-title badge',
-    officeMissingTooltip:'native Monitoring rich START tooltip',
-    officeMissingStartVisual:'matches Akses Terkunci disabled START'
+    dashboardNeutralAvatar:'transparent fill + quiet border; Venom-safe',
+    historyTable:'balanced fixed operational grid',
+    voucherActiveIcon:'shared ticket SVG',
+    usersInlineDropdown:'no scrollIntoView for Training/Office',
+    usersInlineFocus:'preventScroll'
   }),
   productionVoucherAuthority:'finish_izin',
-  voucherLateRule:'duration_seconds > threshold_at_event_seconds',
   backendChanged:false,
   darkThemeAvatarMotion:'HOLD / untouched'
 });
@@ -127918,6 +127953,249 @@ html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presenta
 /* Remove the older v1.1 custom lock treatment. */
 #tab-monitoring .btn-action.start.ddt-office-start-disabled{
   animation:none!important;
+}
+</style>
+
+
+<style id="ddt-dashboard-neutral-avatar-v1-1-3-authority">
+/* ================================================================
+   DASHBOARD — NO ANIMAL SELECTED
+   True transparent fill + quiet line close to Statistics-card material.
+   ================================================================ */
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar,
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible{
+  background:transparent!important;
+  background-image:none!important;
+  border:1px solid color-mix(
+    in srgb,
+    var(--welcome-text,currentColor) 11%,
+    transparent
+  )!important;
+  box-shadow:none!important;
+  color:color-mix(
+    in srgb,
+    var(--welcome-text,currentColor) 48%,
+    transparent
+  )!important;
+}
+
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible{
+  border-color:color-mix(
+    in srgb,
+    var(--welcome-text,currentColor) 18%,
+    transparent
+  )!important;
+  color:color-mix(
+    in srgb,
+    var(--welcome-text,currentColor) 62%,
+    transparent
+  )!important;
+}
+
+/* Venom: support both actual theme selectors used by the dashboard.
+   Explicit matte green-black line prevents Cyber Dark inheritance. */
+html[data-selected-theme="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar,
+html[data-selected-theme="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+html[data-selected-theme="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible{
+  background:transparent!important;
+  background-image:none!important;
+  border-color:#252d25!important;
+  color:#738171!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+html[data-selected-theme="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:hover,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#welcomeDashboardAvatar.ddt-frame-neutral-avatar:focus-visible{
+  border-color:#303b30!important;
+  color:#96a793!important;
+}
+</style>
+
+
+<style id="ddt-history-v1-1-3-balanced-grid">
+/* ================================================================
+   HISTORY IZIN — BALANCED OPERATIONAL GRID
+   # | Nama | Role | Tanggal | Mulai | Selesai | Durasi | Batas | Office | Status
+   ================================================================ */
+#tab-history > .table-wrap table{
+  width:100%!important;
+  table-layout:fixed!important;
+}
+
+#tab-history > .table-wrap :is(th,td){
+  box-sizing:border-box!important;
+}
+
+/* # */
+#tab-history > .table-wrap :is(th,td):nth-child(1){
+  width:42px!important;
+  padding-left:8px!important;
+  padding-right:8px!important;
+  text-align:center!important;
+}
+
+/* Nama gets the flexible visual priority */
+#tab-history > .table-wrap :is(th,td):nth-child(2){
+  width:auto!important;
+  padding-left:11px!important;
+  padding-right:10px!important;
+}
+
+/* Role */
+#tab-history > .table-wrap :is(th,td):nth-child(3){
+  width:88px!important;
+  padding-left:8px!important;
+  padding-right:8px!important;
+}
+
+/* Tanggal */
+#tab-history > .table-wrap :is(th,td):nth-child(4){
+  width:112px!important;
+  padding-left:8px!important;
+  padding-right:8px!important;
+  white-space:nowrap!important;
+}
+
+/* Mulai / Selesai */
+#tab-history > .table-wrap :is(th,td):nth-child(5),
+#tab-history > .table-wrap :is(th,td):nth-child(6){
+  width:78px!important;
+  padding-left:7px!important;
+  padding-right:7px!important;
+  white-space:nowrap!important;
+}
+
+/* Durasi: enough for "17 menit 46 detik", but no dead space */
+#tab-history > .table-wrap :is(th,td):nth-child(7){
+  width:122px!important;
+  min-width:122px!important;
+  max-width:122px!important;
+  padding-left:8px!important;
+  padding-right:6px!important;
+  white-space:nowrap!important;
+}
+
+/* Batas */
+#tab-history > .table-wrap :is(th,td):nth-child(8){
+  width:78px!important;
+  min-width:78px!important;
+  max-width:78px!important;
+  padding-left:6px!important;
+  padding-right:6px!important;
+  white-space:nowrap!important;
+}
+
+/* Office */
+#tab-history > .table-wrap :is(th,td):nth-child(9){
+  width:78px!important;
+  min-width:78px!important;
+  max-width:78px!important;
+  padding-left:6px!important;
+  padding-right:6px!important;
+  white-space:nowrap!important;
+}
+
+/* Status */
+#tab-history > .table-wrap :is(th,td):nth-child(10){
+  width:100px!important;
+  padding-left:7px!important;
+  padding-right:8px!important;
+  white-space:nowrap!important;
+}
+
+#tab-history > .table-wrap td:nth-child(2) .nama-cell{
+  display:block!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+#tab-history > .table-wrap :is(th,td):nth-child(n+5){
+  font-variant-numeric:tabular-nums;
+}
+</style>
+
+
+<style id="ddt-voucher-active-svg-v1-1-3">
+/* Voucher Aktif now uses the same ticket SVG language as Monitoring Izin. */
+#tab-voucher .voucher-count-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+}
+
+#tab-voucher .voucher-active-ticket-icon{
+  display:inline-grid!important;
+  place-items:center!important;
+  flex:none!important;
+  width:14px!important;
+  height:14px!important;
+  color:var(--accent)!important;
+}
+
+#tab-voucher .voucher-active-ticket-icon svg{
+  display:block!important;
+  width:14px!important;
+  height:14px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.8!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+
+/* Venom: matte green, no emoji/system-color mismatch. */
+html[data-selected-theme="venom"] body
+#tab-voucher .voucher-active-ticket-icon,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-voucher .voucher-active-ticket-icon{
+  color:#67e853!important;
+}
+</style>
+
+
+<style id="ddt-users-inline-dropdown-v1-1-3-stability">
+/* Keep row geometry unchanged while Training / Office Premium Select opens. */
+#tab-users .employee-inline-cell-editing[data-inline-field="training_status"],
+#tab-users .employee-inline-cell-editing[data-inline-field="office_id"]{
+  min-height:34px!important;
+  height:34px!important;
+  overflow:visible!important;
+  align-items:center!important;
+}
+
+#tab-users .employee-inline-cell-editing[data-inline-field="training_status"] .premium-select,
+#tab-users .employee-inline-cell-editing[data-inline-field="office_id"] .premium-select{
+  height:34px!important;
+  min-height:34px!important;
+  overflow:visible!important;
+}
+
+/* The popup menu is absolute and must never contribute to table row height. */
+#tab-users .employee-inline-cell-editing[data-inline-field="training_status"] .premium-select-menu,
+#tab-users .employee-inline-cell-editing[data-inline-field="office_id"] .premium-select-menu{
+  position:absolute!important;
+  margin:0!important;
 }
 </style>
 
