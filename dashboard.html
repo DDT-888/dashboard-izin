@@ -45187,11 +45187,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             <th>Mulai</th>
                             <th>Selesai</th>
                             <th>Durasi</th>
+                            <th>Batas</th>
+                            <th>Office</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="historyBody">
-                        <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px;">Belum ada data history</td></tr>
+                        <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px;">Belum ada data history</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -50220,6 +50222,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 thresholdAtEventSeconds: Number.isFinite(Number(row.threshold_at_event_seconds ?? row.thresholdAtEventSeconds))
                     ? Math.max(1, Number(row.threshold_at_event_seconds ?? row.thresholdAtEventSeconds))
                     : null,
+                officeId:
+                    String(row.office_id ?? row.officeId ?? '').trim() || null,
+                officeName:
+                    String(row.office_name ?? row.officeName ?? '').trim() || null,
                 isQuotaValid:
                     row.is_quota_valid !== undefined
                         ? Boolean(row.is_quota_valid)
@@ -50496,7 +50502,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             const { data, error } = await supabaseDashboard
                 .from('history')
-                .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds')
+                .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds, office_id, office_name')
                 .gte('selesai', since)
                 .order('selesai', { ascending: true })
                 .limit(250);
@@ -51461,7 +51467,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             try {
                 const { data, error } = await supabaseDashboard
                     .from('history')
-                    .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds')
+                    .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds, office_id, office_name')
                     .order('mulai', { ascending: false })
                     .limit(HISTORY_INITIAL_LIMIT);
 
@@ -51635,7 +51641,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
                     let query = supabaseDashboard
                         .from('history')
-                        .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds')
+                        .select('id, nama, tanggal, mulai, selesai, status, role, durasi_detik, is_quota_valid, threshold_at_event_seconds, office_id, office_name')
                         .order('mulai', { ascending: false });
 
                     if (historyLoadMode === 'today') {
@@ -55811,7 +55817,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             if (filtered.length === 0) {
                 tbody.innerHTML =
-                    `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Tidak ada data history untuk tanggal yang dipilih</td></tr>`;
+                    `<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">Tidak ada data history untuk tanggal yang dipilih</td></tr>`;
                 return;
             }
 
@@ -55833,6 +55839,15 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const batasDetik = getHistoryEventThresholdSeconds(item);
                 const isOverLimit = durasiDetik > batasDetik;
                 const roleLabel = roleLabels[item.role] || item.role;
+                const batasWaktu = new Date(
+                    tMulai.getTime() + (batasDetik * 1000)
+                );
+                const officeName =
+                    String(
+                        item.officeName ??
+                        item.office_name ??
+                        ''
+                    ).trim() || 'Legacy';
 
                 const tanggal = tMulai.toLocaleDateString('id-ID', {
                     day: '2-digit',
@@ -55849,6 +55864,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     minute: '2-digit',
                     second: '2-digit'
                 });
+                const waktuBatas = batasWaktu.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }).replace(':', '.');
 
                 let durasiText = '';
                 if (menit > 0) {
@@ -55884,6 +55903,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         <td class="time-detail">${waktuMulai}</td>
                         <td class="time-detail">${waktuSelesai}</td>
                         <td class="time-detail"><span class="${durasiClass}">${durasiText}</span></td>
+                        <td class="time-detail history-limit-time">${waktuBatas}</td>
+                        <td><span class="history-office-value ${officeName === 'Legacy' ? 'legacy' : ''}">${officeName}</span></td>
                         <td>${statusBadge}</td>
                     </tr>
                 `;
@@ -55933,7 +55954,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 return;
             }
 
-            let csv = 'No,Nama,Role,Tanggal,Mulai,Selesai,Durasi(menit),Durasi(detik),Status\n';
+            let csv = 'No,Nama,Role,Tanggal,Mulai,Selesai,Durasi(menit),Durasi(detik),Batas,Office,Status\n';
             dataToExport.forEach((item, index) => {
                 const tMulai = new Date(item.mulai);
                 const tSelesai = new Date(item.selesai);
@@ -55949,9 +55970,24 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const waktuSelesai = tSelesai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit',
                     second: '2-digit' });
                 const roleLabel = ROLE_LABELS[item.role] || item.role;
+                const batasWaktu = new Date(
+                    tMulai.getTime() + (batasDetik * 1000)
+                );
+                const waktuBatas = batasWaktu
+                    .toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                    .replace(':', '.');
+                const officeName =
+                    String(
+                        item.officeName ??
+                        item.office_name ??
+                        ''
+                    ).trim() || 'Legacy';
 
                 csv +=
-                    `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${status}\n`;
+                    `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${waktuBatas},${officeName},${status}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -56001,7 +56037,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     while (true) {
                         const { data, error } = await supabaseDashboard
                             .from('history')
-                            .select('id,nama,tanggal,mulai,selesai,status,role,durasi_detik,is_quota_valid,threshold_at_event_seconds')
+                            .select('id,nama,tanggal,mulai,selesai,status,role,durasi_detik,is_quota_valid,threshold_at_event_seconds,office_id,office_name')
                             .gte('mulai', startDate.toISOString())
                             .lt('mulai', endDate.toISOString())
                             .order('mulai', { ascending: true })
@@ -56025,7 +56061,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 return;
             }
 
-            let csv = 'No,Nama,Role,Tanggal,Mulai,Selesai,Durasi(menit),Durasi(detik),Status\n';
+            let csv = 'No,Nama,Role,Tanggal,Mulai,Selesai,Durasi(menit),Durasi(detik),Batas,Office,Status\n';
             filtered.forEach((item, index) => {
                 const tMulai = new Date(item.mulai);
                 const tSelesai = new Date(item.selesai);
@@ -56041,7 +56077,23 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const waktuMulai = tMulai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const waktuSelesai = tSelesai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const roleLabel = ROLE_LABELS[item.role] || item.role;
-                csv += `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${status}\n`;
+                const batasWaktu = new Date(
+                    tMulai.getTime() + (batasDetik * 1000)
+                );
+                const waktuBatas = batasWaktu
+                    .toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                    .replace(':', '.');
+                const officeName =
+                    String(
+                        item.officeName ??
+                        item.office_name ??
+                        ''
+                    ).trim() || 'Legacy';
+
+                csv += `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${waktuBatas},${officeName},${status}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -61550,6 +61602,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             search: '',
             status: 'all',
             role: 'all',
+            office: 'all',
             rank: 'all',
             alert: 'all'
         };
@@ -61914,6 +61967,33 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 'role',
                 employeeRoleFilterOptions(),
                 { ariaLabel: 'Filter Role' }
+            );
+        }
+
+        function employeeOfficeFilterMarkup() {
+            const offices =
+                window.DDTOfficeDurationSystemV1
+                    ?.getActiveOffices?.() || [];
+
+            const options = [
+                {
+                    value: 'all',
+                    label: 'Semua Office'
+                },
+                ...offices.map(item => ({
+                    value: item.id,
+                    label: item.name
+                })),
+                {
+                    value: 'unset',
+                    label: 'Belum diset'
+                }
+            ];
+
+            return employeeCustomFilterMarkup(
+                'office',
+                options,
+                { ariaLabel: 'Filter Office' }
             );
         }
 
@@ -62698,8 +62778,18 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     .toLowerCase()
                     .trim();
 
+            const officeId =
+                String(profile?.office_id || '')
+                    .trim()
+                    .toLowerCase();
+
+            const officeConfig =
+                window.DDTOfficeDurationSystemV1
+                    ?.getOfficeById?.(officeId) ||
+                null;
+
             const haystack =
-                `${user.name || ''} ${user.email || ''} ${profile.passport_number || ''}`
+                `${user.name || ''} ${user.email || ''} ${profile.passport_number || ''} ${officeConfig?.name || ''}`
                     .toLowerCase();
 
             const matchSearch =
@@ -62709,6 +62799,14 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             const matchRole =
                 employeeUserFilters.role === 'all' ||
                 user.role === employeeUserFilters.role;
+
+            const matchOffice =
+                employeeUserFilters.office === 'all' ||
+                (
+                    employeeUserFilters.office === 'unset'
+                        ? !officeId
+                        : officeId === employeeUserFilters.office
+                );
 
             const matchRank =
                 employeeUserFilters.rank === 'all' ||
@@ -62733,6 +62831,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             return (
                 matchSearch &&
                 matchRole &&
+                matchOffice &&
                 matchRank &&
                 matchAlert
             );
@@ -62992,6 +63091,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 <div class="employee-toolbar">
                     <input id="employeeUserSearch" type="search" value="${employeeEscape(employeeUserFilters.search)}" placeholder="Cari nama, email, atau passport..." oninput="setEmployeeUserFilter('search', this.value)"/>
                     ${employeeRoleFilterMarkup()}
+                    ${employeeOfficeFilterMarkup()}
                     ${employeeRankFilterMarkup()}
                     ${employeeAlertFilterMarkup()}
                     ${employeeCan('employee_audit_export') ? `<button class="employee-export-button history-tooltip-target" type="button" onclick="exportEmployeeAudit()" data-tooltip="Export Audit Kepegawaian" data-tooltip-icon="export"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Export Audit</span></button>` : ''}
@@ -124445,15 +124545,20 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 (()=>{
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
   const LEGACY_THRESHOLD_SECONDS=1200;
   const OFFICE_IDS=['office_1','office_2','office_3'];
+
   const state={
     ready:false,
     loading:false,
     settings:{
       version:1,
-      offices:OFFICE_IDS.map(id=>({id,name:'',durationMinutes:null}))
+      offices:OFFICE_IDS.map(id=>({
+        id,
+        name:'',
+        durationMinutes:null
+      }))
     },
     activeSessions:new Map(),
     observer:null,
@@ -124464,11 +124569,19 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
   };
 
   function fName(value){
-    try{return typeof formatName==='function'?formatName(value):String(value||'').trim().toUpperCase()}
-    catch{return String(value||'').trim().toUpperCase()}
+    try{
+      return typeof formatName==='function'
+        ? formatName(value)
+        : String(value||'').trim().toUpperCase();
+    }catch{
+      return String(value||'').trim().toUpperCase();
+    }
   }
+
   function esc(value){
-    if(typeof employeeEscape==='function')return employeeEscape(value);
+    if(typeof employeeEscape==='function'){
+      return employeeEscape(value);
+    }
     return String(value??'')
       .replaceAll('&','&amp;')
       .replaceAll('<','&lt;')
@@ -124476,152 +124589,391 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       .replaceAll('"','&quot;')
       .replaceAll("'","&#39;");
   }
+
   function toast(message,type='info',duration=3500){
-    try{showToast(message,type,duration)}catch{console.info('[Office Duration]',message)}
+    try{
+      showToast(message,type,duration);
+    }catch{
+      console.info('[Office Duration]',message);
+    }
   }
+
   function parseValue(value){
     if(value&&typeof value==='object')return value;
-    try{return JSON.parse(value||'{}')}catch{return {}}
+    try{
+      return JSON.parse(value||'{}');
+    }catch{
+      return {};
+    }
   }
+
   function normalizeSettings(raw){
-    const parsed=raw&&typeof raw==='object'?raw:{};
-    const source=Array.isArray(parsed.offices)?parsed.offices:[];
-    const map=new Map(source.map(item=>[String(item?.id||'').trim().toLowerCase(),item||{}]));
+    const parsed=
+      raw&&typeof raw==='object'
+        ? raw
+        : {};
+
+    const source=
+      Array.isArray(parsed.offices)
+        ? parsed.offices
+        : [];
+
+    const map=
+      new Map(
+        source.map(item=>[
+          String(item?.id||'')
+            .trim()
+            .toLowerCase(),
+          item||{}
+        ])
+      );
+
     return {
       version:1,
       offices:OFFICE_IDS.map(id=>{
         const item=map.get(id)||{};
         const name=String(item.name||'').trim();
         const num=Number(item.durationMinutes);
+
         return {
           id,
           name,
-          durationMinutes:Number.isInteger(num)&&num>=1&&num<=60?num:null
+          durationMinutes:
+            Number.isInteger(num)&&
+            num>=1&&
+            num<=60
+              ? num
+              : null
         };
       })
     };
   }
+
   function activeOffices(){
-    return state.settings.offices.filter(item=>item.name&&Number.isInteger(item.durationMinutes));
+    return state.settings.offices.filter(item=>
+      item.name&&
+      Number.isInteger(item.durationMinutes)
+    );
   }
+
   function officeById(id){
-    const key=String(id||'').trim().toLowerCase();
+    const key=
+      String(id||'')
+        .trim()
+        .toLowerCase();
+
     if(!key)return null;
-    return activeOffices().find(item=>item.id===key)||null;
+
+    return activeOffices()
+      .find(item=>item.id===key)||
+      null;
   }
+
   function directory(){
     try{
-      if(Array.isArray(employeeUserDirectory)&&employeeUserDirectory.length)return employeeUserDirectory;
+      if(
+        Array.isArray(employeeUserDirectory)&&
+        employeeUserDirectory.length
+      ){
+        return employeeUserDirectory;
+      }
     }catch{}
+
     try{
-      if(Array.isArray(listUsers))return listUsers;
+      if(Array.isArray(listUsers)){
+        return listUsers;
+      }
     }catch{}
+
     return [];
   }
+
   function profileFor(userId){
     try{
       if(employeeProfilesByUserId instanceof Map){
-        return employeeProfilesByUserId.get(String(userId))||null;
+        return (
+          employeeProfilesByUserId.get(
+            String(userId)
+          )||
+          null
+        );
       }
     }catch{}
+
     return null;
   }
+
   function userForName(nama){
     const key=fName(nama);
-    return directory().find(user=>fName(user?.name)===key)||null;
+
+    return (
+      directory().find(
+        user=>fName(user?.name)===key
+      )||
+      null
+    );
   }
+
   function userOffice(nama){
     const user=userForName(nama);
-    if(!user)return {user:null,profile:null,officeId:'',config:null,valid:false};
+
+    if(!user){
+      return {
+        user:null,
+        profile:null,
+        officeId:'',
+        config:null,
+        valid:false
+      };
+    }
+
     const profile=profileFor(user.id);
-    const officeId=String(profile?.office_id||'').trim().toLowerCase();
+
+    const officeId=
+      String(profile?.office_id||'')
+        .trim()
+        .toLowerCase();
+
     const config=officeById(officeId);
-    return {user,profile,officeId,config,valid:Boolean(config)};
+
+    return {
+      user,
+      profile,
+      officeId,
+      config,
+      valid:Boolean(config)
+    };
   }
+
   function thresholdForActive(nama){
     const key=fName(nama);
     const meta=state.activeSessions.get(key);
-    const threshold=Number(meta?.threshold_at_event_seconds);
-    if(Number.isFinite(threshold)&&threshold>0)return Math.floor(threshold);
+    const threshold=
+      Number(meta?.threshold_at_event_seconds);
+
+    if(
+      Number.isFinite(threshold)&&
+      threshold>0
+    ){
+      return Math.floor(threshold);
+    }
+
     return LEGACY_THRESHOLD_SECONDS;
   }
+
   function sessionOfficeName(nama){
-    const meta=state.activeSessions.get(fName(nama));
-    return String(meta?.office_name||'').trim()||'Legacy';
+    const meta=
+      state.activeSessions.get(
+        fName(nama)
+      );
+
+    return (
+      String(meta?.office_name||'').trim()||
+      'Legacy'
+    );
   }
+
   function isActive(nama){
     try{
       const data=dataIzin?.[fName(nama)];
-      return Boolean(data&&data.status==='izin'&&data.mulai);
-    }catch{return false}
+
+      return Boolean(
+        data&&
+        data.status==='izin'&&
+        data.mulai
+      );
+    }catch{
+      return false;
+    }
   }
+
   function nowDate(){
-    try{return typeof serverNowDate==='function'?serverNowDate():new Date()}catch{return new Date()}
+    try{
+      return typeof serverNowDate==='function'
+        ? serverNowDate()
+        : new Date();
+    }catch{
+      return new Date();
+    }
   }
+
   function parseStart(value){
     try{
-      if(typeof parseTimeFromDB==='function')return parseTimeFromDB(value);
+      if(typeof parseTimeFromDB==='function'){
+        return parseTimeFromDB(value);
+      }
     }catch{}
-    const d=new Date(value);
-    return Number.isNaN(d.getTime())?null:d;
+
+    const date=new Date(value);
+
+    return Number.isNaN(date.getTime())
+      ? null
+      : date;
+  }
+
+  function formatDeadline(nama){
+    const meta=
+      state.activeSessions.get(
+        fName(nama)
+      );
+
+    const start=
+      parseStart(
+        meta?.mulai||
+        dataIzin?.[fName(nama)]?.mulai
+      );
+
+    if(!start)return '';
+
+    const deadline=
+      new Date(
+        start.getTime()+
+        thresholdForActive(nama)*1000
+      );
+
+    return (
+      `${String(deadline.getHours()).padStart(2,'0')}.`+
+      `${String(deadline.getMinutes()).padStart(2,'0')}`
+    );
   }
 
   async function loadSettings(){
-    if(typeof supabaseDashboard==='undefined')return false;
+    if(typeof supabaseDashboard==='undefined'){
+      return false;
+    }
+
     try{
-      const {data,error}=await supabaseDashboard
-        .from('settings')
-        .select('key,value')
-        .eq('key','office_duration_settings')
-        .limit(1);
+      const {data,error}=
+        await supabaseDashboard
+          .from('settings')
+          .select('key,value')
+          .eq(
+            'key',
+            'office_duration_settings'
+          )
+          .limit(1);
+
       if(error)throw error;
-      const row=Array.isArray(data)?data[0]:data;
-      state.settings=normalizeSettings(parseValue(row?.value));
+
+      const row=
+        Array.isArray(data)
+          ? data[0]
+          : data;
+
+      state.settings=
+        normalizeSettings(
+          parseValue(row?.value)
+        );
+
       return true;
     }catch(error){
-      console.warn('Office Duration settings load failed:',error);
+      console.warn(
+        'Office Duration settings load failed:',
+        error
+      );
+
       return false;
     }
   }
 
   async function loadProfiles(){
     try{
-      if(typeof loadEmployeeProfiles==='function'){
-        await loadEmployeeProfiles(null,'office-duration-v1',true);
+      if(
+        typeof loadEmployeeProfiles==='function'
+      ){
+        await loadEmployeeProfiles(
+          null,
+          'office-duration-v1.1',
+          true
+        );
+
         return true;
       }
     }catch(error){
-      console.warn('Office profile load failed:',error);
+      console.warn(
+        'Office profile load failed:',
+        error
+      );
     }
+
     return false;
   }
 
   async function loadActiveSessions(){
-    if(typeof supabaseDashboard==='undefined')return false;
+    if(typeof supabaseDashboard==='undefined'){
+      return false;
+    }
+
     try{
-      const {data,error}=await supabaseDashboard
-        .from('izin_anggota')
-        .select('nama,status,mulai,office_id,office_name,threshold_at_event_seconds')
-        .eq('status','izin');
+      const {data,error}=
+        await supabaseDashboard
+          .from('izin_anggota')
+          .select(
+            'nama,status,mulai,office_id,office_name,threshold_at_event_seconds'
+          )
+          .eq(
+            'status',
+            'izin'
+          );
+
       if(error)throw error;
+
       state.activeSessions.clear();
+
       (data||[]).forEach(row=>{
         const key=fName(row?.nama);
-        if(key)state.activeSessions.set(key,row);
+
+        if(key){
+          state.activeSessions.set(
+            key,
+            row
+          );
+        }
       });
+
       return true;
     }catch(error){
-      console.warn('Office session snapshot load failed:',error);
+      console.warn(
+        'Office session snapshot load failed:',
+        error
+      );
+
       return false;
     }
   }
 
   async function refreshData(){
     if(state.loading)return;
+
     state.loading=true;
+
     try{
-      await Promise.all([loadSettings(),loadProfiles(),loadActiveSessions()]);
+      await Promise.all([
+        loadSettings(),
+        loadProfiles(),
+        loadActiveSessions()
+      ]);
+
       state.ready=true;
+
+      /*
+       * Refresh Users once after Office data is ready so the Office
+       * filter receives the current Settings options.
+       * This is initialization only, not assignment-save behavior.
+       */
+      try{
+        if(
+          currentTab==='users'&&
+          typeof renderUsersPage==='function'
+        ){
+          const scrollY=window.scrollY;
+          renderUsersPage();
+          requestAnimationFrame(
+            ()=>window.scrollTo(0,scrollY)
+          );
+        }
+      }catch{}
+
       scheduleReconcile();
     }finally{
       state.loading=false;
@@ -124630,32 +124982,68 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
   function officeRowsMarkup(){
     return OFFICE_IDS.map((id,index)=>{
-      const office=state.settings.offices.find(item=>item.id===id)||{id,name:'',durationMinutes:null};
+      const office=
+        state.settings.offices.find(
+          item=>item.id===id
+        )||{
+          id,
+          name:'',
+          durationMinutes:null
+        };
+
       return `
-        <div class="ddt-office-duration-row" data-office-id="${id}">
-          <span class="ddt-office-duration-index">0${index+1}</span>
+        <div
+          class="ddt-office-duration-row"
+          data-office-id="${id}"
+        >
+          <span class="ddt-office-duration-index">
+            0${index+1}
+          </span>
+
           <label class="ddt-office-field">
-            <span class="ddt-office-field-label">Lokasi Office</span>
+            <span class="ddt-office-field-label">
+              Lokasi Office
+            </span>
+
             <input
               id="ddtOfficeLocation${index+1}"
               type="text"
               maxlength="40"
               autocomplete="off"
-              placeholder="${index===0?'Contoh: Australia':index===1?'Contoh: Indonesia':'Lokasi Office'}"
+              placeholder="${
+                index===0
+                  ? 'Contoh: Australia'
+                  : index===1
+                    ? 'Contoh: Indonesia'
+                    : 'Lokasi Office'
+              }"
               value="${esc(office.name||'')}"
             />
           </label>
+
           <label class="ddt-office-field">
-            <span class="ddt-office-field-label">Durasi</span>
+            <span class="ddt-office-field-label">
+              Durasi
+            </span>
+
             <span class="ddt-office-duration-input-wrap">
               <input
                 id="ddtOfficeDuration${index+1}"
                 type="number"
                 min="1"
                 max="60"
-                placeholder="${index===0?'20':index===1?'16':'—'}"
-                value="${office.durationMinutes??''}"
+                placeholder="${
+                  index===0
+                    ? '20'
+                    : index===1
+                      ? '16'
+                      : '—'
+                }"
+                value="${
+                  office.durationMinutes??''
+                }"
               />
+
               <span>menit</span>
             </span>
           </label>
@@ -124665,237 +125053,879 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
   }
 
   function ensureSettingsUI(){
-    const oldInput=document.getElementById('limitDurasi');
-    const section=oldInput?.closest?.('.settings-access-section');
+    const oldInput=
+      document.getElementById(
+        'limitDurasi'
+      );
+
+    const section=
+      oldInput?.closest?.(
+        '.settings-access-section'
+      );
+
     if(!section)return;
 
-    if(section.dataset.officeDurationV1==='1'){
+    if(
+      section.dataset.officeDurationV1==='1'
+    ){
       OFFICE_IDS.forEach((id,index)=>{
-        const office=state.settings.offices.find(item=>item.id===id)||{};
-        const name=document.getElementById(`ddtOfficeLocation${index+1}`);
-        const duration=document.getElementById(`ddtOfficeDuration${index+1}`);
-        if(name&&document.activeElement!==name&&name.value!==String(office.name||''))name.value=office.name||'';
-        const durationValue=office.durationMinutes??'';
-        if(duration&&document.activeElement!==duration&&String(duration.value)!==String(durationValue))duration.value=durationValue;
+        const office=
+          state.settings.offices.find(
+            item=>item.id===id
+          )||{};
+
+        const name=
+          document.getElementById(
+            `ddtOfficeLocation${index+1}`
+          );
+
+        const duration=
+          document.getElementById(
+            `ddtOfficeDuration${index+1}`
+          );
+
+        if(
+          name&&
+          document.activeElement!==name&&
+          name.value!==
+            String(office.name||'')
+        ){
+          name.value=office.name||'';
+        }
+
+        const durationValue=
+          office.durationMinutes??'';
+
+        if(
+          duration&&
+          document.activeElement!==duration&&
+          String(duration.value)!==
+            String(durationValue)
+        ){
+          duration.value=durationValue;
+        }
       });
+
       return;
     }
 
     section.dataset.officeDurationV1='1';
-    section.classList.add('ddt-office-duration-section');
+
+    section.classList.add(
+      'ddt-office-duration-section'
+    );
+
     section.innerHTML=`
       <div class="ddt-office-duration-head">
         <div>
-          <div class="section-title">Durasi Izin Per Office</div>
+          <div class="section-title">
+            Durasi Izin Per Office
+          </div>
+
           <div class="section-desc">
             Lokasi Office dan Durasi wajib diisi berpasangan. Maksimal 3 Office.
           </div>
         </div>
       </div>
-      <div class="ddt-office-duration-grid" id="ddtOfficeDurationGrid">
+
+      <div
+        class="ddt-office-duration-grid"
+        id="ddtOfficeDurationGrid"
+      >
         ${officeRowsMarkup()}
       </div>
+
       <div class="ddt-office-duration-actions">
-        <span id="ddtOfficeDurationSaved">Durasi Office berhasil disimpan.</span>
-        <button class="btn-settings settings-primary-action settings-save-duration"
-                id="ddtSaveOfficeDuration"
-                type="button">
+        <button
+          class="btn-settings settings-primary-action settings-save-duration"
+          id="ddtSaveOfficeDuration"
+          type="button"
+        >
           <span class="button-icon">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+            >
               <path d="M4 4h14l2 2v14H4Z"></path>
               <path d="M8 4v6h8V4"></path>
               <path d="M8 20v-6h8v6"></path>
             </svg>
           </span>
+
           <span>Simpan Office</span>
         </button>
       </div>
     `;
-    section.querySelector('#ddtSaveOfficeDuration')?.addEventListener('click',saveSettings);
+
+    section
+      .querySelector(
+        '#ddtSaveOfficeDuration'
+      )
+      ?.addEventListener(
+        'click',
+        saveSettings
+      );
   }
 
   async function saveSettings(){
     let canEdit=false;
-    try{canEdit=Boolean(userPermissions?.canManageLimits||userPermissions?.canEditSettings)}catch{}
+
+    try{
+      canEdit=
+        Boolean(
+          userPermissions?.canManageLimits||
+          userPermissions?.canEditSettings
+        );
+    }catch{}
+
     if(!canEdit){
-      toast('Akun Anda belum memiliki permission Edit Settings.','error');
+      toast(
+        'Akun Anda belum memiliki permission Edit Settings.',
+        'error'
+      );
+
       return;
     }
 
     const offices=[];
     const seen=new Set();
+
     for(let i=1;i<=3;i++){
       const id=`office_${i}`;
-      const name=String(document.getElementById(`ddtOfficeLocation${i}`)?.value||'').trim();
-      const raw=String(document.getElementById(`ddtOfficeDuration${i}`)?.value||'').trim();
+
+      const name=
+        String(
+          document.getElementById(
+            `ddtOfficeLocation${i}`
+          )?.value||
+          ''
+        ).trim();
+
+      const raw=
+        String(
+          document.getElementById(
+            `ddtOfficeDuration${i}`
+          )?.value||
+          ''
+        ).trim();
 
       if(!name&&!raw){
-        offices.push({id,name:'',durationMinutes:null});
+        offices.push({
+          id,
+          name:'',
+          durationMinutes:null
+        });
+
         continue;
       }
+
       if(!name||!raw){
-        toast(`Office ${i}: Lokasi Office dan Durasi harus diisi berpasangan.`,'warning',4500);
+        toast(
+          `Office ${i}: Lokasi Office dan Durasi harus diisi berpasangan.`,
+          'warning',
+          4500
+        );
+
         return;
       }
-      const duration=Number.parseInt(raw,10);
-      if(!Number.isInteger(duration)||duration<1||duration>60){
-        toast(`Office ${i}: Durasi harus 1 sampai 60 menit.`,'warning',4500);
+
+      const duration=
+        Number.parseInt(
+          raw,
+          10
+        );
+
+      if(
+        !Number.isInteger(duration)||
+        duration<1||
+        duration>60
+      ){
+        toast(
+          `Office ${i}: Durasi harus 1 sampai 60 menit.`,
+          'warning',
+          4500
+        );
+
         return;
       }
-      const nk=name.toLowerCase();
-      if(seen.has(nk)){
-        toast('Nama Office tidak boleh duplikat.','warning',4000);
+
+      const nameKey=
+        name.toLowerCase();
+
+      if(seen.has(nameKey)){
+        toast(
+          'Nama Office tidak boleh duplikat.',
+          'warning',
+          4000
+        );
+
         return;
       }
-      seen.add(nk);
-      offices.push({id,name,durationMinutes:duration});
+
+      seen.add(nameKey);
+
+      offices.push({
+        id,
+        name,
+        durationMinutes:duration
+      });
     }
 
     try{
-      const button=document.getElementById('ddtSaveOfficeDuration');
-      if(button)button.disabled=true;
+      const button=
+        document.getElementById(
+          'ddtSaveOfficeDuration'
+        );
 
-      if(typeof TEST_MODE!=='undefined'&&TEST_MODE){
-        state.settings=normalizeSettings({version:1,offices});
-      }else{
-        const {data,error}=await supabaseDashboard.rpc('save_office_duration_settings',{p_offices:offices});
-        if(error)throw error;
-        state.settings=normalizeSettings(data||{version:1,offices});
+      if(button){
+        button.disabled=true;
       }
 
-      const saved=document.getElementById('ddtOfficeDurationSaved');
-      saved?.classList.add('show');
-      setTimeout(()=>saved?.classList.remove('show'),3000);
+      if(
+        typeof TEST_MODE!=='undefined'&&
+        TEST_MODE
+      ){
+        state.settings=
+          normalizeSettings({
+            version:1,
+            offices
+          });
+      }else{
+        const {data,error}=
+          await supabaseDashboard.rpc(
+            'save_office_duration_settings',
+            {
+              p_offices:offices
+            }
+          );
 
-      toast('Durasi izin per Office berhasil disimpan.','success',3500);
+        if(error)throw error;
+
+        state.settings=
+          normalizeSettings(
+            data||{
+              version:1,
+              offices
+            }
+          );
+      }
+
+      toast(
+        'Durasi izin per Office berhasil disimpan.',
+        'success',
+        3500
+      );
+
+      try{
+        if(
+          currentTab==='users'&&
+          typeof renderUsersPage==='function'
+        ){
+          const scrollY=window.scrollY;
+
+          renderUsersPage();
+
+          requestAnimationFrame(
+            ()=>window.scrollTo(0,scrollY)
+          );
+        }
+      }catch{}
+
       scheduleReconcile();
     }catch(error){
-      toast(error?.message||'Gagal menyimpan Durasi Office.','error',5000);
+      toast(
+        error?.message||
+        'Gagal menyimpan Durasi Office.',
+        'error',
+        5000
+      );
     }finally{
-      const button=document.getElementById('ddtSaveOfficeDuration');
-      if(button)button.disabled=false;
+      const button=
+        document.getElementById(
+          'ddtSaveOfficeDuration'
+        );
+
+      if(button){
+        button.disabled=false;
+      }
     }
   }
 
   function canAssignOffice(){
-    try{return Boolean(userPermissions?.canManage)}catch{return false}
+    try{
+      return Boolean(
+        userPermissions?.canManage
+      );
+    }catch{
+      return false;
+    }
   }
 
   function usersForRenderedRows(){
     try{
-      if(typeof employeeFilteredUsers==='function')return employeeFilteredUsers();
+      if(
+        typeof employeeFilteredUsers===
+        'function'
+      ){
+        return employeeFilteredUsers();
+      }
     }catch{}
+
     return [];
   }
 
-  function officeCellMarkup(user){
-    const profile=profileFor(user.id);
-    const officeId=String(profile?.office_id||'').trim().toLowerCase();
-    const config=officeById(officeId);
+  function officeDisplayMarkup(user){
+    const profile=
+      profileFor(user.id);
 
-    if(!canAssignOffice()){
-      return `<span class="ddt-employee-office-readonly ${config?'assigned':'unset'}">${esc(config?.name||'Belum diset')}</span>`;
-    }
+    const officeId=
+      String(profile?.office_id||'')
+        .trim()
+        .toLowerCase();
+
+    const config=
+      officeById(officeId);
+
+    const text=
+      config?.name||
+      'Belum diset';
+
+    return `
+      <span
+        class="ddt-employee-office-display ${
+          config
+            ? 'assigned'
+            : 'unset'
+        }"
+        title="${
+          canAssignOffice()
+            ? 'Double-click untuk ubah Office'
+            : ''
+        }"
+      >
+        ${esc(text)}
+      </span>
+    `;
+  }
+
+  function officeEditorMarkup(user){
+    const profile=
+      profileFor(user.id);
+
+    const officeId=
+      String(profile?.office_id||'')
+        .trim()
+        .toLowerCase();
+
+    const config=
+      officeById(officeId);
 
     const options=[
       `<option value="">Belum diset</option>`,
       ...activeOffices().map(item=>
-        `<option value="${esc(item.id)}" ${item.id===officeId?'selected':''}>${esc(item.name)}</option>`
+        `<option
+          value="${esc(item.id)}"
+          ${
+            item.id===officeId
+              ? 'selected'
+              : ''
+          }
+        >
+          ${esc(item.name)}
+        </option>`
       )
     ];
-    if(officeId&&!config){
-      options.push(`<option value="${esc(officeId)}" selected disabled>Office tidak aktif</option>`);
+
+    if(
+      officeId&&
+      !config
+    ){
+      options.push(`
+        <option
+          value="${esc(officeId)}"
+          selected
+          disabled
+        >
+          Office tidak aktif
+        </option>
+      `);
     }
 
     return `
-      <select class="ddt-employee-office-select ${config?'assigned':'unset'}"
-              data-user-id="${esc(user.id)}"
-              aria-label="Office ${esc(user.name)}">
+      <select
+        class="ddt-employee-office-select ${
+          config
+            ? 'assigned'
+            : 'unset'
+        }"
+        data-user-id="${esc(user.id)}"
+        aria-label="Office ${esc(user.name)}"
+      >
         ${options.join('')}
       </select>
     `;
   }
 
-  function ensureUsersOffice(){
-    const tbody=document.getElementById('employeeActiveTableBody');
-    const table=tbody?.closest('table');
-    if(!tbody||!table)return;
+  function cancelOfficeEdit(
+    user,
+    cell
+  ){
+    if(!cell?.isConnected)return;
 
-    const headRow=table.querySelector('thead tr');
-    const trainingHead=headRow?.querySelector('.employee-col-training');
-    if(trainingHead&&!headRow.querySelector('.employee-col-office')){
-      const th=document.createElement('th');
-      th.className='employee-col-office';
-      th.textContent='Office';
-      trainingHead.insertAdjacentElement('afterend',th);
-    }
+    cell.dataset.editing='0';
 
-    const description=[...document.querySelectorAll('#tab-users .users-list-title h3')]
-      .find(node=>node.textContent.trim()==='Data User')
-      ?.parentElement?.querySelector('p');
-    if(description&&description.textContent.includes('training, dan status')){
-      description.textContent='Passport, visa, masa kerja, rank, training, Office, dan status akun.';
-    }
-
-    const rows=[...tbody.querySelectorAll(':scope > tr')];
-    if(rows.length===1&&rows[0].children.length===1){
-      const td=rows[0].children[0];
-      if(Number(td.getAttribute('colspan'))===11)td.setAttribute('colspan','12');
-      return;
-    }
-
-    const users=usersForRenderedRows();
-    rows.forEach((row,index)=>{
-      const user=users[index];
-      if(!user)return;
-      let cell=row.querySelector(':scope > td.ddt-employee-office-cell');
-      if(!cell){
-        const cells=[...row.children];
-        const trainingCell=cells[8];
-        if(!trainingCell)return;
-        cell=document.createElement('td');
-        cell.className='ddt-employee-office-cell';
-        trainingCell.insertAdjacentElement('afterend',cell);
-      }
-      const expected=officeCellMarkup(user);
-      if(cell.dataset.officeMarkup!==expected){
-        cell.innerHTML=expected;
-        cell.dataset.officeMarkup=expected;
-        const select=cell.querySelector('.ddt-employee-office-select');
-        select?.addEventListener('change',()=>saveUserOffice(user,select.value,select));
-      }
-    });
+    cell.innerHTML=
+      officeDisplayMarkup(user);
   }
 
-  async function saveUserOffice(user,officeId,select){
-    if(!canAssignOffice()){
-      toast('Office hanya dapat diubah oleh Leader / CS Line.','error');
-      scheduleReconcile();
-      return;
-    }
-    const next=String(officeId||'').trim().toLowerCase();
-    if(next&&!officeById(next)){
-      toast('Office belum aktif pada Settings Durasi Izin.','warning');
-      scheduleReconcile();
+  function beginOfficeEdit(
+    user,
+    cell
+  ){
+    if(
+      !canAssignOffice()||
+      !cell||
+      cell.dataset.editing==='1'
+    ){
       return;
     }
 
-    const oldProfile=profileFor(user.id)||{user_id:Number(user.id)};
-    if(select)select.disabled=true;
-    try{
-      if(typeof TEST_MODE!=='undefined'&&TEST_MODE){
-        employeeProfilesByUserId.set(String(user.id),{...oldProfile,office_id:next||null});
-      }else{
-        const {data,error}=await supabaseDashboard.rpc('save_employee_profile',{
-          p_user_id:Number(user.id),
-          p_patch:{office_id:next||null},
-          p_changed_group:'office_assignment',
-          p_updated_by:(typeof getCurrentUserEmail==='function'?getCurrentUserEmail():null)
-        });
-        if(error)throw error;
-        employeeProfilesByUserId.set(String(user.id),data&&typeof data==='object'?data:{...oldProfile,office_id:next||null});
+    cell.dataset.editing='1';
+
+    cell.innerHTML=
+      officeEditorMarkup(user);
+
+    const select=
+      cell.querySelector(
+        '.ddt-employee-office-select'
+      );
+
+    if(!select){
+      cancelOfficeEdit(
+        user,
+        cell
+      );
+
+      return;
+    }
+
+    const initial=
+      select.value;
+
+    select.focus();
+
+    select.addEventListener(
+      'change',
+      ()=>{
+        saveUserOffice(
+          user,
+          select.value,
+          select,
+          cell
+        );
+      },
+      {
+        once:true
       }
-      const config=officeById(next);
+    );
+
+    select.addEventListener(
+      'keydown',
+      event=>{
+        if(event.key==='Escape'){
+          event.preventDefault();
+
+          cancelOfficeEdit(
+            user,
+            cell
+          );
+        }
+      }
+    );
+
+    select.addEventListener(
+      'blur',
+      ()=>{
+        setTimeout(
+          ()=>{
+            if(
+              cell.isConnected&&
+              cell.dataset.editing==='1'&&
+              select.value===initial
+            ){
+              cancelOfficeEdit(
+                user,
+                cell
+              );
+            }
+          },
+          80
+        );
+      }
+    );
+  }
+
+  function ensureUsersOffice(){
+    const tbody=
+      document.getElementById(
+        'employeeActiveTableBody'
+      );
+
+    const table=
+      tbody?.closest(
+        'table'
+      );
+
+    if(
+      !tbody||
+      !table
+    ){
+      return;
+    }
+
+    const headRow=
+      table.querySelector(
+        'thead tr'
+      );
+
+    const trainingHead=
+      headRow?.querySelector(
+        '.employee-col-training'
+      );
+
+    if(
+      trainingHead&&
+      !headRow.querySelector(
+        '.employee-col-office'
+      )
+    ){
+      const th=
+        document.createElement(
+          'th'
+        );
+
+      th.className=
+        'employee-col-office';
+
+      th.textContent='Office';
+
+      trainingHead.insertAdjacentElement(
+        'afterend',
+        th
+      );
+    }
+
+    const description=[
+      ...document.querySelectorAll(
+        '#tab-users .users-list-title h3'
+      )
+    ]
+      .find(
+        node=>
+          node.textContent.trim()===
+          'Data User'
+      )
+      ?.parentElement
+      ?.querySelector('p');
+
+    if(
+      description&&
+      !description.textContent.includes(
+        'Office'
+      )
+    ){
+      description.textContent=
+        'Passport, visa, masa kerja, rank, training, Office, dan status akun.';
+    }
+
+    const rows=[
+      ...tbody.querySelectorAll(
+        ':scope > tr'
+      )
+    ];
+
+    if(
+      rows.length===1&&
+      rows[0].children.length===1
+    ){
+      const td=
+        rows[0].children[0];
+
+      if(
+        Number(
+          td.getAttribute(
+            'colspan'
+          )
+        )===11
+      ){
+        td.setAttribute(
+          'colspan',
+          '12'
+        );
+      }
+
+      return;
+    }
+
+    const users=
+      usersForRenderedRows();
+
+    rows.forEach(
+      (row,index)=>{
+        const user=
+          users[index];
+
+        if(!user)return;
+
+        let cell=
+          row.querySelector(
+            ':scope > td.ddt-employee-office-cell'
+          );
+
+        if(!cell){
+          const cells=[
+            ...row.children
+          ];
+
+          const trainingCell=
+            cells[8];
+
+          if(!trainingCell){
+            return;
+          }
+
+          cell=
+            document.createElement(
+              'td'
+            );
+
+          cell.className=
+            'ddt-employee-office-cell';
+
+          trainingCell
+            .insertAdjacentElement(
+              'afterend',
+              cell
+            );
+        }
+
+        cell.dataset.userId=
+          String(user.id);
+
+        if(
+          cell.dataset.editing==='1'
+        ){
+          return;
+        }
+
+        const expected=
+          officeDisplayMarkup(user);
+
+        if(
+          cell.dataset.officeMarkup!==
+          expected
+        ){
+          cell.innerHTML=
+            expected;
+
+          cell.dataset.officeMarkup=
+            expected;
+        }
+
+        if(
+          !cell.dataset.officeDblBound
+        ){
+          cell.dataset.officeDblBound='1';
+
+          cell.addEventListener(
+            'dblclick',
+            event=>{
+              event.preventDefault();
+
+              const currentUser=
+                usersForRenderedRows()
+                  .find(
+                    item=>
+                      String(item.id)===
+                      String(cell.dataset.userId)
+                  )||
+                directory()
+                  .find(
+                    item=>
+                      String(item.id)===
+                      String(cell.dataset.userId)
+                  );
+
+              if(currentUser){
+                beginOfficeEdit(
+                  currentUser,
+                  cell
+                );
+              }
+            }
+          );
+        }
+      }
+    );
+  }
+
+  function captureUsersViewport(){
+    const wrap=
+      document.querySelector(
+        '#tab-users .employee-table-wrap'
+      );
+
+    return {
+      pageY:window.scrollY,
+      tableLeft:
+        wrap?.scrollLeft||
+        0
+    };
+  }
+
+  function restoreUsersViewport(snapshot){
+    if(!snapshot)return;
+
+    requestAnimationFrame(
+      ()=>{
+        window.scrollTo(
+          0,
+          snapshot.pageY
+        );
+
+        const wrap=
+          document.querySelector(
+            '#tab-users .employee-table-wrap'
+          );
+
+        if(wrap){
+          wrap.scrollLeft=
+            snapshot.tableLeft;
+        }
+      }
+    );
+  }
+
+  async function saveUserOffice(
+    user,
+    officeId,
+    select,
+    cell
+  ){
+    if(!canAssignOffice()){
+      toast(
+        'Office hanya dapat diubah oleh Leader / CS Line.',
+        'error'
+      );
+
+      cancelOfficeEdit(
+        user,
+        cell
+      );
+
+      return;
+    }
+
+    const next=
+      String(officeId||'')
+        .trim()
+        .toLowerCase();
+
+    if(
+      next&&
+      !officeById(next)
+    ){
+      toast(
+        'Office belum aktif pada Settings Durasi Izin.',
+        'warning'
+      );
+
+      cancelOfficeEdit(
+        user,
+        cell
+      );
+
+      return;
+    }
+
+    const previous=
+      profileFor(user.id)||
+      {
+        user_id:Number(user.id)
+      };
+
+    const viewport=
+      captureUsersViewport();
+
+    if(select){
+      select.disabled=true;
+    }
+
+    try{
+      let savedProfile=null;
+
+      if(
+        typeof TEST_MODE!=='undefined'&&
+        TEST_MODE
+      ){
+        savedProfile={
+          ...previous,
+          office_id:
+            next||
+            null
+        };
+      }else{
+        const {data,error}=
+          await supabaseDashboard.rpc(
+            'save_employee_profile',
+            {
+              p_user_id:
+                Number(user.id),
+              p_patch:{
+                office_id:
+                  next||
+                  null
+              },
+              p_changed_group:
+                'office_assignment',
+              p_updated_by:
+                typeof getCurrentUserEmail==='function'
+                  ? getCurrentUserEmail()
+                  : null
+            }
+          );
+
+        if(error)throw error;
+
+        savedProfile=
+          data&&
+          typeof data==='object'
+            ? data
+            : {
+                ...previous,
+                office_id:
+                  next||
+                  null
+              };
+      }
+
+      employeeProfilesByUserId.set(
+        String(user.id),
+        savedProfile
+      );
+
+      if(
+        cell?.isConnected
+      ){
+        cell.dataset.editing='0';
+        cell.dataset.officeMarkup='';
+        cell.innerHTML=
+          officeDisplayMarkup(user);
+      }
+
+      const config=
+        officeById(next);
+
       toast(
         config
           ? `Office ${user.name}: ${config.name} (${config.durationMinutes} menit).`
@@ -124903,104 +125933,326 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
         'success',
         3500
       );
-      try{if(typeof renderUsersPage==='function')renderUsersPage()}catch{}
-      try{if(typeof renderDashboardTable==='function')renderDashboardTable()}catch{}
+
+      /*
+       * IMPORTANT:
+       * Do not call renderUsersPage() here.
+       * This is what previously jumped the Users screen to the top.
+       */
+      try{
+        if(
+          typeof renderDashboardTable==='function'
+        ){
+          renderDashboardTable();
+        }
+      }catch{}
+
+      restoreUsersViewport(
+        viewport
+      );
+
       scheduleReconcile();
     }catch(error){
-      toast(error?.message||'Gagal menyimpan Office user.','error',5000);
-      scheduleReconcile();
-    }finally{
-      if(select?.isConnected)select.disabled=false;
+      employeeProfilesByUserId.set(
+        String(user.id),
+        previous
+      );
+
+      if(
+        cell?.isConnected
+      ){
+        cell.dataset.editing='0';
+        cell.dataset.officeMarkup='';
+        cell.innerHTML=
+          officeDisplayMarkup(user);
+      }
+
+      restoreUsersViewport(
+        viewport
+      );
+
+      toast(
+        error?.message||
+        'Gagal menyimpan Office user.',
+        'error',
+        5000
+      );
     }
   }
 
   function ensureMonitoringHeader(){
-    const tbody=document.getElementById('dashboardTableBody');
-    const table=tbody?.closest('table');
-    const row=table?.querySelector('thead tr');
-    const mulai=row?.querySelector('.col-mulai');
-    if(mulai&&!row.querySelector('.col-batas')){
-      const th=document.createElement('th');
+    const tbody=
+      document.getElementById(
+        'dashboardTableBody'
+      );
+
+    const table=
+      tbody?.closest(
+        'table'
+      );
+
+    const row=
+      table?.querySelector(
+        'thead tr'
+      );
+
+    const mulai=
+      row?.querySelector(
+        '.col-mulai'
+      );
+
+    if(
+      mulai&&
+      !row.querySelector(
+        '.col-batas'
+      )
+    ){
+      const th=
+        document.createElement(
+          'th'
+        );
+
       th.className='col-batas';
       th.textContent='Batas';
-      mulai.insertAdjacentElement('afterend',th);
+
+      mulai.insertAdjacentElement(
+        'afterend',
+        th
+      );
     }
-    tbody?.querySelectorAll(':scope > tr > td[colspan="8"]').forEach(td=>td.setAttribute('colspan','9'));
+
+    tbody
+      ?.querySelectorAll(
+        ':scope > tr > td[colspan="8"]'
+      )
+      .forEach(
+        td=>
+          td.setAttribute(
+            'colspan',
+            '9'
+          )
+      );
   }
 
   function officeLimitForRow(nama){
-    if(isActive(nama)){
-      return {
-        minutes:Math.max(1,Math.round(thresholdForActive(nama)/60)),
-        officeName:sessionOfficeName(nama),
-        active:true
-      };
+    if(!isActive(nama)){
+      return null;
     }
-    const assignment=userOffice(nama);
-    if(!assignment.valid)return null;
+
+    const deadline=
+      formatDeadline(nama);
+
+    if(!deadline){
+      return null;
+    }
+
     return {
-      minutes:assignment.config.durationMinutes,
-      officeName:assignment.config.name,
-      active:false
+      deadline,
+      minutes:
+        Math.max(
+          1,
+          Math.round(
+            thresholdForActive(nama)/
+            60
+          )
+        ),
+      officeName:
+        sessionOfficeName(nama)
     };
   }
 
-  function setOfficeTooltip(button,message){
+  function setOfficeTooltip(
+    button,
+    message
+  ){
     button.dataset.officeBlocked='1';
-    button.disabled=true;
-    button.setAttribute('data-tooltip-icon','warning');
-    button.setAttribute('data-tooltip-title','Office Belum Diset');
-    button.setAttribute('data-tooltip-desc',message);
-    button.setAttribute('data-tooltip-status','START tidak tersedia');
-    button.setAttribute('data-tooltip-status-class','warning');
-    button.setAttribute('data-tooltip-footer','Data User · Office');
+
+    /*
+     * A native disabled button never receives pointer events,
+     * therefore the global tooltip cannot appear.
+     *
+     * Use semantic aria-disabled + the START wrapper as the hard
+     * frontend gate. Backend start_izin remains the actual authority.
+     */
+    button.disabled=false;
+
+    button.setAttribute(
+      'aria-disabled',
+      'true'
+    );
+
+    button.classList.add(
+      'ddt-office-start-disabled',
+      'history-tooltip-target'
+    );
+
+    button.setAttribute(
+      'data-tooltip',
+      message
+    );
+
+    button.setAttribute(
+      'data-tooltip-icon',
+      'warning'
+    );
+  }
+
+  function clearOfficeTooltip(button){
+    if(
+      button.dataset.officeBlocked!==
+      '1'
+    ){
+      return;
+    }
+
+    delete button.dataset.officeBlocked;
+
+    button.removeAttribute(
+      'aria-disabled'
+    );
+
+    button.classList.remove(
+      'ddt-office-start-disabled'
+    );
+
+    button.removeAttribute(
+      'data-tooltip'
+    );
+
+    button.removeAttribute(
+      'data-tooltip-icon'
+    );
+
+    /*
+     * Keep history-tooltip-target only if another core feature
+     * supplied tooltip data.
+     */
+    if(
+      !button.dataset.tooltipTitle&&
+      !button.dataset.tooltipDesc
+    ){
+      button.classList.remove(
+        'history-tooltip-target'
+      );
+    }
   }
 
   function ensureMonitoringRows(){
-    const tbody=document.getElementById('dashboardTableBody');
+    const tbody=
+      document.getElementById(
+        'dashboardTableBody'
+      );
+
     if(!tbody)return;
 
-    [...tbody.querySelectorAll('tr[data-nama]')].forEach(row=>{
-      const nama=fName(row.dataset.nama);
-      const mulaiCell=row.querySelector(':scope > td.col-mulai');
-      if(mulaiCell&&!row.querySelector(':scope > td.col-batas')){
-        const cell=document.createElement('td');
-        cell.className='col-batas';
-        mulaiCell.insertAdjacentElement('afterend',cell);
+    [
+      ...tbody.querySelectorAll(
+        'tr[data-nama]'
+      )
+    ].forEach(row=>{
+      const nama=
+        fName(
+          row.dataset.nama
+        );
+
+      const mulaiCell=
+        row.querySelector(
+          ':scope > td.col-mulai'
+        );
+
+      if(
+        mulaiCell&&
+        !row.querySelector(
+          ':scope > td.col-batas'
+        )
+      ){
+        const cell=
+          document.createElement(
+            'td'
+          );
+
+        cell.className=
+          'col-batas';
+
+        mulaiCell.insertAdjacentElement(
+          'afterend',
+          cell
+        );
       }
 
-      const limitCell=row.querySelector(':scope > td.col-batas');
-      const limit=officeLimitForRow(nama);
+      const limitCell=
+        row.querySelector(
+          ':scope > td.col-batas'
+        );
+
+      const limit=
+        officeLimitForRow(nama);
+
       if(limitCell){
-        const label=limit?`${limit.minutes} mnt`:'—';
-        const tooltip=limit?`${limit.officeName} · Batas ${limit.minutes} menit`:'Office belum diset';
-        if(limitCell.dataset.limitLabel!==label||limitCell.dataset.limitTooltip!==tooltip){
-          limitCell.dataset.limitLabel=label;
-          limitCell.dataset.limitTooltip=tooltip;
-          limitCell.innerHTML=`<span class="ddt-office-limit ${limit?'':'unset'} history-tooltip-target"
-            data-tooltip="${esc(tooltip)}"
-            data-tooltip-icon="clock"
-            tabindex="0">${esc(label)}</span>`;
+        if(!limit){
+          if(
+            limitCell.dataset.limitLabel!==
+            ''
+          ){
+            limitCell.dataset.limitLabel='';
+            limitCell.innerHTML='';
+          }
+        }else{
+          const label=
+            limit.deadline;
+
+          const tooltip=
+            `${limit.officeName} · Batas ${limit.deadline} · ${limit.minutes} menit`;
+
+          if(
+            limitCell.dataset.limitLabel!==
+              label||
+            limitCell.dataset.limitTooltip!==
+              tooltip
+          ){
+            limitCell.dataset.limitLabel=
+              label;
+
+            limitCell.dataset.limitTooltip=
+              tooltip;
+
+            limitCell.innerHTML=`
+              <span
+                class="ddt-office-limit history-tooltip-target"
+                data-tooltip="${esc(tooltip)}"
+                data-tooltip-icon="clock"
+                tabindex="0"
+              >
+                ${esc(label)}
+              </span>
+            `;
+          }
         }
       }
 
-      const start=row.querySelector('.btn-action.start[data-nama]');
+      const start=
+        row.querySelector(
+          '.btn-action.start[data-nama]'
+        );
+
       if(start){
-        const assignment=userOffice(nama);
+        const assignment=
+          userOffice(nama);
+
         if(!state.ready){
-          setOfficeTooltip(start,'Memuat lokasi Office dan Durasi Izin.');
+          setOfficeTooltip(
+            start,
+            'Memuat lokasi Office dan Durasi Izin.'
+          );
         }else if(!assignment.valid){
           setOfficeTooltip(
             start,
             'Lokasi Office belum diset pada Data User. Silakan hubungi CS Line.'
           );
-        }else if(start.dataset.officeBlocked==='1'){
-          /*
-           * Never force-enable here because quota/role/self permission may
-           * also disable START. A normal table rerender will restore the
-           * canonical non-Office conditions.
-           */
-          delete start.dataset.officeBlocked;
+        }else{
+          clearOfficeTooltip(
+            start
+          );
         }
       }
     });
@@ -125008,178 +126260,586 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
   function elapsedSeconds(nama){
     try{
-      const data=dataIzin?.[fName(nama)];
-      if(!data?.mulai)return null;
-      const start=parseStart(data.mulai);
-      if(!start)return null;
-      return Math.max(0,Math.floor((nowDate().getTime()-start.getTime())/1000));
-    }catch{return null}
+      const data=
+        dataIzin?.[fName(nama)];
+
+      if(!data?.mulai){
+        return null;
+      }
+
+      const start=
+        parseStart(
+          data.mulai
+        );
+
+      if(!start){
+        return null;
+      }
+
+      return Math.max(
+        0,
+        Math.floor(
+          (
+            nowDate().getTime()-
+            start.getTime()
+          )/
+          1000
+        )
+      );
+    }catch{
+      return null;
+    }
   }
 
   function refreshMonitoringProgress(){
-    document.querySelectorAll('#dashboardTableBody tr[data-nama]').forEach(row=>{
-      const nama=fName(row.dataset.nama);
-      if(!isActive(nama))return;
-      const elapsed=elapsedSeconds(nama);
-      if(elapsed==null)return;
-      const threshold=thresholdForActive(nama);
-      const percent=Math.min(100,(elapsed/threshold)*100);
-      const over=elapsed>threshold;
+    document
+      .querySelectorAll(
+        '#dashboardTableBody tr[data-nama]'
+      )
+      .forEach(row=>{
+        const nama=
+          fName(
+            row.dataset.nama
+          );
 
-      const fill=row.querySelector('.progress-bar-fill');
-      const text=row.querySelector('.progress-text');
-      const timer=row.querySelector('.timer-display');
-      if(fill){
-        fill.style.width=`${percent}%`;
-        fill.classList.toggle('full',percent>=100);
-        fill.classList.toggle('warning',!over&&percent>60&&percent<100);
-        fill.classList.toggle('danger',over);
-      }
-      if(text){
-        text.textContent=`${Math.round(percent)}%`;
-        text.classList.toggle('full',percent>=100);
-      }
-      timer?.classList.toggle('over-limit',over);
-    });
+        if(!isActive(nama)){
+          return;
+        }
 
-    document.querySelectorAll('#tab-monitoring .live-card-col[data-nama]').forEach(card=>{
-      const nama=fName(card.dataset.nama);
-      if(!isActive(nama))return;
-      const elapsed=elapsedSeconds(nama);
-      if(elapsed==null)return;
-      const threshold=thresholdForActive(nama);
-      const percent=Math.min(100,(elapsed/threshold)*100);
-      const over=elapsed>threshold;
-      const warning=!over&&percent>=70;
-      const timer=card.querySelector('.timer-col');
-      const track=card.querySelector('.live-mini-progress');
-      const fill=track?.querySelector('span');
-      const label=card.querySelector('.live-status-label');
-      if(timer){
-        timer.dataset.thresholdSeconds=String(threshold);
-        timer.dataset.progress=String(Math.round(percent));
-        timer.classList.toggle('over-limit',over);
-      }
-      if(track)track.dataset.progress=String(Math.round(percent));
-      if(fill)fill.style.width=`${percent}%`;
-      card.classList.toggle('over-limit',over);
-      card.classList.toggle('near-limit',warning);
-      if(label?.lastChild){
-        label.lastChild.textContent=over?'Melewati batas':warning?'Mendekati batas':'Sedang izin';
-      }
-    });
+        const elapsed=
+          elapsedSeconds(nama);
+
+        if(elapsed==null){
+          return;
+        }
+
+        const threshold=
+          thresholdForActive(nama);
+
+        const percent=
+          Math.min(
+            100,
+            (elapsed/threshold)*100
+          );
+
+        const over=
+          elapsed>threshold;
+
+        const fill=
+          row.querySelector(
+            '.progress-bar-fill'
+          );
+
+        const text=
+          row.querySelector(
+            '.progress-text'
+          );
+
+        const timer=
+          row.querySelector(
+            '.timer-display'
+          );
+
+        if(fill){
+          fill.style.width=
+            `${percent}%`;
+
+          fill.classList.toggle(
+            'full',
+            percent>=100
+          );
+
+          fill.classList.toggle(
+            'warning',
+            !over&&
+            percent>60&&
+            percent<100
+          );
+
+          fill.classList.toggle(
+            'danger',
+            over
+          );
+        }
+
+        if(text){
+          text.textContent=
+            `${Math.round(percent)}%`;
+
+          text.classList.toggle(
+            'full',
+            percent>=100
+          );
+        }
+
+        timer
+          ?.classList.toggle(
+            'over-limit',
+            over
+          );
+      });
+
+    document
+      .querySelectorAll(
+        '#tab-monitoring .live-card-col[data-nama]'
+      )
+      .forEach(card=>{
+        const nama=
+          fName(
+            card.dataset.nama
+          );
+
+        if(!isActive(nama)){
+          return;
+        }
+
+        const elapsed=
+          elapsedSeconds(nama);
+
+        if(elapsed==null){
+          return;
+        }
+
+        const threshold=
+          thresholdForActive(nama);
+
+        const percent=
+          Math.min(
+            100,
+            (elapsed/threshold)*100
+          );
+
+        const over=
+          elapsed>threshold;
+
+        const warning=
+          !over&&
+          percent>=70;
+
+        const timer=
+          card.querySelector(
+            '.timer-col'
+          );
+
+        const track=
+          card.querySelector(
+            '.live-mini-progress'
+          );
+
+        const fill=
+          track?.querySelector(
+            'span'
+          );
+
+        const label=
+          card.querySelector(
+            '.live-status-label'
+          );
+
+        if(timer){
+          timer.dataset.thresholdSeconds=
+            String(threshold);
+
+          timer.dataset.progress=
+            String(
+              Math.round(percent)
+            );
+
+          timer.classList.toggle(
+            'over-limit',
+            over
+          );
+        }
+
+        if(track){
+          track.dataset.progress=
+            String(
+              Math.round(percent)
+            );
+        }
+
+        if(fill){
+          fill.style.width=
+            `${percent}%`;
+        }
+
+        card.classList.toggle(
+          'over-limit',
+          over
+        );
+
+        card.classList.toggle(
+          'near-limit',
+          warning
+        );
+
+        if(label?.lastChild){
+          label.lastChild.textContent=
+            over
+              ? 'Melewati batas'
+              : warning
+                ? 'Mendekati batas'
+                : 'Sedang izin';
+        }
+      });
   }
 
   function ensureApsOffice(){
-    const role=document.getElementById('aps-role');
-    if(!role)return;
-    let office=document.getElementById('aps-office');
+    const inner=
+      document.querySelector(
+        '#aps-console .aps-inner'
+      );
+
+    if(!inner)return;
+
+    /*
+     * Remove v1 placement under Role.
+     */
+    document
+      .getElementById(
+        'aps-office'
+      )
+      ?.remove();
+
+    let office=
+      document.getElementById(
+        'aps-office-top'
+      );
+
     if(!office){
-      office=document.createElement('div');
-      office.id='aps-office';
-      office.innerHTML='<span>OFFICE</span><b id="aps-office-value">—</b>';
-      role.insertAdjacentElement('afterend',office);
+      office=
+        document.createElement(
+          'div'
+        );
+
+      office.id=
+        'aps-office-top';
+
+      office.setAttribute(
+        'aria-label',
+        'Lokasi Office'
+      );
+
+      const minimize=
+        document.getElementById(
+          'aps-minimize'
+        );
+
+      if(minimize){
+        minimize
+          .insertAdjacentElement(
+            'beforebegin',
+            office
+          );
+      }else{
+        inner.prepend(
+          office
+        );
+      }
     }
   }
 
   function refreshAps(){
     ensureApsOffice();
-    const layer=document.getElementById('aps-layer');
-    if(!layer||layer.hidden)return;
-    const nama=fName(document.getElementById('aps-name')?.textContent||'');
-    if(!nama||nama==='—'||!isActive(nama))return;
 
-    const officeValue=document.getElementById('aps-office-value');
-    if(officeValue)officeValue.textContent=sessionOfficeName(nama);
+    const layer=
+      document.getElementById(
+        'aps-layer'
+      );
+
+    if(
+      !layer||
+      layer.hidden
+    ){
+      return;
+    }
+
+    const nama=
+      fName(
+        document.getElementById(
+          'aps-name'
+        )?.textContent||
+        ''
+      );
+
+    if(
+      !nama||
+      nama==='—'||
+      !isActive(nama)
+    ){
+      return;
+    }
+
+    const officeTop=
+      document.getElementById(
+        'aps-office-top'
+      );
+
+    if(officeTop){
+      officeTop.textContent=
+        sessionOfficeName(nama);
+    }
 
     let data=null;
-    try{data=dataIzin?.[nama]}catch{}
-    const start=parseStart(data?.mulai);
-    if(!start)return;
 
-    const threshold=thresholdForActive(nama);
-    const minutes=Math.max(1,Math.round(threshold/60));
-    const elapsed=Math.max(0,Math.floor((nowDate().getTime()-start.getTime())/1000));
-    const progress=Math.min(100,(elapsed/threshold)*100);
-    const over=elapsed>threshold;
+    try{
+      data=
+        dataIzin?.[nama];
+    }catch{}
 
-    const limitDate=new Date(start.getTime()+threshold*1000);
-    const limit=document.getElementById('aps-limit');
-    const meta=document.getElementById('aps-limit-meta');
-    const fill=document.getElementById('aps-fill');
-    const consoleEl=document.getElementById('aps-console');
+    const start=
+      parseStart(
+        data?.mulai
+      );
+
+    if(!start){
+      return;
+    }
+
+    const threshold=
+      thresholdForActive(nama);
+
+    const minutes=
+      Math.max(
+        1,
+        Math.round(
+          threshold/
+          60
+        )
+      );
+
+    const elapsed=
+      Math.max(
+        0,
+        Math.floor(
+          (
+            nowDate().getTime()-
+            start.getTime()
+          )/
+          1000
+        )
+      );
+
+    const progress=
+      Math.min(
+        100,
+        (elapsed/threshold)*100
+      );
+
+    const over=
+      elapsed>threshold;
+
+    const limitDate=
+      new Date(
+        start.getTime()+
+        threshold*1000
+      );
+
+    const limit=
+      document.getElementById(
+        'aps-limit'
+      );
+
+    const meta=
+      document.getElementById(
+        'aps-limit-meta'
+      );
+
+    const fill=
+      document.getElementById(
+        'aps-fill'
+      );
+
+    const consoleEl=
+      document.getElementById(
+        'aps-console'
+      );
 
     if(limit){
-      limit.textContent=`${String(limitDate.getHours()).padStart(2,'0')}.${String(limitDate.getMinutes()).padStart(2,'0')}`;
+      limit.textContent=
+        `${String(limitDate.getHours()).padStart(2,'0')}.`+
+        `${String(limitDate.getMinutes()).padStart(2,'0')}`;
     }
-    if(meta)meta.textContent=`${minutes}m`;
-    if(fill)fill.style.width=`${progress}%`;
-    if(consoleEl)consoleEl.dataset.timeState=over?'over':progress>=70?'warning':'normal';
+
+    if(meta){
+      meta.textContent=
+        `${minutes}m`;
+    }
+
+    if(fill){
+      fill.style.width=
+        `${progress}%`;
+    }
+
+    if(consoleEl){
+      consoleEl.dataset.timeState=
+        over
+          ? 'over'
+          : progress>=70
+            ? 'warning'
+            : 'normal';
+    }
   }
 
   async function refreshActiveAfterStart(nama){
-    await new Promise(resolve=>setTimeout(resolve,160));
+    await new Promise(
+      resolve=>
+        setTimeout(
+          resolve,
+          160
+        )
+    );
+
     await loadActiveSessions();
+
     scheduleReconcile();
   }
 
   function wrapStart(){
-    if(state.originalMulaiIzin||typeof window.mulaiIzin!=='function')return;
-    state.originalMulaiIzin=window.mulaiIzin;
+    if(
+      state.originalMulaiIzin||
+      typeof window.mulaiIzin!==
+        'function'
+    ){
+      return;
+    }
 
-    window.mulaiIzin=async function(nama){
-      const key=fName(nama);
-      if(!state.ready)await refreshData();
+    state.originalMulaiIzin=
+      window.mulaiIzin;
 
-      const assignment=userOffice(key);
-      if(!assignment.valid){
-        toast(
-          'Lokasi Office belum diset pada Data User. Silakan hubungi CS Line.',
-          'warning',
-          5000
+    window.mulaiIzin=
+      async function(nama){
+        const key=
+          fName(nama);
+
+        if(!state.ready){
+          await refreshData();
+        }
+
+        const assignment=
+          userOffice(key);
+
+        if(!assignment.valid){
+          toast(
+            'Lokasi Office belum diset pada Data User. Silakan hubungi CS Line.',
+            'warning',
+            5000
+          );
+
+          scheduleReconcile();
+
+          return;
+        }
+
+        const result=
+          await state.originalMulaiIzin
+            .apply(
+              this,
+              arguments
+            );
+
+        refreshActiveAfterStart(
+          key
         );
-        scheduleReconcile();
-        return;
-      }
 
-      const result=await state.originalMulaiIzin.apply(this,arguments);
-      refreshActiveAfterStart(key);
-      return result;
-    };
+        return result;
+      };
   }
 
   function subscribe(){
-    if(typeof supabaseDashboard==='undefined'||state.channel)return;
+    if(
+      typeof supabaseDashboard==='undefined'||
+      state.channel
+    ){
+      return;
+    }
+
     try{
-      state.channel=supabaseDashboard
-        .channel('ddt-office-duration-v1')
-        .on(
-          'postgres_changes',
-          {event:'*',schema:'public',table:'settings',filter:'key=eq.office_duration_settings'},
-          async()=>{await loadSettings();scheduleReconcile()}
-        )
-        .on(
-          'postgres_changes',
-          {event:'*',schema:'public',table:'izin_anggota'},
-          async payload=>{
-            const row=payload?.new||payload?.old||{};
-            const key=fName(row.nama);
-            if(payload?.eventType==='DELETE'||row.status!=='izin'){
-              if(key)state.activeSessions.delete(key);
-            }else if(key){
-              state.activeSessions.set(key,row);
+      state.channel=
+        supabaseDashboard
+          .channel(
+            'ddt-office-duration-v1-1'
+          )
+          .on(
+            'postgres_changes',
+            {
+              event:'*',
+              schema:'public',
+              table:'settings',
+              filter:
+                'key=eq.office_duration_settings'
+            },
+            async()=>{
+              await loadSettings();
+
+              try{
+                if(
+                  currentTab==='users'&&
+                  typeof renderUsersPage==='function'
+                ){
+                  const viewport=
+                    captureUsersViewport();
+
+                  renderUsersPage();
+
+                  restoreUsersViewport(
+                    viewport
+                  );
+                }
+              }catch{}
+
+              scheduleReconcile();
             }
-            scheduleReconcile();
-          }
-        )
-        .subscribe();
+          )
+          .on(
+            'postgres_changes',
+            {
+              event:'*',
+              schema:'public',
+              table:'izin_anggota'
+            },
+            async payload=>{
+              const row=
+                payload?.new||
+                payload?.old||
+                {};
+
+              const key=
+                fName(
+                  row.nama
+                );
+
+              if(
+                payload?.eventType==='DELETE'||
+                row.status!=='izin'
+              ){
+                if(key){
+                  state.activeSessions.delete(
+                    key
+                  );
+                }
+              }else if(key){
+                state.activeSessions.set(
+                  key,
+                  row
+                );
+              }
+
+              scheduleReconcile();
+            }
+          )
+          .subscribe();
     }catch(error){
-      console.warn('Office realtime subscription unavailable:',error);
+      console.warn(
+        'Office realtime subscription unavailable:',
+        error
+      );
     }
   }
 
   function reconcile(){
     state.frame=0;
+
     ensureSettingsUI();
     ensureUsersOffice();
     ensureMonitoringHeader();
@@ -125190,54 +126850,90 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
   function scheduleReconcile(){
     if(state.frame)return;
-    state.frame=requestAnimationFrame(reconcile);
+
+    state.frame=
+      requestAnimationFrame(
+        reconcile
+      );
   }
 
   function bindObserver(){
     if(state.observer)return;
-    state.observer=new MutationObserver(()=>scheduleReconcile());
-    state.observer.observe(document.body,{childList:true,subtree:true});
+
+    state.observer=
+      new MutationObserver(
+        ()=>scheduleReconcile()
+      );
+
+    state.observer.observe(
+      document.body,
+      {
+        childList:true,
+        subtree:true
+      }
+    );
   }
 
   async function init(){
-    /*
-     * Immediately lock visible START buttons until Office data is known.
-     * Backend is also a hard gate, so this is UX protection only.
-     */
     ensureMonitoringHeader();
     ensureMonitoringRows();
     wrapStart();
     bindObserver();
 
     await refreshData();
+
     wrapStart();
     subscribe();
 
-    clearInterval(state.refreshTimer);
-    state.refreshTimer=setInterval(()=>{
-      refreshMonitoringProgress();
-      refreshAps();
-    },350);
+    clearInterval(
+      state.refreshTimer
+    );
+
+    state.refreshTimer=
+      setInterval(
+        ()=>{
+          refreshMonitoringProgress();
+          refreshAps();
+        },
+        350
+      );
 
     scheduleReconcile();
   }
 
-  window.DDTOfficeDurationSystemV1=Object.freeze({
-    version:VERSION,
-    refresh:refreshData,
-    getOfficeById:officeById,
-    getUserOffice:userOffice,
-    getSessionThresholdSeconds:thresholdForActive,
-    getSessionOfficeName:sessionOfficeName,
-    serverAuthority:true,
-    voucherRule:'duration_seconds > threshold_at_event_seconds',
-    legacyHistoryFallbackSeconds:LEGACY_THRESHOLD_SECONDS
-  });
+  window.DDTOfficeDurationSystemV1=
+    Object.freeze({
+      version:VERSION,
+      refresh:refreshData,
+      getOfficeById:officeById,
+      getActiveOffices:()=>activeOffices().map(item=>({...item})),
+      getUserOffice:userOffice,
+      getSessionThresholdSeconds:thresholdForActive,
+      getSessionOfficeName:sessionOfficeName,
+      getSessionDeadline:formatDeadline,
+      serverAuthority:true,
+      voucherRule:
+        'duration_seconds > threshold_at_event_seconds',
+      legacyHistoryFallbackSeconds:
+        LEGACY_THRESHOLD_SECONDS
+    });
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0),{once:true});
+  if(
+    document.readyState===
+    'loading'
+  ){
+    document.addEventListener(
+      'DOMContentLoaded',
+      ()=>setTimeout(init,0),
+      {
+        once:true
+      }
+    );
   }else{
-    setTimeout(init,0);
+    setTimeout(
+      init,
+      0
+    );
   }
 })();
 </script>
@@ -125245,21 +126941,298 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.0.0',
-  source:'v2.10.2-theme-reconciliation-popup-identity-hover',
-  settingsSlots:3,
-  usersOfficeColumn:'right of Training',
-  monitoringLimitColumn:'right of Mulai',
-  startRequiresOffice:true,
-  activePopupOffice:true,
+  version:'1.1.0',
+  source:'Office Duration System v1.0.0',
+  refinements:Object.freeze({
+    officeStartTooltip:'hover-capable aria-disabled soft lock',
+    settingsSpacing:'row 03 separated from Save',
+    settingsSuccessFeedback:'Toast only',
+    usersOfficeEditor:'plain text -> double-click dropdown -> plain text',
+    usersScrollPreservation:true,
+    usersOfficeFilter:true,
+    popupOfficePlacement:'top beside Minimize; location text only',
+    monitoringLimit:'active session deadline only',
+    historyColumns:Object.freeze(['Durasi','Batas','Office','Status']),
+    csvColumns:Object.freeze(['Batas','Office'])
+  }),
   productionVoucherAuthority:'finish_izin',
   voucherLateRule:'duration_seconds > threshold_at_event_seconds',
   legacyHistoryPreserved:true,
   legacyThresholdFallbackSeconds:1200,
-  mechaSummaryAuthority:'get_history_global_summary',
   darkThemeAvatarMotion:'HOLD / untouched'
 });
 </script>
+
+
+<style id="ddt-office-duration-system-v1-1-refinement">
+/* ================================================================
+   OFFICE DURATION SYSTEM v1.1 REFINEMENT
+   ================================================================ */
+
+/* Settings spacing: third row must breathe before the action. */
+#tab-settings .ddt-office-duration-grid{
+  margin-bottom:7px!important;
+}
+
+#tab-settings .ddt-office-duration-actions{
+  margin-top:3px!important;
+}
+
+/* Saved inline text was removed; Toast is the sole success feedback. */
+#tab-settings #ddtOfficeDurationSaved{
+  display:none!important;
+}
+
+/* Office starts: tooltip-compatible soft disabled state. */
+#tab-monitoring .btn-action.start.ddt-office-start-disabled{
+  opacity:.48!important;
+  cursor:not-allowed!important;
+  filter:saturate(.72)!important;
+  pointer-events:auto!important;
+}
+
+/* Batas = actual deadline clock; inactive users are completely blank. */
+#tab-monitoring .ddt-office-limit{
+  min-width:44px!important;
+  font-size:9.2px!important;
+  font-weight:760!important;
+  letter-spacing:.015em;
+}
+
+/* Data Users: Office is plain text until double-click. */
+#tab-users .ddt-employee-office-display{
+  display:inline-flex;
+  align-items:center;
+  width:100%;
+  min-height:26px;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-secondary);
+  font-size:8.8px;
+  font-weight:670;
+  cursor:default;
+}
+
+#tab-users .ddt-employee-office-display.unset{
+  color:var(--text-muted);
+  font-weight:610;
+}
+
+#tab-users td.ddt-employee-office-cell{
+  cursor:default;
+}
+
+#tab-users td.ddt-employee-office-cell:has(.ddt-employee-office-display):hover{
+  background:color-mix(in srgb,var(--bg-hover) 48%,transparent);
+}
+
+#tab-users .ddt-employee-office-select{
+  animation:none!important;
+}
+
+/* Filter trail: Search | Role | Office | Rank | Monitoring */
+#tab-users .employee-toolbar{
+  align-items:center!important;
+  column-gap:8px!important;
+  row-gap:8px!important;
+}
+
+#tab-users .employee-toolbar #employeeUserSearch{
+  min-width:220px;
+  flex:1 1 260px;
+}
+
+#tab-users .employee-custom-filter[data-filter-key="office"]{
+  min-width:124px;
+}
+
+/* Popup START: direct location, top row beside Minimize. */
+#aps-office{
+  display:none!important;
+}
+
+#aps-office-top{
+  position:absolute;
+  z-index:4;
+  top:13px;
+  right:57px;
+  max-width:150px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-secondary,#687984);
+  font-size:8.3px;
+  line-height:28px;
+  font-weight:820;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  opacity:.76;
+  pointer-events:none;
+}
+
+/* History Office/Deadline */
+#tab-history .history-limit-time{
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+
+#tab-history .history-office-value{
+  display:inline-block;
+  max-width:112px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-secondary);
+  font-size:10px;
+  font-weight:680;
+}
+
+#tab-history .history-office-value.legacy{
+  color:var(--text-muted);
+  font-weight:600;
+  opacity:.72;
+}
+
+/* ---------------------------------------------------------------
+   VENOM GREEN — explicit matte paint for every new Office surface.
+   No Cyber cyan/blue inheritance.
+   --------------------------------------------------------------- */
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-section,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-section{
+  color:#dce6d9!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-head .section-title,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-head .section-title{
+  color:#dce6d9!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-head .section-desc,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-head .section-desc{
+  color:#879684!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-row,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-row{
+  background:#0c0f0c!important;
+  border-color:#283028!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-index,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-index{
+  color:#849280!important;
+  background:#101410!important;
+  border-color:#303a30!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-field-label,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-field-label{
+  color:#7f8d7c!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-field > input,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-field > input,
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-input-wrap,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-input-wrap{
+  color:#d9e4d6!important;
+  background:#0a0d0a!important;
+  border-color:#2d362d!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-field > input::placeholder,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-field > input::placeholder,
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-input-wrap input::placeholder,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-input-wrap input::placeholder{
+  color:#596558!important;
+  opacity:1!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-input-wrap input,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-input-wrap input{
+  color:#d9e4d6!important;
+  background:transparent!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings .ddt-office-duration-input-wrap > span,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings .ddt-office-duration-input-wrap > span{
+  color:#778575!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings #ddtSaveOfficeDuration,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings #ddtSaveOfficeDuration{
+  color:#a9cfa4!important;
+  background:#121912!important;
+  border-color:#314631!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body #tab-settings #ddtSaveOfficeDuration:hover:not(:disabled),
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-settings #ddtSaveOfficeDuration:hover:not(:disabled){
+  color:#d2e8ce!important;
+  background:#182218!important;
+  border-color:#446344!important;
+  box-shadow:0 5px 14px rgba(0,0,0,.18)!important;
+}
+
+html[data-selected-theme="venom"] body #tab-users .ddt-employee-office-display,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .ddt-employee-office-display{
+  color:#bcc9b9!important;
+}
+
+html[data-selected-theme="venom"] body #tab-users .ddt-employee-office-display.unset,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .ddt-employee-office-display.unset{
+  color:#758273!important;
+}
+
+html[data-selected-theme="venom"] body #tab-users .ddt-employee-office-select,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .ddt-employee-office-select{
+  color:#dce5da!important;
+  background:#0c0f0c!important;
+  border-color:#303a30!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body #tab-users .employee-custom-filter[data-filter-key="office"] .employee-custom-filter-trigger,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .employee-custom-filter[data-filter-key="office"] .employee-custom-filter-trigger,
+html[data-selected-theme="venom"] body #tab-users .employee-custom-filter[data-filter-key="office"] .employee-custom-filter-menu,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-users .employee-custom-filter[data-filter-key="office"] .employee-custom-filter-menu{
+  color:#d3ded0!important;
+  background:#0d100d!important;
+  border-color:#2c362c!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body #tab-monitoring .ddt-office-limit,
+html[data-theme="dark"][data-theme-variant="venom"] body #tab-monitoring .ddt-office-limit{
+  color:#a8bba4!important;
+}
+
+html[data-selected-theme="venom"] body #aps-office-top,
+html[data-theme="dark"][data-theme-variant="venom"] body #aps-office-top{
+  color:#95aa91!important;
+}
+
+html[data-mi-frozen-presentation="mecha-ivory"] #aps-office-top,
+html[data-mi-native-presentation="mecha-ivory"] #aps-office-top{
+  color:#67726e!important;
+  opacity:.78;
+}
+
+@media(max-width:520px){
+  #aps-office-top{
+    top:9px;
+    right:55px;
+    max-width:118px;
+    line-height:28px;
+  }
+}
+</style>
 
 </body>
 </html>
