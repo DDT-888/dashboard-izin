@@ -57040,16 +57040,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 return;
             }
 
-            /*
-             * ROOT CAUSE CORRECTION v1.2
-             *
-             * The entry position belongs to the VIEWPORT.
-             * The loop distance belongs to the CONTENT SEGMENT.
-             *
-             * Never add viewport width into segment A, otherwise a
-             * narrower Settings Preview and wider Monitoring ticker
-             * produce different cycle geometry.
-             */
             const viewport =
                 track.parentElement;
 
@@ -57066,7 +57056,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             if (
                 !Number.isFinite(segmentWidth) ||
-                segmentWidth <= 1
+                segmentWidth <= 1 ||
+                !Number.isFinite(viewportWidth) ||
+                viewportWidth <= 1
             ) {
                 return;
             }
@@ -57076,29 +57068,34 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     track.dataset.tickerSpeed
                 );
 
-            const pixelsPerSecond =
-                tickerPixelsPerSecond(speed);
-
             /*
-             * Duration depends ONLY on actual content distance.
-             * Container width affects only startX.
+             * v1.3 FINAL SPEED CONTRACT
+             *
+             * "5 detik" means:
+             * fully offscreen at the RIGHT
+             *       ->
+             * fully offscreen at the LEFT
+             * in exactly 5 seconds.
+             *
+             * Monitoring and Settings Preview therefore use the same
+             * completion time even though their viewport widths differ.
              */
-            const durationSeconds =
-                Math.max(
-                    3,
-                    segmentWidth /
-                    pixelsPerSecond
-                );
-
             const startX =
-                Number.isFinite(viewportWidth) &&
-                viewportWidth > 1
-                    ? viewportWidth
-                    : 0;
+                viewportWidth;
 
             const endX =
-                startX -
+                -segmentWidth;
+
+            const travelDistance =
+                viewportWidth +
                 segmentWidth;
+
+            const durationSeconds =
+                speed;
+
+            const effectivePixelsPerSecond =
+                travelDistance /
+                durationSeconds;
 
             track.style.setProperty(
                 '--ddt-ticker-start-x',
@@ -57111,11 +57108,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             );
 
             track.style.setProperty(
-                '--ddt-ticker-shift',
-                `${-segmentWidth}px`
-            );
-
-            track.style.setProperty(
                 '--ddt-ticker-duration',
                 `${durationSeconds.toFixed(3)}s`
             );
@@ -57123,8 +57115,14 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             track.dataset.tickerSegmentWidth =
                 segmentWidth.toFixed(3);
 
+            track.dataset.tickerViewportWidth =
+                viewportWidth.toFixed(3);
+
+            track.dataset.tickerTravelDistance =
+                travelDistance.toFixed(3);
+
             track.dataset.tickerPixelsPerSecond =
-                pixelsPerSecond.toFixed(3);
+                effectivePixelsPerSecond.toFixed(3);
 
             track.classList.add(
                 'ddt-ticker-motion-ready'
@@ -57305,12 +57303,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
              */
             track.innerHTML = `
                 <span class="ddt-ticker-segment">
-                    ${itemMarkup}
-                </span>
-                <span
-                    class="ddt-ticker-segment"
-                    aria-hidden="true"
-                >
                     ${itemMarkup}
                 </span>
             `;
@@ -127579,14 +127571,14 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.9',
-  source:'Ticker Smoothness v1.1 Live/Preview Parity',
+  version:'1.1.10',
+  source:'Ticker Smoothness v1.2 Exact Speed Parity',
   targetedCorrection:Object.freeze({
-    tickerSpeedParity:'container width removed from loop distance',
-    tickerEntry:'viewport start offset outside segment',
-    tickerDistance:'content segment width only',
-    tickerDuration:'content width / shared px-per-second',
-    tickerSpaces:'user spacing preserved; no emsp/nbsp stripping',
+    tickerCycle:'single segment / right-offscreen to left-offscreen',
+    tickerSpeedSetting:'exact full journey duration',
+    tickerLivePreview:'same completion time by design',
+    tickerRepeat:'reset occurs only while fully offscreen',
+    tickerSpaces:'all user spacing preserved',
     tickerPreviewVertical:'preserved'
   }),
   productionVoucherAuthority:'finish_izin',
@@ -130255,15 +130247,14 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
 </style>
 
 
-<style id="ddt-ticker-v1-2-exact-speed-parity">
+<style id="ddt-ticker-v1-3-exact-cycle-duration">
 /* ================================================================
-   TICKER v1.2 — EXACT LIVE / PREVIEW SPEED PARITY
+   TICKER v1.3 — EXACT OFFSCREEN-TO-OFFSCREEN CYCLE
 
-   Container width controls START POSITION only.
-   Segment content width controls DISTANCE + DURATION only.
+   speed setting = exact duration of one complete visible journey.
    ================================================================ */
 
-/* Same glyph geometry in Monitoring and Settings Preview. */
+/* Identical text geometry between Monitoring and Settings Preview. */
 #tickerTrack .ticker-item,
 #tickerSettingsPreviewTrack .settings-preview-item{
   display:inline-flex!important;
@@ -130274,19 +130265,13 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   padding:0 30px!important;
   margin:0!important;
   gap:8px!important;
-
-  /*
-   * Preserve user-authored ordinary spaces as well as &nbsp;/&emsp;.
-   * The JS item markup is compact so only user spacing is preserved.
-   */
   white-space:pre!important;
-
   font-size:13px!important;
   line-height:1!important;
   font-weight:400!important;
 }
 
-/* Match highlight geometry between Preview and Live. */
+/* Preserve identical highlight glyph metrics. */
 #tickerSettingsPreviewTrack .settings-preview-item .highlight,
 #tickerSettingsPreviewTrack .settings-preview-item .highlight-gold,
 #tickerSettingsPreviewTrack .settings-preview-item .highlight-red,
@@ -130299,7 +130284,7 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   font-weight:600!important;
 }
 
-/* Exact segment geometry — no Preview-only rail padding/gap. */
+/* One content segment only. */
 #tickerTrack > .ddt-ticker-segment,
 #tickerSettingsPreviewTrack > .ddt-ticker-segment{
   display:flex!important;
@@ -130316,17 +130301,7 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   white-space:nowrap!important;
 }
 
-/* Remove obsolete v1.1 viewport spacer if stale DOM survives a hot reload. */
-#tickerTrack .ddt-ticker-entry-spacer,
-#tickerSettingsPreviewTrack .ddt-ticker-entry-spacer{
-  display:none!important;
-  width:0!important;
-  min-width:0!important;
-  max-width:0!important;
-  flex-basis:0!important;
-}
-
-/* Both tracks use the same 31px vertical contract. */
+/* Shared GPU-friendly track geometry. */
 #tickerTrack.ddt-ticker-seamless-track,
 #tickerSettingsPreviewTrack.ddt-ticker-seamless-track{
   width:max-content!important;
@@ -130341,6 +130316,7 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   backface-visibility:hidden!important;
 }
 
+/* Preview keeps the approved vertical centering. */
 #tickerSettingsPreviewTrack.settings-preview-track.ddt-ticker-seamless-track{
   position:absolute!important;
   left:0!important;
@@ -130349,11 +130325,13 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
 }
 
 /*
- * IMPORTANT:
- * Start and end X are explicit pixel coordinates.
- * Their difference is ALWAYS exactly one content-segment width.
+ * One full cycle:
+ * RIGHT outside viewport -> LEFT outside viewport.
+ *
+ * At 100%, there is no visible text anywhere.
+ * The reset to 0% therefore happens offscreen and cannot visibly jump.
  */
-@keyframes ddtTickerLiveSeamlessX{
+@keyframes ddtTickerLiveFullJourneyX{
   from{
     transform:translate3d(
       var(--ddt-ticker-start-x,0px),
@@ -130370,7 +130348,7 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   }
 }
 
-@keyframes ddtTickerPreviewSeamlessX{
+@keyframes ddtTickerPreviewFullJourneyX{
   from{
     transform:translate3d(
       var(--ddt-ticker-start-x,0px),
@@ -130389,7 +130367,7 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
 
 #tickerTrack.ddt-ticker-motion-ready{
   animation:
-    ddtTickerLiveSeamlessX
+    ddtTickerLiveFullJourneyX
     var(--ddt-ticker-duration,30s)
     linear
     infinite!important;
@@ -130397,13 +130375,12 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
 
 #tickerSettingsPreviewTrack.ddt-ticker-motion-ready{
   animation:
-    ddtTickerPreviewSeamlessX
+    ddtTickerPreviewFullJourneyX
     var(--ddt-ticker-duration,30s)
     linear
     infinite!important;
 }
 
-/* Preview viewport remains compact and vertically centered. */
 #tab-settings .settings-preview-window{
   position:relative!important;
   height:31px!important;
@@ -130421,7 +130398,7 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   line-height:1!important;
 }
 
-/* Existing intentional live hover pause remains. */
+/* Existing intentional hover pause for Live remains. */
 html:not([data-mi-frozen-presentation="mecha-ivory"])
 .ticker-container .ticker-wrapper:hover
 #tickerTrack.ddt-ticker-motion-ready{
