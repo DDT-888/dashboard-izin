@@ -54146,6 +54146,33 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         // ============================================================
         // RENDER LIVE IZIN
         // ============================================================
+        function activeSessionThresholdSeconds(nama) {
+            const authority =
+                globalThis.DDTActiveSessionThresholdAuthority;
+
+            if (
+                !authority ||
+                typeof authority.getThresholdSeconds !==
+                    'function'
+            ) {
+                return null;
+            }
+
+            const threshold =
+                Number(
+                    authority.getThresholdSeconds(
+                        nama
+                    )
+                );
+
+            return (
+                Number.isFinite(threshold) &&
+                threshold > 0
+            )
+                ? Math.floor(threshold)
+                : null;
+        }
+
         function renderLiveIzin() {
             const preservedLiveAvatars=globalThis.DDTStableAvatarV276?.captureStableNodes?.(
                 document,'#tab-monitoring .live-card-col[data-nama]','.visual-fun-col'
@@ -54204,12 +54231,47 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     }
                     const menit = Math.floor(diff / 60);
                     const detik = diff % 60;
-                    const maxSeconds = Math.max(60, jackpotLimitMinutes * 60);
-                    const progress = Math.min((diff / maxSeconds) * 100, 100);
-                    const isOverLimit = diff >= maxSeconds;
-                    const isWarning = !isOverLimit && progress >= 70;
-                    const stateClass = isOverLimit ? 'over-limit' : (isWarning ? 'near-limit' : '');
-                    const statusText = isOverLimit ? 'Melewati batas' : (isWarning ? 'Mendekati batas' : 'Sedang izin');
+                    const maxSeconds =
+                        activeSessionThresholdSeconds(
+                            item.nama
+                        );
+
+                    const thresholdReady =
+                        Number.isFinite(maxSeconds) &&
+                        maxSeconds > 0;
+
+                    const progress =
+                        thresholdReady
+                            ? Math.min(
+                                (diff / maxSeconds) * 100,
+                                100
+                            )
+                            : 0;
+
+                    const isOverLimit =
+                        thresholdReady &&
+                        diff > maxSeconds;
+
+                    const isWarning =
+                        thresholdReady &&
+                        !isOverLimit &&
+                        progress >= 70;
+
+                    const stateClass =
+                        isOverLimit
+                            ? 'over-limit'
+                            : isWarning
+                                ? 'near-limit'
+                                : '';
+
+                    const statusText =
+                        !thresholdReady
+                            ? 'Memuat batas'
+                            : isOverLimit
+                                ? 'Melewati batas'
+                                : isWarning
+                                    ? 'Mendekati batas'
+                                    : 'Sedang izin';
 
                     const liveName = formatName(item.nama);
                     const liveInitials = liveName.split(/\s+/).filter(Boolean).slice(0,2).map(part => part.charAt(0)).join('').toUpperCase() || '?';
@@ -54224,11 +54286,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             <div class="live-card-main">
                                 <span class="visual-fun-col ${liveAvatarClass}" aria-hidden="true" ${liveAvatarAttrs}>${liveAvatarContent}</span>
                                 <span class="nama">${item.nama}</span>
-                                <span class="timer-col ${isOverLimit ? 'over-limit' : ''}" data-start="${item.mulai}" data-progress="${Math.round(progress)}">${menit}m ${detik}s</span>
+                                <span class="timer-col ${isOverLimit ? 'over-limit' : ''}" data-start="${item.mulai}" data-progress="${thresholdReady ? Math.round(progress) : ''}">${menit}m ${detik}s</span>
                             </div>
                             <div class="live-card-meta">
                                 <span class="live-status-label"><span class="live-status-dot"></span>${statusText}</span>
-                                <span class="live-mini-progress" data-progress="${Math.round(progress)}"><span style="width:${progress}%"></span></span>
+                                <span class="live-mini-progress" data-progress="${thresholdReady ? Math.round(progress) : ''}"><span style="width:${thresholdReady ? progress : 0}%"></span></span>
                             </div>
                         </article>`;
                 }).join('');
@@ -54247,32 +54309,185 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         // ============================================================
         function updateLiveTimers() {
             const now = serverNowDate();
-            document.querySelectorAll('.live-card-col .timer-col').forEach(el => {
-                const startTime = parseTimeFromDB(el.dataset.start);
-                if (!startTime) return;
-                const diff = Math.max(0, Math.floor((now.getTime() - startTime.getTime()) / 1000));
-                const menit = Math.floor(diff / 60);
-                const detik = diff % 60;
-                const maxSeconds = Math.max(60, jackpotLimitMinutes * 60);
-                const progress = Math.min((diff / maxSeconds) * 100, 100);
-                const isOverLimit = diff >= maxSeconds;
-                const isWarning = !isOverLimit && progress >= 70;
-                const card = el.closest('.live-card-col');
 
-                el.textContent = `${menit}m ${detik}s`;
-                el.dataset.progress = String(Math.round(progress));
-                el.classList.toggle('over-limit', isOverLimit);
-                if (card) {
-                    card.classList.toggle('over-limit', isOverLimit);
-                    card.classList.toggle('near-limit', isWarning);
-                    const label = card.querySelector('.live-status-label');
-                    if (label) label.lastChild.textContent = isOverLimit ? 'Melewati batas' : (isWarning ? 'Mendekati batas' : 'Sedang izin');
-                    const track = card.querySelector('.live-mini-progress');
-                    const fill = track?.querySelector(':scope > span');
-                    if (fill) fill.style.width = `${progress}%`;
-                    if (track) track.dataset.progress = String(Math.round(progress));
-                }
-            });
+            document
+                .querySelectorAll(
+                    '.live-card-col .timer-col'
+                )
+                .forEach(el => {
+                    const startTime =
+                        parseTimeFromDB(
+                            el.dataset.start
+                        );
+
+                    if (!startTime) return;
+
+                    const diff =
+                        Math.max(
+                            0,
+                            Math.floor(
+                                (
+                                    now.getTime() -
+                                    startTime.getTime()
+                                ) /
+                                1000
+                            )
+                        );
+
+                    const menit =
+                        Math.floor(diff / 60);
+
+                    const detik =
+                        diff % 60;
+
+                    const card =
+                        el.closest(
+                            '.live-card-col'
+                        );
+
+                    const nama =
+                        card?.dataset?.nama ||
+                        '';
+
+                    const maxSeconds =
+                        activeSessionThresholdSeconds(
+                            nama
+                        );
+
+                    el.textContent =
+                        `${menit}m ${detik}s`;
+
+                    /*
+                     * Fail-safe:
+                     * elapsed timer may continue, but no threshold-driven
+                     * state is painted until immutable START snapshot exists.
+                     */
+                    if (
+                        !Number.isFinite(maxSeconds) ||
+                        maxSeconds <= 0
+                    ) {
+                        el.dataset.progress = '';
+                        el.classList.remove(
+                            'over-limit'
+                        );
+
+                        if (card) {
+                            card.classList.remove(
+                                'over-limit',
+                                'near-limit'
+                            );
+
+                            const label =
+                                card.querySelector(
+                                    '.live-status-label'
+                                );
+
+                            if (label?.lastChild) {
+                                label.lastChild.textContent =
+                                    'Memuat batas';
+                            }
+
+                            const track =
+                                card.querySelector(
+                                    '.live-mini-progress'
+                                );
+
+                            const fill =
+                                track?.querySelector(
+                                    ':scope > span'
+                                );
+
+                            if (fill) {
+                                fill.style.width =
+                                    '0%';
+                            }
+
+                            if (track) {
+                                track.dataset.progress =
+                                    '';
+                            }
+                        }
+
+                        return;
+                    }
+
+                    const progress =
+                        Math.min(
+                            (diff / maxSeconds) * 100,
+                            100
+                        );
+
+                    /*
+                     * Match finish_izin strict authority:
+                     * exact threshold is NOT over-limit.
+                     */
+                    const isOverLimit =
+                        diff > maxSeconds;
+
+                    const isWarning =
+                        !isOverLimit &&
+                        progress >= 70;
+
+                    el.dataset.progress =
+                        String(
+                            Math.round(progress)
+                        );
+
+                    el.classList.toggle(
+                        'over-limit',
+                        isOverLimit
+                    );
+
+                    if (card) {
+                        card.classList.toggle(
+                            'over-limit',
+                            isOverLimit
+                        );
+
+                        card.classList.toggle(
+                            'near-limit',
+                            isWarning
+                        );
+
+                        const label =
+                            card.querySelector(
+                                '.live-status-label'
+                            );
+
+                        if (label?.lastChild) {
+                            label.lastChild.textContent =
+                                isOverLimit
+                                    ? 'Melewati batas'
+                                    : isWarning
+                                        ? 'Mendekati batas'
+                                        : 'Sedang izin';
+                        }
+
+                        const track =
+                            card.querySelector(
+                                '.live-mini-progress'
+                            );
+
+                        const fill =
+                            track?.querySelector(
+                                ':scope > span'
+                            );
+
+                        if (fill) {
+                            fill.style.width =
+                                `${progress}%`;
+                        }
+
+                        if (track) {
+                            track.dataset.progress =
+                                String(
+                                    Math.round(
+                                        progress
+                                    )
+                                );
+                        }
+                    }
+                });
         }
 
         // ============================================================
@@ -54456,36 +54671,72 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         const menit = Math.floor(validDiff / 60);
                         const detik = validDiff % 60;
 
-                        const batasDetik = jackpotLimitMinutes * 60;
-                        const isOverLimit = validDiff > batasDetik;
-                        const isJackpot = isOverLimit;
+                        const batasDetik =
+                            activeSessionThresholdSeconds(
+                                nama
+                            );
 
-                        const maxProgressDetik = jackpotLimitMinutes * 60;
-                        const progressPercent = Math.min((validDiff / maxProgressDetik) * 100, 100);
+                        const thresholdReady =
+                            Number.isFinite(
+                                batasDetik
+                            ) &&
+                            batasDetik > 0;
+
+                        const progressPercent =
+                            thresholdReady
+                                ? Math.min(
+                                    (
+                                        validDiff /
+                                        batasDetik
+                                    ) *
+                                    100,
+                                    100
+                                )
+                                : 0;
+
+                        const isOverLimit =
+                            thresholdReady &&
+                            validDiff >
+                                batasDetik;
+
+                        const isJackpot =
+                            isOverLimit;
 
                         let progressClass = '';
                         let textClass = '';
 
-                        if (progressPercent >= 100) {
-                            progressClass = 'full';
-                            textClass = 'full';
-                        } else if (isJackpot) {
-                            progressClass = 'jackpot';
-                        } else if (isOverLimit) {
-                            progressClass = 'danger';
-                        } else if (progressPercent > 60) {
-                            progressClass = 'warning';
+                        if (
+                            thresholdReady &&
+                            isOverLimit
+                        ) {
+                            progressClass =
+                                'danger';
+                            textClass =
+                                'full';
+                        } else if (
+                            thresholdReady &&
+                            progressPercent >=
+                                100
+                        ) {
+                            progressClass =
+                                'full';
+                        } else if (
+                            thresholdReady &&
+                            progressPercent > 60
+                        ) {
+                            progressClass =
+                                'warning';
                         }
 
                         const progressFill =
-                            `<div class="progress-bar-fill ${progressClass}" style="width: ${progressPercent}%;"></div>`;
+                            `<div class="progress-bar-fill ${progressClass}" style="width: ${thresholdReady ? progressPercent : 0}%;"></div>`;
 
                         progressHTML = `
                             <div class="progress-container">
                                 <div class="progress-bar-wrap">
                                     ${progressFill}
                                 </div>
-                                <span class="progress-text ${textClass}">${Math.round(progressPercent)}%</span>
+                                <span class="progress-text ${textClass}">${thresholdReady ? `${Math.round(progressPercent)}%` : '…'}</span>
                             </div>
                         `;
 
@@ -56189,38 +56440,168 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         // ============================================================
         
         function updateDashboardTimers() {
-            const nowMs = serverNowMs();
-            document.querySelectorAll('#dashboardTableBody tr.row-online[data-nama]').forEach(row => {
-                const nama = row.dataset.nama;
-                const item = dataIzin[nama];
-                if (!item || item.status !== 'izin' || !item.mulai) return;
-                const startTime = parseTimeFromDB(item.mulai);
-                if (!startTime) return;
+            const nowMs =
+                serverNowMs();
 
-                const diff = Math.max(0, Math.floor((nowMs - startTime.getTime()) / 1000));
-                const menit = Math.floor(diff / 60);
-                const detik = diff % 60;
-                const maxSeconds = Math.max(60, jackpotLimitMinutes * 60);
-                const progress = Math.min((diff / maxSeconds) * 100, 100);
-                const isOverLimit = diff >= maxSeconds;
+            document
+                .querySelectorAll(
+                    '#dashboardTableBody tr.row-online[data-nama]'
+                )
+                .forEach(row => {
+                    const nama =
+                        row.dataset.nama;
 
-                const timer = row.querySelector('.timer-display');
-                if (timer) {
-                    timer.textContent = `${menit}m ${detik}s`;
-                    timer.classList.toggle('over-limit', isOverLimit);
-                }
-                const fill = row.querySelector('.progress-bar-fill');
-                if (fill) {
-                    fill.style.width = `${progress}%`;
-                    fill.classList.toggle('full', progress >= 100);
-                    fill.classList.toggle('warning', progress >= 60 && progress < 100);
-                }
-                const progressText = row.querySelector('.progress-text');
-                if (progressText) {
-                    progressText.textContent = `${Math.round(progress)}%`;
-                    progressText.classList.toggle('full', progress >= 100);
-                }
-            });
+                    const item =
+                        dataIzin[nama];
+
+                    if (
+                        !item ||
+                        item.status !== 'izin' ||
+                        !item.mulai
+                    ) {
+                        return;
+                    }
+
+                    const startTime =
+                        parseTimeFromDB(
+                            item.mulai
+                        );
+
+                    if (!startTime) return;
+
+                    const diff =
+                        Math.max(
+                            0,
+                            Math.floor(
+                                (
+                                    nowMs -
+                                    startTime.getTime()
+                                ) /
+                                1000
+                            )
+                        );
+
+                    const menit =
+                        Math.floor(diff / 60);
+
+                    const detik =
+                        diff % 60;
+
+                    const timer =
+                        row.querySelector(
+                            '.timer-display'
+                        );
+
+                    if (timer) {
+                        timer.textContent =
+                            `${menit}m ${detik}s`;
+                    }
+
+                    const maxSeconds =
+                        activeSessionThresholdSeconds(
+                            nama
+                        );
+
+                    const fill =
+                        row.querySelector(
+                            '.progress-bar-fill'
+                        );
+
+                    const progressText =
+                        row.querySelector(
+                            '.progress-text'
+                        );
+
+                    if (
+                        !Number.isFinite(maxSeconds) ||
+                        maxSeconds <= 0
+                    ) {
+                        timer
+                            ?.classList.remove(
+                                'over-limit'
+                            );
+
+                        if (fill) {
+                            fill.style.width =
+                                '0%';
+
+                            fill.classList.remove(
+                                'full',
+                                'warning',
+                                'danger',
+                                'jackpot'
+                            );
+                        }
+
+                        if (progressText) {
+                            progressText.textContent =
+                                '…';
+
+                            progressText.classList.remove(
+                                'full'
+                            );
+                        }
+
+                        return;
+                    }
+
+                    const progress =
+                        Math.min(
+                            (
+                                diff /
+                                maxSeconds
+                            ) *
+                            100,
+                            100
+                        );
+
+                    const isOverLimit =
+                        diff > maxSeconds;
+
+                    if (timer) {
+                        timer.classList.toggle(
+                            'over-limit',
+                            isOverLimit
+                        );
+                    }
+
+                    if (fill) {
+                        fill.style.width =
+                            `${progress}%`;
+
+                        fill.classList.toggle(
+                            'full',
+                            !isOverLimit &&
+                            progress >= 100
+                        );
+
+                        fill.classList.toggle(
+                            'warning',
+                            !isOverLimit &&
+                            progress >= 60 &&
+                            progress < 100
+                        );
+
+                        fill.classList.toggle(
+                            'danger',
+                            isOverLimit
+                        );
+
+                        fill.classList.remove(
+                            'jackpot'
+                        );
+                    }
+
+                    if (progressText) {
+                        progressText.textContent =
+                            `${Math.round(progress)}%`;
+
+                        progressText.classList.toggle(
+                            'full',
+                            isOverLimit
+                        );
+                    }
+                });
         }
         function stopTimerUpdates() {
             if (timerUpdateInterval) {
@@ -93332,9 +93713,63 @@ body:has(#aps-layer:not([hidden])) #historyActionTooltip{z-index:24020}
     const end=data.status==='izin'?now:(data.selesai?new Date(data.selesai):now);
     const diff=Math.max(0,Math.floor((end.getTime()-start.getTime())/1000));
     const parts=timeParts(diff);timerEl.innerHTML=`${parts[0]}<span class="aps-colon">:</span>${parts[1]}<span class="aps-colon">:</span>${parts[2]}`;
-    const limitMinutes=Math.max(1,Number(jackpotLimitMinutes)||20);const maxSeconds=limitMinutes*60;const progress=Math.min(100,(diff/maxSeconds)*100);
-    fillEl.style.width=`${progress}%`;const timeState=diff>=maxSeconds?'over':(progress>=70?'warning':'normal');consoleEl.dataset.timeState=timeState;
-    startEl.textContent=formatClock(start);const limit=new Date(start.getTime()+limitMinutes*60000);limitEl.textContent=formatClock(limit);limitMeta.textContent=`${limitMinutes}m`;
+    const maxSeconds=
+      typeof activeSessionThresholdSeconds==='function'
+        ? activeSessionThresholdSeconds(key)
+        : null;
+
+    startEl.textContent=
+      formatClock(start);
+
+    if(
+      !Number.isFinite(maxSeconds)||
+      maxSeconds<=0
+    ){
+      fillEl.style.width='0%';
+      consoleEl.dataset.timeState='loading';
+      limitEl.textContent='…';
+      limitMeta.textContent='…';
+      return;
+    }
+
+    const limitMinutes=
+      Math.max(
+        1,
+        Math.round(
+          maxSeconds/60
+        )
+      );
+
+    const progress=
+      Math.min(
+        100,
+        (diff/maxSeconds)*100
+      );
+
+    fillEl.style.width=
+      `${progress}%`;
+
+    const timeState=
+      diff>maxSeconds
+        ? 'over'
+        : progress>=70
+          ? 'warning'
+          : 'normal';
+
+    consoleEl.dataset.timeState=
+      timeState;
+
+    const limit=
+      new Date(
+        start.getTime()+
+        maxSeconds*1000
+      );
+
+    limitEl.textContent=
+      formatClock(limit);
+
+    limitMeta.textContent=
+      `${limitMinutes}m`;
   }
   function setCompleted(){ending=false;clearExpanded();consoleEl.classList.remove('aps-error');consoleEl.classList.add('aps-completed');statusText.textContent='SELESAI';endBtn.disabled=true;renderTime(serverNowDate())}
   function setActiveState(){consoleEl.classList.remove('aps-error','aps-completed');statusText.textContent='AKTIF';endBtn.hidden=false;endBtn.textContent='END IZIN';ending=false;updateIdentity()}
@@ -125438,6 +125873,31 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     }
   }
 
+
+  globalThis.DDTActiveSessionThresholdAuthority=
+    Object.freeze({
+      version:'office-start-snapshot-v1',
+      ownsThresholdUI:true,
+
+      getThresholdSeconds(nama){
+        return thresholdForActive(
+          nama
+        );
+      },
+
+      getOfficeName(nama){
+        return sessionOfficeName(
+          nama
+        );
+      },
+
+      isActive(nama){
+        return isActive(
+          nama
+        );
+      }
+    });
+
   function nowDate(){
     try{
       return typeof serverNowDate==='function'
@@ -127939,18 +128399,21 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.14',
-  source:'Ticker Interaction/Visual v1.6',
+  version:'1.1.15',
+  source:'Ticker LIVE Dot v1.7',
   targetedCorrection:Object.freeze({
-    tickerSmoothness:'PRESERVED',
-    tickerHoverPause:'PRESERVED',
-    tickerCopyInteraction:'PRESERVED',
-    liveDotVisual:'old breathing character restored',
-    liveDotRhythm:'1.5s / scale 1-.7-1 / opacity 1-.6-1',
-    liveDotGlow:'single compositor helper; no radar rings',
-    animatedBoxShadow:'NOT USED',
-    venomDotColorAuthority:'PRESERVED',
-    officeDisplayFailSafe:'PRESERVED / PASS'
+    activeThresholdAuthority:'immutable Office START snapshot exposed globally',
+    liveInitialRender:'no jackpotLimitMinutes fallback',
+    liveTimerLoop:'snapshot threshold only / strict over-limit',
+    memberTableInitialRender:'snapshot threshold only',
+    memberTableTimerLoop:'snapshot threshold only / strict over-limit',
+    apsTimer:'snapshot threshold only',
+    pendingSnapshot:'elapsed timer allowed; threshold UI remains neutral',
+    venomRoleDots:'role identity restored',
+    liveDot:'5px softer breathing micro-refinement',
+    liveBadgeTypography:'micro-refined only',
+    tickerMotion:'UNCHANGED',
+    officeDisplayFailSafe:'PRESERVED'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -131053,6 +131516,149 @@ html body #tab-monitoring #tickerTrack .ticker-item{
   color:var(--text-muted)!important;
   opacity:.72!important;
   letter-spacing:.08em!important;
+}
+</style>
+
+
+<style id="ddt-monitoring-v1-8-role-dot-live-micro-refinement">
+/* ================================================================
+   LIVE badge — micro refinement only.
+   Movement, hover pause and ticker timing are untouched.
+   ================================================================ */
+html body #tab-monitoring .ticker-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:9px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  letter-spacing:.62px!important;
+}
+
+html body #tab-monitoring
+.ticker-badge .live-dot{
+  width:5px!important;
+  height:5px!important;
+  min-width:5px!important;
+  min-height:5px!important;
+  margin-right:5px!important;
+
+  box-shadow:
+    0 0 8px rgba(0,230,118,.16)
+    !important;
+
+  animation:
+    ddtTickerLiveDotBreathV18
+    1.55s
+    ease-in-out
+    infinite!important;
+}
+
+html body #tab-monitoring
+.ticker-badge .live-dot::after{
+  background:rgba(0,230,118,.17)!important;
+
+  animation:
+    ddtTickerLiveDotGlowV18
+    1.55s
+    ease-in-out
+    infinite!important;
+}
+
+@keyframes ddtTickerLiveDotBreathV18{
+  0%,100%{
+    transform:scale(1) translateZ(0);
+    opacity:.96;
+  }
+  50%{
+    transform:scale(.78) translateZ(0);
+    opacity:.72;
+  }
+}
+
+@keyframes ddtTickerLiveDotGlowV18{
+  0%,100%{
+    transform:
+      translate3d(-50%,-50%,0)
+      scale(1.25);
+    opacity:.12;
+  }
+  50%{
+    transform:
+      translate3d(-50%,-50%,0)
+      scale(2.05);
+    opacity:.24;
+  }
+}
+
+/* ================================================================
+   VENOM GREEN — restore role identity.
+   Old broad Venom rules forced role-marker/live-status-dot green.
+   ================================================================ */
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring .live-role-column .role-marker,
+html[data-selected-theme="venom"] body
+#tab-monitoring .live-role-column .role-marker{
+  background:var(--role-accent)!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  box-shadow:
+    0 0 0 2px
+    color-mix(
+      in srgb,
+      var(--role-accent) 14%,
+      transparent
+    )
+    !important;
+}
+
+/* Normal "Sedang izin" dot follows the role. */
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring
+.live-role-column
+.live-card-col:not(.near-limit):not(.over-limit)
+.live-status-dot,
+html[data-selected-theme="venom"] body
+#tab-monitoring
+.live-role-column
+.live-card-col:not(.near-limit):not(.over-limit)
+.live-status-dot{
+  background:var(--role-accent)!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+
+/* Warning and over-limit semantic colors keep priority over role. */
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring
+.live-card-col.near-limit
+.live-status-dot,
+html[data-selected-theme="venom"] body
+#tab-monitoring
+.live-card-col.near-limit
+.live-status-dot{
+  background:#d69a38!important;
+  box-shadow:none!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring
+.live-card-col.over-limit
+.live-status-dot,
+html[data-selected-theme="venom"] body
+#tab-monitoring
+.live-card-col.over-limit
+.live-status-dot{
+  background:#dc4b56!important;
+  box-shadow:none!important;
+}
+
+/* Venom LIVE badge glow uses Venom green, still subtle. */
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring .ticker-badge .live-dot::after,
+html[data-selected-theme="venom"] body
+#tab-monitoring .ticker-badge .live-dot::after{
+  background:rgba(68,214,44,.16)!important;
 }
 </style>
 
