@@ -44801,7 +44801,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
                 <div class="page-heading">
-                    <h1 id="pageTitle">Dashboard</h1>
+                    <div class="page-title-access-row">
+                        <h1 id="pageTitle">Dashboard</h1>
+                        <span class="page-access-badge" id="pageAccessBadge" hidden>VIEW ONLY</span>
+                    </div>
                     <p id="pageDescription">Ringkasan aktivitas dan kondisi operasional hari ini.</p>
                 </div>
             </div>
@@ -63065,7 +63068,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <div class="group"><label>Email User</label><input type="email" id="inputUserEmail" placeholder="user@email.com" style="text-transform:lowercase" ${!canManage ? 'disabled' : ''}/></div>
                     <div class="group"><label>Nama User</label><input type="text" id="inputUserName" placeholder="Nama User" style="text-transform:uppercase" ${!canManage ? 'disabled' : ''}/></div>
                     <div class="group"><label>Role</label><select id="inputUserRole" ${!canManage ? 'disabled' : ''}><option value="kasir" selected>Kasir</option><option value="csline">CS Line</option><option value="cs">CS</option><option value="kapten">Kapten</option><option value="leader">Leader</option></select></div>
-                    <button class="saas-action-primary" onclick="tambahUser()" id="btnTambahUser" ${!canManage ? 'disabled' : ''}><span class="button-icon"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span>Tambah User</span></button>${viewOnlyText}
+                    <button class="saas-action-primary" onclick="tambahUser()" id="btnTambahUser" ${!canManage ? 'disabled' : ''}><span class="button-icon"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span>Tambah User</span></button>
                 </div>
                 <div class="users-list-heading"><div class="users-list-title"><span class="users-section-icon compact"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></span><div><h3>Data User</h3><p>Passport, visa, masa kerja, rank, training, dan status akun.</p></div></div><div class="role-summary"><span class="role-item role-leader"><span class="role-dot"></span><span class="role-label">Leader</span><strong>${roleCounts.leader}</strong></span><span class="role-item role-csline"><span class="role-dot"></span><span class="role-label">CS Line</span><strong>${roleCounts.csline}</strong></span><span class="role-item role-cs"><span class="role-dot"></span><span class="role-label">CS</span><strong>${roleCounts.cs}</strong></span><span class="role-item role-kapten"><span class="role-dot"></span><span class="role-label">Kapten</span><strong>${roleCounts.kapten}</strong></span><span class="role-item role-kasir"><span class="role-dot"></span><span class="role-label">Kasir</span><strong>${roleCounts.kasir}</strong></span></div></div>
                 <div class="employee-toolbar">
@@ -63074,7 +63077,17 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     ${employeeOfficeFilterMarkup()}
                     ${employeeRankFilterMarkup()}
                     ${employeeAlertFilterMarkup()}
-                    ${employeeCan('employee_audit_export') ? `<button class="employee-export-button history-tooltip-target" type="button" onclick="exportEmployeeAudit()" data-tooltip="Export Audit Kepegawaian" data-tooltip-icon="export"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Export Audit</span></button>` : ''}
+                    <button
+                        class="employee-export-button history-tooltip-target"
+                        type="button"
+                        onclick="exportEmployeeAudit()"
+                        data-tooltip="Export Audit Kepegawaian"
+                        data-tooltip-icon="export"
+                        ${!employeeCan('employee_audit_export') ? 'disabled' : ''}
+                    >
+                        <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                        <span>Export Audit</span>
+                    </button>
                 </div>
                 <div class="employee-table-wrap"><table class="employee-users-table"><thead><tr>
                     <th class="employee-col-status sticky-left-one">Status</th><th class="employee-col-user sticky-left-two">Nama & Email</th><th class="employee-col-role">Role</th><th class="employee-col-passport">No. Passport</th><th class="employee-col-expiry">Masa Aktif Passport</th><th class="employee-col-expiry">Masa Aktif Visa</th><th class="employee-col-date">JOIN SMB</th><th class="employee-col-date">JOIN DDT</th><th class="employee-col-training">Training</th><th class="employee-col-tenure">Masa Kerja</th><th class="employee-col-actions sticky-right">Aksi</th>
@@ -63554,18 +63567,24 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     data-inline-field="${field}"
                 >
                     ${editor}
-                    <span class="employee-inline-edit-actions">
-                        <button
-                            class="save"
-                            type="button"
-                            onclick="commitEmployeeInlineEdit(this)"
-                            aria-label="Simpan perubahan"
-                        >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="m5 12 4 4L19 6"/>
-                            </svg>
-                        </button>
-                    </span>
+                    ${
+                        field === 'training_status'
+                            ? ''
+                            : `
+                                <span class="employee-inline-edit-actions">
+                                    <button
+                                        class="save"
+                                        type="button"
+                                        onclick="commitEmployeeInlineEdit(this)"
+                                        aria-label="Simpan perubahan"
+                                    >
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="m5 12 4 4L19 6"/>
+                                        </svg>
+                                    </button>
+                                </span>
+                            `
+                    }
                 </div>
             `;
 
@@ -63588,6 +63607,21 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
             if (input?.type === 'date') {
                 bindEmployeeDateYearLock(input);
+            }
+
+            if (
+                input &&
+                field === 'training_status'
+            ) {
+                input.addEventListener(
+                    'change',
+                    () => {
+                        commitEmployeeInlineEdit(
+                            wrapper
+                        );
+                    },
+                    { once: true }
+                );
             }
 
             const keyboardOwner = isDmyDateField ? wrapper : input;
@@ -63741,6 +63775,28 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         sameStatus &&
                         sameDate
                     ) {
+                        return;
+                    }
+
+                    const confirmed =
+                        await requestPremiumConfirmation({
+                            title:
+                                'Konfirmasi Perubahan',
+                            message:
+                                `Ubah ${EMPLOYEE_FIELD_LABELS[field] || 'Training'} milik ${user?.name || 'User'}?`,
+                            note:
+                                `Sebelumnya: ${employeeConfirmationValue(field, oldValue)}
+` +
+                                `Menjadi: ${employeeConfirmationValue(field, 'perpanjang')}
+` +
+                                `Review berikutnya: ${extensionDate}`,
+                            confirmText:
+                                'Simpan Perubahan',
+                            variant:
+                                'warning'
+                        });
+
+                    if (!confirmed) {
                         return;
                     }
 
@@ -125469,18 +125525,6 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
         >
           ${options.join('')}
         </select>
-
-        <span class="employee-inline-edit-actions">
-          <button
-            class="save ddt-office-inline-save"
-            type="button"
-            aria-label="Simpan Office"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m5 12 4 4L19 6"/>
-            </svg>
-          </button>
-        </span>
       </div>
     `;
   }
@@ -125524,15 +125568,9 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
         '.ddt-employee-office-select'
       );
 
-    const save=
-      wrapper?.querySelector(
-        '.ddt-office-inline-save'
-      );
-
     if(
       !wrapper||
-      !select||
-      !save
+      !select
     ){
       cancelOfficeEdit(
         user,
@@ -125543,24 +125581,21 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     }
 
     /*
-     * The global Premium Select enhancer will transform this SELECT
-     * exactly like Training. Do NOT attach a blur auto-close handler:
-     * Premium Select intentionally moves focus from the hidden native
-     * SELECT to its trigger, which was the v1.1 auto-close root cause.
+     * Match Training behavior:
+     * choose one option -> immediately proceed to Konfirmasi Perubahan.
+     * No extra check button.
      */
-    save.addEventListener(
-      'click',
-      event=>{
-        event.preventDefault();
-        event.stopPropagation();
-
+    select.addEventListener(
+      'change',
+      ()=>{
         saveUserOffice(
           user,
           select.value,
           select,
           cell
         );
-      }
+      },
+      { once:true }
     );
 
     wrapper.addEventListener(
@@ -125887,11 +125922,76 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
         user_id:Number(user.id)
       };
 
+    const previousOfficeId=
+      String(
+        previous?.office_id||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+    if(
+      previousOfficeId===
+      next
+    ){
+      cancelOfficeEdit(
+        user,
+        cell
+      );
+
+      return;
+    }
+
+    const oldOffice=
+      officeById(
+        previousOfficeId
+      );
+
+    const newOffice=
+      officeById(
+        next
+      );
+
     const viewport=
       captureUsersViewport();
 
-    if(select){
-      select.disabled=true;
+    /*
+     * Restore the normal cell before the confirmation modal so no
+     * Premium Select remains visible behind the popup.
+     */
+    if(
+      cell?.isConnected
+    ){
+      cell.dataset.editing='0';
+      cell.dataset.officeMarkup='';
+      cell.innerHTML=
+        officeDisplayMarkup(user);
+    }
+
+    const confirmed=
+      await requestPremiumConfirmation({
+        title:
+          'Konfirmasi Perubahan',
+        message:
+          `Ubah Office milik ${user?.name || 'User'}?`,
+        note:
+          `Sebelumnya: ${oldOffice?.name || 'Belum diset'}
+` +
+          `Menjadi: ${newOffice?.name || 'Belum diset'}`,
+        confirmText:
+          'Simpan Perubahan',
+        variant:
+          'warning'
+      });
+
+    if(!confirmed){
+      restoreUsersViewport(
+        viewport
+      );
+
+      scheduleReconcile();
+
+      return;
     }
 
     try{
@@ -125968,9 +126068,8 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       );
 
       /*
-       * IMPORTANT:
-       * Do not call renderUsersPage() here.
-       * This is what previously jumped the Users screen to the top.
+       * Do not full-render Users after assignment save.
+       * Preserve the user's vertical and horizontal position.
        */
       try{
         if(
@@ -126101,11 +126200,10 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     button.dataset.officeBlocked='1';
 
     /*
-     * A native disabled button never receives pointer events,
-     * therefore the global tooltip cannot appear.
-     *
-     * Use semantic aria-disabled + the START wrapper as the hard
-     * frontend gate. Backend start_izin remains the actual authority.
+     * Native disabled START cannot receive hover events.
+     * Keep it semantically locked with aria-disabled, then bind the
+     * exact rich START tooltip controller used by Akses Terkunci /
+     * Slot Penuh / Kuota Penuh.
      */
     button.disabled=false;
 
@@ -126115,19 +126213,56 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     );
 
     button.classList.add(
-      'ddt-office-start-disabled',
-      'history-tooltip-target'
+      'ddt-office-start-disabled'
     );
 
-    button.setAttribute(
-      'data-tooltip',
-      message
-    );
+    button.dataset.tooltipIcon=
+      'warning';
 
-    button.setAttribute(
-      'data-tooltip-icon',
-      'warning'
-    );
+    button.dataset.tooltipTitle=
+      'Office Belum Diset';
+
+    button.dataset.tooltipDesc=
+      'Lokasi Office belum diset pada Data User.';
+
+    button.dataset.tooltipStatus=
+      'START tidak tersedia';
+
+    button.dataset.tooltipStatusClass=
+      'warning';
+
+    button.dataset.tooltipFooter=
+      'Silakan hubungi CS Line';
+
+    if(
+      typeof handleStartMouseEnter===
+      'function'
+    ){
+      button.removeEventListener(
+        'mouseenter',
+        handleStartMouseEnter
+      );
+
+      button.addEventListener(
+        'mouseenter',
+        handleStartMouseEnter
+      );
+    }
+
+    if(
+      typeof handleStartMouseLeave===
+      'function'
+    ){
+      button.removeEventListener(
+        'mouseleave',
+        handleStartMouseLeave
+      );
+
+      button.addEventListener(
+        'mouseleave',
+        handleStartMouseLeave
+      );
+    }
   }
 
   function clearOfficeTooltip(button){
@@ -126148,24 +126283,36 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       'ddt-office-start-disabled'
     );
 
-    button.removeAttribute(
-      'data-tooltip'
+    [
+      'tooltipIcon',
+      'tooltipTitle',
+      'tooltipDesc',
+      'tooltipStatus',
+      'tooltipStatusClass',
+      'tooltipFooter'
+    ].forEach(
+      key=>{
+        delete button.dataset[key];
+      }
     );
 
-    button.removeAttribute(
-      'data-tooltip-icon'
-    );
-
-    /*
-     * Keep history-tooltip-target only if another core feature
-     * supplied tooltip data.
-     */
     if(
-      !button.dataset.tooltipTitle&&
-      !button.dataset.tooltipDesc
+      typeof handleStartMouseEnter===
+      'function'
     ){
-      button.classList.remove(
-        'history-tooltip-target'
+      button.removeEventListener(
+        'mouseenter',
+        handleStartMouseEnter
+      );
+    }
+
+    if(
+      typeof handleStartMouseLeave===
+      'function'
+    ){
+      button.removeEventListener(
+        'mouseleave',
+        handleStartMouseLeave
       );
     }
   }
@@ -126974,22 +127121,20 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.1',
-  source:'Office Duration System v1.1.0',
+  version:'1.1.2',
+  source:'Office Duration System v1.1.1',
   refinements:Object.freeze({
-    activeOfficeLegacyLabelRemoved:true,
-    officeEditor:'Training-style Premium Select + explicit Save',
-    officeBottomRowDropUp:true,
-    historyLegacyOffice:'—',
-    historyLimit:'duration minutes, e.g. 16 menit',
-    csvLimit:'duration minutes',
-    usersToolbar:'single desktop rail',
-    usersOfficeColumn:'compact 78–96px'
+    historyDurationLimitDensity:'compact',
+    trainingEditor:'selection -> confirmation; no check button',
+    officeEditor:'selection -> confirmation; no check button',
+    exportAudit:'always visible; permission-disabled',
+    viewOnly:'small page-title badge',
+    officeMissingTooltip:'native Monitoring rich START tooltip',
+    officeMissingStartVisual:'matches Akses Terkunci disabled START'
   }),
   productionVoucherAuthority:'finish_izin',
   voucherLateRule:'duration_seconds > threshold_at_event_seconds',
-  legacyHistoryPreserved:true,
-  legacyThresholdFallbackSeconds:1200,
+  backendChanged:false,
   darkThemeAvatarMotion:'HOLD / untouched'
 });
 </script>
@@ -127503,6 +127648,276 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-top{
 /* Old rows deliberately use only an em dash, never the word Legacy. */
 #tab-history .history-office-value.legacy{
   opacity:.62!important;
+}
+</style>
+
+
+<style id="ddt-office-v1-1-2-history-density">
+/* History Durasi/Batas are compact operational columns.
+   Long normal example: "17 menit 46 detik". */
+#tab-history > .table-wrap table{
+  table-layout:auto!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(7){
+  width:1%!important;
+  min-width:112px!important;
+  max-width:128px!important;
+  padding-left:10px!important;
+  padding-right:8px!important;
+  white-space:nowrap!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(8){
+  width:1%!important;
+  min-width:74px!important;
+  max-width:88px!important;
+  padding-left:8px!important;
+  padding-right:8px!important;
+  white-space:nowrap!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(9){
+  width:1%!important;
+  min-width:66px!important;
+  max-width:92px!important;
+  padding-left:8px!important;
+  padding-right:9px!important;
+  white-space:nowrap!important;
+}
+</style>
+
+
+<style id="ddt-office-v1-1-2-export-audit-disabled">
+#tab-users .employee-export-button:disabled{
+  cursor:not-allowed!important;
+  opacity:.50!important;
+  transform:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+#tab-users .employee-export-button:disabled:hover{
+  transform:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+</style>
+
+
+<style id="ddt-page-access-badge-style">
+.page-title-access-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.page-access-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:17px;
+  padding:0 6px;
+  border:1px solid color-mix(in srgb,var(--text-muted) 24%,var(--border-color));
+  border-radius:5px;
+  background:color-mix(in srgb,var(--bg-secondary) 72%,transparent);
+  color:var(--text-muted);
+  font-size:6.8px;
+  line-height:1;
+  font-weight:820;
+  letter-spacing:.085em;
+  white-space:nowrap;
+}
+.page-access-badge[hidden]{
+  display:none!important;
+}
+
+/* Old page-level View Only indicators are superseded by the title badge. */
+#tab-settings :is(
+  #settingsViewIndicator,
+  #settingsViewIndicator2,
+  #settingsViewIndicator3
+){
+  display:none!important;
+}
+#tab-users .users-view-only{
+  display:none!important;
+}
+
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+.page-access-badge{
+  color:#8fa38b!important;
+  background:#101410!important;
+  border-color:#2e3a2e!important;
+  box-shadow:none!important;
+}
+</style>
+
+
+<script id="ddt-page-access-badge-controller">
+(()=>{
+  'use strict';
+
+  if(window.__DDTPageAccessBadgeV1)return;
+  window.__DDTPageAccessBadgeV1=true;
+
+  function bool(value){
+    return Boolean(value);
+  }
+
+  function isViewOnly(tab){
+    try{
+      switch(String(tab||currentTab||'')){
+        case 'users':
+          return !bool(userPermissions?.canManage);
+
+        case 'voucher':
+          return !bool(userPermissions?.canManageVoucher);
+
+        case 'history':
+          return typeof canDeleteHistory==='function'
+            ? !bool(canDeleteHistory())
+            : !bool(userPermissions?.canDeleteHistory);
+
+        case 'shifts':
+          return typeof canEditShift==='function'
+            ? !bool(canEditShift())
+            : !bool(userPermissions?.canEditShift);
+
+        case 'historyshift':
+          return typeof canEditShift==='function'
+            ? !bool(canEditShift())
+            : !bool(userPermissions?.canEditShift);
+
+        case 'settings':
+          return !bool(userPermissions?.canEditSettings);
+
+        default:
+          return false;
+      }
+    }catch{
+      return false;
+    }
+  }
+
+  function sync(){
+    const badge=
+      document.getElementById(
+        'pageAccessBadge'
+      );
+
+    if(!badge)return;
+
+    const tab=
+      String(
+        currentTab||
+        ''
+      );
+
+    badge.hidden=
+      !isViewOnly(tab);
+
+    badge.setAttribute(
+      'aria-hidden',
+      badge.hidden
+        ? 'true'
+        : 'false'
+    );
+  }
+
+  const previous=
+    typeof window.switchTab==='function'
+      ? window.switchTab
+      : null;
+
+  if(previous){
+    window.switchTab=function(){
+      const result=
+        previous.apply(
+          this,
+          arguments
+        );
+
+      requestAnimationFrame(
+        sync
+      );
+
+      return result;
+    };
+
+    try{
+      switchTab=
+        window.switchTab;
+    }catch{}
+  }
+
+  const title=
+    document.getElementById(
+      'pageTitle'
+    );
+
+  if(title){
+    new MutationObserver(
+      sync
+    ).observe(
+      title,
+      {
+        childList:true,
+        characterData:true,
+        subtree:true
+      }
+    );
+  }
+
+  window.addEventListener(
+    'pageshow',
+    sync
+  );
+
+  setTimeout(
+    sync,
+    0
+  );
+})();
+</script>
+
+
+<style id="ddt-office-v1-1-2-start-disabled-parity">
+/* Same visual state as the core disabled START / Akses Terkunci. */
+#tab-monitoring .monitoring-members-panel .btn-action.start.ddt-office-start-disabled{
+  cursor:not-allowed!important;
+  pointer-events:auto!important;
+  transform:none!important;
+  background:var(--bg-hover)!important;
+  color:var(--text-muted)!important;
+  box-shadow:none!important;
+  opacity:.60!important;
+  filter:none!important;
+}
+
+#tab-monitoring .monitoring-members-panel .btn-action.start.ddt-office-start-disabled:hover{
+  transform:none!important;
+  background:var(--bg-hover)!important;
+  color:var(--text-muted)!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+
+/* Venom must match its native disabled START material exactly. */
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-members-panel .btn-action.start.ddt-office-start-disabled,
+html[data-theme="dark"][data-theme-variant="venom"]:not([data-mi-frozen-presentation="mecha-ivory"])
+#tab-monitoring .monitoring-members-panel .btn-action.start.ddt-office-start-disabled:hover{
+  background:linear-gradient(180deg,#1a1f1a 0%,#121612 100%)!important;
+  color:#697469!important;
+  border:1px solid rgba(116,132,116,.22)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.025),
+    inset 0 0 0 1px rgba(0,0,0,.18)!important;
+  opacity:1!important;
+  filter:saturate(.35)!important;
+  text-shadow:none!important;
+}
+
+/* Remove the older v1.1 custom lock treatment. */
+#tab-monitoring .btn-action.start.ddt-office-start-disabled{
+  animation:none!important;
 }
 </style>
 
