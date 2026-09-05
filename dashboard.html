@@ -116053,6 +116053,7 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
   function renderLibrary(){
     const grid=document.getElementById('animalEmojiPickerGrid');
     if(!grid)return;
+    globalThis.DDTCharacterIdentityV1?.hidePickerTooltip?.();
     ensureTabs();
 
     const selected=(()=>{
@@ -116082,7 +116083,25 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-library .ddt-ani
     grid.querySelectorAll('[data-ddt-animal-key]').forEach(btn=>{
       const img=btn.querySelector('img');
       img?.addEventListener('error',()=>btn.classList.add('ddt-asset-error'),{once:true});
-      btn.addEventListener('click',()=>window.selectDDTAnimal(btn.dataset.ddtAnimalKey));
+      btn.addEventListener('click',()=>{
+        globalThis.DDTCharacterIdentityV1?.hidePickerTooltip?.();
+        window.selectDDTAnimal(btn.dataset.ddtAnimalKey);
+      });
+
+      const showIdentityTooltip=()=>{
+        globalThis.DDTCharacterIdentityV1?.showPickerTooltip?.(
+          btn,
+          btn.dataset.ddtAnimalKey
+        );
+      };
+      const hideIdentityTooltip=()=>{
+        globalThis.DDTCharacterIdentityV1?.hidePickerTooltip?.(btn);
+      };
+
+      btn.addEventListener('mouseenter',showIdentityTooltip);
+      btn.addEventListener('mouseleave',hideIdentityTooltip);
+      btn.addEventListener('focus',showIdentityTooltip);
+      btn.addEventListener('blur',hideIdentityTooltip);
     });
   }
 
@@ -117114,17 +117133,31 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-avatar-popover-visual{
 
     const visualState=renderVisual(visual,formatted);
     if(nameNode)nameNode.textContent=formatted;
-    if(metaNode)metaNode.textContent=visualState?.meta || 'Belum memilih avatar';
 
     const characterIdentity=globalThis.DDTCharacterIdentityV1?.forName?.(formatted)||null;
+    const hasSelectedAnimal=Boolean(visualState?.value && characterIdentity);
+
+    if(metaNode){
+      metaNode.hidden=hasSelectedAnimal;
+      metaNode.textContent=hasSelectedAnimal
+        ? ''
+        : (visualState?.meta || 'Belum memilih avatar');
+    }
+
     if(identityNode){
       identityNode.hidden=!characterIdentity;
       if(characterIdentity){
         if(identityTitle)identityTitle.textContent=characterIdentity.title;
-        if(identityTraits)identityTraits.textContent=characterIdentity.traits.join(' · ');
+        if(identityTraits){
+          identityTraits.hidden=true;
+          identityTraits.textContent='';
+        }
       }else{
         if(identityTitle)identityTitle.textContent='';
-        if(identityTraits)identityTraits.textContent='';
+        if(identityTraits){
+          identityTraits.hidden=true;
+          identityTraits.textContent='';
+        }
       }
     }
 
@@ -123068,43 +123101,43 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
   'use strict';
 
   const IDENTITIES=Object.freeze({
-    zodiac_rat:Object.freeze({title:'The Pathfinder',traits:Object.freeze(['Cerdik','Gesit','Inventif'])}),
-    zodiac_ox:Object.freeze({title:'The Pillar',traits:Object.freeze(['Teguh','Andal','Disiplin'])}),
-    zodiac_tiger:Object.freeze({title:'The Vanguard',traits:Object.freeze(['Berani','Tegas','Ambisius'])}),
-    zodiac_rabbit:Object.freeze({title:'The Diplomat',traits:Object.freeze(['Tenang','Peka','Elegan'])}),
-    zodiac_dragon:Object.freeze({title:'The Visionary',traits:Object.freeze(['Karismatik','Visioner','Berdaya'])}),
-    zodiac_snake:Object.freeze({title:'The Tactician',traits:Object.freeze(['Tajam','Intuitif','Terukur'])}),
-    zodiac_horse:Object.freeze({title:'The Explorer',traits:Object.freeze(['Bebas','Energik','Optimis'])}),
-    zodiac_goat:Object.freeze({title:'The Artisan',traits:Object.freeze(['Kreatif','Hangat','Harmonis'])}),
-    zodiac_monkey:Object.freeze({title:'The Innovator',traits:Object.freeze(['Cerdas','Lincah','Eksperimental'])}),
-    zodiac_rooster:Object.freeze({title:'The Sentinel',traits:Object.freeze(['Teliti','Percaya Diri','Disiplin'])}),
-    zodiac_dog:Object.freeze({title:'The Guardian',traits:Object.freeze(['Setia','Protektif','Tulus'])}),
-    zodiac_pig:Object.freeze({title:'The Harmonizer',traits:Object.freeze(['Ramah','Dermawan','Santai'])}),
+    zodiac_rat:Object.freeze({title:'The Pathfinder',traits:Object.freeze(['Cerdik','Gesit','Inventif']),description:'Cepat membaca peluang dan menemukan jalan saat situasi berubah.'}),
+    zodiac_ox:Object.freeze({title:'The Pillar',traits:Object.freeze(['Teguh','Andal','Disiplin']),description:'Konsisten membangun hasil dengan ketenangan dan daya tahan.'}),
+    zodiac_tiger:Object.freeze({title:'The Vanguard',traits:Object.freeze(['Berani','Tegas','Ambisius']),description:'Berani maju lebih dulu dan mengambil keputusan saat tekanan meningkat.'}),
+    zodiac_rabbit:Object.freeze({title:'The Diplomat',traits:Object.freeze(['Tenang','Peka','Elegan']),description:'Peka membaca suasana dan menjaga hubungan tetap harmonis.'}),
+    zodiac_dragon:Object.freeze({title:'The Visionary',traits:Object.freeze(['Karismatik','Visioner','Berdaya']),description:'Melihat gambaran besar dan mendorong sekitarnya menuju target yang lebih tinggi.'}),
+    zodiac_snake:Object.freeze({title:'The Tactician',traits:Object.freeze(['Tajam','Intuitif','Terukur']),description:'Mengamati detail, menunggu momen tepat, lalu bergerak dengan presisi.'}),
+    zodiac_horse:Object.freeze({title:'The Explorer',traits:Object.freeze(['Bebas','Energik','Optimis']),description:'Menyukai kebebasan, ritme cepat, dan tantangan yang membuka jalan baru.'}),
+    zodiac_goat:Object.freeze({title:'The Artisan',traits:Object.freeze(['Kreatif','Hangat','Harmonis']),description:'Mengubah ide menjadi sesuatu yang hangat, estetik, dan bernilai.'}),
+    zodiac_monkey:Object.freeze({title:'The Innovator',traits:Object.freeze(['Cerdas','Lincah','Eksperimental']),description:'Cepat belajar, gemar bereksperimen, dan menemukan cara baru.'}),
+    zodiac_rooster:Object.freeze({title:'The Sentinel',traits:Object.freeze(['Teliti','Percaya Diri','Disiplin']),description:'Waspada pada detail dan menjaga standar tetap jelas.'}),
+    zodiac_dog:Object.freeze({title:'The Loyal Sentinel',traits:Object.freeze(['Setia','Protektif','Tulus']),description:'Setia menjaga orang dan hal yang dianggap penting.'}),
+    zodiac_pig:Object.freeze({title:'The Harmonizer',traits:Object.freeze(['Ramah','Dermawan','Santai']),description:'Menciptakan suasana nyaman dan mudah membangun kepercayaan.'}),
 
-    animal_bear:Object.freeze({title:'The Protector',traits:Object.freeze(['Kuat','Tenang','Setia'])}),
-    animal_cat:Object.freeze({title:'The Observer',traits:Object.freeze(['Mandiri','Peka','Elegan'])}),
-    animal_owl:Object.freeze({title:'The Strategist',traits:Object.freeze(['Cerdas','Adaptif','Visioner'])}),
-    animal_eagle:Object.freeze({title:'The Commander',traits:Object.freeze(['Fokus','Berani','Visioner'])}),
-    animal_lion:Object.freeze({title:'The Sovereign',traits:Object.freeze(['Karismatik','Berani','Memimpin'])}),
-    animal_wolf:Object.freeze({title:'The Packmaster',traits:Object.freeze(['Loyal','Taktis','Tangguh'])}),
-    animal_fox:Object.freeze({title:'The Clever One',traits:Object.freeze(['Cerdik','Adaptif','Waspada'])}),
-    animal_panda:Object.freeze({title:'The Peacemaker',traits:Object.freeze(['Tenang','Hangat','Seimbang'])}),
-    animal_deer:Object.freeze({title:'The Gracekeeper',traits:Object.freeze(['Lembut','Waspada','Anggun'])}),
-    animal_dolphin:Object.freeze({title:'The Connector',traits:Object.freeze(['Sosial','Cerdas','Ceria'])}),
-    animal_elephant:Object.freeze({title:'The Sage',traits:Object.freeze(['Bijak','Setia','Berwibawa'])}),
-    animal_koala:Object.freeze({title:'The Calmkeeper',traits:Object.freeze(['Santai','Hangat','Konsisten'])}),
-    animal_penguin:Object.freeze({title:'The Companion',traits:Object.freeze(['Setia','Kompak','Tangguh'])}),
-    animal_shark:Object.freeze({title:'The Finisher',traits:Object.freeze(['Fokus','Tegas','Determinatif'])}),
-    animal_turtle:Object.freeze({title:'The Endurer',traits:Object.freeze(['Sabar','Stabil','Tangguh'])}),
-    animal_zebra:Object.freeze({title:'The Individualist',traits:Object.freeze(['Unik','Adaptif','Percaya Diri'])}),
-    animal_bat:Object.freeze({title:'The Navigator',traits:Object.freeze(['Intuitif','Adaptif','Tajam'])}),
-    animal_frog:Object.freeze({title:'The Improviser',traits:Object.freeze(['Lentur','Gesit','Optimis'])}),
-    animal_giraffe:Object.freeze({title:'The Lookout',traits:Object.freeze(['Visioner','Tenang','Waspada'])}),
-    animal_hedgehog:Object.freeze({title:'The Defender',traits:Object.freeze(['Mandiri','Waspada','Tangguh'])}),
-    animal_hippo:Object.freeze({title:'The Powerhouse',traits:Object.freeze(['Kuat','Tegas','Protektif'])}),
-    animal_otter:Object.freeze({title:'The Charmer',traits:Object.freeze(['Ceria','Kreatif','Sosial'])}),
-    animal_raccoon:Object.freeze({title:'The Problem Solver',traits:Object.freeze(['Cerdik','Adaptif','Tekun'])}),
-    animal_squirrel:Object.freeze({title:'The Planner',traits:Object.freeze(['Gesit','Rajin','Antisipatif'])})
+    animal_bear:Object.freeze({title:'The Protector',traits:Object.freeze(['Kuat','Tenang','Setia']),description:'Tenang saat situasi sulit dan siap melindungi lingkarannya.'}),
+    animal_cat:Object.freeze({title:'The Observer',traits:Object.freeze(['Mandiri','Peka','Elegan']),description:'Membaca situasi dengan tenang dan bergerak hanya saat diperlukan.'}),
+    animal_owl:Object.freeze({title:'The Strategist',traits:Object.freeze(['Cerdas','Adaptif','Visioner']),description:'Menghubungkan informasi, membaca pola, dan merencanakan beberapa langkah ke depan.'}),
+    animal_eagle:Object.freeze({title:'The Commander',traits:Object.freeze(['Fokus','Berani','Visioner']),description:'Melihat sasaran dari jauh lalu bergerak dengan fokus dan keyakinan.'}),
+    animal_lion:Object.freeze({title:'The Sovereign',traits:Object.freeze(['Karismatik','Berani','Memimpin']),description:'Memimpin dengan kehadiran kuat dan memberi arah saat keputusan dibutuhkan.'}),
+    animal_wolf:Object.freeze({title:'The Packmaster',traits:Object.freeze(['Loyal','Taktis','Tangguh']),description:'Mengandalkan kerja tim, membaca ritme kelompok, dan menjaga tujuan bersama.'}),
+    animal_fox:Object.freeze({title:'The Clever One',traits:Object.freeze(['Cerdik','Adaptif','Waspada']),description:'Cepat menyesuaikan strategi tanpa kehilangan arah utama.'}),
+    animal_panda:Object.freeze({title:'The Peacemaker',traits:Object.freeze(['Tenang','Hangat','Seimbang']),description:'Menjaga keseimbangan dan menenangkan situasi tanpa kehilangan ketegasan.'}),
+    animal_deer:Object.freeze({title:'The Gracekeeper',traits:Object.freeze(['Lembut','Waspada','Anggun']),description:'Peka terhadap perubahan dan bergerak dengan hati-hati namun elegan.'}),
+    animal_dolphin:Object.freeze({title:'The Connector',traits:Object.freeze(['Sosial','Cerdas','Ceria']),description:'Mudah terhubung dengan orang lain dan menghidupkan kolaborasi.'}),
+    animal_elephant:Object.freeze({title:'The Sage',traits:Object.freeze(['Bijak','Setia','Berwibawa']),description:'Mengingat pelajaran penting dan menjadi pijakan saat keputusan besar dibuat.'}),
+    animal_koala:Object.freeze({title:'The Calmkeeper',traits:Object.freeze(['Santai','Hangat','Konsisten']),description:'Menjaga ritme stabil dan membawa ketenangan ke lingkungan sekitar.'}),
+    animal_penguin:Object.freeze({title:'The Companion',traits:Object.freeze(['Setia','Kompak','Tangguh']),description:'Kuat dalam kebersamaan dan tetap konsisten di kondisi yang tidak nyaman.'}),
+    animal_shark:Object.freeze({title:'The Finisher',traits:Object.freeze(['Fokus','Tegas','Determinatif']),description:'Mengunci target dan terus bergerak sampai pekerjaan selesai.'}),
+    animal_turtle:Object.freeze({title:'The Endurer',traits:Object.freeze(['Sabar','Stabil','Tangguh']),description:'Tidak terburu-buru, tetapi sulit dihentikan setelah menentukan arah.'}),
+    animal_zebra:Object.freeze({title:'The Individualist',traits:Object.freeze(['Unik','Adaptif','Percaya Diri']),description:'Nyaman tampil berbeda dan tetap percaya diri di tengah kelompok.'}),
+    animal_bat:Object.freeze({title:'The Navigator',traits:Object.freeze(['Intuitif','Adaptif','Tajam']),description:'Membaca sinyal yang tidak terlihat jelas dan menemukan arah dalam ketidakpastian.'}),
+    animal_frog:Object.freeze({title:'The Improviser',traits:Object.freeze(['Lentur','Gesit','Optimis']),description:'Cepat menyesuaikan diri dan menemukan peluang di perubahan mendadak.'}),
+    animal_giraffe:Object.freeze({title:'The Lookout',traits:Object.freeze(['Visioner','Tenang','Waspada']),description:'Melihat jauh ke depan sambil tetap peka terhadap keadaan sekitar.'}),
+    animal_hedgehog:Object.freeze({title:'The Defender',traits:Object.freeze(['Mandiri','Waspada','Tangguh']),description:'Menjaga batas dengan baik dan tahu kapan harus melindungi diri.'}),
+    animal_hippo:Object.freeze({title:'The Powerhouse',traits:Object.freeze(['Kuat','Tegas','Protektif']),description:'Menyimpan kekuatan besar di balik sikap tenang dan tegas.'}),
+    animal_otter:Object.freeze({title:'The Charmer',traits:Object.freeze(['Ceria','Kreatif','Sosial']),description:'Membawa energi positif dan menemukan cara kreatif untuk terhubung.'}),
+    animal_raccoon:Object.freeze({title:'The Problem Solver',traits:Object.freeze(['Cerdik','Adaptif','Tekun']),description:'Tekun membongkar masalah sampai menemukan solusi yang benar-benar bekerja.'}),
+    animal_squirrel:Object.freeze({title:'The Planner',traits:Object.freeze(['Gesit','Rajin','Antisipatif']),description:'Menyiapkan langkah berikutnya sejak awal dan jarang datang tanpa rencana.'})
   });
 
   function normalizeName(value){
@@ -123214,13 +123247,115 @@ html[data-theme="dark"][data-theme-variant="venom"] .ddt-frame-color-control{
     });
   }
 
+
+  let pickerTooltip=null;
+  let pickerTooltipAnchor=null;
+  let pickerTooltipTimer=0;
+
+  function ensurePickerTooltip(){
+    if(pickerTooltip?.isConnected)return pickerTooltip;
+
+    pickerTooltip=document.createElement('div');
+    pickerTooltip.id='ddtAnimalIdentityTooltip';
+    pickerTooltip.className='ddt-animal-identity-tooltip';
+    pickerTooltip.setAttribute('role','tooltip');
+    pickerTooltip.setAttribute('aria-hidden','true');
+    pickerTooltip.innerHTML=`
+      <strong class="ddt-animal-identity-tooltip-title"></strong>
+      <span class="ddt-animal-identity-tooltip-traits"></span>
+      <p class="ddt-animal-identity-tooltip-description"></p>
+    `;
+    document.body.appendChild(pickerTooltip);
+    return pickerTooltip;
+  }
+
+  function positionPickerTooltip(anchor){
+    const tip=ensurePickerTooltip();
+    if(!anchor?.getBoundingClientRect)return;
+
+    const rect=anchor.getBoundingClientRect();
+    const gap=10;
+    const margin=10;
+    const width=tip.offsetWidth||238;
+    const height=tip.offsetHeight||112;
+
+    let left=rect.right+gap;
+    let top=rect.top+(rect.height-height)/2;
+    let placement='right';
+
+    if(left+width>window.innerWidth-margin){
+      left=rect.left-width-gap;
+      placement='left';
+    }
+
+    if(left<margin){
+      left=Math.max(margin,Math.min(
+        rect.left+rect.width/2-width/2,
+        window.innerWidth-width-margin
+      ));
+      top=rect.bottom+gap;
+      placement='bottom';
+    }
+
+    if(top+height>window.innerHeight-margin){
+      top=window.innerHeight-height-margin;
+    }
+    if(top<margin)top=margin;
+
+    tip.style.left=`${Math.round(left)}px`;
+    tip.style.top=`${Math.round(top)}px`;
+    tip.dataset.placement=placement;
+  }
+
+  function showPickerTooltip(anchor,key){
+    clearTimeout(pickerTooltipTimer);
+    const identity=forKey(key);
+    if(!anchor||!identity)return;
+
+    const tip=ensurePickerTooltip();
+    pickerTooltipAnchor=anchor;
+
+    tip.querySelector('.ddt-animal-identity-tooltip-title').textContent=identity.title;
+    tip.querySelector('.ddt-animal-identity-tooltip-traits').textContent=identity.traits.join(' · ');
+    tip.querySelector('.ddt-animal-identity-tooltip-description').textContent=identity.description||'';
+
+    anchor.setAttribute('aria-describedby',tip.id);
+
+    pickerTooltipTimer=setTimeout(()=>{
+      if(pickerTooltipAnchor!==anchor || !anchor.isConnected)return;
+      tip.setAttribute('aria-hidden','false');
+      tip.classList.add('show');
+      requestAnimationFrame(()=>positionPickerTooltip(anchor));
+    },110);
+  }
+
+  function hidePickerTooltip(anchor=null){
+    clearTimeout(pickerTooltipTimer);
+    if(anchor && pickerTooltipAnchor && anchor!==pickerTooltipAnchor)return;
+
+    if(pickerTooltipAnchor?.isConnected){
+      pickerTooltipAnchor.removeAttribute('aria-describedby');
+    }
+    pickerTooltipAnchor=null;
+
+    if(pickerTooltip){
+      pickerTooltip.classList.remove('show');
+      pickerTooltip.setAttribute('aria-hidden','true');
+    }
+  }
+
+  window.addEventListener('resize',()=>hidePickerTooltip(),{passive:true});
+  window.addEventListener('scroll',()=>hidePickerTooltip(),{passive:true,capture:true});
+
   window.DDTCharacterIdentityV1=Object.freeze({
-    version:'1.0.0',
+    version:'1.1.0',
     speciesCount:Object.keys(IDENTITIES).length,
     identities:IDENTITIES,
     forKey,
     forName,
     refresh:queueRefresh,
+    showPickerTooltip,
+    hidePickerTooltip,
     persistence:'static metadata; no Supabase query/write'
   });
 
@@ -123495,6 +123630,248 @@ window.DDTDashboardAvatarV2100=Object.freeze({
   noneAnimal:Object.freeze({scale:.78,yPercent:0}),
   additionalSupabaseQuery:false,
   additionalSupabaseWrite:false
+});
+</script>
+
+
+<style id="ddt-dashboard-avatar-character-identity-v2-10-1-refinement">
+/* ================================================================
+   v2.10.1 — CLEAN NONE + COMPACT POPUP + RICH IDENTITY TOOLTIP
+   Motion dark-theme observation intentionally DEFERRED / untouched.
+   ================================================================ */
+
+/* ---------------------------------------------------------------
+   DASHBOARD: Frame=None is a floating character, NOT a badge.
+   The 72px interaction footprint remains so tooltip/click/edit stay easy.
+   --------------------------------------------------------------- */
+#welcomeDashboardAvatar.ddt-frame-none,
+#welcomeDashboardAvatar.ddt-frame-none:hover,
+#welcomeDashboardAvatar.ddt-frame-none:focus-visible{
+  overflow:visible!important;
+  border-color:transparent!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+
+#welcomeDashboardAvatar.ddt-frame-none:focus-visible{
+  outline:none!important;
+}
+
+#welcomeDashboardAvatar.ddt-frame-none > .ddt-animal-img{
+  filter:drop-shadow(0 4px 7px rgba(12,26,34,.11));
+  transition:filter .16s ease,transform .16s ease;
+}
+
+#welcomeDashboardAvatar.ddt-frame-none:hover > .ddt-animal-img,
+#welcomeDashboardAvatar.ddt-frame-none:focus-visible > .ddt-animal-img{
+  filter:
+    drop-shadow(0 5px 8px rgba(12,26,34,.14))
+    drop-shadow(0 0 4px color-mix(in srgb,var(--accent) 11%,transparent));
+}
+
+/* ---------------------------------------------------------------
+   POPUP AVATAR: selected avatar presentation is intentionally compact.
+   Visual -> Name -> Character Title -> Ubah.
+   No stacked species/gender/frame metadata and no traits.
+   --------------------------------------------------------------- */
+.ddt-avatar-popover{
+  width:212px!important;
+  padding:11px!important;
+}
+
+.ddt-avatar-popover-head{
+  margin-bottom:3px!important;
+}
+
+.ddt-avatar-popover-visual{
+  width:84px!important;
+  height:84px!important;
+  margin-bottom:6px!important;
+}
+
+.ddt-avatar-popover-meta[hidden]{
+  display:none!important;
+}
+
+.ddt-avatar-popover-identity{
+  width:100%;
+  margin:3px 0 0!important;
+  padding:0!important;
+  display:block!important;
+  border:0!important;
+  text-align:center;
+}
+
+.ddt-avatar-popover-identity[hidden]{
+  display:none!important;
+}
+
+.ddt-avatar-popover-identity strong{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text-muted)!important;
+  font-size:8.8px!important;
+  font-weight:720!important;
+  line-height:1.2!important;
+  letter-spacing:.018em!important;
+}
+
+.ddt-avatar-popover-identity span{
+  display:none!important;
+}
+
+.ddt-avatar-popover-actions{
+  justify-content:center!important;
+  margin-top:8px!important;
+  padding-top:0!important;
+  border-top:0!important;
+}
+
+.ddt-avatar-popover-edit{
+  min-width:68px;
+}
+
+/* ---------------------------------------------------------------
+   ANIMAL PICKER — Rich themed Character Identity tooltip.
+   Theme-aware by using dashboard theme tokens, not hardcoded light skin.
+   --------------------------------------------------------------- */
+.ddt-animal-identity-tooltip{
+  position:fixed;
+  z-index:12180;
+  width:238px;
+  max-width:calc(100vw - 20px);
+  box-sizing:border-box;
+  display:grid;
+  gap:5px;
+  padding:11px 12px;
+  border:1px solid color-mix(in srgb,var(--accent) 22%,var(--border-color));
+  border-radius:11px;
+  background:color-mix(in srgb,var(--bg-card) 96%,transparent);
+  color:var(--text-primary);
+  box-shadow:
+    0 14px 32px rgba(15,23,42,.15),
+    0 2px 7px rgba(15,23,42,.08),
+    inset 0 1px 0 rgba(255,255,255,.055);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  pointer-events:none;
+  opacity:0;
+  transform:translateY(2px) scale(.985);
+  transition:opacity .12s ease,transform .12s ease;
+}
+
+.ddt-animal-identity-tooltip.show{
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
+
+.ddt-animal-identity-tooltip[aria-hidden="true"]{
+  visibility:hidden;
+}
+
+.ddt-animal-identity-tooltip-title{
+  display:block;
+  color:color-mix(in srgb,var(--accent) 42%,var(--text-primary));
+  font-size:10px;
+  font-weight:860;
+  line-height:1.18;
+  letter-spacing:.012em;
+}
+
+.ddt-animal-identity-tooltip-traits{
+  display:block;
+  color:var(--text-primary);
+  opacity:.78;
+  font-size:8.3px;
+  font-weight:700;
+  line-height:1.25;
+  letter-spacing:.012em;
+}
+
+.ddt-animal-identity-tooltip-description{
+  margin:1px 0 0;
+  color:var(--text-muted);
+  font-size:8.1px;
+  font-weight:560;
+  line-height:1.42;
+  letter-spacing:.004em;
+}
+
+/* A tiny themed anchor accent. */
+.ddt-animal-identity-tooltip::before{
+  content:"";
+  position:absolute;
+  top:12px;
+  left:-1px;
+  width:2px;
+  height:22px;
+  border-radius:0 2px 2px 0;
+  background:color-mix(in srgb,var(--accent) 72%,transparent);
+  opacity:.78;
+}
+
+/* Venom: keep it Venom, not Cyber/white. */
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-identity-tooltip{
+  background:#121612;
+  border-color:color-mix(in srgb,#44d62c 30%,#2f3e30);
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.34),
+    0 2px 7px rgba(0,0,0,.22),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-identity-tooltip-title{
+  color:color-mix(in srgb,#44d62c 68%,#e5eee5);
+}
+html[data-theme="dark"][data-theme-variant="venom"] .ddt-animal-identity-tooltip::before{
+  background:#44d62c;
+}
+
+/* Cyber Dark: neutral dark surface with current accent only. */
+html[data-theme="dark"]:not([data-theme-variant="venom"]) .ddt-animal-identity-tooltip{
+  background:color-mix(in srgb,var(--bg-card) 98%,#000 2%);
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.30),
+    0 2px 7px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+/* Focused tile also gets a restrained themed cue; no hover animation. */
+.ddt-animal-library .ddt-animal-option.ddt-animal-option:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--accent) 42%,transparent)!important;
+  outline-offset:1px!important;
+}
+
+@media(max-width:760px){
+  .ddt-animal-identity-tooltip{
+    width:220px;
+    padding:10px 11px;
+  }
+}
+</style>
+
+
+<script id="ddt-dashboard-avatar-v2-10-1-build-marker">
+window.DDTDashboardAvatarV2101=Object.freeze({
+  version:'2.10.1',
+  source:'v2.10.0-dashboard-avatar-character-identity',
+  dashboardNoneMaterial:'transparent / no badge',
+  popupAvatarPresentation:'visual + name + identity title + Ubah',
+  pickerIdentityTooltip:Object.freeze({
+    trigger:'hover + keyboard focus',
+    lines:3,
+    speciesSpecificDescriptions:36,
+    themeAware:true
+  }),
+  identityMetadata:'static frontend',
+  additionalSupabaseQuery:false,
+  additionalSupabaseWrite:false,
+  deferred:Object.freeze({
+    darkThemeMotionWhiteSpot:'HOLD — intentionally untouched in v2.10.1'
+  })
 });
 </script>
 
