@@ -55839,15 +55839,14 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const batasDetik = getHistoryEventThresholdSeconds(item);
                 const isOverLimit = durasiDetik > batasDetik;
                 const roleLabel = roleLabels[item.role] || item.role;
-                const batasWaktu = new Date(
-                    tMulai.getTime() + (batasDetik * 1000)
-                );
+                const batasText =
+                    `${Math.max(1, Math.round(batasDetik / 60))} menit`;
                 const officeName =
                     String(
                         item.officeName ??
                         item.office_name ??
                         ''
-                    ).trim() || 'Legacy';
+                    ).trim() || '—';
 
                 const tanggal = tMulai.toLocaleDateString('id-ID', {
                     day: '2-digit',
@@ -55864,11 +55863,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     minute: '2-digit',
                     second: '2-digit'
                 });
-                const waktuBatas = batasWaktu.toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }).replace(':', '.');
-
                 let durasiText = '';
                 if (menit > 0) {
                     durasiText = `${menit} menit ${detik} detik`;
@@ -55903,8 +55897,8 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         <td class="time-detail">${waktuMulai}</td>
                         <td class="time-detail">${waktuSelesai}</td>
                         <td class="time-detail"><span class="${durasiClass}">${durasiText}</span></td>
-                        <td class="time-detail history-limit-time">${waktuBatas}</td>
-                        <td><span class="history-office-value ${officeName === 'Legacy' ? 'legacy' : ''}">${officeName}</span></td>
+                        <td class="time-detail history-limit-time">${batasText}</td>
+                        <td><span class="history-office-value ${officeName === '—' ? 'legacy' : ''}">${officeName}</span></td>
                         <td>${statusBadge}</td>
                     </tr>
                 `;
@@ -55970,24 +55964,17 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const waktuSelesai = tSelesai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit',
                     second: '2-digit' });
                 const roleLabel = ROLE_LABELS[item.role] || item.role;
-                const batasWaktu = new Date(
-                    tMulai.getTime() + (batasDetik * 1000)
-                );
-                const waktuBatas = batasWaktu
-                    .toLocaleTimeString('id-ID', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })
-                    .replace(':', '.');
+                const batasText =
+                    `${Math.max(1, Math.round(batasDetik / 60))} menit`;
                 const officeName =
                     String(
                         item.officeName ??
                         item.office_name ??
                         ''
-                    ).trim() || 'Legacy';
+                    ).trim() || '—';
 
                 csv +=
-                    `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${waktuBatas},${officeName},${status}\n`;
+                    `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${batasText},${officeName},${status}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -56077,23 +56064,16 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 const waktuMulai = tMulai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const waktuSelesai = tSelesai.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const roleLabel = ROLE_LABELS[item.role] || item.role;
-                const batasWaktu = new Date(
-                    tMulai.getTime() + (batasDetik * 1000)
-                );
-                const waktuBatas = batasWaktu
-                    .toLocaleTimeString('id-ID', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })
-                    .replace(':', '.');
+                const batasText =
+                    `${Math.max(1, Math.round(batasDetik / 60))} menit`;
                 const officeName =
                     String(
                         item.officeName ??
                         item.office_name ??
                         ''
-                    ).trim() || 'Legacy';
+                    ).trim() || '—';
 
-                csv += `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${waktuBatas},${officeName},${status}\n`;
+                csv += `${index+1},${item.nama},${roleLabel},${tanggal},${waktuMulai},${waktuSelesai},${menit}.${detik},${durasiDetik},${batasText},${officeName},${status}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -124762,14 +124742,35 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
   }
 
   function sessionOfficeName(nama){
+    const key=fName(nama);
+
     const meta=
       state.activeSessions.get(
-        fName(nama)
+        key
       );
 
+    const snapshotName=
+      String(
+        meta?.office_name||
+        ''
+      ).trim();
+
+    if(snapshotName){
+      return snapshotName;
+    }
+
+    /*
+     * New START sessions always receive an Office snapshot from
+     * server authority. During the short realtime hydration gap,
+     * use the already-saved Data User assignment instead of ever
+     * painting the old "Legacy" label.
+     */
+    const assignment=
+      userOffice(key);
+
     return (
-      String(meta?.office_name||'').trim()||
-      'Legacy'
+      assignment?.config?.name||
+      '—'
     );
   }
 
@@ -125452,17 +125453,35 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     }
 
     return `
-      <select
-        class="ddt-employee-office-select ${
-          config
-            ? 'assigned'
-            : 'unset'
-        }"
-        data-user-id="${esc(user.id)}"
-        aria-label="Office ${esc(user.name)}"
+      <div
+        class="employee-inline-cell employee-inline-cell-editing ddt-office-inline-editor"
+        data-inline-user-id="${esc(user.id)}"
+        data-inline-field="office_id"
       >
-        ${options.join('')}
-      </select>
+        <select
+          class="employee-inline-editor ddt-employee-office-select ${
+            config
+              ? 'assigned'
+              : 'unset'
+          }"
+          data-user-id="${esc(user.id)}"
+          aria-label="Office ${esc(user.name)}"
+        >
+          ${options.join('')}
+        </select>
+
+        <span class="employee-inline-edit-actions">
+          <button
+            class="save ddt-office-inline-save"
+            type="button"
+            aria-label="Simpan Office"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m5 12 4 4L19 6"/>
+            </svg>
+          </button>
+        </span>
+      </div>
     `;
   }
 
@@ -125495,12 +125514,26 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
     cell.innerHTML=
       officeEditorMarkup(user);
 
-    const select=
+    const wrapper=
       cell.querySelector(
+        '.ddt-office-inline-editor'
+      );
+
+    const select=
+      wrapper?.querySelector(
         '.ddt-employee-office-select'
       );
 
-    if(!select){
+    const save=
+      wrapper?.querySelector(
+        '.ddt-office-inline-save'
+      );
+
+    if(
+      !wrapper||
+      !select||
+      !save
+    ){
       cancelOfficeEdit(
         user,
         cell
@@ -125509,31 +125542,33 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       return;
     }
 
-    const initial=
-      select.value;
+    /*
+     * The global Premium Select enhancer will transform this SELECT
+     * exactly like Training. Do NOT attach a blur auto-close handler:
+     * Premium Select intentionally moves focus from the hidden native
+     * SELECT to its trigger, which was the v1.1 auto-close root cause.
+     */
+    save.addEventListener(
+      'click',
+      event=>{
+        event.preventDefault();
+        event.stopPropagation();
 
-    select.focus();
-
-    select.addEventListener(
-      'change',
-      ()=>{
         saveUserOffice(
           user,
           select.value,
           select,
           cell
         );
-      },
-      {
-        once:true
       }
     );
 
-    select.addEventListener(
+    wrapper.addEventListener(
       'keydown',
       event=>{
         if(event.key==='Escape'){
           event.preventDefault();
+          event.stopPropagation();
 
           cancelOfficeEdit(
             user,
@@ -125543,24 +125578,22 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       }
     );
 
-    select.addEventListener(
-      'blur',
+    requestAnimationFrame(
       ()=>{
-        setTimeout(
-          ()=>{
-            if(
-              cell.isConnected&&
-              cell.dataset.editing==='1'&&
-              select.value===initial
-            ){
-              cancelOfficeEdit(
-                user,
-                cell
-              );
-            }
-          },
-          80
-        );
+        const trigger=
+          wrapper.querySelector(
+            '.premium-select-trigger'
+          );
+
+        if(trigger){
+          trigger.focus({
+            preventScroll:true
+          });
+        }else{
+          select.focus({
+            preventScroll:true
+          });
+        }
       }
     );
   }
@@ -126941,19 +126974,17 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.0',
-  source:'Office Duration System v1.0.0',
+  version:'1.1.1',
+  source:'Office Duration System v1.1.0',
   refinements:Object.freeze({
-    officeStartTooltip:'hover-capable aria-disabled soft lock',
-    settingsSpacing:'row 03 separated from Save',
-    settingsSuccessFeedback:'Toast only',
-    usersOfficeEditor:'plain text -> double-click dropdown -> plain text',
-    usersScrollPreservation:true,
-    usersOfficeFilter:true,
-    popupOfficePlacement:'top beside Minimize; location text only',
-    monitoringLimit:'active session deadline only',
-    historyColumns:Object.freeze(['Durasi','Batas','Office','Status']),
-    csvColumns:Object.freeze(['Batas','Office'])
+    activeOfficeLegacyLabelRemoved:true,
+    officeEditor:'Training-style Premium Select + explicit Save',
+    officeBottomRowDropUp:true,
+    historyLegacyOffice:'—',
+    historyLimit:'duration minutes, e.g. 16 menit',
+    csvLimit:'duration minutes',
+    usersToolbar:'single desktop rail',
+    usersOfficeColumn:'compact 78–96px'
   }),
   productionVoucherAuthority:'finish_izin',
   voucherLateRule:'duration_seconds > threshold_at_event_seconds',
@@ -127231,6 +127262,247 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-top{
     max-width:118px;
     line-height:28px;
   }
+}
+</style>
+
+
+<style id="ddt-office-duration-v1-1-1-office-dropdown-direction">
+/* Office inline Premium Select uses the same bottom-row drop-up rule as Training. */
+#tab-users .employee-inline-cell-editing[data-inline-field="office_id"]
+.premium-select.employee-inline-drop-up .premium-select-menu{
+  top:auto!important;
+  bottom:calc(100% + 5px)!important;
+  transform-origin:bottom left!important;
+}
+</style>
+
+<script id="ddt-office-duration-v1-1-1-office-dropdown-direction-script">
+(()=>{
+  'use strict';
+
+  if(window.__DDTOfficeV111DropDirection)return;
+  window.__DDTOfficeV111DropDirection=true;
+
+  function updateDirection(trigger){
+    if(!trigger)return;
+
+    const owner=
+      trigger.closest(
+        '#tab-users .employee-inline-cell-editing[data-inline-field="office_id"]'
+      );
+
+    if(!owner)return;
+
+    const premium=
+      trigger.closest(
+        '.premium-select'
+      );
+
+    const menu=
+      premium?.querySelector(
+        '.premium-select-menu'
+      );
+
+    const tableWrap=
+      trigger.closest(
+        '.employee-table-wrap'
+      );
+
+    if(
+      !premium||
+      !menu||
+      !tableWrap
+    ){
+      return;
+    }
+
+    const triggerRect=
+      trigger.getBoundingClientRect();
+
+    const wrapRect=
+      tableWrap.getBoundingClientRect();
+
+    const estimatedMenuHeight=
+      Math.min(
+        250,
+        Math.max(
+          96,
+          menu.scrollHeight||
+          96
+        )
+      );
+
+    const roomBelow=
+      Math.max(
+        0,
+        wrapRect.bottom-
+        triggerRect.bottom
+      );
+
+    const roomAbove=
+      Math.max(
+        0,
+        triggerRect.top-
+        wrapRect.top
+      );
+
+    premium.classList.toggle(
+      'employee-inline-drop-up',
+      roomBelow<
+        estimatedMenuHeight+8&&
+      roomAbove>
+        roomBelow
+    );
+  }
+
+  document.addEventListener(
+    'pointerdown',
+    event=>{
+      const trigger=
+        event.target
+          ?.closest?.(
+            '#tab-users .employee-inline-cell-editing[data-inline-field="office_id"] .premium-select-trigger'
+          );
+
+      if(trigger){
+        updateDirection(
+          trigger
+        );
+      }
+    },
+    true
+  );
+
+  document.addEventListener(
+    'keydown',
+    event=>{
+      if(
+        ![
+          'Enter',
+          ' ',
+          'ArrowDown',
+          'ArrowUp'
+        ].includes(
+          event.key
+        )
+      ){
+        return;
+      }
+
+      const trigger=
+        event.target
+          ?.closest?.(
+            '#tab-users .employee-inline-cell-editing[data-inline-field="office_id"] .premium-select-trigger'
+          );
+
+      if(trigger){
+        updateDirection(
+          trigger
+        );
+      }
+    },
+    true
+  );
+})();
+</script>
+
+
+<style id="ddt-office-duration-v1-1-1-users-layout-authority">
+/* ================================================================
+   USERS TOOLBAR — single desktop rail
+   Search | Role | Office | Rank | Monitoring | Export Audit
+   ================================================================ */
+@media(min-width:1181px){
+  #tab-users .employee-toolbar{
+    display:grid!important;
+    grid-template-columns:
+      minmax(210px,1.55fr)
+      repeat(4,minmax(102px,.50fr))
+      112px!important;
+    grid-auto-flow:column!important;
+    align-items:center!important;
+    gap:8px!important;
+    flex-wrap:nowrap!important;
+    width:100%!important;
+  }
+
+  #tab-users .employee-toolbar > *{
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+  }
+
+  #tab-users .employee-toolbar > #employeeUserSearch{
+    min-width:0!important;
+    width:100%!important;
+    flex:none!important;
+  }
+
+  #tab-users .employee-toolbar .employee-custom-filter,
+  #tab-users .employee-toolbar .premium-select{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  #tab-users .employee-toolbar .employee-export-button{
+    width:112px!important;
+    min-width:112px!important;
+    max-width:112px!important;
+    justify-self:end!important;
+    white-space:nowrap!important;
+  }
+}
+
+/* Office is deliberately compact: operational codes are typically 3–7 chars. */
+#tab-users .employee-users-table .employee-col-office,
+#tab-users .employee-users-table td.ddt-employee-office-cell{
+  width:88px!important;
+  min-width:78px!important;
+  max-width:96px!important;
+}
+
+#tab-users .employee-users-table td.ddt-employee-office-cell{
+  padding-left:6px!important;
+  padding-right:6px!important;
+}
+
+#tab-users .ddt-employee-office-display{
+  max-width:76px!important;
+}
+
+#tab-users .ddt-office-inline-editor{
+  width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+  position:relative!important;
+  z-index:8!important;
+}
+
+#tab-users .ddt-office-inline-editor .premium-select{
+  width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+}
+
+#tab-users .ddt-office-inline-editor .premium-select-menu{
+  z-index:120!important;
+  min-width:112px!important;
+}
+
+/* Keep the table wrap available for Premium Select menus. */
+#tab-users .employee-table-wrap{
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+}
+
+/* History Batas now means configured duration limit, not deadline clock. */
+#tab-history .history-limit-time{
+  white-space:nowrap!important;
+}
+
+/* Old rows deliberately use only an em dash, never the word Legacy. */
+#tab-history .history-office-value.legacy{
+  opacity:.62!important;
 }
 </style>
 
