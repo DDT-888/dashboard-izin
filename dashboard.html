@@ -54124,7 +54124,10 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             updateCurrentCounts();
             updateSidebarBadge();
             updateQuickStats();
-            renderTicker();
+            /*
+             * Ticker intentionally excluded.
+             * Its motion lifecycle is owned only by ticker content/speed.
+             */
             updateRoleCounts();
         }
 
@@ -56956,6 +56959,361 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             return template.innerHTML;
         }
 
+        const DDT_TICKER_REFERENCE_WIDTH_PX = 1000;
+        const ddtTickerRenderState = new WeakMap();
+        const ddtTickerObservedTracks = new Set();
+
+        const ddtTickerResizeObserver =
+            typeof ResizeObserver === 'function'
+                ? new ResizeObserver(entries => {
+                    entries.forEach(entry => {
+                        const track = entry.target;
+                        if (
+                            track &&
+                            track.classList.contains(
+                                'ddt-ticker-seamless-track'
+                            )
+                        ) {
+                            measureSeamlessTickerTrack(track);
+                        }
+                    });
+                })
+                : null;
+
+        function normalizeTickerMotionSpeed(value) {
+            const numeric =
+                Number.parseInt(
+                    value,
+                    10
+                );
+
+            return Math.min(
+                120,
+                Math.max(
+                    5,
+                    Number.isFinite(numeric)
+                        ? numeric
+                        : 30
+                )
+            );
+        }
+
+        function tickerMotionFingerprint(
+            kind,
+            items,
+            speed
+        ) {
+            return JSON.stringify({
+                kind,
+                items,
+                speed
+            });
+        }
+
+        function tickerPixelsPerSecond(speed) {
+            /*
+             * Preserve the existing "seconds" control as a pace control,
+             * but normalize it against a 1000px reference track.
+             *
+             * Example:
+             * speed = 30 -> ~33.33 px/sec regardless of text length.
+             * Therefore longer messages take longer to complete one loop
+             * instead of moving faster merely because the track is longer.
+             */
+            return (
+                DDT_TICKER_REFERENCE_WIDTH_PX /
+                normalizeTickerMotionSpeed(speed)
+            );
+        }
+
+        function measureSeamlessTickerTrack(track) {
+            if (!track?.isConnected) {
+                return;
+            }
+
+            const segment =
+                track.querySelector(
+                    ':scope > .ddt-ticker-segment'
+                );
+
+            if (!segment) {
+                return;
+            }
+
+            const width =
+                segment.getBoundingClientRect().width;
+
+            if (
+                !Number.isFinite(width) ||
+                width <= 1
+            ) {
+                return;
+            }
+
+            const speed =
+                normalizeTickerMotionSpeed(
+                    track.dataset.tickerSpeed
+                );
+
+            const pixelsPerSecond =
+                tickerPixelsPerSecond(speed);
+
+            const durationSeconds =
+                Math.max(
+                    3,
+                    width /
+                    pixelsPerSecond
+                );
+
+            track.style.setProperty(
+                '--ddt-ticker-shift',
+                `${-width}px`
+            );
+
+            track.style.setProperty(
+                '--ddt-ticker-duration',
+                `${durationSeconds.toFixed(3)}s`
+            );
+
+            track.classList.add(
+                'ddt-ticker-motion-ready'
+            );
+        }
+
+        function observeSeamlessTickerTrack(track) {
+            if (
+                !track ||
+                ddtTickerObservedTracks.has(track)
+            ) {
+                return;
+            }
+
+            ddtTickerObservedTracks.add(track);
+
+            ddtTickerResizeObserver
+                ?.observe(track);
+
+            const firstSegment =
+                track.querySelector(
+                    ':scope > .ddt-ticker-segment'
+                );
+
+            if (firstSegment) {
+                ddtTickerResizeObserver
+                    ?.observe(firstSegment);
+            }
+        }
+
+        function renderSeamlessTickerTrack(
+            track,
+            items,
+            speed,
+            {
+                kind = 'live',
+                itemClass = 'ticker-item',
+                sanitize = false,
+                emptyMarkup = '',
+                force = false
+            } = {}
+        ) {
+            if (!track) {
+                return false;
+            }
+
+            const cleanItems =
+                (Array.isArray(items)
+                    ? items
+                    : []
+                )
+                    .map(item =>
+                        String(item ?? '')
+                    )
+                    .filter(item =>
+                        item.trim() !== ''
+                    );
+
+            const normalizedSpeed =
+                normalizeTickerMotionSpeed(speed);
+
+            if (cleanItems.length === 0) {
+                const fingerprint =
+                    tickerMotionFingerprint(
+                        `${kind}:empty`,
+                        [],
+                        normalizedSpeed
+                    );
+
+                const previous =
+                    ddtTickerRenderState
+                        .get(track);
+
+                if (
+                    !force &&
+                    previous?.fingerprint ===
+                        fingerprint
+                ) {
+                    return false;
+                }
+
+                track.classList.remove(
+                    'ddt-ticker-motion-ready'
+                );
+
+                track.classList.add(
+                    'ddt-ticker-seamless-track'
+                );
+
+                track.dataset.tickerKind =
+                    kind;
+
+                track.dataset.tickerSpeed =
+                    String(normalizedSpeed);
+
+                track.innerHTML =
+                    emptyMarkup;
+
+                track.style.removeProperty(
+                    '--ddt-ticker-shift'
+                );
+
+                track.style.removeProperty(
+                    '--ddt-ticker-duration'
+                );
+
+                ddtTickerRenderState.set(
+                    track,
+                    {
+                        fingerprint
+                    }
+                );
+
+                return true;
+            }
+
+            const fingerprint =
+                tickerMotionFingerprint(
+                    kind,
+                    cleanItems,
+                    normalizedSpeed
+                );
+
+            const previous =
+                ddtTickerRenderState
+                    .get(track);
+
+            /*
+             * Critical smoothness gate:
+             * START/END, Avatar, Monitoring refresh and renderAll()
+             * may ask for a ticker render again. If ticker content and
+             * speed are unchanged, do absolutely nothing so the current
+             * animation phase is preserved.
+             */
+            if (
+                !force &&
+                previous?.fingerprint ===
+                    fingerprint &&
+                track.querySelector(
+                    ':scope > .ddt-ticker-segment'
+                )
+            ) {
+                return false;
+            }
+
+            const itemMarkup =
+                cleanItems
+                    .map(item => {
+                        const content =
+                            sanitize
+                                ? sanitizeTickerPreviewMarkup(
+                                    item
+                                )
+                                : item;
+
+                        return `
+                            <span class="${itemClass}">
+                                ${content}
+                            </span>
+                        `;
+                    })
+                    .join('');
+
+            track.classList.remove(
+                'ddt-ticker-motion-ready'
+            );
+
+            track.classList.add(
+                'ddt-ticker-seamless-track'
+            );
+
+            track.dataset.tickerKind =
+                kind;
+
+            track.dataset.tickerSpeed =
+                String(normalizedSpeed);
+
+            /*
+             * Exactly two identical segments.
+             * The second is a visual duplicate only.
+             * Animation travels exactly the measured width of segment A.
+             */
+            track.innerHTML = `
+                <span class="ddt-ticker-segment">
+                    ${itemMarkup}
+                </span>
+                <span
+                    class="ddt-ticker-segment"
+                    aria-hidden="true"
+                >
+                    ${itemMarkup}
+                </span>
+            `;
+
+            track.style.setProperty(
+                '--ddt-ticker-shift',
+                '0px'
+            );
+
+            track.style.setProperty(
+                '--ddt-ticker-duration',
+                `${normalizedSpeed}s`
+            );
+
+            track.style.opacity = '1';
+            track.style.visibility = 'visible';
+
+            ddtTickerRenderState.set(
+                track,
+                {
+                    fingerprint
+                }
+            );
+
+            observeSeamlessTickerTrack(
+                track
+            );
+
+            requestAnimationFrame(() => {
+                measureSeamlessTickerTrack(
+                    track
+                );
+
+                /*
+                 * A hidden Settings tab may still report 0px.
+                 * One delayed measurement is enough when the tab becomes
+                 * visible; ResizeObserver handles subsequent geometry.
+                 */
+                setTimeout(
+                    () =>
+                        measureSeamlessTickerTrack(
+                            track
+                        ),
+                    80
+                );
+            });
+
+            return true;
+        }
+
         function renderTickerSettingsPreview() {
             const textarea =
                 document.getElementById(
@@ -56967,104 +57325,93 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     'tickerSettingsPreviewTrack'
                 );
 
-            if (!textarea || !previewTrack) {
+            if (
+                !textarea ||
+                !previewTrack
+            ) {
                 return;
             }
 
-            const lines = textarea.value
-                .split('\n')
-                .filter(
-                    line => line.trim() !== ''
-                );
-
-            if (lines.length === 0) {
-                previewTrack.innerHTML = `
-                    <span class="settings-preview-empty">
-                        Preview akan tampil di sini.
-                    </span>
-                `;
-
-                previewTrack.style.animation =
-                    'none';
-
-                return;
-            }
+            const lines =
+                textarea.value
+                    .split('\n')
+                    .filter(line =>
+                        line.trim() !== ''
+                    );
 
             const speedInput =
                 document.getElementById(
                     'tickerSpeedInput'
                 );
 
-            const rawSpeed =
-                Number.parseInt(
-                    speedInput?.value,
-                    10
-                );
-
-            const speed = Math.min(
-                120,
-                Math.max(
-                    5,
-                    Number.isFinite(rawSpeed)
-                        ? rawSpeed
-                        : 30
-                )
+            renderSeamlessTickerTrack(
+                previewTrack,
+                lines,
+                normalizeTickerMotionSpeed(
+                    speedInput?.value
+                ),
+                {
+                    kind:
+                        'settings-preview',
+                    itemClass:
+                        'settings-preview-item',
+                    sanitize:
+                        true,
+                    emptyMarkup: `
+                        <span class="settings-preview-empty">
+                            Preview akan tampil di sini.
+                        </span>
+                    `
+                }
             );
-
-            const previewItems = [
-                ...lines,
-                ...lines,
-                ...lines
-            ];
-
-            previewTrack.innerHTML =
-                previewItems.map(item => `
-                    <span class="settings-preview-item">
-                        ${sanitizeTickerPreviewMarkup(item)}
-                    </span>
-                `).join('');
-
-            previewTrack.style.animation =
-                'none';
-
-            void previewTrack.offsetWidth;
-
-            previewTrack.style.animation =
-                `settingsTickerPreviewScroll ${speed}s linear infinite`;
         }
 
         window.renderTickerSettingsPreview =
             renderTickerSettingsPreview;
 
-        function renderTicker() {
-            const track = document.getElementById('tickerTrack');
-            if (!track) return;
+        function renderTicker({
+            force = false,
+            items = null,
+            speed = null,
+            kind = 'live'
+        } = {}) {
+            const track =
+                document.getElementById(
+                    'tickerTrack'
+                );
 
-            const items = tickerItems.filter(item => item.trim() !== '');
-            const speed = tickerSpeed || 30;
-
-            let html = '';
-            if (items.length === 0) {
-                const defaultItems = [
-                    '⏳ Memuat data...'
-                ];
-                const tripled = [...defaultItems, ...defaultItems, ...defaultItems, ...defaultItems, ...defaultItems,
-                    ...defaultItems
-                ];
-                html = tripled.map(item => `<span class="ticker-item">${item}</span>`).join('');
-            } else {
-                const tripled = [...items, ...items, ...items];
-                html = tripled.map(item => `<span class="ticker-item">${item}</span>`).join('');
+            if (!track) {
+                return false;
             }
 
-            track.innerHTML = html;
-            track.style.opacity = '1';
-            track.style.visibility = 'visible';
-            track.style.animation = 'none';
+            const sourceItems =
+                Array.isArray(items)
+                    ? items
+                    : tickerItems;
 
-            void track.offsetHeight;
+            const cleanItems =
+                sourceItems.filter(item =>
+                    String(item || '').trim() !== ''
+                );
 
-            track.style.animation = `tickerScroll ${speed}s linear infinite`;
+            const effectiveItems =
+                cleanItems.length > 0
+                    ? cleanItems
+                    : ['⏳ Memuat data...'];
+
+            return renderSeamlessTickerTrack(
+                track,
+                effectiveItems,
+                speed ?? tickerSpeed ?? 30,
+                {
+                    kind,
+                    itemClass:
+                        'ticker-item',
+                    sanitize:
+                        false,
+                    force
+                }
+            );
         }
 
         window.saveTickerSettings = async function() {
@@ -57232,42 +57579,68 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         };
 
         window.previewTicker = function() {
-            const textarea = document.getElementById('tickerTextInput');
-            if (!textarea) return;
+            const textarea =
+                document.getElementById(
+                    'tickerTextInput'
+                );
 
-            const lines = textarea.value.split('\n').filter(line => line.trim() !== '');
-            if (lines.length === 0) {
-                showToast('Masukkan minimal 1 baris teks!', 'warning');
+            if (!textarea) {
                 return;
             }
 
-            const speedInput = document.getElementById('tickerSpeedInput');
-            let speed = 30;
-            if (speedInput) {
-                speed = parseInt(speedInput.value) || 30;
-                if (speed < 5) speed = 5;
-                if (speed > 120) speed = 120;
+            const lines =
+                textarea.value
+                    .split('\n')
+                    .filter(line =>
+                        line.trim() !== ''
+                    );
+
+            if (lines.length === 0) {
+                showToast(
+                    'Masukkan minimal 1 baris teks!',
+                    'warning'
+                );
+                return;
             }
 
-            const track = document.getElementById('tickerTrack');
-            if (!track) return;
+            const speedInput =
+                document.getElementById(
+                    'tickerSpeedInput'
+                );
 
-            const tripled = [...lines, ...lines, ...lines];
-            track.innerHTML = tripled.map(item =>
-                `<span class="ticker-item">${item}</span>`
-            ).join('');
+            const speed =
+                normalizeTickerMotionSpeed(
+                    speedInput?.value
+                );
 
-            track.style.animation = 'none';
-            track.offsetHeight;
-            track.style.animation = `tickerScroll ${speed}s linear infinite`;
-            track.style.opacity = '1';
-            track.style.visibility = 'visible';
+            /*
+             * Legacy full Monitoring preview, if invoked, now uses the
+             * same seamless engine. The inline Settings preview is still
+             * the primary live preview.
+             */
+            renderTicker({
+                items: lines,
+                speed,
+                kind:
+                    'manual-settings-preview',
+                force:
+                    true
+            });
 
-            showToast(`Preview ticker dengan kecepatan ${speed} detik!`, 'success', 2000);
+            showToast(
+                `Preview ticker dengan pace ${speed} detik!`,
+                'success',
+                2000
+            );
 
-            setTimeout(() => {
-                renderTicker();
-            }, 5000);
+            setTimeout(
+                () => {
+                    renderTicker({
+                        force:true
+                    });
+                },
+                5000
+            );
         };
 
         // ============================================================
@@ -127159,13 +127532,15 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.6',
-  source:'Office Duration System v1.1.5',
-  rootCauseCorrections:Object.freeze({
-    usersInlineEdit:'editor width contained inside existing TD; save overlaid compact',
-    settingsHeader:'legacy width:100% save rule neutralized',
-    venomFrameTab:'old pill background/border explicitly overridden',
-    ddtOriginalComposerSave:'robust light-theme selector + exact Tambah User palette'
+  version:'1.1.7',
+  source:'Office Duration System v1.1.6',
+  targetedCorrection:Object.freeze({
+    tickerMonitoring:'two identical segments / exact measured travel',
+    tickerSettingsPreview:'same shared engine',
+    tickerRenderLifecycle:'content+speed fingerprint; unchanged render = no-op',
+    tickerGenericRenderAll:'decoupled',
+    tickerVelocity:'normalized pixel-per-second pace from existing seconds setting',
+    tickerMotion:'translate3d + will-change'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -129700,6 +130075,134 @@ body[data-selected-theme="light"]
   html body #tab-settings
   #ddtSaveOfficeDuration.settings-save-duration{
     justify-self:start!important;
+  }
+}
+</style>
+
+
+<style id="ddt-ticker-smoothness-v1-targeted-correction">
+/* ================================================================
+   DDT TICKER SMOOTHNESS — TARGETED ROOT CAUSE CORRECTION
+   Monitoring + Settings Preview share the same two-segment engine.
+   ================================================================ */
+
+/* Disable old percentage/keyframe authority until the new engine is ready. */
+#tickerTrack,
+#tickerSettingsPreviewTrack{
+  animation:none!important;
+}
+
+/* GPU-friendly moving layer. */
+#tickerTrack.ddt-ticker-seamless-track,
+#tickerSettingsPreviewTrack.ddt-ticker-seamless-track{
+  width:max-content!important;
+  min-width:max-content!important;
+  max-width:none!important;
+  gap:0!important;
+  will-change:transform!important;
+  backface-visibility:hidden!important;
+  perspective:1000px;
+  contain:layout style;
+}
+
+/* Segment A and B are exact visual twins. */
+#tickerTrack > .ddt-ticker-segment,
+#tickerSettingsPreviewTrack > .ddt-ticker-segment{
+  display:flex!important;
+  align-items:center!important;
+  flex:0 0 auto!important;
+  width:max-content!important;
+  min-width:max-content!important;
+  max-width:none!important;
+  white-space:nowrap!important;
+}
+
+/* Live ticker items already carry their own 30px side padding. */
+#tickerTrack > .ddt-ticker-segment{
+  gap:0!important;
+}
+
+/* Settings preview formerly used track-level gap.
+   Move that spacing inside each identical segment so the seam matches. */
+#tickerSettingsPreviewTrack{
+  padding-left:0!important;
+  padding-right:0!important;
+}
+
+#tickerSettingsPreviewTrack > .ddt-ticker-segment{
+  gap:24px!important;
+  padding-right:24px!important;
+  box-sizing:content-box!important;
+}
+
+@keyframes ddtTickerLiveSeamlessX{
+  from{
+    transform:translate3d(0,-50%,0);
+  }
+  to{
+    transform:translate3d(
+      var(--ddt-ticker-shift),
+      -50%,
+      0
+    );
+  }
+}
+
+@keyframes ddtTickerPreviewSeamlessX{
+  from{
+    transform:translate3d(0,0,0);
+  }
+  to{
+    transform:translate3d(
+      var(--ddt-ticker-shift),
+      0,
+      0
+    );
+  }
+}
+
+#tickerTrack.ddt-ticker-motion-ready{
+  animation:
+    ddtTickerLiveSeamlessX
+    var(--ddt-ticker-duration,30s)
+    linear
+    infinite
+    !important;
+}
+
+#tickerSettingsPreviewTrack.ddt-ticker-motion-ready{
+  animation:
+    ddtTickerPreviewSeamlessX
+    var(--ddt-ticker-duration,30s)
+    linear
+    infinite
+    !important;
+}
+
+/* Preserve the existing intentional pause-on-hover behavior only for live. */
+html:not([data-mi-frozen-presentation="mecha-ivory"])
+.ticker-container .ticker-wrapper:hover
+#tickerTrack.ddt-ticker-motion-ready{
+  animation-play-state:paused!important;
+}
+
+/* Empty Settings Preview never animates. */
+#tickerSettingsPreviewTrack:not(.ddt-ticker-motion-ready)
+.settings-preview-empty{
+  display:inline-flex!important;
+  align-items:center!important;
+  height:100%!important;
+  padding:0 11px!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  #tickerTrack.ddt-ticker-motion-ready,
+  #tickerSettingsPreviewTrack.ddt-ticker-motion-ready{
+    animation-duration:
+      calc(
+        var(--ddt-ticker-duration,30s) * 1.8
+      )
+      !important;
   }
 }
 </style>
