@@ -124345,7 +124345,7 @@ window.DDTDashboardAvatarV2102=Object.freeze({
   ]),
   additionalSupabaseQuery:false,
   additionalSupabaseWrite:false,
-  motionDarkThemeWhiteSpot:'HOLD / untouched'
+  motionDarkThemeWhiteSpot:'ACCEPTED / no issue'
 });
 </script>
 
@@ -125095,11 +125095,7 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
             0${index+1}
           </span>
 
-          <label class="ddt-office-field">
-            <span class="ddt-office-field-label">
-              Lokasi Office
-            </span>
-
+          <label class="ddt-office-field ddt-office-location-field">
             <input
               id="ddtOfficeLocation${index+1}"
               type="text"
@@ -125113,14 +125109,11 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
                     : 'Lokasi Office'
               }"
               value="${esc(office.name||'')}"
+              aria-label="Lokasi Office ${index+1}"
             />
           </label>
 
-          <label class="ddt-office-field">
-            <span class="ddt-office-field-label">
-              Durasi
-            </span>
-
+          <label class="ddt-office-field ddt-office-duration-field">
             <span class="ddt-office-duration-input-wrap">
               <input
                 id="ddtOfficeDuration${index+1}"
@@ -125137,6 +125130,7 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
                 value="${
                   office.durationMinutes??''
                 }"
+                aria-label="Durasi Office ${index+1}"
               />
 
               <span>menit</span>
@@ -125212,7 +125206,7 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
     section.innerHTML=`
       <div class="ddt-office-duration-head">
-        <div>
+        <div class="ddt-office-duration-copy">
           <div class="section-title">
             Durasi Izin Per Office
           </div>
@@ -125221,16 +125215,7 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
             Lokasi Office dan Durasi wajib diisi berpasangan. Maksimal 3 Office.
           </div>
         </div>
-      </div>
 
-      <div
-        class="ddt-office-duration-grid"
-        id="ddtOfficeDurationGrid"
-      >
-        ${officeRowsMarkup()}
-      </div>
-
-      <div class="ddt-office-duration-actions">
         <button
           class="btn-settings settings-primary-action settings-save-duration"
           id="ddtSaveOfficeDuration"
@@ -125247,8 +125232,23 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
             </svg>
           </span>
 
-          <span>Simpan Office</span>
+          <span>Simpan Durasi Izin</span>
         </button>
+      </div>
+
+      <div class="ddt-office-duration-matrix">
+        <div class="ddt-office-duration-columns" aria-hidden="true">
+          <span></span>
+          <span>Lokasi Office</span>
+          <span>Durasi</span>
+        </div>
+
+        <div
+          class="ddt-office-duration-grid"
+          id="ddtOfficeDurationGrid"
+        >
+          ${officeRowsMarkup()}
+        </div>
       </div>
     `;
 
@@ -127159,18 +127159,18 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.3',
-  source:'Office Duration System v1.1.2',
+  version:'1.1.5',
+  source:'Office Duration System v1.1.4',
   refinements:Object.freeze({
-    dashboardNeutralAvatar:'transparent fill + quiet border; Venom-safe',
-    historyTable:'balanced fixed operational grid',
-    voucherActiveIcon:'shared ticket SVG',
-    usersInlineDropdown:'no scrollIntoView for Training/Office',
-    usersInlineFocus:'preventScroll'
+    venomLiveFramedAvatar:'transparent carrier / no badge',
+    venomLiveUserName:'explicit Venom typography',
+    venomAnimalPicker:'full shell + tabs + animal tiles + Frame rail reconciliation',
+    venomFrameHover:'matte green-black / no Cyber cyan',
+    venomComposerSave:'Venom primary action',
+    ddtOriginalComposerSave:'Tambah User color palette only'
   }),
   productionVoucherAuthority:'finish_izin',
-  backendChanged:false,
-  darkThemeAvatarMotion:'HOLD / untouched'
+  backendChanged:false
 });
 </script>
 
@@ -128196,6 +128196,1089 @@ html[data-theme="dark"][data-theme-variant="venom"] body
 #tab-users .employee-inline-cell-editing[data-inline-field="office_id"] .premium-select-menu{
   position:absolute!important;
   margin:0!important;
+}
+</style>
+
+
+<style id="ddt-history-v1-1-4-balanced-spacing">
+/* ================================================================
+   HISTORY IZIN — EVEN DISTRIBUTION
+   # | Nama | Role | Tanggal | Mulai | Selesai | Durasi | Batas | Office | Status
+   ================================================================ */
+#tab-history > .table-wrap table{
+  width:100%!important;
+  min-width:1060px!important;
+  table-layout:fixed!important;
+}
+
+#tab-history > .table-wrap :is(th,td){
+  box-sizing:border-box!important;
+  padding-left:10px!important;
+  padding-right:10px!important;
+}
+
+/* Distribute available space across all operational columns. */
+#tab-history > .table-wrap :is(th,td):nth-child(1){
+  width:4%!important;
+  text-align:center!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(2){
+  width:18%!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(3){
+  width:9%!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(4){
+  width:11%!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(5),
+#tab-history > .table-wrap :is(th,td):nth-child(6){
+  width:8%!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(7){
+  width:13%!important;
+  white-space:nowrap!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(8){
+  width:9%!important;
+  white-space:nowrap!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(9){
+  width:9%!important;
+  white-space:nowrap!important;
+}
+#tab-history > .table-wrap :is(th,td):nth-child(10){
+  width:11%!important;
+  white-space:nowrap!important;
+}
+
+#tab-history > .table-wrap td:nth-child(2) .nama-cell{
+  display:block!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+#tab-history > .table-wrap :is(th,td):nth-child(n+4){
+  font-variant-numeric:tabular-nums;
+}
+</style>
+
+
+<style id="ddt-voucher-v1-1-4-bare-icon">
+#tab-voucher .voucher-count-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  min-width:0!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+
+#tab-voucher .voucher-count-badge::before,
+#tab-voucher .voucher-count-badge::after{
+  display:none!important;
+  content:none!important;
+}
+
+#tab-voucher .voucher-active-ticket-icon{
+  width:14px!important;
+  height:14px!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  flex:none!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+#tab-voucher .voucher-count-badge strong{
+  color:var(--text-primary)!important;
+  font-size:10px!important;
+  font-weight:760!important;
+  line-height:1!important;
+}
+
+html[data-selected-theme="venom"] body
+#tab-voucher .voucher-active-ticket-icon,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-voucher .voucher-active-ticket-icon{
+  color:#67e853!important;
+}
+</style>
+
+
+<style id="ddt-office-v1-1-4-compact-settings">
+/* ================================================================
+   SETTINGS — DURASI IZIN PER OFFICE
+   One compact matrix, no individual boxed cards.
+   ================================================================ */
+#tab-settings .ddt-office-duration-section{
+  display:grid!important;
+  gap:13px!important;
+}
+
+#tab-settings .ddt-office-duration-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:18px!important;
+  margin:0!important;
+}
+
+#tab-settings .ddt-office-duration-copy{
+  min-width:0;
+}
+
+#tab-settings .ddt-office-duration-head .section-desc{
+  margin-top:4px!important;
+  max-width:620px!important;
+}
+
+#tab-settings #ddtSaveOfficeDuration{
+  flex:none!important;
+  align-self:flex-start!important;
+  margin:0!important;
+  min-width:130px!important;
+  white-space:nowrap!important;
+}
+
+#tab-settings .ddt-office-duration-matrix{
+  display:grid!important;
+  gap:6px!important;
+  padding:10px 0 8px!important;
+  border-top:1px solid var(--border-light)!important;
+  border-bottom:1px solid var(--border-light)!important;
+  background:transparent!important;
+}
+
+#tab-settings .ddt-office-duration-columns,
+#tab-settings .ddt-office-duration-row{
+  display:grid!important;
+  grid-template-columns:36px minmax(180px,1fr) minmax(145px,.42fr)!important;
+  gap:10px!important;
+  align-items:center!important;
+}
+
+#tab-settings .ddt-office-duration-columns{
+  min-height:18px!important;
+  padding:0 2px 2px!important;
+}
+
+#tab-settings .ddt-office-duration-columns > span{
+  color:var(--text-muted)!important;
+  font-size:8px!important;
+  font-weight:760!important;
+  line-height:1!important;
+  letter-spacing:.055em!important;
+  text-transform:uppercase!important;
+}
+
+#tab-settings .ddt-office-duration-grid{
+  display:grid!important;
+  gap:6px!important;
+  margin:0!important;
+}
+
+#tab-settings .ddt-office-duration-row{
+  padding:0 2px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+#tab-settings .ddt-office-duration-index{
+  align-self:center!important;
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  min-height:34px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid var(--border-light)!important;
+  border-radius:8px!important;
+  background:transparent!important;
+  color:var(--text-muted)!important;
+  font-size:8px!important;
+  font-weight:820!important;
+  font-variant-numeric:tabular-nums!important;
+  box-sizing:border-box!important;
+}
+
+#tab-settings .ddt-office-field{
+  display:block!important;
+  min-width:0!important;
+  margin:0!important;
+}
+
+#tab-settings .ddt-office-field > input,
+#tab-settings .ddt-office-duration-input-wrap{
+  width:100%!important;
+  height:34px!important;
+  min-height:34px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+}
+
+#tab-settings .ddt-office-duration-input-wrap{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+}
+
+/* Retire old lower action rail completely. */
+#tab-settings .ddt-office-duration-actions{
+  display:none!important;
+}
+
+/* Venom: same matte Settings action language, no Cyber blue/cyan. */
+html[data-selected-theme="venom"] body
+#tab-settings .ddt-office-duration-matrix,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings .ddt-office-duration-matrix{
+  border-color:#293229!important;
+  background:transparent!important;
+}
+
+html[data-selected-theme="venom"] body
+#tab-settings .ddt-office-duration-row,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings .ddt-office-duration-row{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#tab-settings .ddt-office-duration-index,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings .ddt-office-duration-index{
+  color:#859482!important;
+  background:#0c0f0c!important;
+  border-color:#2e382e!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#tab-settings #ddtSaveOfficeDuration,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings #ddtSaveOfficeDuration{
+  color:#b4cdb0!important;
+  background:#111711!important;
+  border-color:#314131!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#tab-settings #ddtSaveOfficeDuration:hover:not(:disabled),
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings #ddtSaveOfficeDuration:hover:not(:disabled){
+  color:#dbe8d8!important;
+  background:#182018!important;
+  border-color:#435843!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+
+/* Remove earlier boxed Venom authority by final cascade. */
+html[data-selected-theme="venom"] body
+#tab-settings .ddt-office-duration-row,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-settings .ddt-office-duration-row{
+  padding:0 2px!important;
+}
+
+@media(max-width:760px){
+  #tab-settings .ddt-office-duration-head{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+
+  #tab-settings #ddtSaveOfficeDuration{
+    justify-self:start!important;
+  }
+
+  #tab-settings .ddt-office-duration-columns,
+  #tab-settings .ddt-office-duration-row{
+    grid-template-columns:34px minmax(0,1fr)!important;
+  }
+
+  #tab-settings .ddt-office-duration-columns > span:nth-child(3){
+    display:none!important;
+  }
+
+  #tab-settings .ddt-office-duration-field{
+    grid-column:2!important;
+  }
+}
+</style>
+
+
+<style id="ddt-users-inline-dropdown-v1-1-4-fixed-layer">
+/* The active Users table scrolls horizontally only.
+   Inline dropdown menus are fixed to viewport and never affect scrollHeight. */
+#tab-users .employee-table-wrap.ddt-inline-menu-fixed-host{
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scrollbar-gutter:auto!important;
+}
+
+#tab-users .employee-inline-cell-editing[data-inline-field="training_status"],
+#tab-users .employee-inline-cell-editing[data-inline-field="office_id"],
+#tab-users .employee-inline-cell-editing[data-inline-field="training_status"] .premium-select,
+#tab-users .employee-inline-cell-editing[data-inline-field="office_id"] .premium-select{
+  overflow:visible!important;
+}
+
+/* Final fixed menu authority overrides old drop-up absolute rules. */
+body .premium-select-menu.ddt-inline-fixed-menu{
+  position:fixed!important;
+  top:var(--ddt-inline-menu-top)!important;
+  left:var(--ddt-inline-menu-left)!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:var(--ddt-inline-menu-width)!important;
+  min-width:var(--ddt-inline-menu-width)!important;
+  max-width:min(260px,calc(100vw - 20px))!important;
+  max-height:var(--ddt-inline-menu-max-height,250px)!important;
+  z-index:22000!important;
+  margin:0!important;
+  transform-origin:var(--ddt-inline-menu-origin,top left)!important;
+}
+
+body .premium-select.open
+.premium-select-menu.ddt-inline-fixed-menu{
+  transform:translateY(0) scale(1)!important;
+}
+</style>
+
+
+<script id="ddt-users-inline-dropdown-v1-1-4-fixed-layer-controller">
+(()=>{
+  'use strict';
+
+  if(window.__DDTInlineFixedMenuV114)return;
+  window.__DDTInlineFixedMenuV114=true;
+
+  const SELECTOR=
+    '#tab-users .employee-inline-cell-editing[data-inline-field="training_status"] .premium-select, '+
+    '#tab-users .employee-inline-cell-editing[data-inline-field="office_id"] .premium-select';
+
+  let raf=0;
+
+  function markHost(){
+    document
+      .getElementById(
+        'employeeActiveTableBody'
+      )
+      ?.closest(
+        '.employee-table-wrap'
+      )
+      ?.classList.add(
+        'ddt-inline-menu-fixed-host'
+      );
+  }
+
+  function place(premium){
+    if(
+      !premium||
+      !premium.classList.contains('open')
+    ){
+      return;
+    }
+
+    const trigger=
+      premium.querySelector(
+        '.premium-select-trigger'
+      );
+
+    const menu=
+      premium.querySelector(
+        '.premium-select-menu'
+      );
+
+    if(
+      !trigger||
+      !menu
+    ){
+      return;
+    }
+
+    markHost();
+
+    const rect=
+      trigger.getBoundingClientRect();
+
+    const tableWrap=
+      trigger.closest(
+        '.employee-table-wrap'
+      );
+
+    const wrapRect=
+      tableWrap?.getBoundingClientRect()||
+      {
+        top:8,
+        bottom:window.innerHeight-8
+      };
+
+    menu.classList.add(
+      'ddt-inline-fixed-menu'
+    );
+
+    /*
+     * Width is intentionally wider than the compact Office cell so
+     * short codes remain comfortable; Training gets standard menu width.
+     */
+    const isOffice=
+      Boolean(
+        premium.closest(
+          '[data-inline-field="office_id"]'
+        )
+      );
+
+    const desiredWidth=
+      Math.min(
+        250,
+        Math.max(
+          isOffice
+            ? 132
+            : 178,
+          Math.round(rect.width)
+        )
+      );
+
+    const rawHeight=
+      Math.min(
+        250,
+        Math.max(
+          72,
+          menu.scrollHeight||
+          96
+        )
+      );
+
+    const roomBelow=
+      Math.max(
+        0,
+        Math.min(
+          window.innerHeight-10,
+          wrapRect.bottom
+        )-
+        rect.bottom
+      );
+
+    const roomAbove=
+      Math.max(
+        0,
+        rect.top-
+        Math.max(
+          10,
+          wrapRect.top
+        )
+      );
+
+    const openUp=
+      roomBelow<
+        rawHeight+8&&
+      roomAbove>
+        roomBelow;
+
+    const available=
+      Math.max(
+        72,
+        (
+          openUp
+            ? roomAbove
+            : roomBelow
+        )-
+        8
+      );
+
+    const maxHeight=
+      Math.min(
+        250,
+        available
+      );
+
+    const effectiveHeight=
+      Math.min(
+        rawHeight,
+        maxHeight
+      );
+
+    let top=
+      openUp
+        ? rect.top-
+          effectiveHeight-
+          6
+        : rect.bottom+
+          6;
+
+    top=
+      Math.max(
+        8,
+        Math.min(
+          top,
+          window.innerHeight-
+          effectiveHeight-
+          8
+        )
+      );
+
+    let left=
+      rect.left;
+
+    left=
+      Math.max(
+        8,
+        Math.min(
+          left,
+          window.innerWidth-
+          desiredWidth-
+          8
+        )
+      );
+
+    menu.style.setProperty(
+      '--ddt-inline-menu-top',
+      `${Math.round(top)}px`
+    );
+
+    menu.style.setProperty(
+      '--ddt-inline-menu-left',
+      `${Math.round(left)}px`
+    );
+
+    menu.style.setProperty(
+      '--ddt-inline-menu-width',
+      `${Math.round(desiredWidth)}px`
+    );
+
+    menu.style.setProperty(
+      '--ddt-inline-menu-max-height',
+      `${Math.round(maxHeight)}px`
+    );
+
+    menu.style.setProperty(
+      '--ddt-inline-menu-origin',
+      openUp
+        ? 'bottom left'
+        : 'top left'
+    );
+  }
+
+  function placeOpen(){
+    cancelAnimationFrame(raf);
+
+    raf=requestAnimationFrame(
+      ()=>{
+        markHost();
+
+        document
+          .querySelectorAll(
+            `${SELECTOR}.open`
+          )
+          .forEach(
+            place
+          );
+      }
+    );
+  }
+
+  document.addEventListener(
+    'click',
+    event=>{
+      if(
+        event.target
+          ?.closest?.(
+            `${SELECTOR} .premium-select-trigger`
+          )
+      ){
+        requestAnimationFrame(
+          placeOpen
+        );
+      }
+    }
+  );
+
+  document.addEventListener(
+    'keydown',
+    event=>{
+      if(
+        ![
+          'Enter',
+          ' ',
+          'ArrowDown',
+          'ArrowUp'
+        ].includes(
+          event.key
+        )
+      ){
+        return;
+      }
+
+      if(
+        event.target
+          ?.closest?.(
+            `${SELECTOR} .premium-select-trigger`
+          )
+      ){
+        requestAnimationFrame(
+          placeOpen
+        );
+      }
+    }
+  );
+
+  window.addEventListener(
+    'resize',
+    placeOpen,
+    {passive:true}
+  );
+
+  document.addEventListener(
+    'scroll',
+    placeOpen,
+    {
+      passive:true,
+      capture:true
+    }
+  );
+
+  new MutationObserver(
+    mutations=>{
+      for(
+        const mutation
+        of mutations
+      ){
+        if(
+          mutation.type==='attributes'&&
+          mutation.target
+            ?.matches?.(
+              SELECTOR
+            )
+        ){
+          placeOpen();
+          return;
+        }
+
+        if(
+          mutation.addedNodes
+            ?.length
+        ){
+          markHost();
+        }
+      }
+    }
+  ).observe(
+    document.body,
+    {
+      subtree:true,
+      childList:true,
+      attributes:true,
+      attributeFilter:['class']
+    }
+  );
+
+  markHost();
+})();
+</script>
+
+
+<style id="ddt-v1-1-5-venom-avatar-theme-reconciliation">
+/* =====================================================================
+   DDT v1.1.5 — VENOM AVATAR THEME RECONCILIATION
+   Scope:
+   1) Monitoring > Sedang Izin framed avatar + user name
+   2) Pilih Animal 3D — tabs / animal grid / Frame rail / Save / hover
+   3) DDT Original — Save button colors only = Tambah User
+   No functional/persistence/motion changes.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   A. VENOM — LIVE "SEDANG IZIN"
+   Root cause:
+   the older generic Venom .ddt-animal-3d paint has higher specificity than
+   the generic framed-avatar transparent rule, so a dark square/badge carrier
+   can remain visible behind Halo/Orb.
+   --------------------------------------------------------------------- */
+html[data-selected-theme="venom"] body
+#tab-monitoring .live-card-col .visual-fun-col.ddt-animal-3d.ddt-frame-active,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring .live-card-col .visual-fun-col.ddt-animal-3d.ddt-frame-active{
+  padding:0!important;
+  margin:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  border-color:transparent!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  outline:0!important;
+  overflow:visible!important;
+  filter:none!important;
+}
+
+/* Keep only the intended Animal + Back/Front frame composition. */
+html[data-selected-theme="venom"] body
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-active::before,
+html[data-selected-theme="venom"] body
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-active::after,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-active::before,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring .live-card-col .visual-fun-col.ddt-frame-active::after{
+  content:none!important;
+  display:none!important;
+}
+
+/* Name tone follows Venom card typography instead of generic Cyber text. */
+html[data-selected-theme="venom"] body
+#tab-monitoring .live-card-col .nama,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring .live-card-col .nama{
+  color:#dce6d9!important;
+  text-shadow:none!important;
+}
+
+/* Secondary active-card text stays deliberately quieter. */
+html[data-selected-theme="venom"] body
+#tab-monitoring .live-card-col .live-status-label,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-monitoring .live-card-col .live-status-label{
+  color:#8d9b89!important;
+}
+
+/* ---------------------------------------------------------------------
+   B. VENOM — PILIH ANIMAL 3D SHELL
+   Explicit matte black/green authority prevents Cyber Dark inheritance.
+   --------------------------------------------------------------------- */
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .animal-emoji-picker-dialog.ddt-animal-library,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .animal-emoji-picker-dialog.ddt-animal-library{
+  background:#0d100d!important;
+  background-image:none!important;
+  border:1px solid #2a342a!important;
+  color:#dce6d9!important;
+  box-shadow:
+    0 22px 52px rgba(0,0,0,.48),
+    inset 0 1px 0 rgba(255,255,255,.022)!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .animal-emoji-picker-kicker,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .animal-emoji-picker-kicker{
+  color:#66b95b!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker #animalEmojiPickerTitle,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker #animalEmojiPickerTitle{
+  color:#edf4ea!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker #animalEmojiPickerSubtitle,
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .animal-emoji-picker-note,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker #animalEmojiPickerSubtitle,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .animal-emoji-picker-note{
+  color:#83917f!important;
+}
+
+/* Animal preview — neutral matte, never cyan carrier. */
+html[data-selected-theme="venom"] body
+#animalEmojiPicker #animalEmojiPickerPreview:not(.ddt-frame-active),
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker #animalEmojiPickerPreview:not(.ddt-frame-active){
+  background:#101410!important;
+  background-image:none!important;
+  border-color:#2d382d!important;
+  box-shadow:none!important;
+}
+
+/* ---------------------------------------------------------------------
+   B1. SHIO / POPULAR / NEW tabs
+   --------------------------------------------------------------------- */
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-animal-tab,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-animal-tab{
+  color:#849181!important;
+  background:#101410!important;
+  background-image:none!important;
+  border-color:#2b342b!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-animal-tab:hover,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-animal-tab:hover{
+  color:#b9c9b5!important;
+  background:#141a14!important;
+  border-color:#394839!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-animal-tab.active,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-animal-tab.active{
+  color:#dcebd8!important;
+  background:#172017!important;
+  background-image:none!important;
+  border-color:#477047!important;
+  box-shadow:
+    inset 0 -2px 0 rgba(68,214,44,.58)!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-animal-tab strong,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-animal-tab strong{
+  color:#7f927b!important;
+}
+
+/* ---------------------------------------------------------------------
+   B2. Animal grid/options
+   --------------------------------------------------------------------- */
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .animal-emoji-picker-grid,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .animal-emoji-picker-grid{
+  background:#0a0d0a!important;
+  background-image:none!important;
+  border-color:#252e25!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .animal-emoji-option.ddt-animal-option,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .animal-emoji-option.ddt-animal-option{
+  color:#b8c4b5!important;
+  background:#0f130f!important;
+  background-image:none!important;
+  border-color:#283128!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .animal-emoji-option.ddt-animal-option:hover,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .animal-emoji-option.ddt-animal-option:hover{
+  color:#d4e0d1!important;
+  background:#151b15!important;
+  border-color:#3a4a3a!important;
+  box-shadow:none!important;
+  transform:translateY(-1px)!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .animal-emoji-option.ddt-animal-option.selected,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .animal-emoji-option.ddt-animal-option.selected{
+  color:#e3eee0!important;
+  background:#162016!important;
+  border-color:#44d62c!important;
+  box-shadow:0 0 0 2px rgba(68,214,44,.055)!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-animal-name,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-animal-name{
+  color:#d3ded0!important;
+}
+
+/* ---------------------------------------------------------------------
+   B3. FRAME rail / Frame cards / hover
+   --------------------------------------------------------------------- */
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-picker-rail,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-picker-rail{
+  background:#0c0f0c!important;
+  background-image:none!important;
+  border-color:#293229!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-picker-rail-head strong,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-picker-rail-head strong{
+  color:#d8e4d5!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-picker-rail-head span,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-picker-rail-head span{
+  color:#7f8d7c!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-grid,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-grid{
+  background:#090c09!important;
+  background-image:none!important;
+  border-color:#252e25!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-option,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-option{
+  color:#8d998a!important;
+  background:#0f130f!important;
+  background-image:none!important;
+  border-color:#293229!important;
+  box-shadow:none!important;
+}
+
+/* Requested hover reconciliation — no Cyber blue/cyan. */
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-option:hover,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-option:hover{
+  color:#c8d8c4!important;
+  background:#151c15!important;
+  background-image:none!important;
+  border-color:#3d513d!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-option.selected,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-option.selected{
+  color:#dcebd8!important;
+  background:#172017!important;
+  background-image:none!important;
+  border-color:#4b704b!important;
+  box-shadow:0 0 0 2px rgba(68,214,44,.05)!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-option-label,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-option-label{
+  color:inherit!important;
+}
+
+/* Color control frame carrier */
+html[data-selected-theme="venom"] body
+#animalEmojiPicker .ddt-frame-color-control,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker .ddt-frame-color-control{
+  background:#0d110d!important;
+  background-image:none!important;
+  border-color:#293329!important;
+  color:#a5b3a1!important;
+  box-shadow:none!important;
+}
+
+/* ---------------------------------------------------------------------
+   B4. Venom Save button
+   --------------------------------------------------------------------- */
+html[data-selected-theme="venom"] body
+#animalEmojiPicker #ddtAvatarComposerSave,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker #ddtAvatarComposerSave{
+  background:#44d62c!important;
+  background-image:none!important;
+  color:#050705!important;
+  border-color:#44d62c!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker #ddtAvatarComposerSave:hover:not(:disabled),
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker #ddtAvatarComposerSave:hover:not(:disabled){
+  background:#55e23e!important;
+  border-color:#55e23e!important;
+  color:#050705!important;
+  box-shadow:0 7px 16px rgba(68,214,44,.12)!important;
+  filter:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#animalEmojiPicker #ddtAvatarComposerSave:disabled,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#animalEmojiPicker #ddtAvatarComposerSave:disabled{
+  background:#181d18!important;
+  color:#667264!important;
+  border-color:#2b342b!important;
+  box-shadow:none!important;
+  opacity:1!important;
+}
+
+/* ---------------------------------------------------------------------
+   C. DDT ORIGINAL — SAVE BUTTON COLOR ONLY
+   Match Tambah User palette. Geometry remains owned by Avatar composer.
+   --------------------------------------------------------------------- */
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#animalEmojiPicker #ddtAvatarComposerSave{
+  background:var(--accent-strong)!important;
+  background-image:none!important;
+  color:#ffffff!important;
+  border-color:rgba(var(--accent-rgb),.35)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#animalEmojiPicker #ddtAvatarComposerSave:hover:not(:disabled){
+  background:var(--accent)!important;
+  color:#ffffff!important;
+  border-color:rgba(var(--accent-rgb),.45)!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+
+html[data-selected-theme="light"]
+:not([data-mi-native-presentation="mecha-ivory"])
+:not([data-mi-frozen-presentation="mecha-ivory"])
+#animalEmojiPicker #ddtAvatarComposerSave:disabled{
+  background:color-mix(in srgb,var(--accent-strong) 45%,#ffffff)!important;
+  color:rgba(255,255,255,.78)!important;
+  border-color:rgba(var(--accent-rgb),.18)!important;
+  box-shadow:none!important;
+  opacity:1!important;
 }
 </style>
 
