@@ -56998,6 +56998,23 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             );
         }
 
+        function normalizeTickerLeadingRunwayMarkup(value) {
+            /*
+             * Historical workaround:
+             * users prefixed ticker lines with many &emsp; / &nbsp; to
+             * make the first text appear near the LIVE badge.
+             *
+             * v1.1 owns this spacing natively, so ignore only LEADING
+             * spacing entities at render time. Stored settings are not
+             * mutated.
+             */
+            return String(value ?? '')
+                .replace(
+                    /^(?:(?:&emsp;|&nbsp;|&#8195;|&#160;)|\s)+/gi,
+                    ''
+                );
+        }
+
         function tickerMotionFingerprint(
             kind,
             items,
@@ -57040,6 +57057,31 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                 return;
             }
 
+            const viewport =
+                track.parentElement;
+
+            const viewportWidth =
+                viewport
+                    ?.getBoundingClientRect()
+                    ?.width ||
+                viewport
+                    ?.clientWidth ||
+                0;
+
+            if (
+                Number.isFinite(viewportWidth) &&
+                viewportWidth > 1
+            ) {
+                track.style.setProperty(
+                    '--ddt-ticker-entry-width',
+                    `${viewportWidth}px`
+                );
+            }
+
+            /*
+             * Measure AFTER the entry-runway variable is updated.
+             * Segment A and B have identical viewport-width runways.
+             */
             const width =
                 segment.getBoundingClientRect().width;
 
@@ -57126,7 +57168,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     : []
                 )
                     .map(item =>
-                        String(item ?? '')
+                        normalizeTickerLeadingRunwayMarkup(
+                            item
+                        )
                     )
                     .filter(item =>
                         item.trim() !== ''
@@ -57258,12 +57302,20 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
              */
             track.innerHTML = `
                 <span class="ddt-ticker-segment">
+                    <span
+                        class="ddt-ticker-entry-spacer"
+                        aria-hidden="true"
+                    ></span>
                     ${itemMarkup}
                 </span>
                 <span
                     class="ddt-ticker-segment"
                     aria-hidden="true"
                 >
+                    <span
+                        class="ddt-ticker-entry-spacer"
+                        aria-hidden="true"
+                    ></span>
                     ${itemMarkup}
                 </span>
             `;
@@ -127532,15 +127584,14 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.7',
-  source:'Office Duration System v1.1.6',
+  version:'1.1.8',
+  source:'Ticker Smoothness v1.0 Targeted Correction',
   targetedCorrection:Object.freeze({
-    tickerMonitoring:'two identical segments / exact measured travel',
-    tickerSettingsPreview:'same shared engine',
-    tickerRenderLifecycle:'content+speed fingerprint; unchanged render = no-op',
-    tickerGenericRenderAll:'decoupled',
-    tickerVelocity:'normalized pixel-per-second pace from existing seconds setting',
-    tickerMotion:'translate3d + will-change'
+    tickerLivePreviewSpeed:'same px/sec + same typography/padding',
+    tickerPreviewVertical:'top 50% / translateY -50%',
+    tickerEntry:'native viewport-width runway from left side of LIVE badge',
+    legacyLeadingEmsp:'ignored at render time; stored text untouched',
+    tickerLoop:'two identical segments preserved'
   }),
   productionVoucherAuthority:'finish_izin',
   backendChanged:false
@@ -130206,6 +130257,187 @@ html:not([data-mi-frozen-presentation="mecha-ivory"])
   }
 }
 </style>
+
+
+<style id="ddt-ticker-v1-1-live-preview-parity">
+/* ================================================================
+   TICKER v1.1 — LIVE / SETTINGS PREVIEW PERCEPTUAL PARITY
+   ================================================================ */
+
+/* Native runway: no more leading &emsp needed. */
+#tickerTrack .ddt-ticker-entry-spacer,
+#tickerSettingsPreviewTrack .ddt-ticker-entry-spacer{
+  display:block!important;
+  flex:0 0 var(--ddt-ticker-entry-width,0px)!important;
+  width:var(--ddt-ticker-entry-width,0px)!important;
+  min-width:var(--ddt-ticker-entry-width,0px)!important;
+  max-width:var(--ddt-ticker-entry-width,0px)!important;
+  height:1px!important;
+  pointer-events:none!important;
+}
+
+/* Live and Preview use the same item geometry.
+   Container width changes visibility/cycle length, NOT pixel velocity. */
+#tickerTrack .ticker-item,
+#tickerSettingsPreviewTrack .settings-preview-item{
+  display:inline-flex!important;
+  align-items:center!important;
+  flex:0 0 auto!important;
+  height:100%!important;
+  min-height:31px!important;
+  padding:0 30px!important;
+  margin:0!important;
+  gap:8px!important;
+  white-space:nowrap!important;
+  font-size:13px!important;
+  line-height:1!important;
+  font-weight:400!important;
+}
+
+/* Match highlight weight too; otherwise glyph width differs. */
+#tickerSettingsPreviewTrack .settings-preview-item .highlight,
+#tickerSettingsPreviewTrack .settings-preview-item .highlight-gold,
+#tickerSettingsPreviewTrack .settings-preview-item .highlight-red,
+#tickerSettingsPreviewTrack .settings-preview-item .highlight-green,
+#tickerSettingsPreviewTrack .settings-preview-item .highlight-purple,
+#tickerSettingsPreviewTrack .settings-preview-item .highlight-orange,
+#tickerSettingsPreviewTrack .settings-preview-item .highlight-pink,
+#tickerSettingsPreviewTrack .settings-preview-item .highlight-teal,
+#tickerSettingsPreviewTrack .settings-preview-item .highlight-white{
+  font-weight:600!important;
+}
+
+/* Remove Preview-only gap/padding that made its measured segment different. */
+#tickerSettingsPreviewTrack > .ddt-ticker-segment{
+  gap:0!important;
+  padding:0!important;
+}
+
+/* Preview viewport remains compact, but text is vertically centered exactly. */
+#tab-settings .settings-preview-window{
+  position:relative!important;
+  height:31px!important;
+  min-height:31px!important;
+  overflow:hidden!important;
+}
+
+#tickerSettingsPreviewTrack.settings-preview-track.ddt-ticker-seamless-track{
+  position:absolute!important;
+  left:0!important;
+  top:50%!important;
+  height:31px!important;
+  min-height:31px!important;
+  padding:0!important;
+  margin:0!important;
+  align-items:center!important;
+}
+
+/* Both moving layers share the exact same Y-axis contract. */
+@keyframes ddtTickerPreviewSeamlessX{
+  from{
+    transform:translate3d(0,-50%,0);
+  }
+  to{
+    transform:translate3d(
+      var(--ddt-ticker-shift),
+      -50%,
+      0
+    );
+  }
+}
+
+/* Ensure every Preview segment centers its children. */
+#tickerSettingsPreviewTrack > .ddt-ticker-segment{
+  min-height:31px!important;
+  height:31px!important;
+  align-items:center!important;
+}
+
+/* Empty state is also centered. */
+#tickerSettingsPreviewTrack:not(.ddt-ticker-motion-ready)
+.settings-preview-empty{
+  display:inline-flex!important;
+  align-items:center!important;
+  height:31px!important;
+  min-height:31px!important;
+  padding:0 11px!important;
+  line-height:1!important;
+}
+</style>
+
+
+<script id="ddt-ticker-v1-1-visibility-remeasure">
+(()=>{
+  'use strict';
+
+  if(window.__DDTTickerV11VisibilityMeasure)return;
+  window.__DDTTickerV11VisibilityMeasure=true;
+
+  function remeasure(){
+    requestAnimationFrame(()=>{
+      const live=
+        document.getElementById(
+          'tickerTrack'
+        );
+
+      const preview=
+        document.getElementById(
+          'tickerSettingsPreviewTrack'
+        );
+
+      if(
+        live?.classList.contains(
+          'ddt-ticker-seamless-track'
+        )&&
+        typeof measureSeamlessTickerTrack===
+          'function'
+      ){
+        measureSeamlessTickerTrack(
+          live
+        );
+      }
+
+      if(
+        preview?.classList.contains(
+          'ddt-ticker-seamless-track'
+        )&&
+        typeof measureSeamlessTickerTrack===
+          'function'
+      ){
+        measureSeamlessTickerTrack(
+          preview
+        );
+      }
+    });
+  }
+
+  const settings=
+    document.getElementById(
+      'tab-settings'
+    );
+
+  if(settings){
+    new MutationObserver(
+      remeasure
+    ).observe(
+      settings,
+      {
+        attributes:true,
+        attributeFilter:[
+          'class',
+          'style'
+        ]
+      }
+    );
+  }
+
+  window.addEventListener(
+    'resize',
+    remeasure,
+    {passive:true}
+  );
+})();
+</script>
 
 </body>
 </html>
