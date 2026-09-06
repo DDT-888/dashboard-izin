@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.84.44-mecha-ivory-production-assembly-g1p08-pcs-offday-r3">
+    <meta name="dashboard-build" content="v64.84.44-mecha-ivory-production-assembly-g1p08-pcs-offday-r4">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -45827,30 +45827,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
         <!-- ===== TAB OFFDAY — ONLINE / REALTIME ===== -->
         <div class="tab-content" id="tab-offday">
             <section class="offday-page" aria-label="Jadwal Offday">
-                <div class="offday-page-intro">
-                    <div class="offday-page-copy">
-                        <h2>Jadwal Offday</h2>
-                        <p>Pilih tanggal offday pada baris Anda. Jadwal mengikuti susunan Shift Aktif.</p>
-                    </div>
-                    <div class="offday-period" id="offdayPeriodControl">
-                        <span class="offday-period-label">PERIODE</span>
-                        <button
-                            class="offday-period-display"
-                            id="offdayPeriodDisplay"
-                            type="button"
-                            title="Double-click untuk pilih bulan"
-                            aria-label="Periode OFFDAY. Double-click untuk pilih bulan"
-                        >Oktober 2026</button>
-                        <input
-                            class="offday-month-picker"
-                            id="offdayMonthPicker"
-                            type="month"
-                            aria-label="Pilih periode bulan OFFDAY"
-                            tabindex="-1"
-                        />
-                    </div>
-                </div>
-
                 <div class="offday-shell" id="offdayShell">
                     <div class="offday-board-toolbar">
                         <div class="offday-roster-summary">
@@ -45865,13 +45841,33 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                 <div class="offday-selection-title">PEMILIHAN TANGGAL</div>
                                 <div class="offday-selection-desc">Tanggal yang dikunci Leader tidak tersedia untuk pemilihan.</div>
                             </div>
-                            <button
-                                class="offday-toggle"
-                                id="offdayGlobalToggle"
-                                type="button"
-                                aria-label="Buka atau tutup pemilihan OFFDAY"
-                                aria-pressed="false"
-                            ></button>
+                            <div class="offday-header-controls">
+                                <button
+                                    class="offday-toggle"
+                                    id="offdayGlobalToggle"
+                                    type="button"
+                                    aria-label="Buka atau tutup pemilihan OFFDAY"
+                                    aria-pressed="false"
+                                ></button>
+                                <span class="offday-control-divider" aria-hidden="true"></span>
+                                <div class="offday-period" id="offdayPeriodControl">
+                                    <span class="offday-period-label">PERIODE</span>
+                                    <button
+                                        class="offday-period-display"
+                                        id="offdayPeriodDisplay"
+                                        type="button"
+                                        title="Double-click untuk pilih bulan"
+                                        aria-label="Periode OFFDAY. Double-click untuk pilih bulan"
+                                    >Oktober 2026</button>
+                                    <input
+                                        class="offday-month-picker"
+                                        id="offdayMonthPicker"
+                                        type="month"
+                                        aria-label="Pilih periode bulan OFFDAY"
+                                        tabindex="-1"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -134086,6 +134082,120 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     #tab-offday .offday-matrix-tools-left span{display:none;}
     #tab-offday .offday-self-legend{display:none;}
     #tab-offday .offday-matrix-scroll{max-height:none;min-height:520px;}
+}
+</style>
+
+
+<style id="offday-production-realtime-v4-refinement">
+/* OFFDAY R4 — presentation-only refinement. Realtime/action contract unchanged. */
+#tab-offday{
+    /* Shift Kerja column authority: 280px surface, 34px card inside 4px/6px body padding. */
+    --offday-name-w:280px;
+    --offday-row-h:42px;
+}
+
+/* No secondary page heading: the route title remains the single page identity. */
+#tab-offday .offday-page-intro,
+#tab-offday .offday-page-copy{display:none!important;}
+
+/* Period joins the operational header beside the global switch. */
+#tab-offday .offday-selection-control{
+    padding:8px 12px;
+    min-height:50px;
+}
+#tab-offday .offday-header-controls{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:11px;
+    min-width:0;
+}
+#tab-offday .offday-control-divider{
+    width:1px;
+    height:28px;
+    flex:0 0 1px;
+    background:color-mix(in srgb,var(--border-color) 84%,var(--text-muted));
+    opacity:.9;
+}
+#tab-offday .offday-period{
+    position:relative;
+    min-width:102px;
+    text-align:left;
+    display:grid;
+    justify-items:start;
+    align-content:center;
+    gap:2px;
+}
+#tab-offday .offday-period-label{
+    font-size:6.8px;
+    font-weight:790;
+    letter-spacing:.085em;
+}
+#tab-offday .offday-period-display{
+    padding:1px 3px;
+    margin-left:-3px;
+    font-size:10px;
+    font-weight:780;
+    line-height:1.15;
+    text-align:left;
+}
+#tab-offday .offday-month-picker{right:auto;left:0;bottom:0;}
+
+/* Staff geometry mirrors the Shift Kerja user-card rail. */
+#tab-offday .offday-roster-cell{
+    width:var(--offday-name-w);
+    min-width:var(--offday-name-w);
+    max-width:var(--offday-name-w);
+    padding:4px 6px;
+    background:color-mix(in srgb,var(--bg-hover) 32%,var(--bg-card));
+}
+#tab-offday .offday-day-cell{
+    background:color-mix(in srgb,var(--bg-hover) 32%,var(--bg-card));
+}
+#tab-offday .offday-user-card.user-card-shift{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:34px!important;
+    height:34px!important;
+    margin:0!important;
+    padding:4px 8px!important;
+}
+#tab-offday .offday-user-card.user-card-shift .user-info{
+    flex:1 1 auto!important;
+    min-width:0!important;
+    max-width:none!important;
+}
+#tab-offday .offday-user-card.user-card-shift .user-name{
+    width:auto!important;
+    max-width:100%!important;
+    min-width:0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+#tab-offday .offday-user-card.user-card-shift .role-tag-shift{
+    flex:0 0 auto!important;
+    flex-shrink:0!important;
+    margin-left:auto!important;
+}
+
+/* The highlighted own-row uses one continuous row surface behind the card and dates. */
+#tab-offday .offday-roster-cell.is-self,
+#tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-closed){
+    background:var(--offday-self-bg);
+}
+
+@media(max-width:1100px){
+    #tab-offday{--offday-name-w:280px;}
+}
+@media(max-width:760px){
+    #tab-offday{--offday-name-w:260px;}
+    #tab-offday .offday-selection-control{align-items:center;}
+    #tab-offday .offday-header-controls{gap:8px;}
+    #tab-offday .offday-control-divider{height:24px;}
+    #tab-offday .offday-period{min-width:92px;}
 }
 </style>
 
