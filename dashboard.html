@@ -134606,7 +134606,188 @@ html[data-selected-theme="light"] #tab-offday{
 }
 </style>
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v10-silent-warm-prefetch-first-open">
+
+<style id="offday-production-realtime-v11-color-audit">
+/* OFFDAY R11 — micro color audit refinement.
+   Scope: shift separator, available / locked area, OFF stamp, self-row.
+   Header tanggal remains visually locked. No behavior / realtime changes. */
+#tab-offday{
+    --offday-row-surface:color-mix(in srgb,var(--bg-card) 90%,var(--bg-hover));
+    --offday-grid-line:color-mix(in srgb,var(--border-light) 72%,var(--border-color));
+    --offday-lock-bg:color-mix(in srgb,var(--bg-hover) 84%,#dfe7e9);
+    --offday-lock-line:color-mix(in srgb,var(--text-muted) 62%,var(--border-color));
+    --offday-self-bg:color-mix(in srgb,var(--bg-card) 78%,var(--accent-soft));
+    --offday-self-line:color-mix(in srgb,var(--accent) 46%,#8aa094);
+    --offday-stamp:#4d7768;
+    --offday-stamp-border:#35564a;
+}
+
+/* Calm main matrix surface: cleaner available area with less cyan energy. */
+#tab-offday .offday-roster-cell,
+#tab-offday .offday-day-cell{
+    background:var(--offday-row-surface)!important;
+    border-bottom-color:var(--offday-grid-line)!important;
+}
+#tab-offday .offday-day-cell{border-right-color:var(--offday-grid-line)!important;}
+#tab-offday .offday-roster-cell{border-right-color:color-mix(in srgb,var(--offday-grid-line) 70%,var(--border-color))!important;}
+
+/* Shift separator: lighter, more premium, easier to scan. */
+#tab-offday .offday-group-name,
+#tab-offday .offday-group-day{
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--bg-hover) 72%,var(--bg-card)) 0%,
+        color-mix(in srgb,var(--bg-hover) 88%,var(--bg-card)) 100%)!important;
+    border-bottom-color:color-mix(in srgb,var(--border-color) 76%,var(--border-light))!important;
+}
+#tab-offday .offday-group-name{
+    box-shadow:inset 3px 0 0 color-mix(in srgb,var(--text-muted) 18%,transparent), 6px 0 10px rgba(14,45,52,.016)!important;
+}
+#tab-offday .offday-group-name strong{
+    color:color-mix(in srgb,var(--text-secondary) 88%,var(--text-primary))!important;
+    letter-spacing:.05em!important;
+}
+#tab-offday .offday-group-name em{
+    border-color:color-mix(in srgb,var(--border-color) 88%,var(--text-muted))!important;
+    background:color-mix(in srgb,var(--bg-card) 84%,var(--bg-hover))!important;
+    color:color-mix(in srgb,var(--text-muted) 92%,var(--text-secondary))!important;
+}
+#tab-offday .offday-group-name span{
+    color:color-mix(in srgb,var(--text-muted) 92%,var(--text-secondary))!important;
+    opacity:.86!important;
+}
+#tab-offday .offday-group-name.is-leader{
+    background:linear-gradient(180deg,
+        color-mix(in srgb,#172033 4.5%,var(--bg-hover)) 0%,
+        color-mix(in srgb,#172033 1.5%,var(--bg-card)) 100%)!important;
+    box-shadow:inset 3px 0 0 #d5a83f, 6px 0 10px rgba(14,45,52,.016)!important;
+}
+#tab-offday .offday-group-day.is-leader{
+    background:linear-gradient(180deg,
+        color-mix(in srgb,#172033 2.2%,var(--bg-hover)) 0%,
+        color-mix(in srgb,#172033 0.7%,var(--bg-card)) 100%)!important;
+}
+#tab-offday .offday-group-name.is-unassigned,
+#tab-offday .offday-group-day.is-unassigned{
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--text-muted) 4%,var(--bg-hover)) 0%,
+        color-mix(in srgb,var(--text-muted) 2%,var(--bg-card)) 100%)!important;
+}
+
+/* Self row: clearer than available area but quieter and more premium. */
+#tab-offday .offday-roster-cell.is-self,
+#tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-closed):not(.is-role-taken){
+    background:var(--offday-self-bg)!important;
+}
+#tab-offday .offday-roster-cell.is-self{
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,var(--offday-self-line) 62%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-line) 62%,transparent),
+        6px 0 10px rgba(14,45,52,.02)!important;
+}
+#tab-offday .offday-day-cell.is-self-row{
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,var(--offday-self-line) 58%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-line) 58%,transparent)!important;
+}
+#tab-offday .offday-roster-cell.is-self::before{background:var(--offday-stamp)!important;}
+#tab-offday .offday-roster-cell.is-self .offday-user-card.user-card-shift{
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--offday-self-line) 34%,transparent)!important;
+}
+
+/* OFF stamp: darker jade, less neon, slightly more premium material. */
+#tab-offday .offday-stamp{
+    width:27px!important;
+    height:24px!important;
+    border-radius:8px!important;
+    border-color:var(--offday-stamp-border)!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--offday-stamp) 78%,#78988c) 0%,
+        var(--offday-stamp) 55%,
+        color-mix(in srgb,var(--offday-stamp) 88%,#264137) 100%)!important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.18),
+        0 2px 6px rgba(28,63,53,.16)!important;
+    color:#fff!important;
+}
+#tab-offday .offday-day-cell.is-self-row .offday-stamp{
+    box-shadow:
+        0 0 0 2px color-mix(in srgb,var(--offday-self-line) 12%,transparent),
+        inset 0 1px 0 rgba(255,255,255,.18),
+        0 2px 6px rgba(28,63,53,.18)!important;
+}
+
+/* Locked / closed / role-taken states each get a distinct but calm language. */
+#tab-offday .offday-day-cell.is-closed:not(.has-choice){
+    background:color-mix(in srgb,var(--bg-hover) 62%,var(--bg-card))!important;
+}
+#tab-offday .offday-day-cell.is-locked:not(.has-choice){
+    background:repeating-linear-gradient(135deg,
+        var(--offday-lock-bg) 0,
+        var(--offday-lock-bg) 6px,
+        color-mix(in srgb,var(--offday-lock-bg) 86%,var(--border-color)) 6px,
+        color-mix(in srgb,var(--offday-lock-bg) 86%,var(--border-color)) 12px)!important;
+}
+#tab-offday .offday-day-cell.is-role-taken:not(.has-choice){
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--bg-hover) 56%,var(--bg-card)) 0%,
+        color-mix(in srgb,var(--text-muted) 7%,var(--bg-card)) 100%)!important;
+}
+#tab-offday .offday-day-cell.is-role-taken:not(.has-choice)::after{
+    background:color-mix(in srgb,var(--text-muted) 48%,transparent)!important;
+    opacity:.9;
+}
+#tab-offday .offday-lock-mark{
+    color:color-mix(in srgb,var(--text-muted) 82%,var(--text-secondary))!important;
+    opacity:.62!important;
+}
+
+/* DDT Original specific tuning: remove remaining bright cyan feel. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-row-surface:#fbfcfc;
+    --offday-grid-line:#dbe4e6;
+    --offday-lock-bg:#eef2f3;
+    --offday-self-bg:#eef4f1;
+    --offday-self-line:#7e9d90;
+    --offday-stamp:#4b7465;
+    --offday-stamp-border:#355549;
+}
+html[data-selected-theme="light"] #tab-offday .offday-group-name,
+html[data-selected-theme="light"] #tab-offday .offday-group-day{
+    background:linear-gradient(180deg,#f1f6f7 0%,#edf3f4 100%)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-group-name.is-leader{
+    background:linear-gradient(180deg,#edf2f5 0%,#edf1f4 100%)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-group-day.is-leader{
+    background:linear-gradient(180deg,#f3f6f8 0%,#f1f5f7 100%)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-user-clickable:hover{
+    background:#e7efeb!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-axis-hover{
+    background:#eef4f1!important;
+}
+
+/* Dark-family follow the same hierarchy without brightening the table. */
+html[data-theme="dark"] #tab-offday{
+    --offday-row-surface:color-mix(in srgb,var(--bg-card) 92%,var(--bg-hover));
+    --offday-grid-line:color-mix(in srgb,var(--border-color) 84%,var(--border-light));
+    --offday-lock-bg:color-mix(in srgb,var(--bg-hover) 80%,#242c31);
+    --offday-self-bg:color-mix(in srgb,var(--accent-soft) 22%,var(--bg-card));
+}
+html[data-theme="dark"] #tab-offday .offday-group-name,
+html[data-theme="dark"] #tab-offday .offday-group-day{
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--bg-hover) 90%,var(--bg-card)) 0%,
+        color-mix(in srgb,var(--bg-hover) 76%,var(--bg-card)) 100%)!important;
+}
+html[data-theme="dark"] #tab-offday .offday-stamp{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 2px 6px rgba(0,0,0,.24)!important;
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v11-color-audit-pass">
 (function(){
     'use strict';
 
