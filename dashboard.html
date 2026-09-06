@@ -134930,7 +134930,178 @@ html[data-theme="dark"] #tab-offday .offday-day-cell.is-locked:not(.has-choice){
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v12-visual-hierarchy-pass">
+
+<style id="offday-production-realtime-v13-theme-lock-refinement">
+/* OFFDAY R13 — presentation-only refinement.
+   1) Leader-lock body state remains explicit but no longer dominates the matrix.
+   2) STAFF/SHIFT + date-header geometry stays frozen; palette follows each theme. */
+
+/* ------------------------------------------------------------
+   A. Leader Lock — calm hard-restriction language
+   ------------------------------------------------------------ */
+#tab-offday .offday-day-cell.is-locked:not(.has-choice){
+    background:
+        repeating-linear-gradient(135deg,
+            transparent 0,
+            transparent 10px,
+            color-mix(in srgb,var(--offday-lock-line) 7%,transparent) 10px,
+            color-mix(in srgb,var(--offday-lock-line) 7%,transparent) 12px),
+        color-mix(in srgb,var(--offday-lock-bg) 94%,var(--bg-card))!important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--offday-lock-line) 54%,transparent)!important;
+}
+#tab-offday .offday-day-cell.is-locked.is-self-row:not(.has-choice){
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb,var(--offday-lock-line) 58%,transparent),
+        inset 0 1px 0 color-mix(in srgb,var(--offday-self-line) 28%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-line) 28%,transparent)!important;
+}
+#tab-offday .offday-lock-mark{
+    color:color-mix(in srgb,var(--text-muted) 86%,var(--text-secondary))!important;
+    font-weight:820!important;
+    opacity:.68!important;
+}
+
+/* DDT Original: flatter lock surface, still clearly stronger than role-taken. */
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-locked:not(.has-choice){
+    background:
+        repeating-linear-gradient(135deg,
+            transparent 0,
+            transparent 10px,
+            rgba(91,111,113,.045) 10px,
+            rgba(91,111,113,.045) 12px),
+        #eef2f2!important;
+    box-shadow:inset 0 0 0 1px #b6c2c3!important;
+}
+
+/* Dark themes: avoid luminous hatch / heavy boxed cells. */
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-locked:not(.has-choice){
+    background:
+        repeating-linear-gradient(135deg,
+            transparent 0,
+            transparent 10px,
+            rgba(255,255,255,.025) 10px,
+            rgba(255,255,255,.025) 12px),
+        color-mix(in srgb,var(--offday-lock-bg) 92%,var(--bg-card))!important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--offday-lock-line) 58%,transparent)!important;
+}
+
+/* ------------------------------------------------------------
+   B. Header — same approved structure, theme-native palette
+   ------------------------------------------------------------ */
+#tab-offday{
+    --offday-head-text:#edf5f6;
+    --offday-head-muted:#a9c0c4;
+    --offday-head-divider:rgba(255,255,255,.085);
+}
+#tab-offday .offday-corner-head,
+#tab-offday .offday-day-head{
+    background:var(--offday-head)!important;
+    color:var(--offday-head-text)!important;
+}
+#tab-offday .offday-corner-head small,
+#tab-offday .offday-day-head .dow{
+    color:var(--offday-head-muted)!important;
+}
+#tab-offday .offday-corner-head,
+#tab-offday .offday-day-head{
+    border-right-color:var(--offday-head-divider)!important;
+}
+
+/* DDT Original — preserve approved teal authority. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-head:#153a43;
+    --offday-head-lock:#2a4146;
+    --offday-head-text:#edf5f6;
+    --offday-head-muted:#a9c0c4;
+    --offday-head-divider:rgba(255,255,255,.085);
+}
+
+/* Cyber Dark — graphite/cyan family. */
+html[data-selected-theme="dark"] #tab-offday{
+    --offday-head:#172b35;
+    --offday-head-lock:#293940;
+    --offday-head-text:#edf4f6;
+    --offday-head-muted:#9db4bb;
+    --offday-head-divider:rgba(132,205,218,.10);
+}
+
+/* Pastel Pink — deep berry, not teal. */
+html[data-selected-theme="pink"] #tab-offday{
+    --offday-head:#62364d;
+    --offday-head-lock:#59434c;
+    --offday-head-text:#fff2f7;
+    --offday-head-muted:#dab7c6;
+    --offday-head-divider:rgba(255,219,234,.11);
+}
+
+/* Emerald — deep botanical green. */
+html[data-selected-theme="emerald"] #tab-offday{
+    --offday-head:#285746;
+    --offday-head-lock:#405b51;
+    --offday-head-text:#eef9f4;
+    --offday-head-muted:#afd1c4;
+    --offday-head-divider:rgba(208,246,230,.10);
+}
+
+/* Royal Purple — deep violet/slate. */
+html[data-selected-theme="purple"] #tab-offday{
+    --offday-head:#493b70;
+    --offday-head-lock:#514b63;
+    --offday-head-text:#f6f1ff;
+    --offday-head-muted:#c5b9df;
+    --offday-head-divider:rgba(231,220,255,.11);
+}
+
+/* Ocean Blue — marine blue family. */
+html[data-selected-theme="ocean"] #tab-offday{
+    --offday-head:#1d536b;
+    --offday-head-lock:#385c6b;
+    --offday-head-text:#edf9fd;
+    --offday-head-muted:#add0dd;
+    --offday-head-divider:rgba(209,242,252,.10);
+}
+
+/* Rose Gold — muted cocoa-rose rather than cyan. */
+html[data-selected-theme="rose-gold"] #tab-offday{
+    --offday-head:#684944;
+    --offday-head-lock:#645552;
+    --offday-head-text:#fff5f1;
+    --offday-head-muted:#d9bbb4;
+    --offday-head-divider:rgba(255,229,221,.11);
+}
+
+/* Venom — accepted dark green family. */
+html[data-selected-theme="venom"] #tab-offday,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
+    --offday-head:#111b12;
+    --offday-head-lock:#1d2a1e;
+    --offday-head-text:#e9f5e7;
+    --offday-head-muted:#8dac89;
+    --offday-head-divider:rgba(68,214,44,.10);
+}
+
+/* Mecha Ivory — graphite/steel datum consistent with the presentation. */
+html[data-selected-theme="mecha-ivory"] #tab-offday,
+html[data-theme-variant="mecha-ivory"] #tab-offday{
+    --offday-head:#3e494b;
+    --offday-head-lock:#555c5d;
+    --offday-head-text:#f2f0e9;
+    --offday-head-muted:#c1c2bc;
+    --offday-head-divider:rgba(242,240,233,.09);
+}
+
+/* Header locked state inherits each theme instead of reverting to generic teal. */
+#tab-offday .offday-day-head.is-locked{
+    background:var(--offday-head-lock)!important;
+    color:color-mix(in srgb,var(--offday-head-text) 68%,var(--offday-head-muted))!important;
+}
+#tab-offday .offday-day-head.is-locked .dow{
+    color:color-mix(in srgb,var(--offday-head-muted) 72%,transparent)!important;
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v13-theme-lock-refinement">
 (function(){
     'use strict';
 
