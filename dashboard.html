@@ -128418,21 +128418,22 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.24',
-  source:'Users Pencil Authority v1.16',
+  version:'1.1.25',
+  source:'Users Date Editor Cross-PC v1.17',
   targetedCorrection:Object.freeze({
-    activeDateEditors:'cross-PC geometry hardening',
-    fields:'Passport Expiry / Visa Expiry / JOIN SMB / JOIN DDT',
-    columnWidth:'124px unchanged',
-    dateFont:'8.2px',
-    separator:'3px',
-    picker:'15x20 / icon 10x10',
+    activeDateEditors:'visible cross-PC separation',
+    rootCause:'v1.17 effective gap only ~6px',
+    rightReserve:'28px',
+    effectivePickerSaveGap:'~12px',
+    dateFont:'7.6px',
+    separator:'2px',
+    picker:'14x19 / icon 9x9',
     save:'16x16 / icon 9x9',
-    rightReserve:'22px deterministic gap',
+    columnWidth:'124px unchanged',
     inactiveDate:'PASS / untouched',
     training:'PASS / untouched',
     pencilAuthority:'PASS / untouched',
-    allOtherV116Areas:'PASS / unchanged',
+    allOtherV117Areas:'PASS / unchanged',
     tickerSmoothness:'PASS / unchanged',
     poipetProgressAuthority:'PASS / unchanged',
     officeDisplayFailSafe:'PASS / unchanged'
@@ -133587,6 +133588,218 @@ td.ddt-employee-office-cell:hover
   height:16px!important;
   min-width:16px!important;
   max-width:16px!important;
+  padding:0!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+> .employee-inline-edit-actions .save svg{
+  width:9px!important;
+  height:9px!important;
+}
+</style>
+
+
+<style id="ddt-users-v1-18-date-editor-gap-authority">
+/* ================================================================
+   USERS v1.18 — VISIBLE CROSS-PC DATE EDITOR GAP
+
+   v1.17 was technically applied, but:
+   22px reserve - 16px save = only ~6px visible gap.
+   That remained visually too tight on several PC/DPI combinations.
+
+   v1.18 creates a deterministic ~12px lane:
+   28px reserve - 16px save = ~12px visible separation.
+   ================================================================ */
+
+/* Scope remains ONLY the four Active date fields. */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+){
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+
+  /*
+   * Hard separation lane:
+   * 28px reserve - 16px save = approx. 12px clean gap.
+   */
+  padding-right:28px!important;
+  overflow:visible!important;
+}
+
+/* Make the inner control compact enough to preserve readable date text. */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-segmented-date-control{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 14px!important;
+  gap:1px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+/* Tighter DD/MM/YYYY geometry, still fully editable. */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-date-segments{
+  display:grid!important;
+  grid-template-columns:
+    minmax(11px,.66fr)
+    2px
+    minmax(11px,.66fr)
+    2px
+    minmax(23px,1.14fr)
+    !important;
+  gap:0!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-date-segment{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:21px!important;
+  padding:0!important;
+
+  font-size:7.6px!important;
+  line-height:21px!important;
+  letter-spacing:-.08px!important;
+
+  text-align:center!important;
+}
+
+/* Slash is intentionally narrow and visually quiet. */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-date-separator{
+  width:2px!important;
+  min-width:2px!important;
+  max-width:2px!important;
+  height:21px!important;
+
+  font-size:7.2px!important;
+  line-height:21px!important;
+  opacity:.78!important;
+}
+
+/* Calendar becomes 1px smaller than v1.17. */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-segmented-date-picker{
+  width:14px!important;
+  min-width:14px!important;
+  max-width:14px!important;
+
+  height:19px!important;
+  min-height:19px!important;
+  max-height:19px!important;
+
+  margin:1px 0 0!important;
+  padding:0!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-segmented-date-picker svg{
+  width:9px!important;
+  height:9px!important;
+}
+
+/* Save check deliberately remains 16px for a stable click target. */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+> .employee-inline-edit-actions{
+  position:absolute!important;
+  top:50%!important;
+  right:0!important;
+  transform:translateY(-50%)!important;
+
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  max-width:16px!important;
+
+  margin:0!important;
+  padding:0!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+> .employee-inline-edit-actions .save{
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  max-width:16px!important;
+  margin:0!important;
   padding:0!important;
 }
 
