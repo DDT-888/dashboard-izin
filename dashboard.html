@@ -134410,6 +134410,160 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 </style>
 
+
+<style id="offday-production-realtime-v7-design-and-competition">
+/* OFFDAY R7 — design refinement + role/shift competition states.
+   Date-header visual authority remains unchanged; only hover feedback is added. */
+
+/* Shift separator: quieter rail, clearer name hierarchy, no broad cyan band. */
+#tab-offday .offday-group-name,
+#tab-offday .offday-group-day{
+    height:23px!important;
+    min-height:23px!important;
+    background:color-mix(in srgb,var(--text-muted) 4%,var(--bg-hover))!important;
+    border-bottom-color:color-mix(in srgb,var(--border-color) 82%,var(--border-light))!important;
+}
+#tab-offday .offday-group-name{
+    gap:6px!important;
+    padding:0 9px!important;
+    box-shadow:inset 3px 0 0 color-mix(in srgb,var(--text-muted) 24%,transparent),6px 0 12px rgba(14,45,52,.018)!important;
+}
+#tab-offday .offday-group-name strong{
+    color:var(--text-secondary)!important;
+    font-size:8px!important;
+    font-weight:810!important;
+    letter-spacing:.045em!important;
+}
+#tab-offday .offday-group-name em{
+    flex:0 0 auto;
+    min-width:18px;
+    padding:2px 5px;
+    border:1px solid color-mix(in srgb,var(--border-color) 84%,var(--text-muted));
+    border-radius:999px;
+    background:color-mix(in srgb,var(--bg-card) 72%,var(--bg-hover));
+    color:var(--text-muted);
+    font-size:6.6px;
+    font-style:normal;
+    font-weight:800;
+    line-height:1;
+    letter-spacing:.05em;
+    text-align:center;
+}
+#tab-offday .offday-group-name span{
+    margin-left:auto;
+    font-size:6.8px!important;
+    opacity:.88;
+}
+#tab-offday .offday-group-name.is-leader{
+    box-shadow:inset 3px 0 0 #d5a83f,6px 0 12px rgba(14,45,52,.018)!important;
+}
+#tab-offday .offday-group-name.is-unassigned{
+    box-shadow:inset 3px 0 0 color-mix(in srgb,var(--text-muted) 44%,transparent),6px 0 12px rgba(14,45,52,.018)!important;
+}
+
+/* Hover feedback: a cell points to both its date header and user identity rail. */
+#tab-offday .offday-day-head{transition:filter .12s ease,box-shadow .12s ease,color .12s ease;}
+#tab-offday .offday-day-head:hover,
+#tab-offday .offday-day-head.is-axis-hover{
+    filter:brightness(1.10);
+    box-shadow:inset 0 -2px 0 rgba(255,255,255,.18)!important;
+}
+#tab-offday .offday-roster-cell.is-axis-hover .offday-user-card.user-card-shift,
+#tab-offday .offday-roster-cell:hover .offday-user-card.user-card-shift{
+    transform:translateY(-1px);
+    box-shadow:0 3px 9px rgba(20,49,61,.09),inset 0 0 0 1px color-mix(in srgb,var(--text-muted) 16%,transparent)!important;
+}
+#tab-offday .offday-day-cell.is-axis-hover{
+    outline:1px solid color-mix(in srgb,var(--text-muted) 18%,transparent);
+    outline-offset:-1px;
+}
+
+/* Available cells stay clean. Self-row highlight is the only selection guide. */
+#tab-offday .offday-empty-mark{display:none!important;}
+
+/* Same Role + same broad Shift + same date is already owned by another user.
+   It is closed, but intentionally different from an explicit Leader lock. */
+#tab-offday .offday-day-cell.is-role-taken:not(.has-choice){
+    background:color-mix(in srgb,var(--text-muted) 8%,var(--offday-row-surface))!important;
+    cursor:not-allowed!important;
+}
+#tab-offday .offday-day-cell.is-role-taken.is-self-row:not(.has-choice){
+    background:color-mix(in srgb,var(--text-muted) 11%,var(--offday-self-bg))!important;
+}
+#tab-offday .offday-day-cell.is-role-taken:not(.has-choice)::after{
+    content:"";
+    width:12px;
+    height:1px;
+    border-radius:999px;
+    background:color-mix(in srgb,var(--text-muted) 42%,transparent);
+}
+
+/* UNASSIGNED remains visible, but user choice interaction is disabled. */
+#tab-offday .offday-roster-cell.is-unassigned-user{
+    opacity:.84;
+}
+#tab-offday .offday-day-cell.is-unassigned-user:not(.has-choice){
+    cursor:not-allowed!important;
+}
+#tab-offday .offday-day-cell.is-unassigned-user.is-self-row:not(.has-choice){
+    background:color-mix(in srgb,var(--text-muted) 6%,var(--offday-self-bg))!important;
+}
+
+/* DDT Original: replace high-energy cyan actions with muted jade/graphite.
+   Approved date-header palette is intentionally not touched. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-stamp:#497766;
+    --offday-stamp-border:#31594b;
+    --offday-self-bg:#eef5f2;
+}
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open{
+    border-color:#446f60!important;
+    background:linear-gradient(180deg,#5d8978 0%,#477565 52%,#386353 100%)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 1px 3px rgba(32,69,58,.14)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-toggle:not(:disabled):hover{
+    box-shadow:0 0 0 3px rgba(73,119,102,.10),inset 0 1px 0 rgba(255,255,255,.28)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open:disabled:hover{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 1px 3px rgba(32,69,58,.14)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-roster-cell.is-self::before{background:#497766!important;}
+html[data-selected-theme="light"] #tab-offday .offday-roster-cell.is-self{
+    box-shadow:inset 0 1px 0 rgba(73,119,102,.34),inset 0 -1px 0 rgba(73,119,102,.34),6px 0 12px rgba(14,45,52,.02)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-self-row{
+    box-shadow:inset 0 1px 0 rgba(73,119,102,.34),inset 0 -1px 0 rgba(73,119,102,.34)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-roster-cell.is-self .offday-user-card.user-card-shift{
+    box-shadow:inset 0 0 0 1px rgba(73,119,102,.22)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-user-clickable:hover{background:#e5f0ec!important;}
+html[data-selected-theme="light"] #tab-offday .offday-legend-swatch.selfrow{
+    border-color:#78978b!important;
+    box-shadow:inset 0 1px rgba(73,119,102,.34),inset 0 -1px rgba(73,119,102,.34)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-self-row .offday-stamp{
+    box-shadow:0 0 0 2px rgba(73,119,102,.10),0 2px 5px rgba(49,89,75,.14)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-matrix-scroll{
+    scrollbar-color:#78918c transparent!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-matrix-scroll::-webkit-scrollbar-thumb{
+    background:#78918c!important;
+    background-clip:padding-box!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-matrix-scroll::-webkit-scrollbar-thumb:hover{
+    background:#607b75!important;
+    background-clip:padding-box!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#426b5d!important;}
+
+@media (prefers-reduced-motion:reduce){
+    #tab-offday .offday-day-head,
+    #tab-offday .offday-user-card.user-card-shift{transition:none!important;}
+}
+</style>
+
 <script id="offday-production-realtime-v2-js">
 (function(){
     'use strict';
@@ -134425,6 +134579,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         shiftData: null,
         sections: [],
         roster: [],
+        rosterById: new Map(),
+        competition: new Map(),
         currentUserId: null,
         choices: new Map(),
         dateLocks: new Set(),
@@ -134483,6 +134639,39 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     function dayName(day){ const {year,monthIndex}=monthParts(); return DAY_NAMES[new Date(year,monthIndex,day).getDay()]; }
     function normRole(role){ return String(role || 'cs').trim().toLowerCase().replace(/[^a-z]/g,''); }
     function roleLabel(role){ return ({leader:'Leader',csline:'CS Line',cs:'CS',kapten:'Kapten',kasir:'Kasir'})[normRole(role)] || String(role || 'CS'); }
+    function shiftBucket(name){
+        const text=String(name||'').trim();
+        const upper=text.toUpperCase();
+        if(upper.includes('PAGI'))return 'PAGI';
+        if(upper.includes('MALAM'))return 'MALAM';
+        if(upper.includes('CUTI'))return 'CUTI';
+        return String(text.split('·')[0]||text).trim().toUpperCase();
+    }
+    function shiftDisplayParts(name){
+        const text=String(name||'').trim();
+        const parts=text.split('·').map(v=>v.trim()).filter(Boolean);
+        return {main:parts[0]||text,variant:parts.slice(1).join(' · ')};
+    }
+    function competitionKey(row,iso){
+        if(!row?.assigned||!row?.shiftBucket||normRole(row.role)==='leader')return '';
+        return `${row.shiftBucket}|${normRole(row.role)}|${iso}`;
+    }
+    function rebuildCompetition(){
+        const map=new Map();
+        for(const [uid,iso] of state.choices.entries()){
+            const row=state.rosterById.get(Number(uid));
+            const key=competitionKey(row,String(iso));
+            if(!key)continue;
+            if(!map.has(key))map.set(key,{userId:Number(uid),name:row?.name||'User'});
+        }
+        state.competition=map;
+    }
+    function roleTakenOwner(row,iso){
+        const key=competitionKey(row,iso);
+        if(!key)return null;
+        const owner=state.competition.get(key)||null;
+        return owner&&Number(owner.userId)!==Number(row.id)?owner:null;
+    }
     function initials(name){
         const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
         return ((parts[0]?.[0]||'')+(parts.length>1?parts[parts.length-1][0]:'')).toUpperCase() || 'U';
@@ -134538,7 +134727,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 const id=Number(user.id);
                 if(!id||seen.has(id))return;
                 seen.add(id);
-                const row={id,name:user.name||'LEADER',role:user.role||'leader',section:'LEADER'};
+                const row={id,name:user.name||'LEADER',role:user.role||'leader',section:'LEADER',shiftBucket:'LEADER',assigned:false};
                 rows.push(row);roster.push(row);
             });
             if(rows.length) sections.push({id:'leaders',name:'LEADER',kind:'leader',rows});
@@ -134553,11 +134742,14 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 const live=userMap.get(id);
                 if(live && String(live.status||'active').toLowerCase()!=='active')return;
                 seen.add(id);
+                const sectionName=String(column?.name || `SHIFT ${index+1}`).trim() || `SHIFT ${index+1}`;
                 const row={
                     id,
                     name:live?.name || saved?.name || `USER ${id}`,
                     role:live?.role || saved?.role || 'cs',
-                    section:String(column?.name || `SHIFT ${index+1}`).trim() || `SHIFT ${index+1}`
+                    section:sectionName,
+                    shiftBucket:shiftBucket(sectionName),
+                    assigned:true
                 };
                 rows.push(row);roster.push(row);
             });
@@ -134579,7 +134771,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                     id,
                     name:user.name||`USER ${id}`,
                     role:user.role||'cs',
-                    section:'UNASSIGNED'
+                    section:'UNASSIGNED',
+                    shiftBucket:null,
+                    assigned:false
                 };
                 unassignedRows.push(row);
                 roster.push(row);
@@ -134590,6 +134784,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
         state.sections=sections;
         state.roster=roster;
+        state.rosterById=new Map(roster.map(row=>[Number(row.id),row]));
+        rebuildCompetition();
         state.rosterLoaded=true;
     }
 
@@ -134639,7 +134835,12 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
         const appendGroup=(section)=>{
             const groupClass=section.kind==='leader'?' is-leader':(section.kind==='unassigned'?' is-unassigned':'');
-            add(`offday-group-name${groupClass}`,`<strong>${escapeHtml(section.name)}</strong><span>${section.rows.length} STAFF</span>`);
+            const label=shiftDisplayParts(section.name);
+            add(`offday-group-name${groupClass}`,
+                `<strong>${escapeHtml(label.main)}</strong>`+
+                `${label.variant?`<em>${escapeHtml(label.variant)}</em>`:''}`+
+                `<span>${section.rows.length} STAFF</span>`
+            );
             for(let day=1;day<=count;day++) add(`offday-group-day${groupClass}`);
         };
 
@@ -134666,6 +134867,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             `</div>`
         );
         roster.dataset.userId=String(user.id);
+        roster.classList.toggle('is-unassigned-user',!user.assigned);
 
         const selected=state.choices.get(Number(user.id)) || null;
         for(let day=1;day<=count;day++){
@@ -134674,12 +134876,16 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             const cellLocked=state.cellLocks.has(keyCell(user.id,iso));
             const locked=dateLocked||cellLocked;
             const hasChoice=selected===iso;
+            const takenOwner=roleTakenOwner(user,iso);
+            const roleTaken=Boolean(takenOwner&&!hasChoice);
             const classes=['offday-day-cell'];
             if(locked)classes.push('is-locked');
             if(!state.isOpen)classes.push('is-closed');
             if(self)classes.push('is-self-row');
+            if(!user.assigned)classes.push('is-unassigned-user');
+            if(roleTaken)classes.push('is-role-taken');
             if(hasChoice)classes.push('has-choice');
-            if(self && (hasChoice || (state.isOpen && !locked)))classes.push('is-user-clickable');
+            if(self && user.assigned && (hasChoice || (state.isOpen && !locked)))classes.push('is-user-clickable');
             const cell=add(classes.join(' '));
             cell.dataset.userId=String(user.id);cell.dataset.date=iso;
 
@@ -134687,8 +134893,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
             }else if(locked){
                 const mark=document.createElement('span');mark.className='offday-lock-mark';mark.textContent='×';cell.appendChild(mark);
-            }else if(self){
-                const mark=document.createElement('span');mark.className='offday-empty-mark';cell.appendChild(mark);
             }
 
             if(isLeader()){
@@ -134696,7 +134900,17 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                     ? `${user.name} · ${dateLabel(iso)} · klik untuk aksi Leader`
                     : (cellLocked?`Klik untuk membuka lock ${user.name} · ${dateLabel(iso)}`:`Klik untuk mengunci ${user.name} · ${dateLabel(iso)}`);
             }else if(self){
-                cell.title=hasChoice?'Klik OFF untuk membatalkan pilihan':(!state.isOpen?'Pemilihan sedang ditutup':locked?'Tanggal ini dikunci Leader':'Klik untuk memilih atau memindahkan OFFDAY');
+                cell.title=!user.assigned
+                    ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
+                    : hasChoice
+                        ? 'Klik OFF untuk membatalkan pilihan'
+                        : (!state.isOpen
+                            ? 'Pemilihan sedang ditutup'
+                            : locked
+                                ? 'Tanggal ini dikunci Leader'
+                                : roleTaken
+                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}`
+                                    : 'Klik untuk memilih atau memindahkan OFFDAY');
             }
         }
     }
@@ -134707,30 +134921,42 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const iso=String(cell.dataset.date||'');
         if(!uid||!iso)return;
         const self=!isLeader()&&uid===Number(state.currentUserId);
+        const user=state.rosterById.get(uid)||state.roster.find(row=>Number(row.id)===uid);
         const dateLocked=state.dateLocks.has(iso);
         const cellLocked=state.cellLocks.has(keyCell(uid,iso));
         const locked=dateLocked||cellLocked;
         const hasChoice=state.choices.get(uid)===iso;
+        const takenOwner=roleTakenOwner(user,iso);
+        const roleTaken=Boolean(takenOwner&&!hasChoice);
         cell.classList.toggle('is-locked',locked);
         cell.classList.toggle('is-closed',!state.isOpen);
         cell.classList.toggle('is-self-row',self);
+        cell.classList.toggle('is-unassigned-user',Boolean(user&&!user.assigned));
+        cell.classList.toggle('is-role-taken',roleTaken);
         cell.classList.toggle('has-choice',hasChoice);
-        cell.classList.toggle('is-user-clickable',self&&(hasChoice||(state.isOpen&&!locked)));
+        cell.classList.toggle('is-user-clickable',Boolean(self&&user?.assigned&&(hasChoice||(state.isOpen&&!locked))));
         cell.replaceChildren();
         if(hasChoice){
             const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
         }else if(locked){
             const mark=document.createElement('span');mark.className='offday-lock-mark';mark.textContent='×';cell.appendChild(mark);
-        }else if(self){
-            const mark=document.createElement('span');mark.className='offday-empty-mark';cell.appendChild(mark);
         }
-        const user=state.roster.find(row=>Number(row.id)===uid);
         if(isLeader()){
             cell.title=hasChoice
                 ? `${user?.name||'User'} · ${dateLabel(iso)} · klik untuk aksi Leader`
                 : (cellLocked?`Klik untuk membuka lock ${user?.name||'user'} · ${dateLabel(iso)}`:`Klik untuk mengunci ${user?.name||'user'} · ${dateLabel(iso)}`);
         }else if(self){
-            cell.title=hasChoice?'Klik OFF untuk membatalkan pilihan':(!state.isOpen?'Pemilihan sedang ditutup':locked?'Tanggal ini dikunci Leader':'Klik untuk memilih atau memindahkan OFFDAY');
+            cell.title=!user?.assigned
+                ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
+                : hasChoice
+                    ? 'Klik OFF untuk membatalkan pilihan'
+                    : (!state.isOpen
+                        ? 'Pemilihan sedang ditutup'
+                        : locked
+                            ? 'Tanggal ini dikunci Leader'
+                            : roleTaken
+                                ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
+                                : 'Klik untuk memilih atau memindahkan OFFDAY');
         }else{
             cell.removeAttribute('title');
         }
@@ -134796,6 +135022,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 state.users=userRes?.data||[];
                 state.shiftData=shiftRes?.data?.shift_data||{columns:[]};
                 buildRoster();
+            }else{
+                rebuildCompetition();
             }
             renderAll();
             return true;
@@ -134849,8 +135077,12 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         },{
             applyLocal:data=>{
                 const action=data?.action;
+                const oldIso=String(data?.old_off_date||before||'');
                 if(action==='cancelled') state.choices.delete(userId);
                 else if(action==='selected'||action==='moved') state.choices.set(userId,String(data?.off_date||iso));
+                rebuildCompetition();
+                if(oldIso)paintDate(oldIso);
+                if(String(data?.off_date||iso)!==oldIso)paintDate(String(data?.off_date||iso));
                 paintUserCells(userId);renderSummary();
             },
             render:false,
@@ -134888,7 +135120,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 const key=keyCell(uid,iso);
                 if(data?.locked)state.cellLocks.add(key);else state.cellLocks.delete(key);
                 const cancelled=Boolean(data?.locked&&data?.cancelled_choice&&state.choices.get(uid)===iso);
-                if(cancelled)state.choices.delete(uid);
+                if(cancelled){state.choices.delete(uid);rebuildCompetition();paintDate(iso);}
                 const n=nodes();paintCell(n.grid?.querySelector(`.offday-day-cell[data-user-id="${uid}"][data-date="${iso}"]`));
                 if(cancelled)renderSummary();
             },
@@ -134903,7 +135135,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         await callRpc('offday_leader_cancel_choice',{
             p_period_month:monthDate(),p_user_id:uid
         },{
-            applyLocal:data=>{if(data?.cancelled){state.choices.delete(uid);paintUserCells(uid);renderSummary();}},
+            applyLocal:data=>{if(data?.cancelled){const oldIso=state.choices.get(uid)||'';state.choices.delete(uid);rebuildCompetition();if(oldIso)paintDate(oldIso);paintUserCells(uid);renderSummary();}},
             render:false,
             successMessage:data=>data?.cancelled?`Offday ${user.name} dibatalkan.`:null
         });
@@ -135036,11 +135268,46 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 return;
             }
             if(uid!==Number(state.currentUserId))return;
+            const user=state.rosterById.get(uid)||state.roster.find(row=>Number(row.id)===uid);
+            if(!user?.assigned){notify('OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.','warning',2400);return;}
             if(hasChoice){chooseOrCancel(iso);return;}
             if(!state.isOpen){notify('Pemilihan Offday sedang ditutup oleh Leader.','warning',2200);return;}
             if(locked){notify('Tanggal tersebut sedang dikunci oleh Leader.','warning',2200);return;}
+            const takenOwner=roleTakenOwner(user,iso);
+            if(takenOwner){
+                notify(`Tanggal ${dateLabel(iso)} telah dipilih oleh User ${takenOwner.name} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}.`,'warning',3000);
+                return;
+            }
             chooseOrCancel(iso);
         });
+    }
+
+    function clearAxisHover(){
+        const n=nodes();if(!n.grid)return;
+        n.grid.querySelectorAll('.is-axis-hover').forEach(el=>el.classList.remove('is-axis-hover'));
+    }
+
+    function bindAxisHover(){
+        const n=nodes();if(!n.grid||n.grid.dataset.offdayHoverBound==='1')return;
+        n.grid.dataset.offdayHoverBound='1';
+        n.grid.addEventListener('mouseover',event=>{
+            const cell=event.target.closest('.offday-day-cell');
+            if(cell&&n.grid.contains(cell)){
+                clearAxisHover();
+                const uid=Number(cell.dataset.userId||0);
+                const iso=String(cell.dataset.date||'');
+                cell.classList.add('is-axis-hover');
+                n.grid.querySelector(`.offday-day-head[data-date="${iso}"]`)?.classList.add('is-axis-hover');
+                n.grid.querySelector(`.offday-roster-cell[data-user-id="${uid}"]`)?.classList.add('is-axis-hover');
+                return;
+            }
+            const head=event.target.closest('.offday-day-head');
+            if(head&&n.grid.contains(head)){clearAxisHover();head.classList.add('is-axis-hover');return;}
+            const roster=event.target.closest('.offday-roster-cell');
+            if(roster&&n.grid.contains(roster)){clearAxisHover();roster.classList.add('is-axis-hover');return;}
+            clearAxisHover();
+        });
+        n.grid.addEventListener('mouseleave',clearAxisHover);
     }
 
     function bindScroll(){
@@ -135060,7 +135327,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     function init(){
         if(state.initialized)return;state.initialized=true;
         const n=nodes();if(!n.tab)return;
-        renderControls();bindGridActions();bindScroll();
+        renderControls();bindGridActions();bindAxisHover();bindScroll();
         n.period?.addEventListener('dblclick',openMonthPicker);
         n.picker?.addEventListener('change',()=>setMonth(n.picker.value));
         n.toggle?.addEventListener('click',()=>{if(isLeader())setOpen(!state.isOpen);});
