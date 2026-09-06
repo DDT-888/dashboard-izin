@@ -582,6 +582,113 @@
                 transition-duration: .001ms !important;
             }
         }
+    
+        /* ========================= OFFICE SNAPSHOT v1.0 ========================= */
+        .role-stack,
+        .duration-stack {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .role-stack {
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .duration-stack {
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .office-line {
+            max-width: 100%;
+            overflow: hidden;
+            color: #729da6;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 6.4px;
+            font-weight: 760;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: .075em;
+            line-height: 1;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .office-line::before {
+            content: "OFFICE ";
+            color: #4f7780;
+            font-size: 5.7px;
+            letter-spacing: .08em;
+        }
+
+        .timer-cell.near-limit {
+            color: var(--warning);
+        }
+
+        .limit-line {
+            max-width: 100%;
+            overflow: hidden;
+            color: #729da6;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 6.45px;
+            font-weight: 730;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: .02em;
+            line-height: 1;
+            text-align: right;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .limit-line strong {
+            color: #9ec2c8;
+            font-weight: 780;
+        }
+
+        .limit-line.near-limit {
+            color: rgba(255, 194, 103, .76);
+        }
+
+        .limit-line.near-limit strong {
+            color: var(--warning);
+        }
+
+        .limit-line.over-limit,
+        .limit-line.over-limit strong {
+            color: #ff939c;
+        }
+
+        .limit-line.pending,
+        .office-line.pending {
+            color: #68868d;
+            opacity: .72;
+        }
+
+        .clock[data-clock-source="server"] {
+            color: rgba(236, 252, 255, .84);
+        }
+
+        .clock[data-clock-source="local"] {
+            color: rgba(255, 194, 103, .78);
+        }
+
+        @media (max-width: 390px) {
+            .role-stack,
+            .duration-stack { gap: 3px; }
+            .office-line { font-size: 5.9px; }
+            .office-line::before { font-size: 5.2px; }
+            .limit-line { font-size: 5.9px; }
+        }
+
+        @media (max-width: 340px) {
+            .office-line::before { content: ""; }
+            .office-line { font-size: 5.7px; }
+            .limit-line { font-size: 5.6px; letter-spacing: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -624,8 +731,8 @@
                 </div>
                 <div class="summary-meta">
                     <div class="summary-meta-item">
-                        <span>Threshold</span>
-                        <strong id="permitLimitDisplay">15 MIN</strong>
+                        <span>Active Limit</span>
+                        <strong id="permitLimitDisplay">PER OFFICE</strong>
                     </div>
                     <div class="summary-meta-item">
                         <span>Source</span>
@@ -640,7 +747,7 @@
                         <tr>
                             <th class="col-nama">Nama</th>
                             <th class="col-role">Role</th>
-                            <th class="col-durasi">Durasi</th>
+                            <th class="col-durasi">Durasi / Batas</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
@@ -670,14 +777,22 @@
     </script>
 
     <script>
-
         (function() {
             'use strict';
 
-            console.log('🚀 Live View - Starting...');
+            var BUILD = Object.freeze({
+                version: '1.0.0',
+                authority: 'Office START Snapshot + Supabase Server Clock',
+                source: 'live-view(2).html',
+                backendChanged: false
+            });
+
+            window.DDTLiveViewBuild = BUILD;
+
+            console.log('🚀 Live View Office + Server Clock v' + BUILD.version);
 
             // ============================================================
-            // KONFIGURASI SUPABASE BARU
+            // SUPABASE
             // ============================================================
             var SUPABASE_URL = 'https://vnmdtmlrfecremloqlmz.supabase.co';
             var SUPABASE_ANON_KEY = 'sb_publishable_VJdyDKMe_g-YL2BlYBuLCg_xm5RrSQ1';
@@ -698,20 +813,195 @@
             // STATE
             // ============================================================
             var izinData = {};
-            var jackpotLimitMinutes = 15;
             var realtimeChannel = null;
             var lastSuccessfulLoad = 0;
             var refreshInProgress = false;
 
-            // Query fallback dibuat jarang karena update utama memakai Realtime.
-            // Realtime tetap primary. Snapshot 60 detik hanya reconciliation saat halaman visible.
+            // Realtime remains primary. Snapshot is reconciliation only.
             var FALLBACK_REFRESH_MS = 60 * 1000;
-            var SETTINGS_REFRESH_MS = 30 * 60 * 1000;
             var realtimeReconnectTimer = null;
             var realtimeResetInProgress = false;
 
             // ============================================================
-            // ROLE ORDER UNTUK SORTING
+            // SERVER CLOCK AUTHORITY
+            // Same midpoint / lowest-RTT model used by dashboard.
+            // ============================================================
+            var serverClockState = {
+                offsetMs: 0,
+                ready: false,
+                lastSyncClientMs: 0,
+                lastServerEpochMs: 0,
+                rttMs: null,
+                inFlight: null,
+                failures: 0
+            };
+
+            var SERVER_CLOCK_RESYNC_MS = 5 * 60 * 1000;
+            var heartbeatTimer = null;
+
+            function readServerEpochMs(payload) {
+                if (payload == null) return null;
+
+                var value = payload;
+
+                if (typeof value === 'string') {
+                    try {
+                        value = JSON.parse(value);
+                    } catch (_) {}
+                }
+
+                if (value && typeof value === 'object') {
+                    var epoch = Number(value.server_epoch_ms);
+                    if (Number.isFinite(epoch)) return epoch;
+
+                    if (value.server_time) {
+                        var parsed = new Date(value.server_time).getTime();
+                        if (Number.isFinite(parsed)) return parsed;
+                    }
+                }
+
+                var primitive = Number(value);
+                return Number.isFinite(primitive) ? primitive : null;
+            }
+
+            async function takeServerClockSample() {
+                var t0 = Date.now();
+
+                var result = await supabaseClient.rpc('get_server_clock');
+
+                var t1 = Date.now();
+
+                if (result.error) throw result.error;
+
+                var serverMs = readServerEpochMs(result.data);
+
+                if (!Number.isFinite(serverMs)) {
+                    throw new Error('Server clock response tidak valid.');
+                }
+
+                var rtt = Math.max(0, t1 - t0);
+                var midpoint = t0 + (rtt / 2);
+
+                return {
+                    offsetMs: serverMs - midpoint,
+                    serverMs: serverMs,
+                    rttMs: rtt,
+                    sampledAtClientMs: t1
+                };
+            }
+
+            async function syncServerClock(options) {
+                options = options || {};
+
+                if (serverClockState.inFlight) {
+                    return serverClockState.inFlight;
+                }
+
+                var sampleCount = Math.max(
+                    1,
+                    Math.min(3, Number(options.samples) || 1)
+                );
+
+                serverClockState.inFlight = (async function() {
+                    var collected = [];
+
+                    try {
+                        for (var i = 0; i < sampleCount; i += 1) {
+                            try {
+                                collected.push(await takeServerClockSample());
+                            } catch (error) {
+                                if (i === sampleCount - 1 && !collected.length) {
+                                    throw error;
+                                }
+                            }
+                        }
+
+                        if (!collected.length) {
+                            throw new Error('Tidak ada sample server clock.');
+                        }
+
+                        // Lowest RTT gives the cleanest midpoint estimate.
+                        collected.sort(function(a, b) {
+                            return a.rttMs - b.rttMs;
+                        });
+
+                        var best = collected[0];
+
+                        serverClockState.offsetMs = best.offsetMs;
+                        serverClockState.ready = true;
+                        serverClockState.lastSyncClientMs = Date.now();
+                        serverClockState.lastServerEpochMs = best.serverMs;
+                        serverClockState.rttMs = best.rttMs;
+                        serverClockState.failures = 0;
+
+                        updateClock();
+                        updateTimers();
+                        scheduleHeartbeat();
+
+                        return true;
+                    } catch (error) {
+                        serverClockState.failures += 1;
+                        console.warn(
+                            '⚠️ Server clock sync gagal; sementara menggunakan clock browser:',
+                            error && error.message ? error.message : error
+                        );
+
+                        updateClock();
+                        return false;
+                    } finally {
+                        serverClockState.inFlight = null;
+                    }
+                })();
+
+                return serverClockState.inFlight;
+            }
+
+            function serverNowMs() {
+                return Date.now() + (
+                    serverClockState.ready
+                        ? serverClockState.offsetMs
+                        : 0
+                );
+            }
+
+            function serverNowDate() {
+                return new Date(serverNowMs());
+            }
+
+            async function ensureServerClockReady(maxAgeMs) {
+                var maxAge = Number.isFinite(Number(maxAgeMs))
+                    ? Number(maxAgeMs)
+                    : 5 * 60 * 1000;
+
+                var age = Date.now() - serverClockState.lastSyncClientMs;
+
+                if (
+                    serverClockState.ready &&
+                    age >= 0 &&
+                    age <= Math.max(0, maxAge)
+                ) {
+                    return true;
+                }
+
+                return syncServerClock({
+                    samples: serverClockState.ready ? 1 : 3
+                });
+            }
+
+            function resyncClockIfUseful() {
+                if (document.hidden || !navigator.onLine) return;
+
+                var age = Date.now() - serverClockState.lastSyncClientMs;
+
+                if (!serverClockState.ready || age >= 60000) {
+                    syncServerClock({
+                        samples: serverClockState.ready ? 2 : 3
+                    });
+                }
+            }
+
+            // ============================================================
+            // ROLE ORDER
             // ============================================================
             var ROLE_ORDER = {
                 leader: 0,
@@ -731,12 +1021,11 @@
                 kasir: 'Kasir'
             };
 
-
             // ============================================================
-            // UTILITAS
+            // UTILITIES
             // ============================================================
             function escapeHtml(value) {
-                return String(value || '')
+                return String(value == null ? '' : value)
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
@@ -754,6 +1043,25 @@
                 return isNaN(date.getTime()) ? null : date;
             }
 
+            function normalizeThresholdSeconds(value) {
+                var number = Number(value);
+                return Number.isFinite(number) && number > 0
+                    ? Math.floor(number)
+                    : null;
+            }
+
+            function formatClockHHMM(date) {
+                if (!(date instanceof Date) || isNaN(date.getTime())) {
+                    return '…';
+                }
+
+                return (
+                    String(date.getHours()).padStart(2, '0') +
+                    ':' +
+                    String(date.getMinutes()).padStart(2, '0')
+                );
+            }
+
             function setLiveStatus(status, label) {
                 var badge = document.querySelector('.live-badge');
                 var labelEl = document.getElementById('liveStatusLabel');
@@ -766,8 +1074,11 @@
             function markSync() {
                 var el = document.getElementById('lastSyncDisplay');
                 if (!el) return;
-                var now = new Date();
-                el.textContent = 'SYNC ' +
+
+                var now = serverNowDate();
+
+                el.textContent =
+                    'SYNC ' +
                     String(now.getHours()).padStart(2, '0') + ':' +
                     String(now.getMinutes()).padStart(2, '0') + ':' +
                     String(now.getSeconds()).padStart(2, '0');
@@ -790,45 +1101,125 @@
             }
 
             // ============================================================
-            // LOAD SETTING BATAS IZIN
+            // OFFICE START SNAPSHOT AUTHORITY
+            // No current Settings fallback is permitted for an active row.
             // ============================================================
-            async function loadPublicSettings() {
-                try {
-                    var result = await supabaseClient
-                        .from('settings')
-                        .select('value')
-                        .eq('key', 'izin_settings')
-                        .maybeSingle();
+            function activeThresholdSeconds(user) {
+                return normalizeThresholdSeconds(
+                    user && user.threshold_at_event_seconds
+                );
+            }
 
-                    if (result.error) {
-                        console.warn('⚠️ Setting izin tidak terbaca, memakai default 15 menit:', result.error.message);
-                        return;
-                    }
+            function activeOfficeName(user) {
+                var name = String(
+                    user && user.office_name
+                        ? user.office_name
+                        : ''
+                ).trim();
 
-                    if (!result.data || !result.data.value) return;
+                return name || '…';
+            }
 
-                    var parsed = JSON.parse(result.data.value);
-                    var newLimit = Number(parsed.jackpotLimitMinutes);
+            function activeDeadline(user) {
+                var threshold = activeThresholdSeconds(user);
+                var start = parseTimestamp(user && user.mulai);
 
-                    if (Number.isFinite(newLimit) && newLimit > 0) {
-                        jackpotLimitMinutes = newLimit;
-                        var limitDisplay = document.getElementById('permitLimitDisplay');
-                        if (limitDisplay) limitDisplay.textContent = String(newLimit) + ' MIN';
-                        updateTimers();
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Gagal memuat setting izin:', error);
+                if (!threshold || !start) return null;
+
+                return new Date(
+                    start.getTime() +
+                    threshold * 1000
+                );
+            }
+
+            function activeTimingState(user, nowMs) {
+                var start = parseTimestamp(user && user.mulai);
+                var threshold = activeThresholdSeconds(user);
+
+                var elapsed = start
+                    ? Math.max(
+                        0,
+                        Math.floor(
+                            (nowMs - start.getTime()) / 1000
+                        )
+                    )
+                    : 0;
+
+                if (!threshold) {
+                    return {
+                        elapsed: elapsed,
+                        threshold: null,
+                        progress: null,
+                        near: false,
+                        over: false,
+                        deadline: null
+                    };
                 }
+
+                var progress = Math.min(
+                    100,
+                    (elapsed / threshold) * 100
+                );
+
+                // Same strict authority as finish_izin:
+                // exact threshold is NOT over-limit.
+                var over = elapsed > threshold;
+                var near = !over && progress >= 70;
+
+                return {
+                    elapsed: elapsed,
+                    threshold: threshold,
+                    progress: progress,
+                    near: near,
+                    over: over,
+                    deadline: activeDeadline(user)
+                };
+            }
+
+            function updateLimitSummary() {
+                var target = document.getElementById('permitLimitDisplay');
+                if (!target) return;
+
+                var minutes = Object.keys(izinData)
+                    .map(function(key) {
+                        return activeThresholdSeconds(izinData[key]);
+                    })
+                    .filter(function(seconds) {
+                        return Number.isFinite(seconds) && seconds > 0;
+                    })
+                    .map(function(seconds) {
+                        return Math.max(1, Math.round(seconds / 60));
+                    })
+                    .filter(function(value, index, array) {
+                        return array.indexOf(value) === index;
+                    })
+                    .sort(function(a, b) {
+                        return a - b;
+                    });
+
+                if (!minutes.length) {
+                    target.textContent = 'PER OFFICE';
+                    return;
+                }
+
+                target.textContent =
+                    minutes.join(' / ') +
+                    (minutes.length === 1 ? ' MIN' : ' MIN');
             }
 
             // ============================================================
-            // LOAD DATA IZIN PUBLIK
+            // LOAD LIVE DATA
             // ============================================================
             async function loadPublicData(force) {
                 if (refreshInProgress) return;
 
                 var now = Date.now();
-                if (!force && lastSuccessfulLoad && (now - lastSuccessfulLoad) < 15000) {
+
+                if (
+                    !force &&
+                    lastSuccessfulLoad &&
+                    (now - lastSuccessfulLoad) < 15000
+                ) {
                     return;
                 }
 
@@ -839,15 +1230,15 @@
 
                     var result = await supabaseClient
                         .from('izin_anggota')
-                        .select('nama,role,mulai,status')
+                        .select(
+                            'nama,role,mulai,status,office_id,office_name,threshold_at_event_seconds'
+                        )
                         .eq('status', 'izin')
                         .not('mulai', 'is', null)
                         .order('mulai', { ascending: true })
                         .limit(100);
 
-                    if (result.error) {
-                        throw result.error;
-                    }
+                    if (result.error) throw result.error;
 
                     izinData = {};
 
@@ -858,17 +1249,29 @@
                         izinData[key] = {
                             nama: item.nama,
                             role: item.role || 'cs',
-                            mulai: item.mulai
+                            mulai: item.mulai,
+                            office_id: item.office_id || null,
+                            office_name: item.office_name || null,
+                            threshold_at_event_seconds:
+                                normalizeThresholdSeconds(
+                                    item.threshold_at_event_seconds
+                                )
                         };
                     });
 
                     lastSuccessfulLoad = Date.now();
+
                     renderTable();
                     updateOnlineCount();
+                    updateLimitSummary();
                     markSync();
                     setLiveStatus('online', 'LIVE');
 
-                    console.log('✅ ' + Object.keys(izinData).length + ' anggota sedang izin');
+                    console.log(
+                        '✅ ' +
+                        Object.keys(izinData).length +
+                        ' anggota sedang izin'
+                    );
                 } catch (error) {
                     console.error('❌ Gagal mengambil live izin:', error);
                     setLiveStatus('offline', 'OFFLINE');
@@ -889,11 +1292,15 @@
             function applyRealtimePayload(payload) {
                 var oldRow = payload.old || {};
                 var newRow = payload.new || {};
-                var oldKey = oldRow.nama ? normalizeName(oldRow.nama) : '';
-                var newKey = newRow.nama ? normalizeName(newRow.nama) : '';
 
-                // Hapus kedua kemungkinan key lebih dulu. Ini menutup stale row saat
-                // nama/status berubah dan old record dari logical replication terbatas.
+                var oldKey = oldRow.nama
+                    ? normalizeName(oldRow.nama)
+                    : '';
+
+                var newKey = newRow.nama
+                    ? normalizeName(newRow.nama)
+                    : '';
+
                 if (oldKey) delete izinData[oldKey];
                 if (newKey) delete izinData[newKey];
 
@@ -906,49 +1313,75 @@
                     izinData[newKey] = {
                         nama: newRow.nama,
                         role: newRow.role || 'cs',
-                        mulai: newRow.mulai
+                        mulai: newRow.mulai,
+                        office_id: newRow.office_id || null,
+                        office_name: newRow.office_name || null,
+                        threshold_at_event_seconds:
+                            normalizeThresholdSeconds(
+                                newRow.threshold_at_event_seconds
+                            )
                     };
                 }
 
                 renderTable();
                 updateOnlineCount();
+                updateLimitSummary();
                 markSync();
             }
 
             function scheduleRealtimeReconnect() {
-                if (realtimeReconnectTimer || realtimeResetInProgress) return;
+                if (
+                    realtimeReconnectTimer ||
+                    realtimeResetInProgress
+                ) {
+                    return;
+                }
 
-                realtimeReconnectTimer = setTimeout(async function() {
-                    realtimeReconnectTimer = null;
-                    realtimeResetInProgress = true;
+                realtimeReconnectTimer = setTimeout(
+                    async function() {
+                        realtimeReconnectTimer = null;
+                        realtimeResetInProgress = true;
 
-                    var staleChannel = realtimeChannel;
-                    realtimeChannel = null;
+                        var staleChannel = realtimeChannel;
+                        realtimeChannel = null;
 
-                    if (staleChannel) {
-                        try {
-                            await supabaseClient.removeChannel(staleChannel);
-                        } catch (error) {
-                            console.warn('⚠️ Gagal membersihkan channel Realtime lama:', error);
+                        if (staleChannel) {
+                            try {
+                                await supabaseClient.removeChannel(
+                                    staleChannel
+                                );
+                            } catch (error) {
+                                console.warn(
+                                    '⚠️ Gagal membersihkan channel Realtime lama:',
+                                    error
+                                );
+                            }
                         }
-                    }
 
-                    realtimeResetInProgress = false;
-                    subscribeRealtime();
+                        realtimeResetInProgress = false;
+                        subscribeRealtime();
 
-                    if (document.visibilityState === 'visible') {
-                        loadPublicData(true);
-                    }
-                }, 2500);
+                        if (document.visibilityState === 'visible') {
+                            loadPublicData(true);
+                            resyncClockIfUseful();
+                        }
+                    },
+                    2500
+                );
             }
 
             function subscribeRealtime() {
-                if (realtimeChannel || realtimeResetInProgress) return;
+                if (
+                    realtimeChannel ||
+                    realtimeResetInProgress
+                ) {
+                    return;
+                }
 
                 setLiveStatus('connecting', 'CONNECTING');
 
                 realtimeChannel = supabaseClient
-                    .channel('public-live-izin')
+                    .channel('public-live-izin-office-v1')
                     .on(
                         'postgres_changes',
                         {
@@ -981,19 +1414,33 @@
             // ============================================================
             function renderTable() {
                 var tbody = document.getElementById('tableBody');
+
                 var onlineUsers = Object.keys(izinData)
                     .map(function(key) {
                         return izinData[key];
                     })
                     .sort(function(a, b) {
-                        var orderA = ROLE_ORDER[a.role] !== undefined ? ROLE_ORDER[a.role] : 99;
-                        var orderB = ROLE_ORDER[b.role] !== undefined ? ROLE_ORDER[b.role] : 99;
+                        var orderA =
+                            ROLE_ORDER[a.role] !== undefined
+                                ? ROLE_ORDER[a.role]
+                                : 99;
 
-                        if (orderA !== orderB) return orderA - orderB;
-                        return normalizeName(a.nama).localeCompare(normalizeName(b.nama));
+                        var orderB =
+                            ROLE_ORDER[b.role] !== undefined
+                                ? ROLE_ORDER[b.role]
+                                : 99;
+
+                        if (orderA !== orderB) {
+                            return orderA - orderB;
+                        }
+
+                        return normalizeName(a.nama)
+                            .localeCompare(
+                                normalizeName(b.nama)
+                            );
                     });
 
-                if (onlineUsers.length === 0) {
+                if (!onlineUsers.length) {
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="3">
@@ -1007,27 +1454,71 @@
                     return;
                 }
 
-                var now = Date.now();
-                var batasDetik = jackpotLimitMinutes * 60;
-                var html = '';
+                var nowMs = serverNowMs();
+                var rowHtml = '';
 
                 onlineUsers.forEach(function(user, index) {
-                    var startTime = parseTimestamp(user.mulai);
-                    var diff = startTime
-                        ? Math.max(0, Math.floor((now - startTime.getTime()) / 1000))
-                        : 0;
+                    var timing = activeTimingState(
+                        user,
+                        nowMs
+                    );
 
-                    var menit = Math.floor(diff / 60);
-                    var detik = diff % 60;
-                    var isOverLimit = diff >= batasDetik;
-                    var role = user.role || 'cs';
-                    var roleLabel = ROLE_LABELS[role] || role;
-                    var timerClass = isOverLimit ? 'over-limit' : '';
+                    var minutes = Math.floor(
+                        timing.elapsed / 60
+                    );
+
+                    var seconds =
+                        timing.elapsed % 60;
+
+                    var role =
+                        user.role || 'cs';
+
+                    var roleLabel =
+                        ROLE_LABELS[role] || role;
+
+                    var timerClass =
+                        timing.over
+                            ? 'over-limit'
+                            : timing.near
+                                ? 'near-limit'
+                                : '';
+
+                    var limitClass =
+                        timing.over
+                            ? 'over-limit'
+                            : timing.near
+                                ? 'near-limit'
+                                : timing.threshold
+                                    ? ''
+                                    : 'pending';
+
                     var delay = index * 0.06;
                     var safeName = escapeHtml(user.nama);
                     var safeRole = escapeHtml(role);
+                    var safeOffice = escapeHtml(
+                        activeOfficeName(user)
+                    );
 
-                    html += `
+                    var limitText = timing.threshold
+                        ? (
+                            '<strong>Batas ' +
+                            escapeHtml(
+                                formatClockHHMM(
+                                    timing.deadline
+                                )
+                            ) +
+                            '</strong> · ' +
+                            Math.max(
+                                1,
+                                Math.round(
+                                    timing.threshold / 60
+                                )
+                            ) +
+                            'm'
+                        )
+                        : '<strong>Batas …</strong>';
+
+                    rowHtml += `
                         <tr style="animation: fadeIn 0.25s ease ${delay}s both;">
                             <td class="col-nama">
                                 <span class="name-status">
@@ -1036,135 +1527,294 @@
                                 </span>
                             </td>
                             <td class="col-role">
-                                <span class="role-tag ${safeRole}">${escapeHtml(roleLabel)}</span>
+                                <span class="role-stack">
+                                    <span class="role-tag ${safeRole}">${escapeHtml(roleLabel)}</span>
+                                    <span class="office-line ${user.office_name ? '' : 'pending'}">${safeOffice}</span>
+                                </span>
                             </td>
                             <td class="col-durasi">
-                                <span
-                                    class="timer-cell ${timerClass}"
-                                    data-nama="${escapeHtml(normalizeName(user.nama))}"
-                                >${menit}m ${String(detik).padStart(2, '0')}s</span>
+                                <span class="duration-stack">
+                                    <span
+                                        class="timer-cell ${timerClass}"
+                                        data-nama="${escapeHtml(normalizeName(user.nama))}"
+                                    >${minutes}m ${String(seconds).padStart(2, '0')}s</span>
+                                    <span
+                                        class="limit-line ${limitClass}"
+                                        data-limit-nama="${escapeHtml(normalizeName(user.nama))}"
+                                    >${limitText}</span>
+                                </span>
                             </td>
                         </tr>
                     `;
                 });
 
-                tbody.innerHTML = html;
+                tbody.innerHTML = rowHtml;
             }
 
             // ============================================================
-            // UPDATE ONLINE COUNT
+            // COUNTS / TIMERS
             // ============================================================
             function updateOnlineCount() {
-                var online = Object.keys(izinData).length;
-                document.getElementById('totalOnline').textContent = online;
+                document.getElementById('totalOnline').textContent =
+                    Object.keys(izinData).length;
             }
 
-            // ============================================================
-            // UPDATE TIMER LOKAL (TIDAK QUERY DATABASE)
-            // ============================================================
             function updateTimers() {
-                var timerCells = document.querySelectorAll('.timer-cell');
-                var now = Date.now();
-                var batasDetik = jackpotLimitMinutes * 60;
+                var nowMs = serverNowMs();
 
-                timerCells.forEach(function(el) {
-                    var key = el.getAttribute('data-nama');
-                    var data = izinData[key];
-                    if (!data || !data.mulai) return;
+                document
+                    .querySelectorAll('.timer-cell[data-nama]')
+                    .forEach(function(el) {
+                        var key = el.getAttribute('data-nama');
+                        var data = izinData[key];
 
-                    var startTime = parseTimestamp(data.mulai);
-                    if (!startTime) return;
+                        if (!data || !data.mulai) return;
 
-                    var diff = Math.max(0, Math.floor((now - startTime.getTime()) / 1000));
-                    var menit = Math.floor(diff / 60);
-                    var detik = diff % 60;
-                    var isOverLimit = diff >= batasDetik;
+                        var timing = activeTimingState(
+                            data,
+                            nowMs
+                        );
 
-                    el.textContent = menit + 'm ' + String(detik).padStart(2, '0') + 's';
-                    el.className = 'timer-cell' + (isOverLimit ? ' over-limit' : '');
-                });
+                        var minutes = Math.floor(
+                            timing.elapsed / 60
+                        );
+
+                        var seconds =
+                            timing.elapsed % 60;
+
+                        el.textContent =
+                            minutes +
+                            'm ' +
+                            String(seconds).padStart(2, '0') +
+                            's';
+
+                        el.className =
+                            'timer-cell' +
+                            (
+                                timing.over
+                                    ? ' over-limit'
+                                    : timing.near
+                                        ? ' near-limit'
+                                        : ''
+                            );
+
+                        var limit = document.querySelector(
+                            '.limit-line[data-limit-nama="' +
+                            CSS.escape(key) +
+                            '"]'
+                        );
+
+                        if (!limit) return;
+
+                        if (!timing.threshold) {
+                            limit.className =
+                                'limit-line pending';
+                            limit.innerHTML =
+                                '<strong>Batas …</strong>';
+                            return;
+                        }
+
+                        limit.className =
+                            'limit-line' +
+                            (
+                                timing.over
+                                    ? ' over-limit'
+                                    : timing.near
+                                        ? ' near-limit'
+                                        : ''
+                            );
+
+                        limit.innerHTML =
+                            '<strong>Batas ' +
+                            escapeHtml(
+                                formatClockHHMM(
+                                    timing.deadline
+                                )
+                            ) +
+                            '</strong> · ' +
+                            Math.max(
+                                1,
+                                Math.round(
+                                    timing.threshold / 60
+                                )
+                            ) +
+                            'm';
+                    });
             }
 
             // ============================================================
-            // CLOCK
+            // SERVER CLOCK DISPLAY + PHASE-LOCKED HEARTBEAT
             // ============================================================
             function updateClock() {
-                var now = new Date();
-                var hours = String(now.getHours()).padStart(2, '0');
-                var minutes = String(now.getMinutes()).padStart(2, '0');
-                var seconds = String(now.getSeconds()).padStart(2, '0');
+                var now = serverNowDate();
+                var el = document.getElementById('clockDisplay');
 
-                document.getElementById('clockDisplay').textContent =
-                    hours + ':' + minutes + ':' + seconds;
+                if (!el) return;
+
+                el.textContent =
+                    String(now.getHours()).padStart(2, '0') + ':' +
+                    String(now.getMinutes()).padStart(2, '0') + ':' +
+                    String(now.getSeconds()).padStart(2, '0');
+
+                el.setAttribute(
+                    'data-clock-source',
+                    serverClockState.ready
+                        ? 'server'
+                        : 'local'
+                );
+
+                el.title =
+                    serverClockState.ready
+                        ? 'Waktu server'
+                        : 'Menunggu sinkronisasi waktu server';
+            }
+
+            function stopHeartbeat() {
+                if (heartbeatTimer) {
+                    clearTimeout(heartbeatTimer);
+                    heartbeatTimer = null;
+                }
+            }
+
+            function scheduleHeartbeat() {
+                stopHeartbeat();
+
+                if (document.hidden) return;
+
+                /*
+                 * Align UI updates to the next SERVER second boundary.
+                 * This removes the arbitrary setInterval phase difference
+                 * that made Live View appear 1–3 seconds behind Dashboard.
+                 */
+                var nowMs = serverNowMs();
+                var remainder = ((nowMs % 1000) + 1000) % 1000;
+                var delay = Math.max(
+                    35,
+                    Math.round(1000 - remainder + 18)
+                );
+
+                heartbeatTimer = setTimeout(function() {
+                    heartbeatTimer = null;
+
+                    if (!document.hidden) {
+                        updateClock();
+                        updateTimers();
+                    }
+
+                    scheduleHeartbeat();
+                }, delay);
             }
 
             function startClock() {
                 updateClock();
+                updateTimers();
+                scheduleHeartbeat();
             }
 
             // ============================================================
             // INIT
             // ============================================================
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('🚀 Live View - DOM Ready');
+            document.addEventListener(
+                'DOMContentLoaded',
+                function() {
+                    console.log('🚀 Live View - DOM Ready');
 
-                startClock();
-                loadPublicSettings();
-                loadPublicData(true);
-                subscribeRealtime();
+                    startClock();
 
-                // Satu heartbeat UI untuk clock + timer; tidak bekerja saat tab tersembunyi.
-                setInterval(function() {
-                    if (document.visibilityState === 'visible') {
-                        updateClock();
-                        updateTimers();
-                    }
-                }, 1000);
-                setInterval(function() {
-                    if (document.visibilityState === 'visible') {
-                        loadPublicData(true);
-                    }
-                }, FALLBACK_REFRESH_MS);
-                setInterval(function() {
-                    if (document.visibilityState === 'visible') {
-                        loadPublicSettings();
-                    }
-                }, SETTINGS_REFRESH_MS);
+                    // Clock sync and data load can begin in parallel.
+                    syncServerClock({ samples: 3 });
+                    loadPublicData(true);
+                    subscribeRealtime();
 
-                document.addEventListener('visibilitychange', function() {
-                    if (document.visibilityState === 'visible') {
-                        updateClock();
-                        updateTimers();
-                        if (Date.now() - lastSuccessfulLoad > 60000) {
+                    setInterval(function() {
+                        if (document.visibilityState === 'visible') {
                             loadPublicData(true);
                         }
-                    }
-                });
+                    }, FALLBACK_REFRESH_MS);
 
-                window.addEventListener('online', function() {
-                    if (document.visibilityState === 'visible') {
-                        loadPublicData(true);
-                    }
-                    scheduleRealtimeReconnect();
-                });
+                    setInterval(function() {
+                        if (
+                            document.visibilityState === 'visible' &&
+                            navigator.onLine
+                        ) {
+                            syncServerClock({ samples: 1 });
+                        }
+                    }, SERVER_CLOCK_RESYNC_MS);
 
-                window.addEventListener('offline', function() {
-                    setLiveStatus('offline', 'OFFLINE');
-                });
-            });
+                    document.addEventListener(
+                        'visibilitychange',
+                        function() {
+                            if (document.visibilityState === 'visible') {
+                                resyncClockIfUseful();
+                                updateClock();
+                                updateTimers();
+                                scheduleHeartbeat();
 
-            window.addEventListener('beforeunload', function() {
-                if (realtimeReconnectTimer) {
-                    clearTimeout(realtimeReconnectTimer);
-                    realtimeReconnectTimer = null;
+                                if (
+                                    Date.now() -
+                                    lastSuccessfulLoad >
+                                    60000
+                                ) {
+                                    loadPublicData(true);
+                                }
+                            } else {
+                                stopHeartbeat();
+                            }
+                        }
+                    );
+
+                    window.addEventListener(
+                        'pageshow',
+                        resyncClockIfUseful
+                    );
+
+                    window.addEventListener(
+                        'online',
+                        function() {
+                            resyncClockIfUseful();
+
+                            if (
+                                document.visibilityState ===
+                                'visible'
+                            ) {
+                                loadPublicData(true);
+                            }
+
+                            scheduleRealtimeReconnect();
+                        }
+                    );
+
+                    window.addEventListener(
+                        'offline',
+                        function() {
+                            setLiveStatus(
+                                'offline',
+                                'OFFLINE'
+                            );
+                        }
+                    );
                 }
-                if (realtimeChannel) {
-                    supabaseClient.removeChannel(realtimeChannel);
-                    realtimeChannel = null;
+            );
+
+            window.addEventListener(
+                'beforeunload',
+                function() {
+                    stopHeartbeat();
+
+                    if (realtimeReconnectTimer) {
+                        clearTimeout(realtimeReconnectTimer);
+                        realtimeReconnectTimer = null;
+                    }
+
+                    if (realtimeChannel) {
+                        supabaseClient.removeChannel(
+                            realtimeChannel
+                        );
+                        realtimeChannel = null;
+                    }
                 }
-            });
+            );
         })();
-
     </script>
 
 </body>
