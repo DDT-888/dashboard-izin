@@ -135382,7 +135382,88 @@ html[data-theme="dark"] #tab-offday{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v17-unified-lock-authority">
+
+<style id="offday-production-realtime-v18-lock-tile-refinement">
+/* OFFDAY R18 — tile-based lock refinement.
+   One unified lock language for header-lock and row-lock.
+   Goal: subtle theme-aware tiles with single grid seams, no double lines,
+   no extra hatch, and no distinction between lock sources. */
+
+#tab-offday{
+    --offday-lock-tile-top:color-mix(in srgb,var(--bg-hover) 58%,var(--bg-card));
+    --offday-lock-tile-bottom:color-mix(in srgb,var(--bg-hover) 72%,var(--bg-card));
+    --offday-lock-tile-line:color-mix(in srgb,var(--border-color) 74%,var(--bg-card));
+}
+
+/* Unified lock authority: same visual treatment for any Leader lock source. */
+#tab-offday .offday-day-cell.is-locked:not(.has-choice),
+#tab-offday .offday-day-cell.is-date-locked:not(.has-choice),
+#tab-offday .offday-day-cell.is-cell-locked:not(.has-choice),
+#tab-offday .offday-day-cell.is-date-locked.is-cell-locked:not(.has-choice),
+#tab-offday .offday-day-cell.is-locked.is-self-row:not(.has-choice),
+#tab-offday .offday-day-cell.is-date-locked.is-self-row:not(.has-choice),
+#tab-offday .offday-day-cell.is-cell-locked.is-self-row:not(.has-choice){
+    background:linear-gradient(180deg,var(--offday-lock-tile-top) 0%, var(--offday-lock-tile-bottom) 100%)!important;
+    box-shadow:none!important;
+    border-left:0!important;
+    border-top:0!important;
+    border-right:1px solid var(--offday-lock-tile-line)!important;
+    border-bottom:1px solid var(--offday-lock-tile-line)!important;
+}
+
+/* Locked state always wins over role-taken visual. */
+#tab-offday .offday-day-cell.is-locked.is-role-taken:not(.has-choice),
+#tab-offday .offday-day-cell.is-date-locked.is-role-taken:not(.has-choice),
+#tab-offday .offday-day-cell.is-cell-locked.is-role-taken:not(.has-choice){
+    background:linear-gradient(180deg,var(--offday-lock-tile-top) 0%, var(--offday-lock-tile-bottom) 100%)!important;
+    box-shadow:none!important;
+    border-right:1px solid var(--offday-lock-tile-line)!important;
+    border-bottom:1px solid var(--offday-lock-tile-line)!important;
+}
+#tab-offday .offday-day-cell.is-locked.is-role-taken:not(.has-choice)::after,
+#tab-offday .offday-day-cell.is-date-locked.is-role-taken:not(.has-choice)::after,
+#tab-offday .offday-day-cell.is-cell-locked.is-role-taken:not(.has-choice)::after{
+    content:none!important;
+    display:none!important;
+}
+#tab-offday .offday-lock-mark{display:none!important;}
+
+/* DDT Original: soft mecha/ivory tile tone. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-lock-tile-top:#f1f4f5;
+    --offday-lock-tile-bottom:#e8edef;
+    --offday-lock-tile-line:#cfd7da;
+}
+
+/* Theme-specific tuning so header/body feel native instead of universally teal/gray. */
+html[data-selected-theme="pink"] #tab-offday,
+html[data-selected-theme="pastel-pink"] #tab-offday{
+    --offday-lock-tile-top:color-mix(in srgb,var(--accent) 10%,var(--bg-card));
+    --offday-lock-tile-bottom:color-mix(in srgb,var(--accent) 16%,var(--bg-hover));
+    --offday-lock-tile-line:color-mix(in srgb,var(--accent) 24%,var(--border-color));
+}
+html[data-selected-theme="purple"] #tab-offday,
+html[data-selected-theme="royal-purple"] #tab-offday{
+    --offday-lock-tile-top:color-mix(in srgb,var(--accent) 9%,var(--bg-card));
+    --offday-lock-tile-bottom:color-mix(in srgb,var(--accent) 16%,var(--bg-hover));
+    --offday-lock-tile-line:color-mix(in srgb,var(--accent) 26%,var(--border-color));
+}
+html[data-selected-theme="emerald"] #tab-offday,
+html[data-selected-theme="ocean"] #tab-offday,
+html[data-selected-theme="ocean-blue"] #tab-offday,
+html[data-selected-theme="rose-gold"] #tab-offday,
+html[data-selected-theme="venom-green"] #tab-offday,
+html[data-selected-theme="mecha-ivory"] #tab-offday,
+html[data-selected-theme="dark"] #tab-offday,
+html[data-theme="dark"] #tab-offday{
+    --offday-lock-tile-top:color-mix(in srgb,var(--accent) 7%,var(--bg-card));
+    --offday-lock-tile-bottom:color-mix(in srgb,var(--accent) 12%,var(--bg-hover));
+    --offday-lock-tile-line:color-mix(in srgb,var(--accent) 18%,var(--border-color));
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v18-lock-tile-theme-refinement">
 (function(){
     'use strict';
 
