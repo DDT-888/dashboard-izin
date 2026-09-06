@@ -45843,8 +45843,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             </div>
                             <div class="offday-header-controls">
                                 <button
-                                    class="offday-toggle"
+                                    class="offday-toggle history-tooltip-target"
                                     id="offdayGlobalToggle"
+                                    data-tooltip-icon="power"
                                     type="button"
                                     aria-label="Buka atau tutup pemilihan OFFDAY"
                                     aria-pressed="false"
@@ -45853,10 +45854,11 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                 <div class="offday-period" id="offdayPeriodControl">
                                     <span class="offday-period-label">PERIODE</span>
                                     <button
-                                        class="offday-period-display"
+                                        class="offday-period-display history-tooltip-target"
                                         id="offdayPeriodDisplay"
                                         type="button"
-                                        title="Double-click untuk pilih bulan"
+                                        data-tooltip="Double-click untuk memilih periode bulan OFFDAY"
+                                        data-tooltip-icon="edit"
                                         aria-label="Periode OFFDAY. Double-click untuk pilih bulan"
                                     >Oktober 2026</button>
                                     <input
@@ -134558,13 +134560,49 @@ html[data-selected-theme="light"] #tab-offday .offday-matrix-scroll::-webkit-scr
 }
 html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#426b5d!important;}
 
+/* OFFDAY R8 — stronger cross-axis hover without changing the approved date-header base palette. */
+#tab-offday{
+    --offday-axis-hover:color-mix(in srgb,var(--accent) 72%,var(--text-primary));
+}
+#tab-offday .offday-day-head:hover,
+#tab-offday .offday-day-head.is-axis-hover{
+    position:sticky;
+    z-index:14!important;
+    filter:brightness(1.16) saturate(1.06)!important;
+    box-shadow:
+        inset 0 0 0 2px color-mix(in srgb,var(--offday-axis-hover) 68%,#ffffff 32%),
+        inset 0 -3px 0 color-mix(in srgb,var(--offday-axis-hover) 82%,#ffffff 18%),
+        0 3px 9px rgba(5,30,38,.16)!important;
+}
+#tab-offday .offday-roster-cell.is-axis-hover,
+#tab-offday .offday-roster-cell:hover{
+    background:color-mix(in srgb,var(--offday-axis-hover) 9%,var(--offday-row-surface))!important;
+}
+#tab-offday .offday-roster-cell.is-axis-hover .offday-user-card.user-card-shift,
+#tab-offday .offday-roster-cell:hover .offday-user-card.user-card-shift{
+    transform:translateY(-1px)!important;
+    filter:brightness(1.045) saturate(1.04);
+    box-shadow:
+        0 0 0 2px color-mix(in srgb,var(--offday-axis-hover) 74%,transparent),
+        0 5px 13px rgba(20,49,61,.15),
+        inset 0 1px 0 rgba(255,255,255,.22)!important;
+}
+#tab-offday .offday-day-cell.is-axis-hover{
+    outline:2px solid color-mix(in srgb,var(--offday-axis-hover) 50%,transparent)!important;
+    outline-offset:-2px!important;
+    background:color-mix(in srgb,var(--offday-axis-hover) 7%,var(--offday-row-surface))!important;
+}
+html[data-selected-theme="light"] #tab-offday{
+    --offday-axis-hover:#557d70;
+}
+
 @media (prefers-reduced-motion:reduce){
     #tab-offday .offday-day-head,
     #tab-offday .offday-user-card.user-card-shift{transition:none!important;}
 }
 </style>
 
-<script id="offday-production-realtime-v2-js">
+<script id="offday-production-realtime-v2-js" data-offday-build="v8-hover-tooltip-state-sync">
 (function(){
     'use strict';
 
@@ -134574,6 +134612,7 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
     const CLIENT_STORAGE = 'ddt_offday_client_id_v1';
     const state = {
         month: initialMonth(),
+        loadedMonth: null,
         isOpen: false,
         users: [],
         shiftData: null,
@@ -134618,8 +134657,7 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
             if (/^\d{4}-\d{2}$/.test(saved || '')) return saved;
         } catch (_) {}
         const now = new Date();
-        const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-        return `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}`;
+        return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
     }
 
     function monthDate(){ return `${state.month}-01`; }
@@ -134688,6 +134726,24 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
     function rpcMessage(error,fallback='Aksi OFFDAY gagal diproses.'){
         const raw=String(error?.message || error?.details || fallback).replace(/^.*?exception:\s*/i,'').trim();
         return raw || fallback;
+    }
+
+    function setThemeTooltip(target,message,icon='info',overflow=false){
+        if(!target)return;
+        target.removeAttribute('title');
+        const text=String(message||'').trim();
+        if(!text){
+            target.classList.remove('history-tooltip-target');
+            delete target.dataset.tooltip;
+            delete target.dataset.tooltipIcon;
+            delete target.dataset.tooltipOverflow;
+            return;
+        }
+        target.classList.add('history-tooltip-target');
+        target.dataset.tooltip=text;
+        target.dataset.tooltipIcon=icon||'info';
+        if(overflow)target.dataset.tooltipOverflow='true';
+        else delete target.dataset.tooltipOverflow;
     }
 
     function nodes(){
@@ -134807,7 +134863,16 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
             n.toggle.classList.toggle('is-open',state.isOpen);
             n.toggle.disabled=!isLeader();
             n.toggle.setAttribute('aria-pressed',String(state.isOpen));
-            n.toggle.title=isLeader()?(state.isOpen?'Klik untuk menutup pemilihan OFFDAY':'Klik untuk membuka pemilihan OFFDAY'):(state.isOpen?'Pemilihan OFFDAY sedang dibuka':'Pemilihan OFFDAY sedang ditutup');
+            setThemeTooltip(
+                n.toggle,
+                isLeader()
+                    ? (state.isOpen?'Klik untuk menutup pemilihan OFFDAY':'Klik untuk membuka pemilihan OFFDAY')
+                    : (state.isOpen?'Pemilihan OFFDAY sedang dibuka':'Pemilihan OFFDAY sedang ditutup'),
+                'power'
+            );
+        }
+        if(n.period){
+            setThemeTooltip(n.period,'Double-click untuk memilih periode bulan OFFDAY','edit');
         }
         if(n.selfLegend) n.selfLegend.style.display=isLeader()?'none':'';
     }
@@ -134828,9 +134893,9 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
         for(let day=1;day<=count;day++){
             const iso=dateISO(day);
             const locked=state.dateLocks.has(iso);
-            const head=add(`offday-day-head${isSunday(day)?' is-sunday':''}${locked?' is-locked':''}`,`<span class="num">${String(day).padStart(2,'0')}</span><span class="dow">${dayName(day)}</span>`);
+            const head=add(`offday-day-head history-tooltip-target${isSunday(day)?' is-sunday':''}${locked?' is-locked':''}`,`<span class="num">${String(day).padStart(2,'0')}</span><span class="dow">${dayName(day)}</span>`);
             head.dataset.date=iso;
-            head.title=isLeader()?(locked?'Klik untuk membuka tanggal':'Klik untuk mengunci tanggal'):(locked?'Tanggal dikunci Leader':'Tanggal tersedia');
+            setThemeTooltip(head,isLeader()?(locked?'Klik untuk membuka tanggal':'Klik untuk mengunci tanggal'):(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
         }
 
         const appendGroup=(section)=>{
@@ -134862,7 +134927,7 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
         const roster=add(`offday-roster-cell${self?' is-self':''}`,
             `<div class="user-card-shift offday-user-card role-${role}" data-offday-user-card="1">`+
                 `<div class="avatar">${escapeHtml(String(user.name || '').charAt(0).toUpperCase() || '?')}</div>`+
-                `<div class="user-info"><div class="user-name" title="${escapeHtml(user.name)}">${escapeHtml(user.name)}</div></div>`+
+                `<div class="user-info"><div class="user-name history-tooltip-target" data-tooltip="${escapeHtml(user.name)}" data-tooltip-icon="user" data-tooltip-overflow="true">${escapeHtml(user.name)}</div></div>`+
                 `<span class="role-tag-shift ${role}${role==='leader'?' role-tag':''}">${escapeHtml(roleLabel(role))}</span>`+
             `</div>`
         );
@@ -134896,21 +134961,31 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
             }
 
             if(isLeader()){
-                cell.title=hasChoice
-                    ? `${user.name} · ${dateLabel(iso)} · klik untuk aksi Leader`
-                    : (cellLocked?`Klik untuk membuka lock ${user.name} · ${dateLabel(iso)}`:`Klik untuk mengunci ${user.name} · ${dateLabel(iso)}`);
+                setThemeTooltip(
+                    cell,
+                    hasChoice
+                        ? `${user.name} · ${dateLabel(iso)} · klik untuk aksi Leader`
+                        : (cellLocked?`Klik untuk membuka lock ${user.name} · ${dateLabel(iso)}`:`Klik untuk mengunci ${user.name} · ${dateLabel(iso)}`),
+                    hasChoice?'info':'lock'
+                );
             }else if(self){
-                cell.title=!user.assigned
-                    ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
-                    : hasChoice
-                        ? 'Klik OFF untuk membatalkan pilihan'
-                        : (!state.isOpen
-                            ? 'Pemilihan sedang ditutup'
-                            : locked
-                                ? 'Tanggal ini dikunci Leader'
-                                : roleTaken
-                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}`
-                                    : 'Klik untuk memilih atau memindahkan OFFDAY');
+                setThemeTooltip(
+                    cell,
+                    !user.assigned
+                        ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
+                        : hasChoice
+                            ? 'Klik OFF untuk membatalkan pilihan'
+                            : (!state.isOpen
+                                ? 'Pemilihan sedang ditutup'
+                                : locked
+                                    ? 'Tanggal ini dikunci Leader'
+                                    : roleTaken
+                                        ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}`
+                                        : 'Klik untuk memilih atau memindahkan OFFDAY'),
+                    locked?'lock':'info'
+                );
+            }else{
+                setThemeTooltip(cell,'');
             }
         }
     }
@@ -134942,23 +135017,31 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
             const mark=document.createElement('span');mark.className='offday-lock-mark';mark.textContent='×';cell.appendChild(mark);
         }
         if(isLeader()){
-            cell.title=hasChoice
-                ? `${user?.name||'User'} · ${dateLabel(iso)} · klik untuk aksi Leader`
-                : (cellLocked?`Klik untuk membuka lock ${user?.name||'user'} · ${dateLabel(iso)}`:`Klik untuk mengunci ${user?.name||'user'} · ${dateLabel(iso)}`);
+            setThemeTooltip(
+                cell,
+                hasChoice
+                    ? `${user?.name||'User'} · ${dateLabel(iso)} · klik untuk aksi Leader`
+                    : (cellLocked?`Klik untuk membuka lock ${user?.name||'user'} · ${dateLabel(iso)}`:`Klik untuk mengunci ${user?.name||'user'} · ${dateLabel(iso)}`),
+                hasChoice?'info':'lock'
+            );
         }else if(self){
-            cell.title=!user?.assigned
-                ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
-                : hasChoice
-                    ? 'Klik OFF untuk membatalkan pilihan'
-                    : (!state.isOpen
-                        ? 'Pemilihan sedang ditutup'
-                        : locked
-                            ? 'Tanggal ini dikunci Leader'
-                            : roleTaken
-                                ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
-                                : 'Klik untuk memilih atau memindahkan OFFDAY');
+            setThemeTooltip(
+                cell,
+                !user?.assigned
+                    ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
+                    : hasChoice
+                        ? 'Klik OFF untuk membatalkan pilihan'
+                        : (!state.isOpen
+                            ? 'Pemilihan sedang ditutup'
+                            : locked
+                                ? 'Tanggal ini dikunci Leader'
+                                : roleTaken
+                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
+                                    : 'Klik untuk memilih atau memindahkan OFFDAY'),
+                locked?'lock':'info'
+            );
         }else{
-            cell.removeAttribute('title');
+            setThemeTooltip(cell,'');
         }
     }
 
@@ -134973,7 +135056,7 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
         if(head){
             const locked=state.dateLocks.has(iso);
             head.classList.toggle('is-locked',locked);
-            head.title=isLeader()?(locked?'Klik untuk membuka tanggal':'Klik untuk mengunci tanggal'):(locked?'Tanggal dikunci Leader':'Tanggal tersedia');
+            setThemeTooltip(head,isLeader()?(locked?'Klik untuk membuka tanggal':'Klik untuk mengunci tanggal'):(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
         }
         n.grid.querySelectorAll(`.offday-day-cell[data-date="${iso}"]`).forEach(paintCell);
     }
@@ -135015,6 +135098,7 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
                 if(res?.error)throw res.error;
             }
             state.isOpen=Boolean(periodRes?.data?.is_open);
+            state.loadedMonth=state.month;
             state.choices=new Map((choiceRes?.data||[]).map(row=>[Number(row.user_id),String(row.off_date)]));
             state.dateLocks=new Set((dateLockRes?.data||[]).map(row=>String(row.off_date)));
             state.cellLocks=new Set((cellLockRes?.data||[]).map(row=>keyCell(row.user_id,String(row.off_date))));
@@ -135062,7 +135146,11 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
             return data;
         }catch(error){
             console.error(`OFFDAY RPC ${name} gagal:`,error);
-            notify(rpcMessage(error),'warning',2800);
+            const message=rpcMessage(error);
+            notify(message,'warning',2800);
+            if(/pemilihan\s+offday\s+sedang\s+ditutup/i.test(message)){
+                window.setTimeout(()=>loadSnapshot({reason:'open-state-reconcile',includeRoster:false}),0);
+            }
             return null;
         }finally{
             state.actionBusy=false;
@@ -135182,8 +135270,11 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
     function setMonth(value){
         if(!/^\d{4}-\d{2}$/.test(String(value||'')))return;
         state.month=String(value);
+        state.loadedMonth=null;
+        state.isOpen=false;
         try{localStorage.setItem(STORAGE_MONTH,state.month);}catch(_){}
         closeLeaderPopover();
+        renderControls();
         const n=nodes();if(n.scroll)n.scroll.scrollLeft=0;
         loadSnapshot({reason:'month-change',includeRoster:!state.rosterLoaded});
     }
@@ -135271,7 +135362,9 @@ html[data-selected-theme="light"] #tab-offday .offday-popover-btn.lock{color:#42
             const user=state.rosterById.get(uid)||state.roster.find(row=>Number(row.id)===uid);
             if(!user?.assigned){notify('OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.','warning',2400);return;}
             if(hasChoice){chooseOrCancel(iso);return;}
-            if(!state.isOpen){notify('Pemilihan Offday sedang ditutup oleh Leader.','warning',2200);return;}
+            /* Do not reject from a potentially stale local open/closed snapshot.
+               The atomic RPC is the authority; if Leader has actually closed the
+               period, the server rejects and the client immediately reconciles. */
             if(locked){notify('Tanggal tersebut sedang dikunci oleh Leader.','warning',2200);return;}
             const takenOwner=roleTakenOwner(user,iso);
             if(takenOwner){
