@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.84.44-mecha-ivory-production-assembly-g1p08-pcs-offday-r4">
+    <meta name="dashboard-build" content="v64.84.44-mecha-ivory-production-assembly-g1p08-pcs-offday-r5">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -134199,6 +134199,73 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 </style>
 
+<style id="offday-production-realtime-v5-refinement">
+/* OFFDAY R5 — roster continuity + Leader identity + disabled-control fidelity. */
+
+/* Disabled users see the exact live toggle state/color, but cannot operate it. */
+#tab-offday .offday-toggle:disabled{
+    opacity:1!important;
+    filter:none!important;
+    cursor:not-allowed!important;
+}
+#tab-offday .offday-toggle:disabled:hover{
+    cursor:not-allowed!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 1px 3px rgba(17,42,48,.08)!important;
+}
+
+/* Leader is not present in Shift Kerja, so its OFFDAY card extends the same
+   user-card language using the canonical Users Leader navy/gold identity. */
+#tab-offday .offday-user-card.user-card-shift.role-leader{
+    --shift-role-accent:#d5a83f;
+    --shift-role-soft:#172033;
+    --shift-role-text:#f7d978;
+    border-color:color-mix(in srgb,#d5a83f 34%,var(--border-color))!important;
+    border-left-color:#d5a83f!important;
+    background:
+        linear-gradient(90deg,rgba(213,168,63,.09),rgba(17,26,45,.025) 60%,transparent),
+        var(--bg-card)!important;
+}
+#tab-offday .offday-user-card.user-card-shift.role-leader .avatar{
+    background:#172033!important;
+    color:#f7d978!important;
+    border-color:color-mix(in srgb,#d5a83f 46%,var(--border-color))!important;
+}
+#tab-offday .offday-user-card.user-card-shift.role-leader .role-tag-shift.leader{
+    background:linear-gradient(135deg,#111a2d 0%,#283a59 100%)!important;
+    color:#f7d978!important;
+    border:1px solid #d5a83f!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 2px 6px rgba(17,26,45,.13)!important;
+    font-weight:850!important;
+}
+
+/* Venom keeps the same Leader semantic palette already used by Users. */
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-user-card.user-card-shift.role-leader{
+    --shift-role-accent:#5a4b1e;
+    --shift-role-soft:#242010;
+    --shift-role-text:#f2d77f;
+    border-left-color:#5a4b1e!important;
+    background:linear-gradient(90deg,rgba(90,75,30,.16),transparent 62%),var(--bg-card)!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-user-card.user-card-shift.role-leader .avatar,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-user-card.user-card-shift.role-leader .role-tag-shift.leader{
+    background:#242010!important;
+    color:#f2d77f!important;
+    border-color:#5a4b1e!important;
+    box-shadow:none!important;
+}
+
+/* DATA STAFF from Shift Kerja is represented explicitly and always last. */
+#tab-offday .offday-group-name.is-unassigned{
+    background:color-mix(in srgb,var(--bg-hover) 72%,var(--bg-card));
+}
+#tab-offday .offday-group-name.is-unassigned strong{
+    color:var(--text-secondary);
+}
+#tab-offday .offday-group-day.is-unassigned{
+    background:color-mix(in srgb,var(--bg-hover) 72%,var(--bg-card));
+}
+</style>
+
 <script id="offday-production-realtime-v2-js">
 (function(){
     'use strict';
@@ -134226,6 +134293,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         realtimeStatus: 'IDLE',
         realtimeRevision: 0,
         realtimeTimer: null,
+        pendingRosterRefresh: false,
         popoverTarget: null,
         drag: null,
         suppressClickUntil: 0,
@@ -134352,6 +134420,30 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             if(rows.length) sections.push({id:String(column?.id||`shift-${index}`),name:String(column?.name||`SHIFT ${index+1}`).trim(),kind:'shift',rows});
         });
 
+        // Active users that are not present in any Shift Aktif column remain visible
+        // at the bottom as UNASSIGNED. OFFDAY identity follows user_id, so moving a
+        // person between a shift and DATA STAFF never drops or resets their choice.
+        const unassignedRows=[];
+        activeUsers
+            .filter(user=>normRole(user.role)!=='leader')
+            .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'))
+            .forEach(user=>{
+                const id=Number(user.id);
+                if(!id||seen.has(id))return;
+                seen.add(id);
+                const row={
+                    id,
+                    name:user.name||`USER ${id}`,
+                    role:user.role||'cs',
+                    section:'UNASSIGNED'
+                };
+                unassignedRows.push(row);
+                roster.push(row);
+            });
+        if(unassignedRows.length){
+            sections.push({id:'unassigned',name:'UNASSIGNED',kind:'unassigned',rows:unassignedRows});
+        }
+
         state.sections=sections;
         state.roster=roster;
         state.rosterLoaded=true;
@@ -134402,7 +134494,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         }
 
         const appendGroup=(section)=>{
-            const groupClass=section.kind==='leader'?' is-leader':'';
+            const groupClass=section.kind==='leader'?' is-leader':(section.kind==='unassigned'?' is-unassigned':'');
             add(`offday-group-name${groupClass}`,`<strong>${escapeHtml(section.name)}</strong><span>${section.rows.length} STAFF</span>`);
             for(let day=1;day<=count;day++) add(`offday-group-day${groupClass}`);
         };
@@ -134426,7 +134518,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             `<div class="user-card-shift offday-user-card role-${role}" data-offday-user-card="1">`+
                 `<div class="avatar">${escapeHtml(String(user.name || '').charAt(0).toUpperCase() || '?')}</div>`+
                 `<div class="user-info"><div class="user-name" title="${escapeHtml(user.name)}">${escapeHtml(user.name)}</div></div>`+
-                `<span class="role-tag-shift ${role}">${escapeHtml(roleLabel(role))}</span>`+
+                `<span class="role-tag-shift ${role}${role==='leader'?' role-tag':''}">${escapeHtml(roleLabel(role))}</span>`+
             `</div>`
         );
         roster.dataset.userId=String(user.id);
@@ -134574,8 +134666,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     function scheduleSnapshot(reason='signal',includeRoster=false){
         if(typeof currentTab!=='undefined' && currentTab!=='offday')return;
         if(document.visibilityState!=='visible')return;
+        state.pendingRosterRefresh=state.pendingRosterRefresh||Boolean(includeRoster);
         window.clearTimeout(state.realtimeTimer);
-        state.realtimeTimer=window.setTimeout(()=>loadSnapshot({reason,includeRoster}),180);
+        state.realtimeTimer=window.setTimeout(()=>{
+            const refreshRoster=state.pendingRosterRefresh;
+            state.pendingRosterRefresh=false;
+            loadSnapshot({reason,includeRoster:refreshRoster});
+        },180);
     }
 
     async function callRpc(name,args,options={}){
