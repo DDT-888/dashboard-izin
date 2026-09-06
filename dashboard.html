@@ -135182,7 +135182,76 @@ html[data-theme="dark"] #tab-offday{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v14-body-lock-column-refinement">
+
+<style id="offday-production-realtime-v15-body-lock-simplification">
+/* OFFDAY R15 — simplify global date lock.
+   Goal: remove the "grid on top of grid" effect seen in v14.
+   Global date lock becomes a continuous muted column wash.
+   Individual cell lock remains locally explicit. */
+
+#tab-offday{
+    --offday-date-lock-surface:color-mix(in srgb,var(--bg-hover) 58%,var(--bg-card));
+    --offday-date-lock-grid:color-mix(in srgb,var(--border-light) 40%,var(--offday-date-lock-surface));
+}
+
+/* GLOBAL DATE LOCK: no per-cell frame, no repeated ×, no horizontal boxing. */
+#tab-offday .offday-day-cell.is-date-locked:not(.has-choice){
+    background:var(--offday-date-lock-surface)!important;
+    box-shadow:none!important;
+    border-bottom-color:var(--offday-date-lock-surface)!important;
+    border-right-color:var(--offday-date-lock-grid)!important;
+}
+
+/* Keep self-row identity only as an extremely light wash; do not re-box locked cells. */
+#tab-offday .offday-day-cell.is-date-locked.is-self-row:not(.has-choice){
+    background:color-mix(in srgb,var(--offday-date-lock-surface) 92%,var(--offday-self-bg))!important;
+    box-shadow:none!important;
+    border-bottom-color:color-mix(in srgb,var(--offday-date-lock-surface) 94%,var(--offday-self-bg))!important;
+}
+
+/* Adjacent globally locked columns should read as one calm area. */
+#tab-offday .offday-day-cell.is-date-locked + .offday-day-cell.is-date-locked{
+    border-left-color:transparent!important;
+}
+
+/* Individual cell lock stays explicit because it is a local Leader restriction. */
+#tab-offday .offday-day-cell.is-cell-locked:not(.has-choice){
+    background:color-mix(in srgb,var(--bg-hover) 76%,var(--bg-card))!important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text-muted) 38%,var(--border-color))!important;
+    border-bottom-color:var(--offday-grid-line)!important;
+    border-right-color:var(--offday-grid-line)!important;
+}
+#tab-offday .offday-day-cell.is-date-locked.is-cell-locked:not(.has-choice){
+    background:color-mix(in srgb,var(--bg-hover) 72%,var(--offday-date-lock-surface))!important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text-muted) 42%,var(--border-color))!important;
+    border-bottom-color:var(--offday-grid-line)!important;
+    border-right-color:var(--offday-grid-line)!important;
+}
+
+/* DDT Original: soft steel wash. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-date-lock-surface:#f0f3f4;
+    --offday-date-lock-grid:#e5ebec;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-date-locked:not(.has-choice){
+    background:#f0f3f4!important;
+    border-bottom-color:#f0f3f4!important;
+    border-right-color:#e5ebec!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-date-locked.is-self-row:not(.has-choice){
+    background:#eef2f1!important;
+    border-bottom-color:#eef2f1!important;
+}
+
+/* Dark themes: same hierarchy, no extra luminous separators. */
+html[data-theme="dark"] #tab-offday{
+    --offday-date-lock-surface:color-mix(in srgb,var(--bg-hover) 66%,var(--bg-card));
+    --offday-date-lock-grid:color-mix(in srgb,var(--border-color) 34%,var(--offday-date-lock-surface));
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v15-global-lock-column-wash">
 (function(){
     'use strict';
 
