@@ -689,6 +689,75 @@
             .limit-line { font-size: 5.6px; letter-spacing: 0; }
         }
 
+    
+        /* ========================= OFFICE COLUMN v1.1 ========================= */
+        .summary-meta.summary-meta-single {
+            grid-template-rows: 1fr;
+        }
+
+        .summary-meta.summary-meta-single .summary-meta-item {
+            min-height: 100%;
+        }
+
+        .office-cell {
+            display: block;
+            max-width: 100%;
+            overflow: hidden;
+            color: #9dc7ce;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 8.2px;
+            font-weight: 760;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: .035em;
+            line-height: 1;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .office-cell.pending {
+            color: #68868d;
+            opacity: .72;
+        }
+
+        /* Four-column balance: compact, no horizontal scroll. */
+        .col-nama { width: 39%; }
+        .col-role { width: 19%; }
+        .col-office { width: 17%; }
+        .col-durasi { width: 25%; text-align: right; }
+
+        thead th.col-office {
+            color: #8aadb5;
+        }
+
+        td.col-office {
+            vertical-align: middle;
+        }
+
+        @media (max-width: 390px) {
+            .office-cell {
+                font-size: 7.3px;
+                letter-spacing: .02em;
+            }
+
+            .col-nama { width: 38%; }
+            .col-role { width: 18%; }
+            .col-office { width: 18%; }
+            .col-durasi { width: 26%; }
+        }
+
+        @media (max-width: 340px) {
+            .office-cell {
+                font-size: 6.9px;
+                letter-spacing: 0;
+            }
+
+            .col-nama { width: 37%; }
+            .col-role { width: 18%; }
+            .col-office { width: 18%; }
+            .col-durasi { width: 27%; }
+        }
+
     </style>
 </head>
 <body>
@@ -729,11 +798,7 @@
                     </div>
                     <div class="status-dots" id="statusDots" aria-hidden="true"></div>
                 </div>
-                <div class="summary-meta">
-                    <div class="summary-meta-item">
-                        <span>Active Limit</span>
-                        <strong id="permitLimitDisplay">PER OFFICE</strong>
-                    </div>
+                <div class="summary-meta summary-meta-single">
                     <div class="summary-meta-item">
                         <span>Source</span>
                         <strong>REALTIME</strong>
@@ -747,12 +812,13 @@
                         <tr>
                             <th class="col-nama">Nama</th>
                             <th class="col-role">Role</th>
+                            <th class="col-office">Office</th>
                             <th class="col-durasi">Durasi / Batas</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
                         <tr>
-                            <td colspan="3">
+                            <td colspan="4">
                                 <div class="loading-spinner">
                                     <div class="spinner" aria-hidden="true"></div>
                                     <span>Memuat data izin</span>
@@ -781,8 +847,8 @@
             'use strict';
 
             var BUILD = Object.freeze({
-                version: '1.0.0',
-                authority: 'Office START Snapshot + Supabase Server Clock',
+                version: '1.1.0',
+                authority: 'Office START Snapshot + Server Clock + Dedicated Office Column',
                 source: 'live-view(2).html',
                 backendChanged: false
             });
@@ -1090,7 +1156,7 @@
 
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3">
+                        <td colspan="4">
                             <div class="empty-state">
                                 <div class="icon">⚠️</div>
                                 <h3>${escapeHtml(message)}</h3>
@@ -1263,7 +1329,6 @@
 
                     renderTable();
                     updateOnlineCount();
-                    updateLimitSummary();
                     markSync();
                     setLiveStatus('online', 'LIVE');
 
@@ -1325,7 +1390,6 @@
 
                 renderTable();
                 updateOnlineCount();
-                updateLimitSummary();
                 markSync();
             }
 
@@ -1443,7 +1507,7 @@
                 if (!onlineUsers.length) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="3">
+                            <td colspan="4">
                                 <div class="empty-state">
                                     <div class="icon">😴</div>
                                     <h3>Belum ada yang izin</h3>
@@ -1527,10 +1591,10 @@
                                 </span>
                             </td>
                             <td class="col-role">
-                                <span class="role-stack">
-                                    <span class="role-tag ${safeRole}">${escapeHtml(roleLabel)}</span>
-                                    <span class="office-line ${user.office_name ? '' : 'pending'}">${safeOffice}</span>
-                                </span>
+                                <span class="role-tag ${safeRole}">${escapeHtml(roleLabel)}</span>
+                            </td>
+                            <td class="col-office">
+                                <span class="office-cell ${user.office_name ? '' : 'pending'}">${safeOffice}</span>
                             </td>
                             <td class="col-durasi">
                                 <span class="duration-stack">
