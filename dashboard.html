@@ -135778,7 +135778,158 @@ html[data-theme="dark"] #tab-offday{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v22-self-section-grid-continuity">
+
+<style id="offday-production-realtime-v23-selectable-surface-refinement">
+/* OFFDAY R23 — available/selectable surface + self-row/hover balance.
+   v22 lock tile and lock seam continuity remain untouched. */
+#tab-offday{
+    --offday-available-surface:color-mix(in srgb,var(--accent) 2.5%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,var(--accent) 7%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,var(--accent) 12%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,var(--text-muted) 6%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,var(--accent) 24%,var(--border-color));
+}
+
+/* Neutral available cells should not read as stark white islands. */
+html #tab-offday .offday-day-cell:not(.is-locked):not(.is-date-locked):not(.is-cell-locked):not(.is-closed):not(.is-role-taken):not(.has-choice):not(.is-self-row){
+    background:var(--offday-available-surface)!important;
+}
+
+/* The logged-in user's available cells are the selectable working surface. */
+html #tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-date-locked):not(.is-cell-locked):not(.is-closed):not(.is-role-taken):not(.has-choice){
+    background:var(--offday-selectable-surface)!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,var(--offday-selectable-line) 42%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-selectable-line) 42%,transparent)!important;
+}
+
+/* Hover is only one tonal step above selectable, never a new bright block. */
+html #tab-offday .offday-day-cell.is-user-clickable:not(.is-locked):not(.is-date-locked):not(.is-cell-locked):not(.is-role-taken):hover{
+    background:var(--offday-selectable-hover)!important;
+    outline:1px solid color-mix(in srgb,var(--offday-selectable-line) 52%,transparent)!important;
+    outline-offset:-1px!important;
+}
+
+/* Cross-axis hover should remain softer than direct pointer hover. */
+html #tab-offday .offday-day-cell.is-axis-hover:not(.is-locked):not(.is-date-locked):not(.is-cell-locked):not(.is-role-taken){
+    background:color-mix(in srgb,var(--offday-selectable-surface) 70%,var(--offday-available-surface))!important;
+    outline:1px solid color-mix(in srgb,var(--offday-selectable-line) 34%,transparent)!important;
+    outline-offset:-1px!important;
+}
+
+/* Role-taken stays visually below Leader lock and below the selectable row. */
+html #tab-offday .offday-day-cell.is-role-taken:not(.is-locked):not(.is-date-locked):not(.is-cell-locked):not(.has-choice){
+    background:var(--offday-role-taken-surface)!important;
+    opacity:1!important;
+}
+html #tab-offday .offday-day-cell.is-role-taken:not(.is-locked):not(.is-date-locked):not(.is-cell-locked):not(.has-choice)::after{
+    background:color-mix(in srgb,var(--text-muted) 34%,transparent)!important;
+    opacity:.72!important;
+}
+
+/* Roster rail follows the same self-row material instead of a separate bright band. */
+html #tab-offday .offday-roster-cell.is-self{
+    background:var(--offday-selectable-surface)!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,var(--offday-selectable-line) 44%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-selectable-line) 44%,transparent),
+        6px 0 10px rgba(14,45,52,.018)!important;
+}
+html #tab-offday .offday-roster-cell.is-self::before{
+    background:color-mix(in srgb,var(--accent-strong) 78%,var(--text-secondary))!important;
+}
+
+/* DDT Original — near-white jade-gray, not pure white and not cyan. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-available-surface:#f7faf9;
+    --offday-selectable-surface:#edf4f1;
+    --offday-selectable-hover:#e2ede8;
+    --offday-role-taken-surface:#f0f3f2;
+    --offday-selectable-line:#8eaaa0;
+}
+
+/* Pastel Pink — faint rose-neutral selectable material. */
+html[data-selected-theme="pink"] #tab-offday,
+html[data-selected-theme="pastel-pink"] #tab-offday{
+    --offday-available-surface:color-mix(in srgb,var(--accent) 2.5%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,var(--accent) 7.5%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,var(--accent) 13%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,var(--text-muted) 6%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,var(--accent) 27%,var(--border-color));
+}
+
+/* Royal Purple — muted lavender working row. */
+html[data-selected-theme="purple"] #tab-offday,
+html[data-selected-theme="royal-purple"] #tab-offday{
+    --offday-available-surface:color-mix(in srgb,var(--accent) 2.5%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,var(--accent) 7.5%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,var(--accent) 13%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,var(--text-muted) 6%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,var(--accent) 28%,var(--border-color));
+}
+
+/* Emerald — sage-neutral, never neon green. */
+html[data-selected-theme="emerald"] #tab-offday{
+    --offday-available-surface:color-mix(in srgb,var(--accent) 2.2%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,var(--accent) 6.5%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,var(--accent) 11.5%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,var(--text-muted) 6%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,var(--accent) 25%,var(--border-color));
+}
+
+/* Ocean — cool blue-gray available/selectable surfaces. */
+html[data-selected-theme="ocean"] #tab-offday,
+html[data-selected-theme="ocean-blue"] #tab-offday{
+    --offday-available-surface:color-mix(in srgb,var(--accent) 2.2%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,var(--accent) 6.5%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,var(--accent) 11.5%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,var(--text-muted) 6%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,var(--accent) 26%,var(--border-color));
+}
+
+/* Rose Gold — warm neutral, not saturated pink. */
+html[data-selected-theme="rose-gold"] #tab-offday{
+    --offday-available-surface:color-mix(in srgb,var(--accent) 2%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,var(--accent) 6%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,var(--accent) 10.5%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,var(--text-muted) 6%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,var(--accent) 24%,var(--border-color));
+}
+
+/* Dark/Cyber — low-energy selectable lift, no glowing strip. */
+html[data-selected-theme="dark"] #tab-offday,
+html[data-theme="dark"] #tab-offday{
+    --offday-available-surface:color-mix(in srgb,var(--accent) 1.5%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,var(--accent) 5%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,var(--accent) 9%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,var(--text-muted) 7%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,var(--accent) 22%,var(--border-color));
+}
+
+/* Venom — moss tint kept matte. */
+html[data-selected-theme="venom"] #tab-offday,
+html[data-selected-theme="venom-green"] #tab-offday,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
+    --offday-available-surface:color-mix(in srgb,#557444 1.8%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,#5d7e4b 5.5%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,#668c50 9.5%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,var(--text-muted) 7%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,#668c50 22%,var(--border-color));
+}
+
+/* Mecha Ivory — nearly neutral operational plane. */
+html[data-selected-theme="mecha-ivory"] #tab-offday,
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday{
+    --offday-available-surface:color-mix(in srgb,#7b8783 1.5%,var(--bg-card));
+    --offday-selectable-surface:color-mix(in srgb,#77847f 4.5%,var(--bg-card));
+    --offday-selectable-hover:color-mix(in srgb,#6e7c77 8%,var(--bg-card));
+    --offday-role-taken-surface:color-mix(in srgb,#7b8783 5.5%,var(--bg-card));
+    --offday-selectable-line:color-mix(in srgb,#6f7c78 22%,var(--border-color));
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v23-selectable-surface-theme-balance">
 (function(){
     'use strict';
 
