@@ -135463,7 +135463,78 @@ html[data-theme="dark"] #tab-offday{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v18-lock-tile-theme-refinement">
+
+<style id="offday-production-realtime-v19-lock-source-unification">
+/* OFFDAY R19 — root-cause cleanup.
+   Force exact body-tile parity between date-header lock and individual Leader lock.
+   This intentionally overrides older source-specific lock selectors with higher specificity. */
+
+/* Unified body tile for ANY lock source. */
+html #tab-offday .offday-day-cell.is-locked:not(.has-choice),
+html #tab-offday .offday-day-cell.is-date-locked:not(.has-choice),
+html #tab-offday .offday-day-cell.is-cell-locked:not(.has-choice),
+html #tab-offday .offday-day-cell.is-date-locked.is-cell-locked:not(.has-choice),
+html #tab-offday .offday-day-cell.is-locked.is-self-row:not(.has-choice),
+html #tab-offday .offday-day-cell.is-date-locked.is-self-row:not(.has-choice),
+html #tab-offday .offday-day-cell.is-cell-locked.is-self-row:not(.has-choice){
+    background:linear-gradient(180deg,var(--offday-lock-tile-top) 0%,var(--offday-lock-tile-bottom) 100%)!important;
+    box-shadow:none!important;
+    border-left:0!important;
+    border-top:0!important;
+    border-right:1px solid var(--offday-lock-tile-line)!important;
+    border-bottom:1px solid var(--offday-lock-tile-line)!important;
+}
+
+/* Explicit theme-level parity so old date-lock theme overrides cannot leak through. */
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-locked:not(.has-choice),
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-date-locked:not(.has-choice),
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-cell-locked:not(.has-choice),
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked:not(.has-choice),
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-locked.is-self-row:not(.has-choice),
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-date-locked.is-self-row:not(.has-choice),
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-cell-locked.is-self-row:not(.has-choice){
+    background:linear-gradient(180deg,var(--offday-lock-tile-top) 0%,var(--offday-lock-tile-bottom) 100%)!important;
+    box-shadow:none!important;
+    border-left:0!important;
+    border-top:0!important;
+    border-right:1px solid var(--offday-lock-tile-line)!important;
+    border-bottom:1px solid var(--offday-lock-tile-line)!important;
+}
+
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-locked:not(.has-choice),
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-date-locked:not(.has-choice),
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-cell-locked:not(.has-choice),
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked:not(.has-choice),
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-locked.is-self-row:not(.has-choice),
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-date-locked.is-self-row:not(.has-choice),
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-cell-locked.is-self-row:not(.has-choice){
+    background:linear-gradient(180deg,var(--offday-lock-tile-top) 0%,var(--offday-lock-tile-bottom) 100%)!important;
+    box-shadow:none!important;
+    border-left:0!important;
+    border-top:0!important;
+    border-right:1px solid var(--offday-lock-tile-line)!important;
+    border-bottom:1px solid var(--offday-lock-tile-line)!important;
+}
+
+/* LOCKED remains above role-taken regardless of source. */
+html #tab-offday .offday-day-cell.is-locked.is-role-taken:not(.has-choice),
+html #tab-offday .offday-day-cell.is-date-locked.is-role-taken:not(.has-choice),
+html #tab-offday .offday-day-cell.is-cell-locked.is-role-taken:not(.has-choice){
+    background:linear-gradient(180deg,var(--offday-lock-tile-top) 0%,var(--offday-lock-tile-bottom) 100%)!important;
+    box-shadow:none!important;
+    border-right:1px solid var(--offday-lock-tile-line)!important;
+    border-bottom:1px solid var(--offday-lock-tile-line)!important;
+}
+html #tab-offday .offday-day-cell.is-locked.is-role-taken:not(.has-choice)::after,
+html #tab-offday .offday-day-cell.is-date-locked.is-role-taken:not(.has-choice)::after,
+html #tab-offday .offday-day-cell.is-cell-locked.is-role-taken:not(.has-choice)::after{
+    content:none!important;
+    display:none!important;
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v19-lock-source-unification">
 (function(){
     'use strict';
 
