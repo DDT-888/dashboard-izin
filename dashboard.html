@@ -128418,17 +128418,21 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.23',
-  source:'Users Final Detail v1.15',
+  version:'1.1.24',
+  source:'Users Pencil Authority v1.16',
   targetedCorrection:Object.freeze({
-    officeNativeTooltip:'REMOVED',
-    usersInlinePencil:'Office pencil is single visual authority',
-    pencilSvg:'12px / stroke 1.8 / round caps+joins / transparent carrier',
-    pencilHover:'shared opacity + accent behavior',
-    venomPencilPlate:'removed',
-    officeEditBehavior:'UNCHANGED',
-    inlineEditBehavior:'UNCHANGED',
-    allOtherV115Areas:'PASS / unchanged',
+    activeDateEditors:'cross-PC geometry hardening',
+    fields:'Passport Expiry / Visa Expiry / JOIN SMB / JOIN DDT',
+    columnWidth:'124px unchanged',
+    dateFont:'8.2px',
+    separator:'3px',
+    picker:'15x20 / icon 10x10',
+    save:'16x16 / icon 9x9',
+    rightReserve:'22px deterministic gap',
+    inactiveDate:'PASS / untouched',
+    training:'PASS / untouched',
+    pencilAuthority:'PASS / untouched',
+    allOtherV116Areas:'PASS / unchanged',
     tickerSmoothness:'PASS / unchanged',
     poipetProgressAuthority:'PASS / unchanged',
     officeDisplayFailSafe:'PASS / unchanged'
@@ -133391,6 +133395,212 @@ html[data-theme="dark"][data-theme-variant="venom"] body
 td.ddt-employee-office-cell:hover
 .ddt-office-edit-mark{
   color:#44d62c!important;
+}
+</style>
+
+
+<style id="ddt-users-v1-17-date-editor-cross-pc-hardening">
+/* ================================================================
+   USERS v1.17 — CROSS-PC DATE EDITOR HARDENING
+
+   Scope ONLY:
+   - Masa Aktif Passport
+   - Masa Aktif Visa
+   - JOIN SMB
+   - JOIN DDT
+
+   Column widths remain v1.14/v1.16 authority (124px).
+   Tgl Nonaktif and all other PASS areas are untouched.
+   ================================================================ */
+
+/*
+ * Reserve a deterministic right-side lane for the save check.
+ * Previous 18px reserve was visually too tight on some DPI/font stacks.
+ */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+){
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  padding-right:22px!important;
+  overflow:visible!important;
+}
+
+/*
+ * Slightly tighter internal control:
+ * 1px grid gap + 15px picker.
+ */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-segmented-date-control{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 15px!important;
+  gap:1px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+/*
+ * DD / MM / YYYY use less min-content width so browser font-metric
+ * differences cannot push the picker toward the save lane.
+ */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-date-segments{
+  display:grid!important;
+  grid-template-columns:
+    minmax(12px,.68fr)
+    3px
+    minmax(12px,.68fr)
+    3px
+    minmax(25px,1.16fr)
+    !important;
+  gap:0!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-date-segment{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:22px!important;
+  padding:0!important;
+  font-size:8.2px!important;
+  line-height:22px!important;
+  letter-spacing:-.05px!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-date-separator{
+  width:3px!important;
+  min-width:3px!important;
+  max-width:3px!important;
+  height:22px!important;
+  font-size:8px!important;
+  line-height:22px!important;
+}
+
+/* Calendar control: micro-compact only. */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-segmented-date-picker{
+  width:15px!important;
+  min-width:15px!important;
+  max-width:15px!important;
+  height:20px!important;
+  min-height:20px!important;
+  max-height:20px!important;
+  margin:1px 0 0!important;
+  padding:0!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+.employee-segmented-date-picker svg{
+  width:10px!important;
+  height:10px!important;
+}
+
+/*
+ * Save check remains readable and consistent.
+ * Its absolute lane is unchanged; the larger 22px wrapper reserve
+ * now guarantees real separation from the calendar picker.
+ */
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+> .employee-inline-edit-actions{
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  max-width:16px!important;
+  right:0!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+> .employee-inline-edit-actions .save{
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  max-width:16px!important;
+  padding:0!important;
+}
+
+#tab-users
+.employee-users-table:not(.employee-inactive-table)
+.employee-inline-cell-editing:is(
+  [data-inline-field="passport_expiry_date"],
+  [data-inline-field="visa_expiry_date"],
+  [data-inline-field="join_smb_date"],
+  [data-inline-field="join_site_date"]
+)
+> .employee-inline-edit-actions .save svg{
+  width:9px!important;
+  height:9px!important;
 }
 </style>
 
