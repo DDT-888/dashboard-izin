@@ -45887,7 +45887,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
 
                     <div class="offday-matrix-scroll" id="offdayMatrixScroll" aria-live="polite">
                         <div class="offday-grid" id="offdayGrid">
-                            <div class="offday-loading">Memuat jadwal OFFDAY…</div>
+                            <div class="offday-loading" aria-hidden="true"></div>
                         </div>
                     </div>
                 </div>
@@ -134606,7 +134606,7 @@ html[data-selected-theme="light"] #tab-offday{
 }
 </style>
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v9-current-month-self-focus-tooltip-refine">
+<script id="offday-production-realtime-v2-js" data-offday-build="v10-silent-warm-prefetch-first-open">
 (function(){
     'use strict';
 
@@ -134640,7 +134640,10 @@ html[data-selected-theme="light"] #tab-offday{
         popoverTarget: null,
         drag: null,
         suppressClickUntil: 0,
-        initialized: false
+        initialized: false,
+        warmPrefetchStarted: false,
+        warmPrefetchDone: false,
+        warmPrefetchTimer: null
     };
 
     const clientId = (() => {
@@ -135087,15 +135090,24 @@ html[data-selected-theme="light"] #tab-offday{
         const current=currentCalendarMonth();
         const monthChanged=state.month!==current;
         state.month=current;
-        state.loadedMonth=null;
-        state.isOpen=false;
         closeLeaderPopover();
         const n=nodes();
+
+        /*
+         * Keep a warm current-month snapshot intact across route opens.
+         * Only invalidate month-specific state when the previous visible visit
+         * was intentionally browsing a different historical month.
+         */
+        if(monthChanged){
+            state.loadedMonth=null;
+            state.isOpen=false;
+            renderControls();
+        }
+
         if(n.scroll){
             n.scroll.scrollLeft=0;
-            n.scroll.scrollTop=0;
+            if(!(state.rosterLoaded&&state.loadedMonth===current))n.scroll.scrollTop=0;
         }
-        if(monthChanged)renderControls();
         return current;
     }
 
@@ -135103,12 +135115,29 @@ html[data-selected-theme="light"] #tab-offday{
         const reason=String(options.reason||'manual');
         const includeRoster=Boolean(options.includeRoster || !state.rosterLoaded);
         const focusSelf=Boolean(options.focusSelf);
+        const silent=Boolean(options.silent);
         const serial=++state.loadSerial;
         const n=nodes();
         if(!n.grid || typeof supabaseDashboard==='undefined' || !supabaseDashboard)return false;
 
-        if(!state.rosterLoaded && n.grid.children.length<=1){
-            n.grid.innerHTML='<div class="offday-loading">Memuat jadwal OFFDAY…</div>';
+        const warmVisibleSnapshot=Boolean(
+            state.rosterLoaded &&
+            state.loadedMonth===state.month &&
+            state.roster.length &&
+            n.grid.querySelector('.offday-roster-cell')
+        );
+
+        /* If a warm snapshot already exists, move to the current user immediately
+           while the background reconciliation runs. */
+        if(focusSelf&&warmVisibleSnapshot){
+            scheduleCurrentUserFocus({smooth:true,left:0});
+        }
+
+        /* Boot prefetch is intentionally silent. Even in the unlikely race where
+           the user opens OFFDAY before warm-up completes, keep the shell stable
+           instead of replacing it with a visible loading message. */
+        if(!silent&&!state.rosterLoaded&&n.grid.children.length<=1){
+            n.grid.innerHTML='<div class="offday-loading" aria-hidden="true"></div>';
         }
 
         const month=monthDate();
@@ -135142,7 +135171,8 @@ html[data-selected-theme="light"] #tab-offday{
                 rebuildCompetition();
             }
             renderAll();
-            if(focusSelf)scheduleCurrentUserFocus({smooth:true,left:0});
+            if(reason==='boot-prefetch')state.warmPrefetchDone=true;
+            if(focusSelf&&!warmVisibleSnapshot)scheduleCurrentUserFocus({smooth:true,left:0});
             return true;
         }catch(error){
             console.error(`OFFDAY snapshot gagal (${reason}):`,error);
@@ -135321,6 +135351,38 @@ html[data-selected-theme="light"] #tab-offday{
         }catch(_){ n.picker.focus(); n.picker.click(); }
     }
 
+    function startWarmPrefetch(){
+        if(state.warmPrefetchStarted||state.rosterLoaded)return;
+        state.warmPrefetchStarted=true;
+        let attempts=0;
+        const tryWarm=()=>{
+            state.warmPrefetchTimer=null;
+            attempts+=1;
+            const ready=Boolean(
+                typeof supabaseDashboard!=='undefined' &&
+                supabaseDashboard &&
+                currentEmail()
+            );
+            if(ready){
+                const current=currentCalendarMonth();
+                state.month=current;
+                loadSnapshot({
+                    reason:'boot-prefetch',
+                    includeRoster:true,
+                    focusSelf:false,
+                    silent:true
+                }).catch(()=>{});
+                return;
+            }
+            if(attempts<100){
+                state.warmPrefetchTimer=window.setTimeout(tryWarm,120);
+            }else{
+                state.warmPrefetchStarted=false;
+            }
+        };
+        state.warmPrefetchTimer=window.setTimeout(tryWarm,80);
+    }
+
     async function syncRealtimeState(){
         try{
             const {data,error}=await supabaseDashboard.from('offday_realtime_state').select('id,revision,change_type,period_month,client_id,updated_at,updated_by').eq('id',1).maybeSingle();
@@ -135454,6 +135516,7 @@ html[data-selected-theme="light"] #tab-offday{
         if(state.initialized)return;state.initialized=true;
         const n=nodes();if(!n.tab)return;
         renderControls();bindGridActions();bindAxisHover();bindScroll();
+        startWarmPrefetch();
         n.period?.addEventListener('dblclick',openMonthPicker);
         n.picker?.addEventListener('change',()=>setMonth(n.picker.value));
         n.toggle?.addEventListener('click',()=>{if(isLeader())setOpen(!state.isOpen);});
@@ -135481,7 +135544,7 @@ html[data-selected-theme="light"] #tab-offday{
     window.stopOffdayRealtime=stopRealtime;
     window.prepareOffdayOpen=prepareOpen;
     window.focusOffdayCurrentUser=()=>scheduleCurrentUserFocus({smooth:true,left:0});
-    window.DDTOffdayRealtime={state,load:loadSnapshot,start:startRealtime,stop:stopRealtime,setMonth,prepareOpen,focusCurrentUser};
+    window.DDTOffdayRealtime={state,load:loadSnapshot,start:startRealtime,stop:stopRealtime,setMonth,prepareOpen,focusCurrentUser,startWarmPrefetch};
 
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
     else init();
