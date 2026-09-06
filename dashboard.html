@@ -126515,20 +126515,44 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
       config?.name||
       'Belum diset';
 
+    const editable=
+      canAssignOffice();
+
     return `
       <span
         class="ddt-employee-office-display ${
           config
             ? 'assigned'
             : 'unset'
+        } ${
+          editable
+            ? 'is-editable'
+            : ''
         }"
         title="${
-          canAssignOffice()
+          editable
             ? 'Double-click untuk ubah Office'
             : ''
         }"
       >
-        ${esc(text)}
+        <span class="ddt-employee-office-text">
+          ${esc(text)}
+        </span>
+        ${
+          editable
+            ? `
+              <span
+                class="employee-edit-mark ddt-office-edit-mark"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>
+                </svg>
+              </span>
+            `
+            : ''
+        }
       </span>
     `;
   }
@@ -128399,16 +128423,14 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.21',
-  source:'Users Date Editor v1.13 Uniform Geometry',
+  version:'1.1.22',
+  source:'Users Visual Balance v1.14',
   targetedCorrection:Object.freeze({
-    activeDateColumns:'Expiry+JOIN unified at 124px',
-    trainingColumn:'restored to 96px normal visual authority',
-    inactiveDateColumns:'JOIN SMB / JOIN DDT / Tgl Nonaktif unified at 116px',
-    inactiveTextColumns:'PIC Nonaktif + Alasan balanced to 122px each',
-    dateEditorFamily:'all date editors micro-refined uniformly by ~1px',
-    tableWidth:'net zero redistribution',
-    allOtherV113Areas:'PASS / unchanged',
+    inactiveDateEdit:'wrapper capped at 108px to match Active JOIN content footprint',
+    inactiveDateInternalGeometry:'v1.14 unchanged',
+    officeHoverPencil:'overlay edit mark / zero layout contribution',
+    officeEditBehavior:'UNCHANGED / double-click authority preserved',
+    allOtherV114Areas:'PASS / unchanged',
     tickerSmoothness:'PASS / unchanged',
     poipetProgressAuthority:'PASS / unchanged',
     officeDisplayFailSafe:'PASS / unchanged'
@@ -133107,6 +133129,119 @@ tbody td:has(
 > .employee-inline-edit-actions .save svg{
   width:9px!important;
   height:9px!important;
+}
+</style>
+
+
+<style id="ddt-users-v1-15-final-detail-authority">
+/* ================================================================
+   v1.15 — FINAL USERS DETAIL
+   Scope:
+   1. Tgl Nonaktif edit spacing only
+   2. Office hover pencil only
+   All v1.14 PASS geometry is preserved.
+   ================================================================ */
+
+/* ---------------------------------------------------------------
+   TGL NONAKTIF
+   The inactive table can stretch beyond its nominal column widths
+   because min-width:100% fills the available viewport.
+
+   Lock only the EDIT WRAPPER to the same nominal content footprint
+   as Active JOIN SMB/JOIN DDT:
+       124px active cell - 8px left - 8px right = 108px.
+   Internal picker/check/font geometry stays exactly v1.14.
+   --------------------------------------------------------------- */
+#tab-users .employee-inactive-table
+.employee-inline-cell-editing[data-lifecycle-field="inactive_at"]{
+  width:108px!important;
+  min-width:108px!important;
+  max-width:108px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+}
+
+/*
+ * Guard against any older inactive-specific width rules.
+ * The control remains inside the fixed 108px wrapper.
+ */
+#tab-users .employee-inactive-table
+.employee-inline-cell-editing[data-lifecycle-field="inactive_at"]
+.employee-segmented-date-control{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+
+/* ---------------------------------------------------------------
+   OFFICE HOVER EDIT AFFORDANCE
+   Pencil is overlay-only: no width/reflow contribution.
+   --------------------------------------------------------------- */
+#tab-users .ddt-employee-office-display{
+  position:relative!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  min-width:0!important;
+  max-width:100%!important;
+  min-height:24px!important;
+  box-sizing:border-box!important;
+}
+
+#tab-users .ddt-employee-office-display.is-editable{
+  padding-right:14px!important;
+}
+
+#tab-users .ddt-employee-office-text{
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+#tab-users .ddt-office-edit-mark{
+  position:absolute!important;
+  top:50%!important;
+  right:0!important;
+  width:12px!important;
+  height:12px!important;
+  min-width:12px!important;
+  max-width:12px!important;
+  flex:none!important;
+  transform:translateY(-50%)!important;
+  color:var(--text-muted)!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  transition:
+    opacity .15s ease,
+    color .15s ease!important;
+}
+
+#tab-users .ddt-office-edit-mark svg{
+  display:block!important;
+  width:12px!important;
+  height:12px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.8!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+
+/* Same hover language as other editable Users fields. */
+#tab-users td.ddt-employee-office-cell:hover
+.ddt-office-edit-mark,
+#tab-users .ddt-employee-office-display.is-editable:hover
+.ddt-office-edit-mark{
+  opacity:.78!important;
+}
+
+/* Keep theme identity; only hover affordance gains accent emphasis. */
+#tab-users td.ddt-employee-office-cell:hover
+.ddt-employee-office-display.is-editable
+.ddt-office-edit-mark{
+  color:var(--accent)!important;
 }
 </style>
 
