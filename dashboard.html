@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v64.84.44-mecha-ivory-production-assembly-g1p08-pcs-offday-r2">
+    <meta name="dashboard-build" content="v64.84.44-mecha-ivory-production-assembly-g1p08-pcs-offday-r3">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -45878,7 +45878,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <div class="offday-matrix-tools">
                         <div class="offday-matrix-tools-left">
                             <strong>TIMELINE TANGGAL</strong>
-                            <span>Geser horizontal untuk melihat seluruh tanggal.</span>
+                            <span>Gunakan scrollbar untuk melihat tanggal berikutnya.</span>
                         </div>
                         <div class="offday-matrix-legend" aria-label="Keterangan">
                             <span class="offday-legend-item"><span class="offday-legend-swatch stamped"></span>OFFDAY</span>
@@ -133936,9 +133936,10 @@ td.ddt-employee-office-cell:hover
    Scoped to #tab-offday. Existing v1.18 surfaces remain untouched.
    ============================================================ */
 #tab-offday{
-    --offday-name-w:350px;
-    --offday-day-w:46px;
+    --offday-name-w:320px;
+    --offday-day-w:48px;
     --offday-row-h:42px;
+    --offday-head-h:50px;
     --offday-head:#153a43;
     --offday-head-lock:#2a4146;
     --offday-stamp:var(--accent-strong,#167d89);
@@ -133947,9 +133948,15 @@ td.ddt-employee-office-cell:hover
     --offday-lock-bg:color-mix(in srgb,var(--bg-hover) 76%,var(--border-color));
     --offday-lock-line:color-mix(in srgb,var(--border-color) 78%,var(--text-muted));
     --offday-self-bg:color-mix(in srgb,var(--accent-soft) 38%,var(--bg-card));
+    width:100%;
+    max-width:100%;
     min-width:0;
+    overflow:hidden;
+    box-sizing:border-box;
 }
-#tab-offday .offday-page{min-width:0;}
+body:has(#tab-offday.active) .main-content{min-width:0;overflow-x:hidden;}
+#tab-offday.active{min-width:0;max-width:100%;overflow:hidden;box-sizing:border-box;}
+#tab-offday .offday-page{width:100%;max-width:100%;min-width:0;overflow:hidden;box-sizing:border-box;}
 #tab-offday .offday-page-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:2px 0 12px;}
 #tab-offday .offday-page-copy{min-width:0;}
 #tab-offday .offday-page-copy h2{margin:0;color:var(--text-primary);font-size:18px;font-weight:760;letter-spacing:.01em;}
@@ -133960,7 +133967,7 @@ td.ddt-employee-office-cell:hover
 #tab-offday .offday-period-display:hover{background:color-mix(in srgb,var(--accent-soft) 44%,transparent);}
 #tab-offday .offday-month-picker{position:absolute;right:0;bottom:0;width:1px;height:1px;padding:0;border:0;opacity:0;pointer-events:none;}
 
-#tab-offday .offday-shell{min-width:0;overflow:hidden;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-card);box-shadow:var(--shadow-md);}
+#tab-offday .offday-shell{width:100%;max-width:100%;min-width:0;overflow:hidden;box-sizing:border-box;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-card);box-shadow:var(--shadow-md);}
 #tab-offday .offday-board-toolbar{display:grid;grid-template-columns:var(--offday-name-w) minmax(0,1fr);border-bottom:1px solid var(--border-color);background:var(--bg-card);}
 #tab-offday .offday-roster-summary{min-width:0;padding:10px 13px;border-right:1px solid var(--border-color);display:flex;align-items:center;gap:14px;}
 #tab-offday .offday-toolbar-eyebrow{flex:0 0 auto;margin:0;color:var(--text-muted);font-size:8px;font-weight:820;letter-spacing:.105em;text-transform:uppercase;}
@@ -133995,14 +134002,17 @@ td.ddt-employee-office-cell:hover
 #tab-offday .offday-legend-swatch.locked::after{content:"×";position:absolute;inset:-4px 0 0;display:grid;place-items:center;color:var(--text-muted);font-size:10px;}
 #tab-offday .offday-legend-swatch.selfrow{background:var(--offday-self-bg);border-color:color-mix(in srgb,var(--accent) 52%,var(--border-color));box-shadow:inset 0 1px color-mix(in srgb,var(--accent) 48%,transparent),inset 0 -1px color-mix(in srgb,var(--accent) 48%,transparent);}
 
-#tab-offday .offday-matrix-scroll{min-height:510px;max-height:calc(100vh - 245px);overflow:auto;background:var(--bg-card);cursor:grab;scrollbar-gutter:stable;overscroll-behavior:contain;scroll-behavior:auto;-webkit-overflow-scrolling:touch;}
-#tab-offday .offday-matrix-scroll.is-dragging{cursor:grabbing;user-select:none;}
+#tab-offday .offday-matrix-scroll{width:100%;max-width:100%;min-width:0;min-height:510px;max-height:calc(100vh - 245px);overflow-x:auto;overflow-y:auto;background:var(--bg-card);cursor:default;scrollbar-gutter:auto;overscroll-behavior:contain;scroll-behavior:auto;-webkit-overflow-scrolling:touch;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--accent) 34%,var(--border-color)) transparent;}
+#tab-offday .offday-matrix-scroll::-webkit-scrollbar{width:8px;height:8px;}
+#tab-offday .offday-matrix-scroll::-webkit-scrollbar-track{background:color-mix(in srgb,var(--bg-hover) 40%,transparent);}
+#tab-offday .offday-matrix-scroll::-webkit-scrollbar-thumb{border:2px solid transparent;border-radius:999px;background:color-mix(in srgb,var(--accent) 34%,var(--border-color));background-clip:padding-box;}
+#tab-offday .offday-matrix-scroll::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--accent) 48%,var(--border-color));background-clip:padding-box;}
 #tab-offday .offday-grid{position:relative;display:grid;width:max-content;min-width:max-content;grid-auto-flow:row;grid-auto-columns:0;background:var(--bg-card);contain:layout style;}
 #tab-offday .offday-loading{grid-column:1;min-width:calc(var(--offday-name-w) + 320px);height:130px;display:grid;place-items:center;color:var(--text-muted);font-size:10px;}
-#tab-offday .offday-corner-head{position:sticky;left:0;top:0;z-index:9;height:50px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-right:1px solid rgba(255,255,255,.10);border-bottom:1px solid rgba(0,0,0,.18);background:var(--offday-head);color:#eaf3f4;box-shadow:6px 0 12px rgba(14,45,52,.08);}
-#tab-offday .offday-corner-head span{font-size:8.5px;font-weight:820;letter-spacing:.065em;text-transform:uppercase;}
-#tab-offday .offday-corner-head small{color:#adc4c8;font-size:7.5px;}
-#tab-offday .offday-day-head{position:sticky;top:0;z-index:7;height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-right:1px solid rgba(255,255,255,.075);border-bottom:1px solid rgba(0,0,0,.18);background:var(--offday-head);color:#e8f1f3;cursor:default;}
+#tab-offday .offday-corner-head{position:sticky;left:0;top:0;z-index:9;height:var(--offday-head-h);min-height:var(--offday-head-h);padding:0 8px 0 10px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;box-sizing:border-box;border-right:1px solid rgba(255,255,255,.10);border-bottom:1px solid rgba(0,0,0,.18);background:var(--offday-head);color:#eaf3f4;box-shadow:6px 0 12px rgba(14,45,52,.08);}
+#tab-offday .offday-corner-head span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8.5px;font-weight:820;letter-spacing:.065em;text-transform:uppercase;}
+#tab-offday .offday-corner-head small{justify-self:end;color:#adc4c8;font-size:7.5px;white-space:nowrap;}
+#tab-offday .offday-day-head{position:sticky;top:0;z-index:7;height:var(--offday-head-h);min-height:var(--offday-head-h);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-right:1px solid rgba(255,255,255,.075);border-bottom:1px solid rgba(0,0,0,.18);background:var(--offday-head);color:#e8f1f3;cursor:default;}
 #tab-offday .offday-day-head .num{font-size:10.5px;font-weight:820;line-height:1;}
 #tab-offday .offday-day-head .dow{color:#9fb8bd;font-size:7px;line-height:1;text-transform:uppercase;}
 #tab-offday .offday-day-head.is-sunday .num{color:var(--offday-sunday);}
@@ -134020,19 +134030,14 @@ td.ddt-employee-office-cell:hover
 #tab-offday .offday-group-name.is-leader{background:color-mix(in srgb,#26324d 8%,var(--bg-hover));}
 #tab-offday .offday-group-name.is-leader strong{color:color-mix(in srgb,var(--text-primary) 88%,#26324d);}
 
-#tab-offday .offday-roster-cell{position:sticky;left:0;z-index:4;height:var(--offday-row-h);display:grid;grid-template-columns:30px minmax(0,1fr) 62px;align-items:center;gap:7px;padding:0 9px;border-right:1px solid var(--border-color);border-bottom:1px solid var(--border-light);background:var(--bg-card);box-shadow:6px 0 12px rgba(14,45,52,.02);}
+#tab-offday .offday-roster-cell{position:sticky;left:0;z-index:4;height:var(--offday-row-h);display:flex;align-items:center;padding:4px 6px;box-sizing:border-box;border-right:1px solid var(--border-color);border-bottom:1px solid var(--border-light);background:var(--bg-card);box-shadow:6px 0 12px rgba(14,45,52,.02);}
 #tab-offday .offday-roster-cell.is-self{background:var(--offday-self-bg);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--accent) 46%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--accent) 46%,transparent),6px 0 12px rgba(14,45,52,.02);}
-#tab-offday .offday-roster-cell.is-self::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);}
-#tab-offday .offday-avatar{width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--border-color);border-radius:7px;background:var(--bg-hover);color:var(--text-secondary);font-size:7.5px;font-weight:820;}
-#tab-offday .offday-roster-copy{min-width:0;}
-#tab-offday .offday-roster-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);font-size:9px;font-weight:720;line-height:1.05;}
-#tab-offday .offday-roster-sub{margin-top:2px;color:var(--text-muted);font-size:6.8px;line-height:1;}
-#tab-offday .offday-role-badge{justify-self:end;padding:2px 4px;border:1px solid transparent;border-radius:6px;font-size:6.8px;font-weight:820;line-height:1;white-space:nowrap;}
-#tab-offday .offday-role-badge.leader{background:linear-gradient(135deg,#172033,#0f1727);border-color:#a78332;color:#f3cf70;}
-#tab-offday .offday-role-badge.csline{background:#fff4e8;border-color:#efc28f;color:#a95d12;}
-#tab-offday .offday-role-badge.cs{background:#eaf3fc;border-color:#b7d2ee;color:#276bb1;}
-#tab-offday .offday-role-badge.kapten{background:#fbf1e8;border-color:#e4c2a1;color:#8a582b;}
-#tab-offday .offday-role-badge.kasir{background:#f2edfb;border-color:#d3c3ef;color:#6e4da7;}
+#tab-offday .offday-roster-cell.is-self::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);z-index:2;}
+#tab-offday .offday-user-card.user-card-shift{width:100%!important;max-width:none!important;min-height:34px!important;height:34px!important;margin:0!important;padding:4px 8px!important;box-sizing:border-box!important;cursor:default!important;flex:1 1 auto!important;}
+#tab-offday .offday-user-card.user-card-shift:active{cursor:default!important;}
+#tab-offday .offday-user-card.user-card-shift .user-name{max-width:none!important;}
+#tab-offday .offday-user-card.user-card-shift .role-tag-shift{margin-left:auto!important;}
+#tab-offday .offday-roster-cell.is-self .offday-user-card.user-card-shift{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent)!important;}
 
 #tab-offday .offday-day-cell{position:relative;height:var(--offday-row-h);display:grid;place-items:center;border-right:1px solid var(--border-light);border-bottom:1px solid var(--border-light);background:var(--bg-card);}
 #tab-offday .offday-day-cell.is-closed:not(.has-choice){background:color-mix(in srgb,var(--bg-hover) 72%,var(--bg-card));}
@@ -134060,10 +134065,6 @@ td.ddt-employee-office-cell:hover
 #tab-offday .offday-popover-btn.cancel{color:var(--danger);}
 
 html[data-theme="dark"] #tab-offday{--offday-head:#142c34;--offday-head-lock:#23373c;--offday-sunday:#d18d92;--offday-self-bg:color-mix(in srgb,var(--accent-soft) 34%,var(--bg-card));}
-html[data-theme="dark"] #tab-offday .offday-role-badge.csline{background:#3a2a1a;border-color:#8c5720;color:#f0ad67;}
-html[data-theme="dark"] #tab-offday .offday-role-badge.cs{background:#172a3d;border-color:#315b87;color:#8fc1f0;}
-html[data-theme="dark"] #tab-offday .offday-role-badge.kapten{background:#31261d;border-color:#795837;color:#ddb081;}
-html[data-theme="dark"] #tab-offday .offday-role-badge.kasir{background:#2a2238;border-color:#654d8e;color:#c1a6ec;}
 html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{--offday-head:#111b12;--offday-head-lock:#1a261b;--offday-sunday:#cb8589;--offday-stamp:#2d9f21;--offday-stamp-border:#44d62c;}
 
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-shell{border-radius:0!important;box-shadow:none!important;background:transparent!important;border-color:rgba(113,121,118,.12)!important;}
@@ -134072,12 +134073,12 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-toggle{border-radius:1px!important;}
 
 @media(max-width:1100px){
-    #tab-offday{--offday-name-w:320px;--offday-day-w:44px;}
+    #tab-offday{--offday-name-w:300px;--offday-day-w:46px;}
     #tab-offday .offday-board-toolbar{grid-template-columns:var(--offday-name-w) minmax(0,1fr);}
     #tab-offday .offday-selection-desc{display:none;}
 }
 @media(max-width:760px){
-    #tab-offday{--offday-name-w:270px;--offday-day-w:42px;--offday-row-h:39px;}
+    #tab-offday{--offday-name-w:280px;--offday-day-w:44px;--offday-row-h:39px;}
     #tab-offday .offday-page-intro{align-items:flex-start;}
     #tab-offday .offday-page-copy p{max-width:62vw;}
     #tab-offday .offday-board-toolbar{display:block;}
@@ -134312,9 +134313,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const self=nonLeader && Number(user.id)===Number(state.currentUserId);
         const role=normRole(user.role);
         const roster=add(`offday-roster-cell${self?' is-self':''}`,
-            `<div class="offday-avatar">${escapeHtml(initials(user.name))}</div>`+
-            `<div class="offday-roster-copy"><div class="offday-roster-name" title="${escapeHtml(user.name)}">${escapeHtml(user.name)}</div><div class="offday-roster-sub">${self?'BARIS ANDA':'Staff aktif'}</div></div>`+
-            `<span class="offday-role-badge ${role}">${escapeHtml(roleLabel(role))}</span>`
+            `<div class="user-card-shift offday-user-card role-${role}" data-offday-user-card="1">`+
+                `<div class="avatar">${escapeHtml(String(user.name || '').charAt(0).toUpperCase() || '?')}</div>`+
+                `<div class="user-info"><div class="user-name" title="${escapeHtml(user.name)}">${escapeHtml(user.name)}</div></div>`+
+                `<span class="role-tag-shift ${role}">${escapeHtml(roleLabel(role))}</span>`+
+            `</div>`
         );
         roster.dataset.userId=String(user.id);
 
@@ -134692,36 +134695,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     function bindScroll(){
         const n=nodes();if(!n.scroll||n.scroll.dataset.offdayBound==='1')return;
         n.scroll.dataset.offdayBound='1';
-        n.scroll.addEventListener('pointerdown',event=>{
-            if(event.button!==0||event.target.closest('.offday-toggle,.offday-period-display,.offday-leader-popover'))return;
-            state.drag={pointerId:event.pointerId,x:event.clientX,y:event.clientY,left:n.scroll.scrollLeft,moved:false,horizontal:false};
-        });
-        n.scroll.addEventListener('pointermove',event=>{
-            const drag=state.drag;
-            if(!drag||drag.pointerId!==event.pointerId)return;
-            const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
-            if(!drag.moved){
-                if(Math.abs(dx)<5&&Math.abs(dy)<5)return;
-                drag.horizontal=Math.abs(dx)>=Math.abs(dy);
-                if(!drag.horizontal){state.drag=null;return;}
-                drag.moved=true;
-                try{n.scroll.setPointerCapture?.(event.pointerId);}catch(_){ }
-                n.scroll.classList.add('is-dragging');
-            }
-            if(!drag.horizontal)return;
-            n.scroll.scrollLeft=drag.left-dx;
-            event.preventDefault();
-        },{passive:false});
-        const end=event=>{
-            const drag=state.drag;if(!drag)return;
-            if(drag.moved&&drag.horizontal)state.suppressClickUntil=performance.now()+140;
-            try{n.scroll.releasePointerCapture?.(drag.pointerId);}catch(_){ }
-            state.drag=null;n.scroll.classList.remove('is-dragging');
-        };
-        n.scroll.addEventListener('pointerup',end);n.scroll.addEventListener('pointercancel',end);
+        // Native overflow owns horizontal/vertical scrolling. Keep Shift+wheel
+        // as a desktop convenience without pointer-drag capture, so cell clicks,
+        // sticky header, mouse wheel and the scrollbar remain predictable.
         n.scroll.addEventListener('wheel',event=>{
             if(event.shiftKey&&Math.abs(event.deltaY)>Math.abs(event.deltaX)){
-                n.scroll.scrollLeft+=event.deltaY;event.preventDefault();
+                n.scroll.scrollLeft+=event.deltaY;
+                event.preventDefault();
             }
         },{passive:false});
     }
