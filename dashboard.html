@@ -135323,7 +135323,66 @@ html[data-theme="dark"] #tab-offday{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v16-body-lock-mecha-grid-refinement">
+
+<style id="offday-production-realtime-v17-unified-lock-authority">
+/* OFFDAY R17 — unified lock authority.
+   Header date lock and Leader row/cell lock use EXACTLY the same body treatment.
+   LOCKED has visual priority over ROLE-TAKEN. Single-line grid only. */
+#tab-offday{
+    --offday-lock-surface:color-mix(in srgb,var(--bg-hover) 54%,var(--bg-card));
+    --offday-lock-grid:color-mix(in srgb,var(--border-color) 58%,var(--bg-card));
+}
+
+/* One unified locked-cell presentation. No double line, no inner frame, no hatch, no ×. */
+#tab-offday .offday-day-cell.is-locked:not(.has-choice),
+#tab-offday .offday-day-cell.is-date-locked:not(.has-choice),
+#tab-offday .offday-day-cell.is-cell-locked:not(.has-choice),
+#tab-offday .offday-day-cell.is-date-locked.is-cell-locked:not(.has-choice){
+    background:var(--offday-lock-surface)!important;
+    box-shadow:none!important;
+    border-left:0!important;
+    border-right:1px solid var(--offday-lock-grid)!important;
+    border-bottom:1px solid var(--offday-lock-grid)!important;
+}
+
+/* Locked state owns the cell completely, including on the self row. */
+#tab-offday .offday-day-cell.is-locked.is-self-row:not(.has-choice),
+#tab-offday .offday-day-cell.is-date-locked.is-self-row:not(.has-choice),
+#tab-offday .offday-day-cell.is-cell-locked.is-self-row:not(.has-choice){
+    background:var(--offday-lock-surface)!important;
+    box-shadow:none!important;
+    border-right:1px solid var(--offday-lock-grid)!important;
+    border-bottom:1px solid var(--offday-lock-grid)!important;
+}
+
+/* Defensive visual priority if an old/stale DOM ever contains both states. */
+#tab-offday .offday-day-cell.is-locked.is-role-taken:not(.has-choice){
+    background:var(--offday-lock-surface)!important;
+    box-shadow:none!important;
+    border-right:1px solid var(--offday-lock-grid)!important;
+    border-bottom:1px solid var(--offday-lock-grid)!important;
+}
+#tab-offday .offday-day-cell.is-locked.is-role-taken:not(.has-choice)::after{
+    content:none!important;
+    display:none!important;
+}
+#tab-offday .offday-lock-mark{display:none!important;}
+
+/* DDT Original: Mecha-like quiet squared grid, using only one separator line. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-lock-surface:#f0f4f5;
+    --offday-lock-grid:#d8e2e4;
+}
+
+/* Dark/theme families inherit their own surfaces; keep the same hierarchy. */
+html[data-theme="dark"] #tab-offday{
+    --offday-lock-surface:color-mix(in srgb,var(--bg-hover) 64%,var(--bg-card));
+    --offday-lock-grid:color-mix(in srgb,var(--border-color) 66%,var(--bg-card));
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v17-unified-lock-authority">
 (function(){
     'use strict';
 
@@ -135666,7 +135725,7 @@ html[data-theme="dark"] #tab-offday{
             const locked=dateLocked||cellLocked;
             const hasChoice=selected===iso;
             const takenOwner=roleTakenOwner(user,iso);
-            const roleTaken=Boolean(takenOwner&&!hasChoice);
+            const roleTaken=Boolean(takenOwner&&!hasChoice&&!locked);
             const classes=['offday-day-cell'];
             if(locked)classes.push('is-locked');
             if(dateLocked)classes.push('is-date-locked');
@@ -135682,8 +135741,6 @@ html[data-theme="dark"] #tab-offday{
 
             if(hasChoice){
                 const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
-            }else if(cellLocked){
-                const mark=document.createElement('span');mark.className='offday-lock-mark';mark.textContent='×';cell.appendChild(mark);
             }
 
             if(isLeader()){
@@ -135698,7 +135755,7 @@ html[data-theme="dark"] #tab-offday{
                             : (!state.isOpen
                                 ? 'Pemilihan sedang ditutup'
                                 : locked
-                                    ? 'Tanggal ini dikunci Leader'
+                                    ? 'Dikunci Leader'
                                     : roleTaken
                                         ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}`
                                         : 'Klik untuk memilih OFFDAY'),
@@ -135722,7 +135779,7 @@ html[data-theme="dark"] #tab-offday{
         const locked=dateLocked||cellLocked;
         const hasChoice=state.choices.get(uid)===iso;
         const takenOwner=roleTakenOwner(user,iso);
-        const roleTaken=Boolean(takenOwner&&!hasChoice);
+        const roleTaken=Boolean(takenOwner&&!hasChoice&&!locked);
         cell.classList.toggle('is-locked',locked);
         cell.classList.toggle('is-date-locked',dateLocked);
         cell.classList.toggle('is-cell-locked',cellLocked);
@@ -135735,8 +135792,6 @@ html[data-theme="dark"] #tab-offday{
         cell.replaceChildren();
         if(hasChoice){
             const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
-        }else if(cellLocked){
-            const mark=document.createElement('span');mark.className='offday-lock-mark';mark.textContent='×';cell.appendChild(mark);
         }
         if(isLeader()){
             setThemeTooltip(cell,'');
@@ -135750,7 +135805,7 @@ html[data-theme="dark"] #tab-offday{
                         : (!state.isOpen
                             ? 'Pemilihan sedang ditutup'
                             : locked
-                                ? (cellLocked && !dateLocked ? 'Cell ini dikunci Leader' : 'Tanggal ini dikunci Leader')
+                                ? 'Dikunci Leader'
                                 : roleTaken
                                     ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
                                     : 'Klik untuk memilih OFFDAY'),
