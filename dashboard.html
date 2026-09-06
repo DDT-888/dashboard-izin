@@ -135101,7 +135101,88 @@ html[data-theme-variant="mecha-ivory"] #tab-offday{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v13-theme-lock-refinement">
+
+<style id="offday-production-realtime-v14-body-lock-refinement">
+/* OFFDAY R14 — body-lock refinement only.
+   Global date lock is a calm column state.
+   Individual Leader cell lock keeps the local × cue.
+   Header authority and all behavior remain unchanged. */
+#tab-offday{
+    --offday-date-lock-surface:color-mix(in srgb,var(--bg-hover) 64%,var(--bg-card));
+    --offday-date-lock-edge:color-mix(in srgb,var(--text-muted) 18%,var(--border-color));
+    --offday-cell-lock-surface:color-mix(in srgb,var(--bg-hover) 78%,var(--bg-card));
+    --offday-cell-lock-edge:color-mix(in srgb,var(--text-muted) 46%,var(--border-color));
+}
+#tab-offday .offday-day-cell.is-locked:not(.has-choice){
+    background:var(--offday-row-surface)!important;
+    box-shadow:none!important;
+}
+/* Global date lock = one continuous muted column, no repeated × marks. */
+#tab-offday .offday-day-cell.is-date-locked:not(.has-choice){
+    background:var(--offday-date-lock-surface)!important;
+    box-shadow:
+        inset 1px 0 0 color-mix(in srgb,var(--offday-date-lock-edge) 72%,transparent),
+        inset -1px 0 0 color-mix(in srgb,var(--offday-date-lock-edge) 72%,transparent)!important;
+}
+#tab-offday .offday-day-cell.is-date-locked.is-self-row:not(.has-choice){
+    background:color-mix(in srgb,var(--offday-date-lock-surface) 88%,var(--offday-self-bg))!important;
+    box-shadow:
+        inset 1px 0 0 color-mix(in srgb,var(--offday-date-lock-edge) 78%,transparent),
+        inset -1px 0 0 color-mix(in srgb,var(--offday-date-lock-edge) 78%,transparent),
+        inset 0 1px 0 color-mix(in srgb,var(--offday-self-line) 22%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-line) 22%,transparent)!important;
+}
+/* Individual cell lock retains a local hard-restriction cue. */
+#tab-offday .offday-day-cell.is-cell-locked:not(.has-choice){
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--offday-cell-lock-surface) 94%,var(--bg-card)) 0%,
+        var(--offday-cell-lock-surface) 100%)!important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--offday-cell-lock-edge) 70%,transparent)!important;
+}
+#tab-offday .offday-day-cell.is-cell-locked.is-self-row:not(.has-choice){
+    background:color-mix(in srgb,var(--offday-cell-lock-surface) 88%,var(--offday-self-bg))!important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb,var(--offday-cell-lock-edge) 74%,transparent),
+        inset 0 1px 0 color-mix(in srgb,var(--offday-self-line) 22%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-line) 22%,transparent)!important;
+}
+#tab-offday .offday-day-cell.is-date-locked.is-cell-locked:not(.has-choice){
+    background:color-mix(in srgb,var(--offday-cell-lock-surface) 62%,var(--offday-date-lock-surface))!important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb,var(--offday-cell-lock-edge) 72%,transparent),
+        inset 2px 0 0 color-mix(in srgb,var(--offday-date-lock-edge) 44%,transparent),
+        inset -2px 0 0 color-mix(in srgb,var(--offday-date-lock-edge) 44%,transparent)!important;
+}
+#tab-offday .offday-lock-mark{
+    font-size:8px!important;
+    font-weight:760!important;
+    color:color-mix(in srgb,var(--text-muted) 76%,var(--text-secondary))!important;
+    opacity:.60!important;
+}
+html[data-selected-theme="light"] #tab-offday{
+    --offday-date-lock-surface:#eef2f3;
+    --offday-date-lock-edge:#d0dadd;
+    --offday-cell-lock-surface:#e7edef;
+    --offday-cell-lock-edge:#a9b9bd;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-date-locked:not(.has-choice){
+    background:#eef2f3!important;
+    box-shadow:inset 1px 0 0 #d6dfe1,inset -1px 0 0 #d6dfe1!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-cell-locked:not(.has-choice){
+    background:linear-gradient(180deg,#edf1f2 0%,#e5ebed 100%)!important;
+    box-shadow:inset 0 0 0 1px #b7c4c7!important;
+}
+html[data-theme="dark"] #tab-offday{
+    --offday-date-lock-surface:color-mix(in srgb,var(--bg-hover) 70%,var(--bg-card));
+    --offday-date-lock-edge:color-mix(in srgb,var(--text-muted) 16%,var(--border-color));
+    --offday-cell-lock-surface:color-mix(in srgb,var(--bg-hover) 82%,var(--bg-card));
+    --offday-cell-lock-edge:color-mix(in srgb,var(--text-muted) 42%,var(--border-color));
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v14-body-lock-column-refinement">
 (function(){
     'use strict';
 
@@ -135447,6 +135528,8 @@ html[data-theme-variant="mecha-ivory"] #tab-offday{
             const roleTaken=Boolean(takenOwner&&!hasChoice);
             const classes=['offday-day-cell'];
             if(locked)classes.push('is-locked');
+            if(dateLocked)classes.push('is-date-locked');
+            if(cellLocked)classes.push('is-cell-locked');
             if(!state.isOpen)classes.push('is-closed');
             if(self)classes.push('is-self-row');
             if(!user.assigned)classes.push('is-unassigned-user');
@@ -135458,7 +135541,7 @@ html[data-theme-variant="mecha-ivory"] #tab-offday{
 
             if(hasChoice){
                 const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
-            }else if(locked){
+            }else if(cellLocked){
                 const mark=document.createElement('span');mark.className='offday-lock-mark';mark.textContent='×';cell.appendChild(mark);
             }
 
@@ -135500,6 +135583,8 @@ html[data-theme-variant="mecha-ivory"] #tab-offday{
         const takenOwner=roleTakenOwner(user,iso);
         const roleTaken=Boolean(takenOwner&&!hasChoice);
         cell.classList.toggle('is-locked',locked);
+        cell.classList.toggle('is-date-locked',dateLocked);
+        cell.classList.toggle('is-cell-locked',cellLocked);
         cell.classList.toggle('is-closed',!state.isOpen);
         cell.classList.toggle('is-self-row',self);
         cell.classList.toggle('is-unassigned-user',Boolean(user&&!user.assigned));
@@ -135509,7 +135594,7 @@ html[data-theme-variant="mecha-ivory"] #tab-offday{
         cell.replaceChildren();
         if(hasChoice){
             const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
-        }else if(locked){
+        }else if(cellLocked){
             const mark=document.createElement('span');mark.className='offday-lock-mark';mark.textContent='×';cell.appendChild(mark);
         }
         if(isLeader()){
@@ -135524,7 +135609,7 @@ html[data-theme-variant="mecha-ivory"] #tab-offday{
                         : (!state.isOpen
                             ? 'Pemilihan sedang ditutup'
                             : locked
-                                ? 'Tanggal ini dikunci Leader'
+                                ? (cellLocked && !dateLocked ? 'Cell ini dikunci Leader' : 'Tanggal ini dikunci Leader')
                                 : roleTaken
                                     ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
                                     : 'Klik untuk memilih OFFDAY'),
