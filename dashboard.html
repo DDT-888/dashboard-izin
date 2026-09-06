@@ -45850,6 +45850,13 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                     aria-label="Buka atau tutup pemilihan OFFDAY"
                                     aria-pressed="false"
                                 ></button>
+                                <div class="offday-leader-action" id="offdayLeaderAction" hidden>
+                                    <span class="offday-leader-action-label">AKSI LEADER</span>
+                                    <div class="offday-leader-action-segment" role="group" aria-label="Mode aksi Leader">
+                                        <button type="button" class="offday-leader-action-btn is-active" id="offdayLeaderModeLock" data-mode="lock" aria-pressed="true">KUNCI</button>
+                                        <button type="button" class="offday-leader-action-btn" id="offdayLeaderModeAssign" data-mode="assign" aria-pressed="false">ASSIGN OFFDAY</button>
+                                    </div>
+                                </div>
                                 <span class="offday-control-divider" aria-hidden="true"></span>
                                 <div class="offday-period" id="offdayPeriodControl">
                                     <span class="offday-period-label">PERIODE</span>
@@ -135929,7 +135936,81 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v23-selectable-surface-theme-balance">
+
+<style id="offday-production-realtime-v24-leader-action-mode">
+/* OFFDAY R24 — Leader action mode (function-first pass).
+   Control is Leader-only. Default mode is KUNCI; ASSIGN OFFDAY is explicit. */
+#tab-offday .offday-leader-action[hidden]{display:none!important;}
+#tab-offday .offday-leader-action{
+    flex:0 0 auto;
+    display:grid;
+    align-content:center;
+    gap:3px;
+    min-width:142px;
+}
+#tab-offday .offday-leader-action-label{
+    color:var(--text-muted);
+    font-size:6.4px;
+    font-weight:790;
+    line-height:1;
+    letter-spacing:.085em;
+    text-transform:uppercase;
+}
+#tab-offday .offday-leader-action-segment{
+    display:flex;
+    align-items:stretch;
+    height:21px;
+    padding:2px;
+    border:1px solid color-mix(in srgb,var(--border-color) 88%,var(--text-muted));
+    border-radius:6px;
+    background:color-mix(in srgb,var(--bg-hover) 66%,var(--bg-card));
+    box-sizing:border-box;
+}
+#tab-offday .offday-leader-action-btn{
+    appearance:none;
+    border:0;
+    border-radius:4px;
+    padding:0 7px;
+    background:transparent;
+    color:var(--text-muted);
+    font:inherit;
+    font-size:6.5px;
+    font-weight:800;
+    line-height:1;
+    white-space:nowrap;
+    cursor:pointer;
+    transition:background .12s ease,color .12s ease,box-shadow .12s ease;
+}
+#tab-offday .offday-leader-action-btn:first-child{flex:0 0 48px;}
+#tab-offday .offday-leader-action-btn:last-child{flex:1 1 auto;}
+#tab-offday .offday-leader-action-btn:hover{
+    color:var(--text-secondary);
+    background:color-mix(in srgb,var(--accent-soft) 28%,transparent);
+}
+#tab-offday .offday-leader-action-btn.is-active{
+    color:var(--text-primary);
+    background:var(--bg-card);
+    box-shadow:0 1px 3px rgba(18,45,53,.10),inset 0 0 0 1px color-mix(in srgb,var(--accent) 20%,var(--border-color));
+}
+#tab-offday.offday-leader-assign-mode .offday-leader-action-btn[data-mode="assign"].is-active{
+    color:var(--accent-strong);
+    background:color-mix(in srgb,var(--accent-soft) 42%,var(--bg-card));
+}
+#tab-offday.offday-leader-assign-mode .offday-day-cell:not(.has-choice):not(.is-locked){cursor:pointer;}
+#tab-offday.offday-leader-assign-mode .offday-day-cell:not(.has-choice):not(.is-locked):hover{
+    outline:1px solid color-mix(in srgb,var(--accent) 34%,transparent)!important;
+    outline-offset:-1px!important;
+}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-leader-action-segment,
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-leader-action-btn{border-radius:0!important;}
+@media(max-width:1100px){
+    #tab-offday .offday-leader-action{min-width:126px;}
+    #tab-offday .offday-leader-action-btn{padding:0 5px;font-size:6.1px;}
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v24-leader-action-mode">
 (function(){
     'use strict';
 
@@ -135966,7 +136047,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         initialized: false,
         warmPrefetchStarted: false,
         warmPrefetchDone: false,
-        warmPrefetchTimer: null
+        warmPrefetchTimer: null,
+        leaderActionMode: 'lock'
     };
 
     const clientId = (() => {
@@ -136084,6 +136166,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             period:document.getElementById('offdayPeriodDisplay'),
             picker:document.getElementById('offdayMonthPicker'),
             toggle:document.getElementById('offdayGlobalToggle'),
+            leaderAction:document.getElementById('offdayLeaderAction'),
+            leaderModeLock:document.getElementById('offdayLeaderModeLock'),
+            leaderModeAssign:document.getElementById('offdayLeaderModeAssign'),
             summary:document.getElementById('offdaySummaryLine'),
             scroll:document.getElementById('offdayMatrixScroll'),
             grid:document.getElementById('offdayGrid'),
@@ -136186,9 +136271,33 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             `<div class="offday-summary-metric"><span>SUDAH PILIH</span><strong>${picked}</strong></div>`;
     }
 
+    function setLeaderActionMode(mode){
+        if(!isLeader())return;
+        const next=mode==='assign'?'assign':'lock';
+        if(state.leaderActionMode===next)return;
+        state.leaderActionMode=next;
+        closeLeaderPopover();
+        renderControls();
+    }
+
     function renderControls(){
         const n=nodes(); if(!n.tab)return;
-        n.tab.classList.toggle('offday-leader-mode',isLeader());
+        const leader=isLeader();
+        n.tab.classList.toggle('offday-leader-mode',leader);
+        n.tab.classList.toggle('offday-leader-assign-mode',leader&&state.leaderActionMode==='assign');
+        if(n.leaderAction)n.leaderAction.hidden=!leader;
+        if(n.leaderModeLock){
+            const active=state.leaderActionMode!=='assign';
+            n.leaderModeLock.classList.toggle('is-active',active);
+            n.leaderModeLock.setAttribute('aria-pressed',String(active));
+            setThemeTooltip(n.leaderModeLock,'Klik cell kosong untuk kunci atau buka kunci','lock');
+        }
+        if(n.leaderModeAssign){
+            const active=state.leaderActionMode==='assign';
+            n.leaderModeAssign.classList.toggle('is-active',active);
+            n.leaderModeAssign.setAttribute('aria-pressed',String(active));
+            setThemeTooltip(n.leaderModeAssign,'Klik cell user untuk assign OFFDAY','calendar');
+        }
         if(n.period) n.period.textContent=formatMonth();
         if(n.picker) n.picker.value=state.month;
         if(n.toggle){
@@ -136599,10 +136708,45 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             applyLocal:data=>{
                 const key=keyCell(uid,iso);
                 if(data?.locked)state.cellLocks.add(key);else state.cellLocks.delete(key);
-                const cancelled=Boolean(data?.locked&&data?.cancelled_choice&&state.choices.get(uid)===iso);
-                if(cancelled){state.choices.delete(uid);rebuildCompetition();paintDate(iso);}
-                const n=nodes();paintCell(n.grid?.querySelector(`.offday-day-cell[data-user-id="${uid}"][data-date="${iso}"]`));
-                if(cancelled)renderSummary();
+                const n=nodes();
+                paintCell(n.grid?.querySelector(`.offday-day-cell[data-user-id="${uid}"][data-date="${iso}"]`));
+            },
+            render:false
+        });
+    }
+
+    async function leaderAssignChoice(user,iso){
+        if(!isLeader()||!user)return;
+        const uid=Number(user.id);
+        if(!uid)return;
+        if(!user.assigned){
+            notify(`${user.name} belum ditempatkan ke Shift Aktif.`,'warning',2400);
+            return;
+        }
+        const locked=state.dateLocks.has(iso)||state.cellLocks.has(keyCell(uid,iso));
+        if(locked){
+            notify('Tanggal atau cell tersebut sedang dikunci Leader.','warning',2200);
+            return;
+        }
+        const takenOwner=roleTakenOwner(user,iso);
+        if(takenOwner){
+            notify(`Tanggal ${dateLabel(iso)} telah dipilih oleh User ${takenOwner.name} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}.`,'warning',3000);
+            return;
+        }
+        const before=state.choices.get(uid)||null;
+        await callRpc('offday_leader_assign_choice',{
+            p_period_month:monthDate(),p_user_id:uid,p_off_date:iso
+        },{
+            applyLocal:data=>{
+                const action=String(data?.action||'');
+                const oldIso=String(data?.old_off_date||before||'');
+                const newIso=String(data?.off_date||iso);
+                if(action==='selected'||action==='moved'||action==='unchanged')state.choices.set(uid,newIso);
+                rebuildCompetition();
+                if(oldIso)paintDate(oldIso);
+                if(newIso!==oldIso)paintDate(newIso);
+                paintUserCells(uid);
+                renderSummary();
             },
             render:false
         });
@@ -136638,6 +136782,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         state.popoverTarget={user,iso};
         if(n.popTitle)n.popTitle.textContent=user.name;
         if(n.popCopy)n.popCopy.textContent=`OFFDAY ${dateLabel(iso)}. Pilih tindakan untuk cell ini.`;
+        if(n.popLock)n.popLock.textContent=state.cellLocks.has(keyCell(user.id,iso))?'Buka Kunci Cell':'Kunci Cell';
         const rect=anchor.getBoundingClientRect();
         const width=226,pad=10;
         let left=rect.left+rect.width/2-width/2;
@@ -136756,6 +136901,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         }
         state.realtimeChannel=null;state.realtimeStatus='IDLE';
         closeLeaderPopover();
+        if(state.leaderActionMode!=='lock'){
+            state.leaderActionMode='lock';
+            renderControls();
+        }
     }
 
     function bindGridActions(){
@@ -136778,8 +136927,15 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             if(isLeader()){
                 const user=state.roster.find(row=>Number(row.id)===uid);
                 if(!user)return;
-                if(hasChoice)openLeaderPopover(cell,user,iso);
-                else toggleCellLock(uid,iso);
+                if(hasChoice){
+                    openLeaderPopover(cell,user,iso);
+                    return;
+                }
+                if(state.leaderActionMode==='assign'){
+                    leaderAssignChoice(user,iso);
+                }else{
+                    toggleCellLock(uid,iso);
+                }
                 return;
             }
             if(uid!==Number(state.currentUserId))return;
@@ -136849,6 +137005,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         n.period?.addEventListener('dblclick',openMonthPicker);
         n.picker?.addEventListener('change',()=>setMonth(n.picker.value));
         n.toggle?.addEventListener('click',()=>{if(isLeader())setOpen(!state.isOpen);});
+        n.leaderModeLock?.addEventListener('click',()=>setLeaderActionMode('lock'));
+        n.leaderModeAssign?.addEventListener('click',()=>setLeaderActionMode('assign'));
         n.popCancel?.addEventListener('click',cancelLeaderChoice);
         n.popLock?.addEventListener('click',()=>{
             const target=state.popoverTarget;if(target)toggleCellLock(target.user.id,target.iso);
