@@ -45860,7 +45860,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                         data-tooltip="Double-click untuk memilih periode bulan OFFDAY"
                                         data-tooltip-icon="edit"
                                         aria-label="Periode OFFDAY. Double-click untuk pilih bulan"
-                                    >Oktober 2026</button>
+                                    >September 2026</button>
                                     <input
                                         class="offday-month-picker"
                                         id="offdayMonthPicker"
@@ -58424,13 +58424,17 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     });
                 }
             } else if (selectedTab === 'offday') {
+                if (typeof window.prepareOffdayOpen === 'function') {
+                    window.prepareOffdayOpen();
+                }
                 if (typeof window.startOffdayRealtime === 'function') {
                     window.startOffdayRealtime();
                 }
                 if (typeof window.loadOffdaySnapshot === 'function') {
                     window.loadOffdaySnapshot({
                         reason: 'offday-tab-open',
-                        includeRoster: true
+                        includeRoster: true,
+                        focusSelf: true
                     });
                 }
             } else if (selectedTab === 'historyshift') {
@@ -134602,7 +134606,7 @@ html[data-selected-theme="light"] #tab-offday{
 }
 </style>
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v8-hover-tooltip-state-sync">
+<script id="offday-production-realtime-v2-js" data-offday-build="v9-current-month-self-focus-tooltip-refine">
 (function(){
     'use strict';
 
@@ -134651,13 +134655,15 @@ html[data-selected-theme="light"] #tab-offday{
         }
     })();
 
-    function initialMonth(){
-        try {
-            const saved = localStorage.getItem(STORAGE_MONTH);
-            if (/^\d{4}-\d{2}$/.test(saved || '')) return saved;
-        } catch (_) {}
+    function currentCalendarMonth(){
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    }
+
+    function initialMonth(){
+        // OFFDAY always opens on the current calendar month. Historical months
+        // remain available through the month picker for the active OFFDAY visit.
+        return currentCalendarMonth();
     }
 
     function monthDate(){ return `${state.month}-01`; }
@@ -134895,7 +134901,7 @@ html[data-selected-theme="light"] #tab-offday{
             const locked=state.dateLocks.has(iso);
             const head=add(`offday-day-head history-tooltip-target${isSunday(day)?' is-sunday':''}${locked?' is-locked':''}`,`<span class="num">${String(day).padStart(2,'0')}</span><span class="dow">${dayName(day)}</span>`);
             head.dataset.date=iso;
-            setThemeTooltip(head,isLeader()?(locked?'Klik untuk membuka tanggal':'Klik untuk mengunci tanggal'):(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
+            setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
         }
 
         const appendGroup=(section)=>{
@@ -134961,13 +134967,7 @@ html[data-selected-theme="light"] #tab-offday{
             }
 
             if(isLeader()){
-                setThemeTooltip(
-                    cell,
-                    hasChoice
-                        ? `${user.name} · ${dateLabel(iso)} · klik untuk aksi Leader`
-                        : (cellLocked?`Klik untuk membuka lock ${user.name} · ${dateLabel(iso)}`:`Klik untuk mengunci ${user.name} · ${dateLabel(iso)}`),
-                    hasChoice?'info':'lock'
-                );
+                setThemeTooltip(cell,'');
             }else if(self){
                 setThemeTooltip(
                     cell,
@@ -134981,7 +134981,7 @@ html[data-selected-theme="light"] #tab-offday{
                                     ? 'Tanggal ini dikunci Leader'
                                     : roleTaken
                                         ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}`
-                                        : 'Klik untuk memilih atau memindahkan OFFDAY'),
+                                        : 'Klik untuk memilih OFFDAY'),
                     locked?'lock':'info'
                 );
             }else{
@@ -135017,13 +135017,7 @@ html[data-selected-theme="light"] #tab-offday{
             const mark=document.createElement('span');mark.className='offday-lock-mark';mark.textContent='×';cell.appendChild(mark);
         }
         if(isLeader()){
-            setThemeTooltip(
-                cell,
-                hasChoice
-                    ? `${user?.name||'User'} · ${dateLabel(iso)} · klik untuk aksi Leader`
-                    : (cellLocked?`Klik untuk membuka lock ${user?.name||'user'} · ${dateLabel(iso)}`:`Klik untuk mengunci ${user?.name||'user'} · ${dateLabel(iso)}`),
-                hasChoice?'info':'lock'
-            );
+            setThemeTooltip(cell,'');
         }else if(self){
             setThemeTooltip(
                 cell,
@@ -135037,7 +135031,7 @@ html[data-selected-theme="light"] #tab-offday{
                                 ? 'Tanggal ini dikunci Leader'
                                 : roleTaken
                                     ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
-                                    : 'Klik untuk memilih atau memindahkan OFFDAY'),
+                                    : 'Klik untuk memilih OFFDAY'),
                 locked?'lock':'info'
             );
         }else{
@@ -135056,7 +135050,7 @@ html[data-selected-theme="light"] #tab-offday{
         if(head){
             const locked=state.dateLocks.has(iso);
             head.classList.toggle('is-locked',locked);
-            setThemeTooltip(head,isLeader()?(locked?'Klik untuk membuka tanggal':'Klik untuk mengunci tanggal'):(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
+            setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
         }
         n.grid.querySelectorAll(`.offday-day-cell[data-date="${iso}"]`).forEach(paintCell);
     }
@@ -135068,9 +135062,47 @@ html[data-selected-theme="light"] #tab-offday{
 
     function renderAll(){ renderControls(); renderGrid(); }
 
+    function focusCurrentUser(options={}){
+        const n=nodes();
+        if(!n.scroll||!n.grid||!state.currentUserId)return false;
+        const target=n.grid.querySelector(`.offday-roster-cell[data-user-id="${Number(state.currentUserId)}"]`);
+        if(!target)return false;
+        const maxTop=Math.max(0,n.scroll.scrollHeight-n.scroll.clientHeight);
+        const targetTop=Math.max(0,Math.min(maxTop,target.offsetTop-(n.scroll.clientHeight-target.offsetHeight)/2));
+        n.scroll.scrollTo({
+            top:targetTop,
+            left:Number.isFinite(options.left)?options.left:n.scroll.scrollLeft,
+            behavior:options.smooth===false?'auto':'smooth'
+        });
+        return true;
+    }
+
+    function scheduleCurrentUserFocus(options={}){
+        window.requestAnimationFrame(()=>{
+            window.requestAnimationFrame(()=>focusCurrentUser(options));
+        });
+    }
+
+    function prepareOpen(){
+        const current=currentCalendarMonth();
+        const monthChanged=state.month!==current;
+        state.month=current;
+        state.loadedMonth=null;
+        state.isOpen=false;
+        closeLeaderPopover();
+        const n=nodes();
+        if(n.scroll){
+            n.scroll.scrollLeft=0;
+            n.scroll.scrollTop=0;
+        }
+        if(monthChanged)renderControls();
+        return current;
+    }
+
     async function loadSnapshot(options={}){
         const reason=String(options.reason||'manual');
         const includeRoster=Boolean(options.includeRoster || !state.rosterLoaded);
+        const focusSelf=Boolean(options.focusSelf);
         const serial=++state.loadSerial;
         const n=nodes();
         if(!n.grid || typeof supabaseDashboard==='undefined' || !supabaseDashboard)return false;
@@ -135110,6 +135142,7 @@ html[data-selected-theme="light"] #tab-offday{
                 rebuildCompetition();
             }
             renderAll();
+            if(focusSelf)scheduleCurrentUserFocus({smooth:true,left:0});
             return true;
         }catch(error){
             console.error(`OFFDAY snapshot gagal (${reason}):`,error);
@@ -135446,7 +135479,9 @@ html[data-selected-theme="light"] #tab-offday{
     window.loadOffdaySnapshot=loadSnapshot;
     window.startOffdayRealtime=startRealtime;
     window.stopOffdayRealtime=stopRealtime;
-    window.DDTOffdayRealtime={state,load:loadSnapshot,start:startRealtime,stop:stopRealtime,setMonth};
+    window.prepareOffdayOpen=prepareOpen;
+    window.focusOffdayCurrentUser=()=>scheduleCurrentUserFocus({smooth:true,left:0});
+    window.DDTOffdayRealtime={state,load:loadSnapshot,start:startRealtime,stop:stopRealtime,setMonth,prepareOpen,focusCurrentUser};
 
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
     else init();
