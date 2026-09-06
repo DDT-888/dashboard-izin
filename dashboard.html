@@ -126529,11 +126529,6 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
             ? 'is-editable'
             : ''
         }"
-        title="${
-          editable
-            ? 'Double-click untuk ubah Office'
-            : ''
-        }"
       >
         <span class="ddt-employee-office-text">
           ${esc(text)}
@@ -128423,14 +128418,17 @@ html[data-mi-native-presentation="mecha-ivory"] #aps-office-value{
 
 <script id="ddt-office-duration-system-v1-build-marker">
 window.DDTOfficeDurationSystemBuild=Object.freeze({
-  version:'1.1.22',
-  source:'Users Visual Balance v1.14',
+  version:'1.1.23',
+  source:'Users Final Detail v1.15',
   targetedCorrection:Object.freeze({
-    inactiveDateEdit:'wrapper capped at 108px to match Active JOIN content footprint',
-    inactiveDateInternalGeometry:'v1.14 unchanged',
-    officeHoverPencil:'overlay edit mark / zero layout contribution',
-    officeEditBehavior:'UNCHANGED / double-click authority preserved',
-    allOtherV114Areas:'PASS / unchanged',
+    officeNativeTooltip:'REMOVED',
+    usersInlinePencil:'Office pencil is single visual authority',
+    pencilSvg:'12px / stroke 1.8 / round caps+joins / transparent carrier',
+    pencilHover:'shared opacity + accent behavior',
+    venomPencilPlate:'removed',
+    officeEditBehavior:'UNCHANGED',
+    inlineEditBehavior:'UNCHANGED',
+    allOtherV115Areas:'PASS / unchanged',
     tickerSmoothness:'PASS / unchanged',
     poipetProgressAuthority:'PASS / unchanged',
     officeDisplayFailSafe:'PASS / unchanged'
@@ -133242,6 +133240,157 @@ tbody td:has(
 .ddt-employee-office-display.is-editable
 .ddt-office-edit-mark{
   color:var(--accent)!important;
+}
+</style>
+
+
+<style id="ddt-users-v1-16-pencil-visual-authority">
+/* ================================================================
+   USERS v1.16 — ONE INLINE PENCIL VISUAL AUTHORITY
+
+   Scope:
+   - User Aktif / Nonaktif inline-edit hover pencils only
+   - Office pencil is the visual reference
+   - no edit/save/permission/layout behavior changes
+   ================================================================ */
+
+/*
+ * One pencil carrier language for every editable inline field.
+ * Do not use background plates, borders, or theme-specific boxes.
+ */
+#tab-users .employee-users-table
+.employee-edit-mark{
+  width:12px!important;
+  height:12px!important;
+  min-width:12px!important;
+  min-height:12px!important;
+  max-width:12px!important;
+  max-height:12px!important;
+  flex:0 0 12px!important;
+
+  margin:0!important;
+  padding:0!important;
+
+  color:var(--text-muted)!important;
+  background:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  border-color:transparent!important;
+  border-radius:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+
+  opacity:0!important;
+  pointer-events:none!important;
+
+  transition:
+    opacity .15s ease,
+    color .15s ease
+    !important;
+}
+
+/* Exact Office SVG language becomes the common authority. */
+#tab-users .employee-users-table
+.employee-edit-mark svg{
+  display:block!important;
+  width:12px!important;
+  height:12px!important;
+
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.8!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+
+  overflow:visible!important;
+}
+
+/*
+ * Existing inline fields:
+ * hover/focus reveals the same pencil as Office.
+ */
+#tab-users .employee-users-table
+.employee-inline-cell:hover
+.employee-edit-mark,
+#tab-users .employee-users-table
+.employee-inline-cell:focus-visible
+.employee-edit-mark,
+#tab-users .employee-users-table
+.employee-lifecycle-inline:hover
+.employee-edit-mark,
+#tab-users .employee-users-table
+.employee-lifecycle-inline:focus-visible
+.employee-edit-mark{
+  opacity:.78!important;
+}
+
+/* Office keeps its overlay geometry from v1.15. */
+#tab-users .employee-users-table
+.ddt-office-edit-mark{
+  position:absolute!important;
+  top:50%!important;
+  right:0!important;
+
+  flex:none!important;
+  transform:translateY(-50%)!important;
+}
+
+/* Same reveal strength and same accent response. */
+#tab-users .employee-users-table
+td.ddt-employee-office-cell:hover
+.ddt-office-edit-mark,
+#tab-users .employee-users-table
+.ddt-employee-office-display.is-editable:hover
+.ddt-office-edit-mark{
+  opacity:.78!important;
+}
+
+#tab-users .employee-users-table
+.employee-inline-cell:hover
+.employee-edit-mark,
+#tab-users .employee-users-table
+.employee-inline-cell:focus-visible
+.employee-edit-mark,
+#tab-users .employee-users-table
+td.ddt-employee-office-cell:hover
+.ddt-office-edit-mark{
+  color:var(--accent)!important;
+}
+
+/*
+ * Venom previously added a dark plate to generic .employee-edit-mark.
+ * Final authority explicitly keeps the pencil transparent.
+ */
+html[data-selected-theme="venom"] body
+#tab-users .employee-users-table
+.employee-edit-mark,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-users .employee-users-table
+.employee-edit-mark{
+  color:#a9aea9!important;
+  background:transparent!important;
+  background-image:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+
+html[data-selected-theme="venom"] body
+#tab-users .employee-users-table
+.employee-inline-cell:hover
+.employee-edit-mark,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-users .employee-users-table
+.employee-inline-cell:hover
+.employee-edit-mark,
+html[data-selected-theme="venom"] body
+#tab-users .employee-users-table
+td.ddt-employee-office-cell:hover
+.ddt-office-edit-mark,
+html[data-theme="dark"][data-theme-variant="venom"] body
+#tab-users .employee-users-table
+td.ddt-employee-office-cell:hover
+.ddt-office-edit-mark{
+  color:#44d62c!important;
 }
 </style>
 
