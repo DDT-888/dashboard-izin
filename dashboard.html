@@ -134787,7 +134787,150 @@ html[data-theme="dark"] #tab-offday .offday-stamp{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v11-color-audit-pass">
+
+<style id="offday-production-realtime-v12-visual-hierarchy">
+/* OFFDAY R12 — visual hierarchy refinement only.
+   Shift names now mirror Shift Kerja text treatment (no KD/PP badge),
+   hover is lighter, Leader lock is stronger, and staff rail uses a subtle
+   tint from the STAFF/SHIFT header family. Header tanggal base is untouched. */
+
+/* 1) Shift separator: text-only naming, same hierarchy language as Shift Kerja. */
+#tab-offday .offday-group-name{
+    gap:8px!important;
+    padding:0 10px!important;
+}
+#tab-offday .offday-group-name strong{
+    min-width:0!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    color:var(--text-primary)!important;
+    font-size:9px!important;
+    font-weight:820!important;
+    line-height:1!important;
+    letter-spacing:.24px!important;
+    text-transform:uppercase!important;
+}
+#tab-offday .offday-group-name em{display:none!important;}
+#tab-offday .offday-group-name span{
+    margin-left:auto!important;
+    flex:0 0 auto!important;
+    color:var(--text-muted)!important;
+    font-size:6.8px!important;
+    font-weight:720!important;
+    letter-spacing:.02em!important;
+}
+
+/* Separator stays structural rather than becoming a colored feature. */
+#tab-offday .offday-group-name,
+#tab-offday .offday-group-day{
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--bg-hover) 75%,var(--bg-card)) 0%,
+        color-mix(in srgb,var(--bg-hover) 88%,var(--bg-card)) 100%)!important;
+}
+#tab-offday .offday-group-name{
+    box-shadow:inset 2px 0 0 color-mix(in srgb,var(--text-muted) 17%,transparent),6px 0 10px rgba(14,45,52,.014)!important;
+}
+#tab-offday .offday-group-name.is-leader{
+    box-shadow:inset 2px 0 0 #d5a83f,6px 0 10px rgba(14,45,52,.014)!important;
+}
+#tab-offday .offday-group-name.is-unassigned{
+    box-shadow:inset 2px 0 0 color-mix(in srgb,var(--text-muted) 34%,transparent),6px 0 10px rgba(14,45,52,.014)!important;
+}
+
+/* 2) Staff rail: connected to STAFF/SHIFT header through a very light tint,
+      never the full dark header color so role cards remain the identity layer. */
+#tab-offday .offday-roster-cell{
+    background:color-mix(in srgb,var(--offday-head) 7%,var(--offday-row-surface))!important;
+}
+#tab-offday .offday-roster-cell.is-self{
+    background:color-mix(in srgb,var(--offday-head) 5%,var(--offday-self-bg))!important;
+}
+#tab-offday .offday-roster-cell.is-unassigned-user{
+    background:color-mix(in srgb,var(--text-muted) 3%,color-mix(in srgb,var(--offday-head) 5%,var(--offday-row-surface)))!important;
+}
+
+/* 3) Cross-axis hover: retain the useful guidance, but reduce visual weight. */
+#tab-offday .offday-day-head:hover,
+#tab-offday .offday-day-head.is-axis-hover{
+    filter:brightness(1.085) saturate(1.025)!important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb,var(--offday-axis-hover) 58%,#ffffff 42%),
+        inset 0 -2px 0 color-mix(in srgb,var(--offday-axis-hover) 66%,#ffffff 34%),
+        0 2px 6px rgba(5,30,38,.10)!important;
+}
+#tab-offday .offday-roster-cell.is-axis-hover,
+#tab-offday .offday-roster-cell:hover{
+    background:color-mix(in srgb,var(--offday-axis-hover) 5%,color-mix(in srgb,var(--offday-head) 7%,var(--offday-row-surface)))!important;
+}
+#tab-offday .offday-roster-cell.is-axis-hover .offday-user-card.user-card-shift,
+#tab-offday .offday-roster-cell:hover .offday-user-card.user-card-shift{
+    transform:none!important;
+    filter:brightness(1.025) saturate(1.02)!important;
+    box-shadow:
+        0 0 0 1px color-mix(in srgb,var(--offday-axis-hover) 55%,transparent),
+        0 2px 7px rgba(20,49,61,.09),
+        inset 0 1px 0 rgba(255,255,255,.16)!important;
+}
+#tab-offday .offday-day-cell.is-axis-hover{
+    outline:1px solid color-mix(in srgb,var(--offday-axis-hover) 40%,transparent)!important;
+    outline-offset:-1px!important;
+}
+
+/* 4) Leader lock: hard restriction is intentionally stronger than role-taken.
+      The body cell gets a 2px inner frame + firmer hatch. Date-header styling
+      itself remains the previously approved authority. */
+#tab-offday .offday-day-cell.is-locked:not(.has-choice){
+    background:repeating-linear-gradient(135deg,
+        color-mix(in srgb,var(--offday-lock-bg) 94%,var(--bg-card)) 0,
+        color-mix(in srgb,var(--offday-lock-bg) 94%,var(--bg-card)) 6px,
+        color-mix(in srgb,var(--offday-lock-bg) 76%,var(--offday-lock-line)) 6px,
+        color-mix(in srgb,var(--offday-lock-bg) 76%,var(--offday-lock-line)) 12px)!important;
+    box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--offday-lock-line) 70%,transparent)!important;
+}
+#tab-offday .offday-day-cell.is-locked.is-self-row:not(.has-choice){
+    box-shadow:
+        inset 0 0 0 2px color-mix(in srgb,var(--offday-lock-line) 72%,transparent),
+        inset 0 1px 0 color-mix(in srgb,var(--offday-self-line) 34%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-line) 34%,transparent)!important;
+}
+#tab-offday .offday-day-cell.is-role-taken:not(.has-choice){
+    box-shadow:none!important;
+}
+#tab-offday .offday-lock-mark{
+    font-weight:850!important;
+    opacity:.72!important;
+}
+
+/* DDT Original micro-tuning. */
+html[data-selected-theme="light"] #tab-offday .offday-roster-cell{
+    background:#f1f6f6!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-roster-cell.is-self{
+    background:#eaf2ee!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-roster-cell.is-axis-hover,
+html[data-selected-theme="light"] #tab-offday .offday-roster-cell:hover{
+    background:#e8f0ed!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-locked:not(.has-choice){
+    box-shadow:inset 0 0 0 2px #aab8b8!important;
+}
+
+/* Dark families keep the same rail/header connection without becoming heavy. */
+html[data-theme="dark"] #tab-offday .offday-roster-cell{
+    background:color-mix(in srgb,var(--offday-head) 12%,var(--offday-row-surface))!important;
+}
+html[data-theme="dark"] #tab-offday .offday-roster-cell.is-self{
+    background:color-mix(in srgb,var(--offday-head) 8%,var(--offday-self-bg))!important;
+}
+html[data-theme="dark"] #tab-offday .offday-day-cell.is-locked:not(.has-choice){
+    box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--offday-lock-line) 78%,transparent)!important;
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v12-visual-hierarchy-pass">
 (function(){
     'use strict';
 
@@ -135090,10 +135233,8 @@ html[data-theme="dark"] #tab-offday .offday-stamp{
 
         const appendGroup=(section)=>{
             const groupClass=section.kind==='leader'?' is-leader':(section.kind==='unassigned'?' is-unassigned':'');
-            const label=shiftDisplayParts(section.name);
             add(`offday-group-name${groupClass}`,
-                `<strong>${escapeHtml(label.main)}</strong>`+
-                `${label.variant?`<em>${escapeHtml(label.variant)}</em>`:''}`+
+                `<strong>${escapeHtml(section.name)}</strong>`+
                 `<span>${section.rows.length} STAFF</span>`
             );
             for(let day=1;day<=count;day++) add(`offday-group-day${groupClass}`);
