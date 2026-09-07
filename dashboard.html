@@ -133939,7 +133939,7 @@ td.ddt-employee-office-cell:hover
 </style>
 
 
-<style id="offday-production-realtime-v48-consolidated">
+<style id="offday-production-realtime-v49-consolidated">
 
 
 /* ---- consolidated source: offday-production-realtime-v2 ---- */
@@ -135886,7 +135886,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 
 /* ============================================================
-   OFFDAY R48 — GEOMETRIC HOLLOW DAY SEAL REFINEMENT
+   OFFDAY R49 — CUSTOM VECTOR DAY GLYPH SEAL
    ------------------------------------------------------------
    Visual authority only. Functional baseline remains frozen.
 
@@ -136314,7 +136314,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 
 /* OFF = final two-tier role seal above board, cavity, self surface and lock tile.
-   V48 keeps the approved solid OFF authority field and refines only DAY into a larger geometric hollow seal mark.
+   V49 keeps the approved solid OFF authority field and replaces only DAY with custom vector hollow glyphs.
    The lower half remains board-visible so the mark reads as a stamped seal, not a mini card. */
 #tab-offday .offday-stamp{
     --offday-seal-ink:var(--offday-stamp-border);
@@ -136365,7 +136365,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     pointer-events:none!important;
     background:color-mix(in srgb,var(--offday-seal-ink) 78%,transparent)!important;
 }
-/* V48 remains two-tier; legacy kicker stays hidden. OFF authority is frozen. */
+/* V49 remains two-tier; legacy kicker stays hidden. OFF authority is frozen. */
 #tab-offday .offday-stamp .offday-seal-kicker{display:none!important;}
 #tab-offday .offday-stamp .offday-seal-off{
     position:relative!important;
@@ -136386,52 +136386,36 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     letter-spacing:.035em!important;
     text-shadow:none!important;
 }
-/* DAY = geometric hollow seal lettering.
-   V48 removes the printer/barcode texture. The letters are larger, more open,
-   and use only two intentional horizontal knock-outs so the board shows through
-   as negative space while DAY remains immediately legible. */
+/* DAY = custom geometric hollow vector mark.
+   The negative space is intrinsic to each glyph rather than produced by masks,
+   barcode bands or distressed texture. OFF above remains the visual authority. */
 #tab-offday .offday-stamp .offday-seal-day{
     position:relative!important;
     z-index:2!important;
-    display:grid!important;
-    place-items:center!important;
+    display:block!important;
     width:100%!important;
     height:11px!important;
     margin:0!important;
-    padding:0!important;
-    overflow:hidden!important;
-    white-space:nowrap!important;
-    font-size:8.85px!important;
-    line-height:1!important;
-    font-weight:950!important;
-    font-stretch:condensed!important;
-    letter-spacing:.015em!important;
-    text-transform:uppercase!important;
-    color:transparent!important;
-    -webkit-text-stroke:.76px color-mix(in srgb,var(--offday-seal-ink) 96%,transparent)!important;
+    padding:1px 1px 0!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    color:var(--offday-seal-ink)!important;
     background:none!important;
-    -webkit-background-clip:border-box!important;
-    background-clip:border-box!important;
-    text-shadow:none!important;
-    transform:scaleX(.94)!important;
-    transform-origin:center!important;
-    -webkit-mask-image:linear-gradient(
-        180deg,
-        #000 0 30%,
-        transparent 30% 39%,
-        #000 39% 68%,
-        transparent 68% 76%,
-        #000 76% 100%
-    )!important;
-    mask-image:linear-gradient(
-        180deg,
-        #000 0 30%,
-        transparent 30% 39%,
-        #000 39% 68%,
-        transparent 68% 76%,
-        #000 76% 100%
-    )!important;
-    opacity:.98!important;
+    transform:none!important;
+    opacity:.97!important;
+}
+#tab-offday .offday-stamp .offday-seal-day path{
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:1.08!important;
+    stroke-linecap:square!important;
+    stroke-linejoin:miter!important;
+    vector-effect:non-scaling-stroke!important;
+}
+/* The A crossbar is intentionally lighter so the lower mark keeps generous voids. */
+#tab-offday .offday-stamp .offday-seal-day .day-cross{
+    stroke-width:.82!important;
+    opacity:.88!important;
 }
 /* Warm/gold inks need dark lettering on the solid OFF field for crisp contrast. */
 #tab-offday .offday-stamp.role-leader,
@@ -136650,7 +136634,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v48-geometric-hollow-day-seal">
+<script id="offday-production-realtime-v2-js" data-offday-build="v49-custom-vector-day-seal">
 (function(){
     'use strict';
 
@@ -137056,7 +137040,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             cell.dataset.userId=String(user.id);cell.dataset.date=iso;cell.dataset.sectionIndex=String(sectionIndex);
 
             if(hasChoice){
-                const stamp=document.createElement('div');stamp.className=`offday-stamp role-${role}`;stamp.setAttribute('aria-label','OFFDAY');stamp.innerHTML='<span class="offday-seal-kicker" aria-hidden="true">OFFDAY</span><strong class="offday-seal-off">OFF</strong><span class="offday-seal-day">DAY</span>';cell.appendChild(stamp);
+                const stamp=document.createElement('div');stamp.className=`offday-stamp role-${role}`;stamp.setAttribute('aria-label','OFFDAY');stamp.innerHTML='<span class="offday-seal-kicker" aria-hidden="true">OFFDAY</span><strong class="offday-seal-off">OFF</strong><svg class="offday-seal-day" viewBox="0 0 24 9" aria-hidden="true" focusable="false"><path d="M1.2 1H4.25M1.2 1V8M1.2 8H4.25M4.25 1C6.55 1 7.75 2.2 7.75 4.5S6.55 8 4.25 8"/><path d="M9.45 8L12.15 1L14.85 8"/><path class="day-cross" d="M10.5 5.3H13.8"/><path d="M16.25 1L19 4.15L21.75 1M19 4.15V8"/></svg>';cell.appendChild(stamp);
             }
 
             if(isLeader()){
@@ -137108,7 +137092,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
         cell.replaceChildren();
         if(hasChoice){
-            const stamp=document.createElement('div');const stampRole=normRole(user?.role);stamp.className=`offday-stamp role-${stampRole}`;stamp.setAttribute('aria-label','OFFDAY');stamp.innerHTML='<span class="offday-seal-kicker" aria-hidden="true">OFFDAY</span><strong class="offday-seal-off">OFF</strong><span class="offday-seal-day">DAY</span>';cell.appendChild(stamp);
+            const stamp=document.createElement('div');const stampRole=normRole(user?.role);stamp.className=`offday-stamp role-${stampRole}`;stamp.setAttribute('aria-label','OFFDAY');stamp.innerHTML='<span class="offday-seal-kicker" aria-hidden="true">OFFDAY</span><strong class="offday-seal-off">OFF</strong><svg class="offday-seal-day" viewBox="0 0 24 9" aria-hidden="true" focusable="false"><path d="M1.2 1H4.25M1.2 1V8M1.2 8H4.25M4.25 1C6.55 1 7.75 2.2 7.75 4.5S6.55 8 4.25 8"/><path d="M9.45 8L12.15 1L14.85 8"/><path class="day-cross" d="M10.5 5.3H13.8"/><path d="M16.25 1L19 4.15L21.75 1M19 4.15V8"/></svg>';cell.appendChild(stamp);
         }
         if(isLeader()){
             setThemeTooltip(cell,'');
