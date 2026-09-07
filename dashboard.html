@@ -136769,258 +136769,101 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-matrix-s
 </style>
 
 
-<style id="offday-production-realtime-v31-junction-venom-row-lock-fix">
-/* OFFDAY R31 — targeted junction + Venom row-lock authority.
-   Functional behavior remains unchanged.
+<style id="offday-production-realtime-v34-single-lock-material-border-owner">
+/* OFFDAY R34 — full seam/material audit closure.
 
-   A) Realtime lock transitions always retain their top/left perimeter seam.
-   B) In Venom Green, lock paint outranks the generic CLOSED surface so
-      date lock, row/cell lock, and their overlap share one Venom material. */
+   Architectural rule:
+   - Header/date lock and individual cell/row lock are ONE visual state.
+   - Overlap does not add a second material, frame, seam, shadow, or overlay.
+   - Existing grid borders own every seam; their COLOR may change, geometry never does.
+   - This supersedes the v31-v33 pseudo-seam experiment. */
 
-/* Junction authority — one perimeter seam only, including date+cell overlap. */
-html #tab-offday .offday-day-cell.is-locked.lock-edge-top,
-html #tab-offday .offday-day-cell.is-date-locked.lock-edge-top,
-html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-top,
-html #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.lock-edge-top{
-    border-top:1px solid var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
-}
-html #tab-offday .offday-day-cell.is-locked.lock-edge-left,
-html #tab-offday .offday-day-cell.is-date-locked.lock-edge-left,
-html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-left,
-html #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.lock-edge-left{
-    border-left:1px solid var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
-}
-
-/* VENOM GREEN — explicit lock precedence above .is-closed.
-   Same material for header/date lock and individual row/cell lock. */
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
-    --offday-venom-lock-surface:#223022;
-    --offday-venom-lock-line:#4a6146;
-    --offday-lock-tile-center:#223022;
-    --offday-lock-tile-line:#4a6146;
-    --offday-lock-transition-line:#4a6146;
-}
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked.is-closed,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-closed,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked.is-closed,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.is-closed{
-    background:var(--offday-venom-lock-surface)!important;
-    border-right-color:var(--offday-venom-lock-line)!important;
-    border-bottom-color:var(--offday-venom-lock-line)!important;
-    box-shadow:none!important;
-}
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked.lock-edge-top,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.lock-edge-top,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked.lock-edge-top,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.lock-edge-top{
-    border-top-color:var(--offday-venom-lock-line)!important;
-}
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked.lock-edge-left,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.lock-edge-left,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked.lock-edge-left,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.lock-edge-left{
-    border-left-color:var(--offday-venom-lock-line)!important;
-}
-
-/* OFF stamped on a locked cell keeps the exact same Venom tile around it. */
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-date-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-cell-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-date-locked.is-cell-locked{
-    background:var(--offday-venom-lock-surface)!important;
-}
-
-/* Keep legend materially identical to the actual locked cells. */
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-legend-swatch.locked{
-    background:var(--offday-venom-lock-surface)!important;
-    border-color:var(--offday-venom-lock-line)!important;
-}
-</style>
-
-
-
-<style id="offday-production-realtime-v32-seam-authority-venom-lock">
-/* OFFDAY R32 — seam ownership correction.
-   Structural first-row/first-day markers guarantee perimeter continuity after
-   SHIFT separators and at matrix transitions. Visual seams are painted as an
-   overlay so they cannot disappear because of grid border ownership. */
-
-/* Remove layout-changing top/left borders from lock tiles. Right/bottom remain
-   the internal single-seam authority established by the near-flat tile system. */
+/* One exact material for every lock source and every combination. */
 html #tab-offday .offday-day-cell.is-locked,
 html #tab-offday .offday-day-cell.is-date-locked,
-html #tab-offday .offday-day-cell.is-cell-locked{
-    border-top-width:0!important;
-    border-left-width:0!important;
+html #tab-offday .offday-day-cell.is-cell-locked,
+html #tab-offday .offday-day-cell.is-date-locked.is-cell-locked,
+html #tab-offday .offday-day-cell.is-locked.is-closed,
+html #tab-offday .offday-day-cell.is-date-locked.is-closed,
+html #tab-offday .offday-day-cell.is-cell-locked.is-closed,
+html #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.is-closed,
+html #tab-offday .offday-day-cell.has-choice.is-locked,
+html #tab-offday .offday-day-cell.has-choice.is-date-locked,
+html #tab-offday .offday-day-cell.has-choice.is-cell-locked,
+html #tab-offday .offday-day-cell.has-choice.is-date-locked.is-cell-locked,
+html #tab-offday .offday-day-cell.is-self-row.is-locked,
+html #tab-offday .offday-day-cell.is-self-row.is-date-locked,
+html #tab-offday .offday-day-cell.is-self-row.is-cell-locked{
+    background:var(--offday-lock-tile-center)!important;
+    border-top:0!important;
+    border-left:0!important;
+    border-right:1px solid var(--offday-lock-tile-line)!important;
+    border-bottom:1px solid var(--offday-lock-tile-line)!important;
+    box-shadow:none!important;
+    outline:none!important;
 }
 
-/* Dedicated perimeter overlay. top:-1/left:-1 paints over the existing separator
-   boundary rather than adding a second adjacent line. */
+/* Completely disable all historical synthetic seam paint. */
 html #tab-offday .offday-day-cell.is-locked::before,
 html #tab-offday .offday-day-cell.is-date-locked::before,
 html #tab-offday .offday-day-cell.is-cell-locked::before{
-    content:"";
-    position:absolute;
-    top:-1px;
-    left:-1px;
-    right:0;
-    bottom:0;
-    pointer-events:none;
-    z-index:3;
-    border-top:1px solid transparent;
-    border-left:1px solid transparent;
+    content:none!important;
+    display:none!important;
+    background:none!important;
+    border:0!important;
+    box-shadow:none!important;
 }
 
-/* Transition edge + structural fallback for the first user row after every SHIFT. */
-html #tab-offday .offday-day-cell.is-locked.lock-edge-top::before,
-html #tab-offday .offday-day-cell.is-date-locked.lock-edge-top::before,
-html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-top::before,
-html #tab-offday .offday-day-cell.is-section-first-row.is-locked::before,
-html #tab-offday .offday-day-cell.is-section-first-row.is-date-locked::before,
-html #tab-offday .offday-day-cell.is-section-first-row.is-cell-locked::before{
-    border-top-color:var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
+/* The left/top perimeter is painted by the ORIGINAL border owner.
+   Width, position, row height, grid sizing and box model are untouched. */
+html #tab-offday .offday-day-cell.lock-seam-owner-right,
+html #tab-offday .offday-roster-cell.lock-seam-owner-right{
+    border-right-color:var(--offday-lock-tile-line)!important;
+}
+html #tab-offday .offday-day-cell.lock-seam-owner-bottom,
+html #tab-offday .offday-group-day.lock-seam-owner-bottom{
+    border-bottom-color:var(--offday-lock-tile-line)!important;
 }
 
-/* Transition edge + structural fallback at the first calendar column. */
-html #tab-offday .offday-day-cell.is-locked.lock-edge-left::before,
-html #tab-offday .offday-day-cell.is-date-locked.lock-edge-left::before,
-html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-left::before,
-html #tab-offday .offday-day-cell.is-first-day.is-locked::before,
-html #tab-offday .offday-day-cell.is-first-day.is-date-locked::before,
-html #tab-offday .offday-day-cell.is-first-day.is-cell-locked::before{
-    border-left-color:var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
+/* Old edge classes are inert even if a stale DOM survives during hot reload. */
+html #tab-offday .offday-day-cell.lock-edge-top,
+html #tab-offday .offday-day-cell.lock-edge-left{
+    border-top:0!important;
+    border-left:0!important;
 }
 
-/* VENOM GREEN — cover every theme-state representation used by legacy theme
-   switching. Row/cell lock and date lock intentionally share one matte moss tile. */
+/* DDT Original keeps the approved deeper near-flat lock material from v29. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-lock-tile-center:#cfdad7;
+    --offday-lock-tile-line:#9eafab;
+    --offday-lock-transition-line:#9eafab;
+}
+
+/* Venom Green: one matte moss material, independent of Cyber/Dark closed paint. */
 html[data-selected-theme="venom"] #tab-offday,
 html[data-selected-theme="venom-green"] #tab-offday,
 html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
-    --offday-venom-lock-surface:#263426;
-    --offday-venom-lock-line:#50684c;
     --offday-lock-tile-center:#263426;
     --offday-lock-tile-line:#50684c;
     --offday-lock-transition-line:#50684c;
 }
-
 html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-locked,
 html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-date-locked,
 html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-cell-locked,
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-locked.is-closed,
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-date-locked.is-closed,
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-cell-locked.is-closed,
 html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-locked,
 html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-date-locked,
 html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-cell-locked,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-locked.is-closed,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-date-locked.is-closed,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-cell-locked.is-closed,
 html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked,
 html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked.is-closed,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-closed,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked.is-closed{
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked{
     background:#263426!important;
     border-right-color:#50684c!important;
     border-bottom-color:#50684c!important;
-    box-shadow:none!important;
-}
-
-/* OFF remains above the same Venom lock material. */
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.has-choice.is-locked,
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.has-choice.is-date-locked,
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.has-choice.is-cell-locked,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.has-choice.is-locked,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.has-choice.is-date-locked,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.has-choice.is-cell-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-date-locked,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-cell-locked{
-    background:#263426!important;
-}
-
-/* The seam overlay itself must also use Venom, including first-row SHIFT junctions. */
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-locked::before,
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-date-locked::before,
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-cell-locked::before,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-locked::before,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-date-locked::before,
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-cell-locked::before,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked::before,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked::before,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked::before{
-    --offday-lock-transition-line:#50684c;
 }
 </style>
 
 
-<style id="offday-production-realtime-v33-seam-grid-alignment">
-/* OFFDAY R33 — 1px seam alignment only.
-   R32 correctly restored missing top/left seams, but its border overlay let the
-   vertical edge extend one pixel into the row above. Keep the perimeter authority,
-   but paint the two axes independently on the exact existing grid boundaries. */
-
-/* Convert the R32 pseudo border into two independent 1px paint lines.
-   - pseudo top:-1 overlays the existing previous-row bottom border
-   - pseudo left:-1 overlays the existing previous-cell right border
-   - vertical paint starts at pseudo y=1 (= current cell y=0), so it never
-     protrudes into a SHIFT separator or the row above. */
-html #tab-offday .offday-day-cell.is-locked::before,
-html #tab-offday .offday-day-cell.is-date-locked::before,
-html #tab-offday .offday-day-cell.is-cell-locked::before{
-    top:-1px!important;
-    left:-1px!important;
-    right:0!important;
-    bottom:0!important;
-    box-sizing:border-box!important;
-    border:0!important;
-    --offday-seam-top-paint:transparent;
-    --offday-seam-left-paint:transparent;
-    background:
-        linear-gradient(var(--offday-seam-top-paint),var(--offday-seam-top-paint)) 0 0 / 100% 1px no-repeat,
-        linear-gradient(var(--offday-seam-left-paint),var(--offday-seam-left-paint)) 0 1px / 1px calc(100% - 1px) no-repeat!important;
-}
-
-/* Horizontal boundary owner. */
-html #tab-offday .offday-day-cell.is-locked.lock-edge-top::before,
-html #tab-offday .offday-day-cell.is-date-locked.lock-edge-top::before,
-html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-top::before,
-html #tab-offday .offday-day-cell.is-section-first-row.is-locked::before,
-html #tab-offday .offday-day-cell.is-section-first-row.is-date-locked::before,
-html #tab-offday .offday-day-cell.is-section-first-row.is-cell-locked::before{
-    --offday-seam-top-paint:var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
-}
-
-/* Vertical boundary owner. */
-html #tab-offday .offday-day-cell.is-locked.lock-edge-left::before,
-html #tab-offday .offday-day-cell.is-date-locked.lock-edge-left::before,
-html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-left::before,
-html #tab-offday .offday-day-cell.is-first-day.is-locked::before,
-html #tab-offday .offday-day-cell.is-first-day.is-date-locked::before,
-html #tab-offday .offday-day-cell.is-first-day.is-cell-locked::before{
-    --offday-seam-left-paint:var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
-}
-
-/* At a true top-left junction, the vertical starts immediately below the
-   horizontal 1px seam. This keeps the corner optically square and single-line. */
-html #tab-offday .offday-day-cell.lock-edge-top.lock-edge-left::before,
-html #tab-offday .offday-day-cell.is-section-first-row.lock-edge-left::before,
-html #tab-offday .offday-day-cell.lock-edge-top.is-first-day::before,
-html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
-    background:
-        linear-gradient(var(--offday-seam-top-paint),var(--offday-seam-top-paint)) 0 0 / 100% 1px no-repeat,
-        linear-gradient(var(--offday-seam-left-paint),var(--offday-seam-left-paint)) 0 1px / 1px calc(100% - 1px) no-repeat!important;
-}
-</style>
-
-
-
-<script id="offday-production-realtime-v2-js" data-offday-build="v33-seam-grid-alignment">
+<script id="offday-production-realtime-v2-js" data-offday-build="v34-single-lock-material-border-owner">
 (function(){
     'use strict';
 
@@ -137349,20 +137192,27 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
             setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
         }
 
-        const appendGroup=(section)=>{
+        const appendGroup=(section,sectionIndex)=>{
             const selfSection=!isLeader() && section.rows.some(row=>Number(row.id)===Number(state.currentUserId));
             const groupClass=(section.kind==='leader'?' is-leader':(section.kind==='unassigned'?' is-unassigned':''))+(selfSection?' is-self-section':'');
-            add(`offday-group-name${groupClass}`,
+            const groupName=add(`offday-group-name${groupClass}`,
                 `<strong>${escapeHtml(section.name)}</strong>`+
                 `<span>${section.rows.length} STAFF</span>`
             );
-            for(let day=1;day<=count;day++) add(`offday-group-day${groupClass}`);
+            groupName.dataset.sectionIndex=String(sectionIndex);
+            for(let day=1;day<=count;day++){
+                const groupDay=add(`offday-group-day${groupClass}`);
+                groupDay.dataset.sectionIndex=String(sectionIndex);
+                groupDay.dataset.date=dateISO(day);
+            }
         };
 
-        state.sections.forEach(section=>{
-            appendGroup(section);
-            section.rows.forEach((user,rowIndex)=>renderUserRow(user,count,add,rowIndex>0?section.rows[rowIndex-1]:null,rowIndex===0));
+        state.sections.forEach((section,sectionIndex)=>{
+            appendGroup(section,sectionIndex);
+            section.rows.forEach((user,rowIndex)=>renderUserRow(user,count,add,rowIndex>0?section.rows[rowIndex-1]:null,rowIndex===0,sectionIndex));
         });
+
+        syncLockBorderOwners();
 
         // Calendar footprint: one sticky name column + actual days in the selected month only.
         n.grid.dataset.days=String(count);
@@ -137370,7 +137220,7 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
         renderSummary();
     }
 
-    function renderUserRow(user,count,add,previousUser=null,isSectionFirstRow=false){
+    function renderUserRow(user,count,add,previousUser=null,isSectionFirstRow=false,sectionIndex=-1){
         const nonLeader=!isLeader();
         const self=nonLeader && Number(user.id)===Number(state.currentUserId);
         const role=normRole(user.role);
@@ -137382,6 +137232,7 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
             `</div>`
         );
         roster.dataset.userId=String(user.id);
+        roster.dataset.sectionIndex=String(sectionIndex);
         const visuallyUnassigned=!user.assigned&&role!=='leader';
         roster.classList.toggle('is-unassigned-user',visuallyUnassigned);
 
@@ -137397,14 +137248,7 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
             const classes=['offday-day-cell'];
             if(isSectionFirstRow)classes.push('is-section-first-row');
             if(day===1)classes.push('is-first-day');
-            if(locked){
-                classes.push('is-locked');
-                const prevDayIso=day>1?dateISO(day-1):null;
-                const leftLocked=day>1 && (state.dateLocks.has(prevDayIso)||state.cellLocks.has(keyCell(user.id,prevDayIso)));
-                const aboveLocked=previousUser && (dateLocked||state.cellLocks.has(keyCell(previousUser.id,iso)));
-                if(day===1 || !leftLocked)classes.push('lock-edge-left');
-                if(isSectionFirstRow || !aboveLocked)classes.push('lock-edge-top');
-            }
+            if(locked)classes.push('is-locked');
             if(dateLocked)classes.push('is-date-locked');
             if(cellLocked)classes.push('is-cell-locked');
             if(!state.isOpen)classes.push('is-closed');
@@ -137414,7 +137258,7 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
             if(hasChoice)classes.push('has-choice');
             if(self && user.assigned && state.isOpen && (hasChoice || !locked))classes.push('is-user-clickable');
             const cell=add(classes.join(' '));
-            cell.dataset.userId=String(user.id);cell.dataset.date=iso;
+            cell.dataset.userId=String(user.id);cell.dataset.date=iso;cell.dataset.sectionIndex=String(sectionIndex);
 
             if(hasChoice){
                 const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
@@ -137467,30 +137311,6 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
         cell.classList.toggle('has-choice',hasChoice);
         cell.classList.toggle('is-user-clickable',Boolean(self&&user?.assigned&&state.isOpen&&(hasChoice||!locked)));
 
-        /* R31 — recompute lock junction edges on every live paint.
-           Header/date locks can be toggled after the grid was rendered, so the
-           original render-time lock-edge classes may be stale or absent. */
-        let previousUser=null;
-        for(const section of state.sections){
-            const idx=section.rows.findIndex(row=>Number(row.id)===uid);
-            if(idx>=0){
-                previousUser=idx>0?section.rows[idx-1]:null;
-                break;
-            }
-        }
-        const dayNumber=Number(String(iso).slice(-2));
-        const prevDayIso=dayNumber>1?dateISO(dayNumber-1):null;
-        const leftLocked=Boolean(locked && dayNumber>1 && prevDayIso && (
-            state.dateLocks.has(prevDayIso) || state.cellLocks.has(keyCell(uid,prevDayIso))
-        ));
-        const aboveLocked=Boolean(locked && previousUser && (
-            dateLocked || state.cellLocks.has(keyCell(previousUser.id,iso))
-        ));
-        const isSectionFirstRow=cell.classList.contains('is-section-first-row');
-        const isFirstDay=cell.classList.contains('is-first-day');
-        cell.classList.toggle('lock-edge-left',Boolean(locked&&(isFirstDay||!leftLocked)));
-        cell.classList.toggle('lock-edge-top',Boolean(locked&&(isSectionFirstRow||!aboveLocked)));
-
         cell.replaceChildren();
         if(hasChoice){
             const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
@@ -137518,9 +137338,61 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
         }
     }
 
+    /* R34 — lock seams use EXISTING grid borders only.
+       A locked cell owns its right/bottom border. For its left/top perimeter,
+       recolor the already-existing right/bottom border of the adjacent owner.
+       No pseudo-element, inset frame, extra border, or 1px layout shift exists. */
+    function syncLockBorderOwners(){
+        const n=nodes();
+        if(!n.grid)return;
+
+        n.grid.querySelectorAll('.offday-day-cell,.offday-group-day,.offday-roster-cell')
+            .forEach(el=>el.classList.remove('lock-seam-owner-right','lock-seam-owner-bottom'));
+
+        const cells=Array.from(n.grid.querySelectorAll('.offday-day-cell.is-locked'));
+        for(const cell of cells){
+            const uid=Number(cell.dataset.userId||0);
+            const iso=String(cell.dataset.date||'');
+            const sectionIndex=Number(cell.dataset.sectionIndex||-1);
+            if(!uid||!iso)continue;
+
+            const dayNumber=Number(iso.slice(-2));
+            const previousDayIso=dayNumber>1?dateISO(dayNumber-1):null;
+            const leftLocked=Boolean(previousDayIso && (
+                state.dateLocks.has(previousDayIso) || state.cellLocks.has(keyCell(uid,previousDayIso))
+            ));
+
+            if(!leftLocked){
+                const leftOwner=previousDayIso
+                    ? n.grid.querySelector(`.offday-day-cell[data-user-id="${uid}"][data-date="${previousDayIso}"]`)
+                    : n.grid.querySelector(`.offday-roster-cell[data-user-id="${uid}"]`);
+                leftOwner?.classList.add('lock-seam-owner-right');
+            }
+
+            let previousUser=null;
+            const section=state.sections[sectionIndex];
+            if(section){
+                const rowIndex=section.rows.findIndex(row=>Number(row.id)===uid);
+                if(rowIndex>0)previousUser=section.rows[rowIndex-1];
+            }
+
+            const aboveLocked=Boolean(previousUser && (
+                state.dateLocks.has(iso) || state.cellLocks.has(keyCell(previousUser.id,iso))
+            ));
+
+            if(!aboveLocked){
+                const topOwner=previousUser
+                    ? n.grid.querySelector(`.offday-day-cell[data-user-id="${Number(previousUser.id)}"][data-date="${iso}"]`)
+                    : n.grid.querySelector(`.offday-group-day[data-section-index="${sectionIndex}"][data-date="${iso}"]`);
+                topOwner?.classList.add('lock-seam-owner-bottom');
+            }
+        }
+    }
+
     function paintUserCells(userId){
         const n=nodes();if(!n.grid)return;
         n.grid.querySelectorAll(`.offday-day-cell[data-user-id="${Number(userId)}"]`).forEach(paintCell);
+        syncLockBorderOwners();
     }
 
     function paintDate(iso){
@@ -137532,11 +137404,13 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
             setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
         }
         n.grid.querySelectorAll(`.offday-day-cell[data-date="${iso}"]`).forEach(paintCell);
+        syncLockBorderOwners();
     }
 
     function paintAllCells(){
         const n=nodes();if(!n.grid)return;
         n.grid.querySelectorAll('.offday-day-cell').forEach(paintCell);
+        syncLockBorderOwners();
     }
 
     function renderAll(){ renderControls(); renderGrid(); }
@@ -137748,6 +137622,7 @@ html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
                 if(data?.locked)state.cellLocks.add(key);else state.cellLocks.delete(key);
                 const n=nodes();
                 paintCell(n.grid?.querySelector(`.offday-day-cell[data-user-id="${uid}"][data-date="${iso}"]`));
+                syncLockBorderOwners();
             },
             render:false
         });
