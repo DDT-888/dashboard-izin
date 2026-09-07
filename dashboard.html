@@ -136768,7 +136768,81 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-matrix-s
 }
 </style>
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v30-venom-authority-cleanup">
+
+<style id="offday-production-realtime-v31-junction-venom-row-lock-fix">
+/* OFFDAY R31 — targeted junction + Venom row-lock authority.
+   Functional behavior remains unchanged.
+
+   A) Realtime lock transitions always retain their top/left perimeter seam.
+   B) In Venom Green, lock paint outranks the generic CLOSED surface so
+      date lock, row/cell lock, and their overlap share one Venom material. */
+
+/* Junction authority — one perimeter seam only, including date+cell overlap. */
+html #tab-offday .offday-day-cell.is-locked.lock-edge-top,
+html #tab-offday .offday-day-cell.is-date-locked.lock-edge-top,
+html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-top,
+html #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.lock-edge-top{
+    border-top:1px solid var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
+}
+html #tab-offday .offday-day-cell.is-locked.lock-edge-left,
+html #tab-offday .offday-day-cell.is-date-locked.lock-edge-left,
+html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-left,
+html #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.lock-edge-left{
+    border-left:1px solid var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
+}
+
+/* VENOM GREEN — explicit lock precedence above .is-closed.
+   Same material for header/date lock and individual row/cell lock. */
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
+    --offday-venom-lock-surface:#223022;
+    --offday-venom-lock-line:#4a6146;
+    --offday-lock-tile-center:#223022;
+    --offday-lock-tile-line:#4a6146;
+    --offday-lock-transition-line:#4a6146;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked.is-closed,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-closed,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked.is-closed,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.is-closed{
+    background:var(--offday-venom-lock-surface)!important;
+    border-right-color:var(--offday-venom-lock-line)!important;
+    border-bottom-color:var(--offday-venom-lock-line)!important;
+    box-shadow:none!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked.lock-edge-top,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.lock-edge-top,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked.lock-edge-top,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.lock-edge-top{
+    border-top-color:var(--offday-venom-lock-line)!important;
+}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-locked.lock-edge-left,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.lock-edge-left,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-cell-locked.lock-edge-left,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-date-locked.is-cell-locked.lock-edge-left{
+    border-left-color:var(--offday-venom-lock-line)!important;
+}
+
+/* OFF stamped on a locked cell keeps the exact same Venom tile around it. */
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-locked,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-date-locked,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-cell-locked,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.has-choice.is-date-locked.is-cell-locked{
+    background:var(--offday-venom-lock-surface)!important;
+}
+
+/* Keep legend materially identical to the actual locked cells. */
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-legend-swatch.locked{
+    background:var(--offday-venom-lock-surface)!important;
+    border-color:var(--offday-venom-lock-line)!important;
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v31-junction-venom-row-lock-fix">
 (function(){
     'use strict';
 
@@ -137212,6 +137286,29 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-matrix-s
         cell.classList.toggle('is-role-taken',roleTaken);
         cell.classList.toggle('has-choice',hasChoice);
         cell.classList.toggle('is-user-clickable',Boolean(self&&user?.assigned&&state.isOpen&&(hasChoice||!locked)));
+
+        /* R31 — recompute lock junction edges on every live paint.
+           Header/date locks can be toggled after the grid was rendered, so the
+           original render-time lock-edge classes may be stale or absent. */
+        let previousUser=null;
+        for(const section of state.sections){
+            const idx=section.rows.findIndex(row=>Number(row.id)===uid);
+            if(idx>=0){
+                previousUser=idx>0?section.rows[idx-1]:null;
+                break;
+            }
+        }
+        const dayNumber=Number(String(iso).slice(-2));
+        const prevDayIso=dayNumber>1?dateISO(dayNumber-1):null;
+        const leftLocked=Boolean(locked && dayNumber>1 && prevDayIso && (
+            state.dateLocks.has(prevDayIso) || state.cellLocks.has(keyCell(uid,prevDayIso))
+        ));
+        const aboveLocked=Boolean(locked && previousUser && (
+            dateLocked || state.cellLocks.has(keyCell(previousUser.id,iso))
+        ));
+        cell.classList.toggle('lock-edge-left',Boolean(locked&&!leftLocked));
+        cell.classList.toggle('lock-edge-top',Boolean(locked&&!aboveLocked));
+
         cell.replaceChildren();
         if(hasChoice){
             const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
