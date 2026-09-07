@@ -133939,7 +133939,7 @@ td.ddt-employee-office-cell:hover
 </style>
 
 
-<style id="offday-production-realtime-v41-consolidated">
+<style id="offday-production-realtime-v43-consolidated">
 
 
 /* ---- consolidated source: offday-production-realtime-v2 ---- */
@@ -135663,6 +135663,7 @@ html[data-theme="dark"] #tab-offday{
 html[data-selected-theme="venom"] #tab-offday,
 html[data-selected-theme="venom-green"] #tab-offday,
 html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
+    --offday-self-role-weight:13%;
     --offday-lock-tile-center:#263426;
     --offday-lock-tile-line:#50684c;
 }
@@ -135885,7 +135886,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 
 /* ============================================================
-   OFFDAY R42 — BOARD EDGE + ACTIVE SELF SURFACE + CAVITY DEPTH REFINEMENT
+   OFFDAY R43 — ROLE-TINTED SELF SURFACE + CAVITY MICRO-REFINEMENT
    ------------------------------------------------------------
    Visual authority only. Functional baseline remains frozen.
 
@@ -136112,19 +136113,32 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     filter:none!important;
 }
 
-/* Self row = an active-surface lane. No rail, glow line, outline, or frame.
-   Recognition comes from a restrained tonal lift across the existing tiles; Role Taken remains a hole and Lock stays above it. */
-#tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken){
-    background:var(--offday-self-surface)!important;
-    border-right-color:color-mix(in srgb,var(--offday-board-grid) 88%,var(--offday-self-surface))!important;
-    border-bottom-color:color-mix(in srgb,var(--offday-board-grid) 88%,var(--offday-self-surface))!important;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-self-highlight) 50%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-shadow) 22%,transparent)!important;
+/* Self row = role-tinted active board tiles.
+   The tile hue follows the semantic role color already used by the User Card,
+   but never copies the card's thick left datum, outline, or gradient.
+   Role Taken remains a hole; Lock and OFF remain above this surface. */
+#tab-offday{
+    --offday-self-role-weight:10%;
+    --offday-self-role-accent:var(--accent);
 }
-/* Roster backplane joins the same focus lane; the User Card remains the left anchor. */
+#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-leader) ~ .offday-day-cell.is-self-row{--offday-self-role-accent:#c39a3b;}
+#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-csline) ~ .offday-day-cell.is-self-row{--offday-self-role-accent:#31a95f;}
+#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-cs) ~ .offday-day-cell.is-self-row{--offday-self-role-accent:#5b84c7;}
+#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-kapten) ~ .offday-day-cell.is-self-row{--offday-self-role-accent:#c58a35;}
+#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-kasir) ~ .offday-day-cell.is-self-row{--offday-self-role-accent:#8468bd;}
+
+#tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken){
+    background:color-mix(in srgb,var(--offday-self-role-accent) var(--offday-self-role-weight),var(--offday-tile-surface))!important;
+    border-right-color:color-mix(in srgb,var(--offday-board-grid) 94%,var(--offday-self-role-accent))!important;
+    border-bottom-color:color-mix(in srgb,var(--offday-board-grid) 94%,var(--offday-self-role-accent))!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,#fff 18%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 7%,transparent)!important;
+}
+/* The roster backplane stays board-neutral. The role-colored User Card is the
+   visual anchor; no self-row stripe or copied left role datum is added. */
 #tab-offday .offday-roster-cell.is-self{
-    background:color-mix(in srgb,var(--offday-self-surface) 76%,var(--offday-board-surface))!important;
+    background:var(--offday-board-surface)!important;
     box-shadow:none!important;
 }
 #tab-offday .offday-roster-cell.is-self::before{
@@ -136135,8 +136149,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 #tab-offday .offday-roster-cell.is-self .offday-user-card.user-card-shift{
     box-shadow:
-        0 3px 8px -5px color-mix(in srgb,var(--offday-self-shadow) 78%,transparent),
-        inset 0 1px 0 color-mix(in srgb,var(--offday-self-highlight) 52%,transparent)!important;
+        0 3px 8px -5px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 34%,transparent),
+        inset 0 1px 0 color-mix(in srgb,#fff 24%,transparent)!important;
 }
 
 /* Input tile: flat at rest, then one light depth step on direct actionable hover.
@@ -136154,12 +136168,12 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 28%,transparent),
         0 3px 7px -4px var(--offday-input-glow)!important;
 }
-/* On self-row, hover rises above the soft platform but does not introduce a border frame. */
+/* On self-row, direct hover rises one level while preserving the role hue. */
 #tab-offday .offday-day-cell.is-user-clickable.is-self-row:hover{
-    background:color-mix(in srgb,var(--offday-input-surface) 62%,var(--offday-self-surface))!important;
+    background:color-mix(in srgb,var(--offday-self-role-accent) 8%,var(--offday-input-surface))!important;
     box-shadow:
         inset 0 1px 0 color-mix(in srgb,#fff 20%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 22%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 12%,transparent),
         0 3px 7px -5px var(--offday-input-glow)!important;
 }
 /* Cross-axis guidance is tonal only; it must never add another grid/rail line. */
@@ -136212,9 +136226,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     border-radius:1px!important;
     background:var(--offday-role-hole)!important;
     box-shadow:
-        inset 3px 3px 6px -2px var(--offday-role-hole-shadow),
-        inset 1px 1px 0 color-mix(in srgb,var(--offday-role-hole-shadow) 32%,transparent),
-        inset -1px -1px 0 var(--offday-role-hole-highlight)!important;
+        inset 3px 3px 7px -2px var(--offday-role-hole-shadow),
+        inset 1px 1px 0 color-mix(in srgb,var(--offday-role-hole-shadow) 36%,transparent),
+        inset -1px -1px 0 color-mix(in srgb,var(--offday-role-hole-highlight) 36%,transparent)!important;
 }
 #tab-offday .offday-day-cell.is-role-taken:not(.has-choice)::after{
     content:none!important;
@@ -136299,10 +136313,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     background:var(--offday-tile-surface)!important;
 }
 #tab-offday.offday-sealed .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken){
-    background:color-mix(in srgb,var(--offday-sealed-self-surface) 50%,var(--offday-tile-surface))!important;
+    background:color-mix(in srgb,var(--offday-self-role-accent) 5%,var(--offday-tile-surface))!important;
     box-shadow:
         inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-sealed-line) 12%,transparent)!important;
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 5%,transparent)!important;
 }
 #tab-offday.offday-sealed .offday-roster-cell.is-self{
     background:var(--offday-board-surface)!important;
@@ -136411,6 +136425,7 @@ html[data-selected-theme="rose-gold"] #tab-offday{
 
 /* Dark/Cyber uses the same physical system but keeps its own theme tokens. */
 html[data-theme="dark"] #tab-offday:not([data-theme-variant="venom"]){
+    --offday-self-role-weight:12%;
     --offday-content-surface:var(--bg-primary);
     --offday-board-surface:color-mix(in srgb,var(--bg-hover) 68%,var(--bg-card));
     --offday-board-line:color-mix(in srgb,var(--border-color) 88%,var(--border-light));
@@ -136448,11 +136463,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     border-color:var(--offday-board-grid)!important;
     box-shadow:inset 0 1px 0 color-mix(in srgb,var(--offday-self-highlight) 42%,transparent)!important;
 }
-/* END OFFDAY R42 */
+/* END OFFDAY R43 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v42-board-edge-self-active-cavity-depth">
+<script id="offday-production-realtime-v2-js" data-offday-build="v43-role-tinted-self-cavity-micro-refinement">
 (function(){
     'use strict';
 
