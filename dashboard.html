@@ -133939,7 +133939,7 @@ td.ddt-employee-office-cell:hover
 </style>
 
 
-<style id="offday-production-realtime-v39-consolidated">
+<style id="offday-production-realtime-v40-consolidated">
 
 
 /* ---- consolidated source: offday-production-realtime-v2 ---- */
@@ -135885,7 +135885,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 
 /* ============================================================
-   OFFDAY R39 — SELF GUIDE + ROLE CAVITY REFINEMENT
+   OFFDAY R40 — SELF PLATFORM + ROLE CAVITY REFINEMENT
    ------------------------------------------------------------
    Visual authority only. Functional baseline remains frozen.
 
@@ -135898,8 +135898,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
    - Shift/Leader separator rows are plain board strips: no per-date boxes.
    - Leader lock = raised block tile (same material for date/cell/overlap).
    - Role taken = a true board cutout/hole revealing the content-area color.
-   - Self row = thin luminous guide, not a filled band.
-   - Select/hover = restrained input-tile lift.
+   - Self row = soft raised platform with no guide-line / rectangular outline.
+   - Select/hover = lightweight input-tile lift above the platform.
    - OFF = final raised stamp above every other material.
    ============================================================ */
 #tab-offday{
@@ -135923,13 +135923,16 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     --offday-input-line:color-mix(in srgb,var(--accent) 31%,var(--board-line,var(--border-color)));
     --offday-input-glow:color-mix(in srgb,var(--accent) 10%,transparent);
 
-    --offday-self-line:color-mix(in srgb,var(--accent) 52%,var(--text-secondary));
-    --offday-self-glow:color-mix(in srgb,var(--accent) 12%,transparent);
+    --offday-self-line:color-mix(in srgb,var(--accent) 46%,var(--text-secondary));
+    --offday-self-glow:color-mix(in srgb,var(--accent) 9%,transparent);
+    --offday-self-surface:color-mix(in srgb,var(--accent) 3.2%,var(--offday-tile-surface));
+    --offday-self-highlight:color-mix(in srgb,#ffffff 24%,transparent);
+    --offday-self-shadow:color-mix(in srgb,var(--accent) 12%,transparent);
 
     --offday-role-hole:var(--offday-content-surface);
-    --offday-role-hole-edge:color-mix(in srgb,var(--offday-board-line) 62%,var(--offday-content-surface));
-    --offday-role-hole-shadow:rgba(12,24,26,.18);
-    --offday-role-hole-highlight:rgba(255,255,255,.10);
+    --offday-role-hole-edge:color-mix(in srgb,var(--offday-board-line) 42%,var(--offday-content-surface));
+    --offday-role-hole-shadow:rgba(12,24,26,.20);
+    --offday-role-hole-highlight:rgba(255,255,255,.085);
 
     --offday-lock-highlight:color-mix(in srgb,#ffffff 14%,var(--offday-lock-tile-center));
     --offday-lock-shadow:color-mix(in srgb,#000000 11%,transparent);
@@ -136097,36 +136100,34 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     filter:none!important;
 }
 
-/* Self/selectable row = horizontal luminous guide rail, never a rectangular band.
-   The rail remains continuous across normal and role-taken cells; explicit lock stays above it. */
-#tab-offday .offday-roster-cell.is-self,
-#tab-offday .offday-day-cell.is-self-row:not(.is-locked){
+/* Self row = a soft raised platform, not a guide-line or rectangular selection.
+   Only normal/selectable tiles lift. Role-taken remains a physical hole and lock stays above it. */
+#tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken){
+    background:var(--offday-self-surface)!important;
     box-shadow:
-        inset 0 1px 0 var(--offday-self-line),
-        inset 0 -1px 0 var(--offday-self-line),
-        0 -2px 5px -4px var(--offday-self-glow),
-        0 2px 5px -4px var(--offday-self-glow)!important;
+        inset 0 1px 0 var(--offday-self-highlight),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-shadow) 38%,transparent),
+        0 2px 5px -4px var(--offday-self-shadow)!important;
 }
-#tab-offday .offday-day-cell.is-self-row:not(.is-locked){
-    background:var(--offday-tile-surface)!important;
-}
+/* Roster backplane remains the board. The User Card itself is the left anchor. */
 #tab-offday .offday-roster-cell.is-self{
     background:var(--offday-board-surface)!important;
+    box-shadow:none!important;
 }
 #tab-offday .offday-roster-cell.is-self::before{
-    width:1px!important;
-    background:var(--offday-self-line)!important;
-    opacity:.78!important;
-    box-shadow:0 0 4px var(--offday-self-glow)!important;
+    width:0!important;
+    background:transparent!important;
+    opacity:0!important;
+    box-shadow:none!important;
 }
-/* Keep the User Card as the left-hand anchor, but avoid a second full rectangular selection. */
 #tab-offday .offday-roster-cell.is-self .offday-user-card.user-card-shift{
     box-shadow:
-        inset 0 0 0 1px color-mix(in srgb,var(--offday-self-line) 18%,transparent),
-        0 1px 2px color-mix(in srgb,var(--offday-self-line) 7%,transparent)!important;
+        0 2px 5px -3px var(--offday-self-shadow),
+        inset 0 1px 0 color-mix(in srgb,var(--offday-self-highlight) 68%,transparent)!important;
 }
 
-/* Input tile: calm at rest; only the directly actionable hover gets a small lift. */
+/* Input tile: flat at rest, then one light depth step on direct actionable hover.
+   No full outline and no extra horizontal guide line. */
 #tab-offday .offday-day-cell.is-user-clickable,
 #tab-offday.offday-leader-mode .offday-day-cell:not(.is-locked){
     transition:background-color .12s ease,box-shadow .12s ease;
@@ -136136,29 +136137,29 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     background:var(--offday-input-surface)!important;
     outline:none!important;
     box-shadow:
-        inset 0 0 0 1px color-mix(in srgb,var(--offday-input-line) 76%,transparent),
-        inset 0 1px 0 color-mix(in srgb,#fff 15%,transparent),
-        0 2px 5px -3px var(--offday-input-glow)!important;
+        inset 0 1px 0 color-mix(in srgb,#fff 22%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 28%,transparent),
+        0 3px 7px -4px var(--offday-input-glow)!important;
 }
-/* On the user's own row, direct hover keeps the horizontal guide rail visible. */
+/* On self-row, hover rises above the soft platform but does not introduce a border frame. */
 #tab-offday .offday-day-cell.is-user-clickable.is-self-row:hover{
+    background:color-mix(in srgb,var(--offday-input-surface) 74%,var(--offday-self-surface))!important;
     box-shadow:
-        inset 0 0 0 1px color-mix(in srgb,var(--offday-input-line) 72%,transparent),
-        inset 0 1px 0 var(--offday-self-line),
-        inset 0 -1px 0 var(--offday-self-line),
-        0 -2px 5px -4px var(--offday-self-glow),
-        0 2px 5px -4px var(--offday-self-glow)!important;
+        inset 0 1px 0 color-mix(in srgb,#fff 25%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 32%,transparent),
+        0 3px 8px -4px var(--offday-input-glow)!important;
 }
-/* Axis guidance stays quieter than the self rail and never replaces it. */
+/* Cross-axis guidance is tonal only; it must never add another grid/rail line. */
 #tab-offday .offday-day-cell.is-axis-hover:not(.is-locked):not(.is-role-taken):not(.is-self-row){
     outline:none!important;
+    background:color-mix(in srgb,var(--offday-input-surface) 28%,var(--offday-tile-surface))!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-input-line) 46%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 46%,transparent)!important;
+        inset 0 1px 0 var(--offday-tile-highlight),
+        inset 0 -1px 0 var(--offday-tile-shadow)!important;
 }
 #tab-offday .offday-day-head.is-axis-hover:not(.is-locked){
-    background:color-mix(in srgb,var(--offday-input-surface) 26%,var(--offday-board-surface))!important;
-    box-shadow:inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 54%,transparent)!important;
+    background:color-mix(in srgb,var(--offday-input-surface) 22%,var(--offday-board-surface))!important;
+    box-shadow:none!important;
     filter:none!important;
 }
 
@@ -136180,14 +136181,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     content:""!important;
     display:block!important;
     position:absolute!important;
-    inset:2px!important;
+    inset:1px!important;
     z-index:0!important;
     pointer-events:none!important;
     border-radius:1px!important;
     background:var(--offday-role-hole)!important;
     box-shadow:
-        0 0 0 1px var(--offday-role-hole-edge),
-        inset 1px 1px 3px var(--offday-role-hole-shadow),
+        inset 2px 2px 4px -1px var(--offday-role-hole-shadow),
         inset -1px -1px 0 var(--offday-role-hole-highlight)!important;
 }
 #tab-offday .offday-day-cell.is-role-taken:not(.has-choice)::after{
@@ -136196,10 +136196,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 /* Leader Assign may override a cavity; hover highlights the tile rim without filling the hole. */
 #tab-offday.offday-leader-assign-mode .offday-day-cell.is-role-taken:not(.is-locked):hover{
-    background:var(--offday-tile-surface)!important;
+    background:color-mix(in srgb,var(--offday-input-surface) 24%,var(--offday-tile-surface))!important;
     box-shadow:
-        inset 0 0 0 1px color-mix(in srgb,var(--offday-input-line) 72%,transparent),
-        0 2px 5px -3px var(--offday-input-glow)!important;
+        inset 0 1px 0 color-mix(in srgb,#fff 15%,transparent),
+        0 2px 6px -4px var(--offday-input-glow)!important;
 }
 
 /* Lock = raised block tile. Date lock / row lock / overlap all reuse .is-locked. */
@@ -136264,14 +136264,16 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 #tab-offday.offday-sealed .offday-day-cell.is-role-taken:not(.is-locked):not(.has-choice){
     background:var(--offday-tile-surface)!important;
 }
-#tab-offday.offday-sealed .offday-day-cell.is-self-row:not(.is-locked),
-#tab-offday.offday-sealed .offday-roster-cell.is-self{
+#tab-offday.offday-sealed .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken){
+    background:color-mix(in srgb,var(--offday-sealed-self-surface) 42%,var(--offday-tile-surface))!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-sealed-line) 62%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-sealed-line) 62%,transparent)!important;
+        inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent),
+        0 2px 4px -4px color-mix(in srgb,var(--offday-sealed-line) 34%,transparent)!important;
 }
-#tab-offday.offday-sealed .offday-day-cell.is-self-row:not(.is-locked){background:var(--offday-tile-surface)!important;}
-#tab-offday.offday-sealed .offday-roster-cell.is-self{background:var(--offday-board-surface)!important;}
+#tab-offday.offday-sealed .offday-roster-cell.is-self{
+    background:var(--offday-board-surface)!important;
+    box-shadow:none!important;
+}
 #tab-offday.offday-sealed:not(.offday-leader-mode) .offday-day-cell:hover{
     background:var(--offday-tile-surface)!important;
     outline:none!important;
@@ -136296,11 +136298,14 @@ html[data-selected-theme="light"] #tab-offday{
     --offday-input-line:#87aa9d;
     --offday-input-glow:rgba(92,139,121,.11);
     --offday-self-line:#719a8b;
-    --offday-self-glow:rgba(92,139,121,.13);
+    --offday-self-glow:rgba(92,139,121,.09);
+    --offday-self-surface:#f2f7f4;
+    --offday-self-highlight:rgba(255,255,255,.82);
+    --offday-self-shadow:rgba(79,125,108,.13);
     --offday-role-hole:var(--offday-content-surface);
-    --offday-role-hole-edge:#c7d2cf;
-    --offday-role-hole-shadow:rgba(56,79,73,.18);
-    --offday-role-hole-highlight:rgba(255,255,255,.46);
+    --offday-role-hole-edge:#ccd6d3;
+    --offday-role-hole-shadow:rgba(56,79,73,.20);
+    --offday-role-hole-highlight:rgba(255,255,255,.36);
     --offday-lock-highlight:#e2e9e7;
     --offday-lock-shadow:rgba(65,84,79,.14);
 }
@@ -136324,11 +136329,14 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     --offday-input-line:#4acb38;
     --offday-input-glow:rgba(68,214,44,.12);
     --offday-self-line:#56c943;
-    --offday-self-glow:rgba(68,214,44,.13);
+    --offday-self-glow:rgba(68,214,44,.08);
+    --offday-self-surface:#172017;
+    --offday-self-highlight:rgba(112,144,102,.085);
+    --offday-self-shadow:rgba(68,214,44,.11);
     --offday-role-hole:var(--offday-content-surface);
     --offday-role-hole-edge:#263126;
-    --offday-role-hole-shadow:rgba(0,0,0,.62);
-    --offday-role-hole-highlight:rgba(113,149,102,.075);
+    --offday-role-hole-shadow:rgba(0,0,0,.66);
+    --offday-role-hole-highlight:rgba(113,149,102,.055);
     --offday-lock-tile-center:#263426;
     --offday-lock-tile-line:#50684c;
     --offday-lock-highlight:#344834;
@@ -136370,18 +136378,17 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 #tab-offday .offday-legend-swatch.locked::after{content:none!important;}
 #tab-offday .offday-legend-swatch.selfrow{
-    background:var(--offday-tile-surface)!important;
+    background:var(--offday-self-surface)!important;
     border-color:var(--offday-board-grid)!important;
     box-shadow:
-        inset 0 1px 0 var(--offday-self-line),
-        inset 0 -1px 0 var(--offday-self-line),
-        0 0 4px -2px var(--offday-self-glow)!important;
+        inset 0 1px 0 var(--offday-self-highlight),
+        0 2px 4px -3px var(--offday-self-shadow)!important;
 }
-/* END OFFDAY R39 */
+/* END OFFDAY R40 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v39-self-guide-role-cavity-refinement">
+<script id="offday-production-realtime-v2-js" data-offday-build="v40-self-platform-role-cavity-refinement">
 (function(){
     'use strict';
 
