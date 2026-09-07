@@ -134007,7 +134007,7 @@ body:has(#tab-offday.active) .main-content{min-width:0;overflow-x:hidden;}
 #tab-offday .offday-matrix-legend{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:8px;white-space:nowrap;}
 #tab-offday .offday-legend-item{display:inline-flex;align-items:center;gap:4px;}
 #tab-offday .offday-legend-swatch{position:relative;width:9px;height:9px;border:1px solid var(--border-color);border-radius:3px;background:var(--bg-card);}
-#tab-offday .offday-legend-swatch.stamped{border-color:var(--offday-stamp-border);background:var(--offday-stamp);}
+#tab-offday .offday-legend-swatch.stamped{border-color:var(--offday-stamp-border);background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--offday-stamp-border) 22%,transparent);}
 #tab-offday .offday-legend-swatch.locked{background:var(--offday-lock-bg);border-color:var(--offday-lock-line);}
 #tab-offday .offday-legend-swatch.locked::after{content:"×";position:absolute;inset:-4px 0 0;display:grid;place-items:center;color:var(--text-muted);font-size:10px;}
 #tab-offday .offday-legend-swatch.selfrow{background:var(--offday-self-bg);border-color:color-mix(in srgb,var(--accent) 52%,var(--border-color));box-shadow:inset 0 1px color-mix(in srgb,var(--accent) 48%,transparent),inset 0 -1px color-mix(in srgb,var(--accent) 48%,transparent);}
@@ -135886,7 +135886,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 
 /* ============================================================
-   OFFDAY R44 — USER-CARD ROLE-GRADIENT SELF SURFACE
+   OFFDAY R45 — ROLE SEAL OFF STAMP PROTOTYPE
    ------------------------------------------------------------
    Visual authority only. Functional baseline remains frozen.
 
@@ -136313,29 +136313,115 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     border-bottom-color:var(--offday-lock-tile-line)!important;
 }
 
-/* OFF = final raised stamp above board, recess, self guide and lock tile. */
+/* OFF = final digital seal / stamp above board, cavity, self surface and lock tile.
+   The ink color follows the same semantic role color as the User Card left datum.
+   Geometry remains compact enough to preserve the board tile underneath. */
 #tab-offday .offday-stamp{
-    width:27px!important;
-    height:24px!important;
-    border-radius:6px!important;
-    border-color:var(--offday-stamp-border)!important;
-    background:linear-gradient(180deg,
-        color-mix(in srgb,var(--offday-stamp) 92%,#ffffff) 0%,
-        var(--offday-stamp) 38%,
-        color-mix(in srgb,var(--offday-stamp) 91%,#000000) 100%)!important;
-    color:#fff!important;
-    text-shadow:0 1px 0 rgba(0,0,0,.18)!important;
+    --offday-seal-ink:var(--offday-stamp-border);
+    width:30px!important;
+    height:30px!important;
+    position:relative!important;
+    display:grid!important;
+    grid-template-rows:7px 1fr 6px!important;
+    align-items:center!important;
+    justify-items:center!important;
+    padding:2px 2px 1px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    border:1.5px solid var(--offday-seal-ink)!important;
+    border-radius:3px!important;
+    background:color-mix(in srgb,var(--offday-seal-ink) 7%,var(--offday-board-surface))!important;
+    color:var(--offday-seal-ink)!important;
+    transform:rotate(-.65deg)!important;
+    transform-origin:center!important;
+    text-shadow:none!important;
     box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.22),
-        inset 0 -1px 0 rgba(0,0,0,.12),
-        0 2px 5px rgba(12,28,28,.15)!important;
+        inset 0 0 0 1px color-mix(in srgb,var(--offday-seal-ink) 25%,transparent),
+        inset 0 1px 0 color-mix(in srgb,#fff 30%,transparent),
+        0 2px 4px -2px color-mix(in srgb,var(--offday-seal-ink) 22%,rgba(0,0,0,.14))!important;
+    isolation:isolate!important;
 }
+/* Remove the legacy single-word pseudo stamp. V45 uses real seal typography. */
+#tab-offday .offday-stamp::before,
+#tab-offday .offday-stamp::after{
+    content:none!important;
+    display:none!important;
+}
+#tab-offday .offday-stamp .offday-seal-kicker,
+#tab-offday .offday-stamp .offday-seal-foot{
+    position:relative!important;
+    z-index:2!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+    font-size:4.1px!important;
+    line-height:1!important;
+    font-weight:850!important;
+    letter-spacing:.075em!important;
+    text-transform:uppercase!important;
+    color:color-mix(in srgb,var(--offday-seal-ink) 88%,var(--text-primary))!important;
+    opacity:.92!important;
+}
+#tab-offday .offday-stamp strong{
+    position:relative!important;
+    z-index:2!important;
+    display:grid!important;
+    place-items:center!important;
+    width:21px!important;
+    height:13px!important;
+    margin:0!important;
+    border-top:1px solid color-mix(in srgb,var(--offday-seal-ink) 72%,transparent)!important;
+    border-bottom:1px solid color-mix(in srgb,var(--offday-seal-ink) 72%,transparent)!important;
+    font-size:8.2px!important;
+    line-height:1!important;
+    font-weight:950!important;
+    letter-spacing:.035em!important;
+    color:var(--offday-seal-ink)!important;
+}
+/* Small internal seal rails echo a carved/stamped mark without becoming ornamental noise. */
+#tab-offday .offday-stamp .offday-seal-kicker::before,
+#tab-offday .offday-stamp .offday-seal-kicker::after{
+    content:""!important;
+    position:absolute!important;
+    top:50%!important;
+    width:4px!important;
+    height:1px!important;
+    background:color-mix(in srgb,var(--offday-seal-ink) 68%,transparent)!important;
+    transform:translateY(-50%)!important;
+}
+#tab-offday .offday-stamp .offday-seal-kicker::before{right:calc(100% + 2px)!important;}
+#tab-offday .offday-stamp .offday-seal-kicker::after{left:calc(100% + 2px)!important;}
+
+/* Role ink = canonical User Card left-border language. */
+#tab-offday .offday-stamp.role-leader{--offday-seal-ink:#c39a3b;}
+#tab-offday .offday-stamp.role-csline{--offday-seal-ink:#31a95f;}
+#tab-offday .offday-stamp.role-cs{--offday-seal-ink:#5b84c7;}
+#tab-offday .offday-stamp.role-kapten{--offday-seal-ink:#c58a35;}
+#tab-offday .offday-stamp.role-kasir{--offday-seal-ink:#8468bd;}
+
+/* Venom User Card role lines use their own denser material palette. */
+html[data-selected-theme="venom"] #tab-offday .offday-stamp.role-csline,
+html[data-selected-theme="venom-green"] #tab-offday .offday-stamp.role-csline,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-stamp.role-csline{--offday-seal-ink:#48b966;}
+html[data-selected-theme="venom"] #tab-offday .offday-stamp.role-cs,
+html[data-selected-theme="venom-green"] #tab-offday .offday-stamp.role-cs,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-stamp.role-cs{--offday-seal-ink:#5b86b3;}
+html[data-selected-theme="venom"] #tab-offday .offday-stamp.role-kapten,
+html[data-selected-theme="venom-green"] #tab-offday .offday-stamp.role-kapten,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-stamp.role-kapten{--offday-seal-ink:#c08a48;}
+html[data-selected-theme="venom"] #tab-offday .offday-stamp.role-kasir,
+html[data-selected-theme="venom-green"] #tab-offday .offday-stamp.role-kasir,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-stamp.role-kasir{--offday-seal-ink:#8a6dbc;}
+html[data-selected-theme="venom"] #tab-offday .offday-stamp.role-leader,
+html[data-selected-theme="venom-green"] #tab-offday .offday-stamp.role-leader,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-stamp.role-leader{--offday-seal-ink:#b58c34;}
+
+/* Self-row remains V44. The seal adds identity without introducing a new row outline. */
 #tab-offday .offday-day-cell.is-self-row .offday-stamp{
     box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.22),
-        inset 0 -1px 0 rgba(0,0,0,.12),
-        0 2px 5px rgba(12,28,28,.15),
-        0 0 0 1px color-mix(in srgb,var(--offday-self-line) 22%,transparent)!important;
+        inset 0 0 0 1px color-mix(in srgb,var(--offday-seal-ink) 26%,transparent),
+        inset 0 1px 0 color-mix(in srgb,#fff 32%,transparent),
+        0 2px 4px -2px color-mix(in srgb,var(--offday-seal-ink) 26%,rgba(0,0,0,.14))!important;
 }
 
 /* ----- Closed / Sealed state translated into the same board system ----- */
@@ -136518,11 +136604,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     border-color:var(--offday-board-grid)!important;
     box-shadow:inset 0 1px 0 color-mix(in srgb,var(--offday-self-highlight) 42%,transparent)!important;
 }
-/* END OFFDAY R44 */
+/* END OFFDAY R45 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v44-user-card-role-gradient-self-surface">
+<script id="offday-production-realtime-v2-js" data-offday-build="v45-role-seal-off-stamp-prototype">
 (function(){
     'use strict';
 
@@ -136928,7 +137014,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             cell.dataset.userId=String(user.id);cell.dataset.date=iso;cell.dataset.sectionIndex=String(sectionIndex);
 
             if(hasChoice){
-                const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
+                const stamp=document.createElement('div');stamp.className=`offday-stamp role-${role}`;stamp.setAttribute('aria-label','OFFDAY');stamp.innerHTML='<span class="offday-seal-kicker">OFFDAY</span><strong>OFF</strong><span class="offday-seal-foot">STAFF</span>';cell.appendChild(stamp);
             }
 
             if(isLeader()){
@@ -136980,7 +137066,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
         cell.replaceChildren();
         if(hasChoice){
-            const stamp=document.createElement('div');stamp.className='offday-stamp';cell.appendChild(stamp);
+            const stamp=document.createElement('div');const stampRole=normRole(user?.role);stamp.className=`offday-stamp role-${stampRole}`;stamp.setAttribute('aria-label','OFFDAY');stamp.innerHTML='<span class="offday-seal-kicker">OFFDAY</span><strong>OFF</strong><span class="offday-seal-foot">STAFF</span>';cell.appendChild(stamp);
         }
         if(isLeader()){
             setThemeTooltip(cell,'');
