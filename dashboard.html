@@ -136134,7 +136134,26 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v26-closed-final-leader-controls">
+
+<style id="offday-production-realtime-v27-leader-assign-lock-override">
+/* OFFDAY R27 — Leader ASSIGN is an explicit override workflow.
+   Locked / role-taken target cells remain assignable after confirmation.
+   Leader rows are not styled as UNASSIGNED even though they are outside Shift Kerja. */
+#tab-offday.offday-leader-assign-mode .offday-day-cell:not(.has-choice):not(.is-unassigned-user){
+    cursor:pointer!important;
+}
+#tab-offday.offday-leader-assign-mode .offday-day-cell:not(.has-choice):not(.is-unassigned-user):hover{
+    outline:1px solid color-mix(in srgb,var(--accent) 34%,transparent)!important;
+    outline-offset:-1px!important;
+}
+#tab-offday.offday-leader-assign-mode .offday-day-cell.is-locked:not(.has-choice):not(.is-unassigned-user),
+#tab-offday.offday-leader-assign-mode .offday-day-cell.is-role-taken:not(.has-choice):not(.is-unassigned-user){
+    cursor:pointer!important;
+}
+</style>
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v27-leader-assign-lock-override">
 (function(){
     'use strict';
 
@@ -136496,7 +136515,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             `</div>`
         );
         roster.dataset.userId=String(user.id);
-        roster.classList.toggle('is-unassigned-user',!user.assigned);
+        const visuallyUnassigned=!user.assigned&&role!=='leader';
+        roster.classList.toggle('is-unassigned-user',visuallyUnassigned);
 
         const selected=state.choices.get(Number(user.id)) || null;
         for(let day=1;day<=count;day++){
@@ -136520,7 +136540,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             if(cellLocked)classes.push('is-cell-locked');
             if(!state.isOpen)classes.push('is-closed');
             if(self)classes.push('is-self-row');
-            if(!user.assigned)classes.push('is-unassigned-user');
+            if(visuallyUnassigned)classes.push('is-unassigned-user');
             if(roleTaken)classes.push('is-role-taken');
             if(hasChoice)classes.push('has-choice');
             if(self && user.assigned && state.isOpen && (hasChoice || !locked))classes.push('is-user-clickable');
@@ -136573,7 +136593,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         cell.classList.toggle('is-cell-locked',cellLocked);
         cell.classList.toggle('is-closed',!state.isOpen);
         cell.classList.toggle('is-self-row',self);
-        cell.classList.toggle('is-unassigned-user',Boolean(user&&!user.assigned));
+        cell.classList.toggle('is-unassigned-user',Boolean(user&&!user.assigned&&normRole(user.role)!=='leader'));
         cell.classList.toggle('is-role-taken',roleTaken);
         cell.classList.toggle('has-choice',hasChoice);
         cell.classList.toggle('is-user-clickable',Boolean(self&&user?.assigned&&state.isOpen&&(hasChoice||!locked)));
@@ -136850,11 +136870,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             notify(`${user.name} belum ditempatkan ke Shift Aktif.`,'warning',2400);
             return;
         }
-        const locked=state.dateLocks.has(iso)||state.cellLocks.has(keyCell(uid,iso));
-        if(locked){
-            notify('Tanggal atau cell tersebut sedang dikunci Leader.','warning',2200);
-            return;
-        }
+        /* In ASSIGN mode an existing Leader lock is not a hard block.
+           The RPC returns confirm_required for date/cell locks and/or role conflict;
+           the second confirmed call performs the explicit Leader override. */
         const before=state.choices.get(uid)||null;
         const data=await callRpc('offday_leader_assign_choice_v2',{
             p_period_month:monthDate(),p_user_id:uid,p_off_date:iso,p_force_conflict:Boolean(forceConflict)
@@ -136936,11 +136954,21 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         if(!isLeader())return;
         const n=nodes();if(!n.popover)return;
         state.popoverTarget={mode:'assign-confirm',user,iso,conflict};
-        const conflictName=String(conflict?.conflict_user_name||'User lain');
+        const conflictName=String(conflict?.conflict_user_name||'').trim();
+        const isLocked=Boolean(conflict?.date_locked||conflict?.cell_locked);
+        const hasConflict=Boolean(conflictName);
         const bucket=String(conflict?.shift_bucket||user.shiftBucket||'').trim();
         const bucketText=bucket&&bucket!=='LEADER'?` di Shift ${bucket}`:'';
+        let copy='';
+        if(isLocked&&hasConflict){
+            copy=`${dateLabel(iso)} sedang dikunci dan sudah dipilih ${conflictName} untuk role ${roleLabel(user.role)}${bucketText}. Tetap assign untuk ${user.name}?`;
+        }else if(isLocked){
+            copy=`${dateLabel(iso)} sedang dikunci. Tetap assign OFFDAY untuk ${user.name}?`;
+        }else{
+            copy=`${dateLabel(iso)} sudah dipilih ${conflictName||'user lain'} untuk role ${roleLabel(user.role)}${bucketText}. Tetap assign untuk ${user.name}?`;
+        }
         if(n.popTitle)n.popTitle.textContent='KONFIRMASI ASSIGN OFFDAY';
-        if(n.popCopy)n.popCopy.textContent=`${dateLabel(iso)} sudah dipilih ${conflictName} untuk role ${roleLabel(user.role)}${bucketText}. Tetap assign untuk ${user.name}?`;
+        if(n.popCopy)n.popCopy.textContent=copy;
         if(n.popCancel)n.popCancel.textContent='Batal';
         if(n.popLock)n.popLock.textContent='Tetap Assign';
         positionLeaderPopover(anchor);
