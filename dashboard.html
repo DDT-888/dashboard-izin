@@ -136959,7 +136959,68 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v32-seam-authority-venom-lock">
+<style id="offday-production-realtime-v33-seam-grid-alignment">
+/* OFFDAY R33 — 1px seam alignment only.
+   R32 correctly restored missing top/left seams, but its border overlay let the
+   vertical edge extend one pixel into the row above. Keep the perimeter authority,
+   but paint the two axes independently on the exact existing grid boundaries. */
+
+/* Convert the R32 pseudo border into two independent 1px paint lines.
+   - pseudo top:-1 overlays the existing previous-row bottom border
+   - pseudo left:-1 overlays the existing previous-cell right border
+   - vertical paint starts at pseudo y=1 (= current cell y=0), so it never
+     protrudes into a SHIFT separator or the row above. */
+html #tab-offday .offday-day-cell.is-locked::before,
+html #tab-offday .offday-day-cell.is-date-locked::before,
+html #tab-offday .offday-day-cell.is-cell-locked::before{
+    top:-1px!important;
+    left:-1px!important;
+    right:0!important;
+    bottom:0!important;
+    box-sizing:border-box!important;
+    border:0!important;
+    --offday-seam-top-paint:transparent;
+    --offday-seam-left-paint:transparent;
+    background:
+        linear-gradient(var(--offday-seam-top-paint),var(--offday-seam-top-paint)) 0 0 / 100% 1px no-repeat,
+        linear-gradient(var(--offday-seam-left-paint),var(--offday-seam-left-paint)) 0 1px / 1px calc(100% - 1px) no-repeat!important;
+}
+
+/* Horizontal boundary owner. */
+html #tab-offday .offday-day-cell.is-locked.lock-edge-top::before,
+html #tab-offday .offday-day-cell.is-date-locked.lock-edge-top::before,
+html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-top::before,
+html #tab-offday .offday-day-cell.is-section-first-row.is-locked::before,
+html #tab-offday .offday-day-cell.is-section-first-row.is-date-locked::before,
+html #tab-offday .offday-day-cell.is-section-first-row.is-cell-locked::before{
+    --offday-seam-top-paint:var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
+}
+
+/* Vertical boundary owner. */
+html #tab-offday .offday-day-cell.is-locked.lock-edge-left::before,
+html #tab-offday .offday-day-cell.is-date-locked.lock-edge-left::before,
+html #tab-offday .offday-day-cell.is-cell-locked.lock-edge-left::before,
+html #tab-offday .offday-day-cell.is-first-day.is-locked::before,
+html #tab-offday .offday-day-cell.is-first-day.is-date-locked::before,
+html #tab-offday .offday-day-cell.is-first-day.is-cell-locked::before{
+    --offday-seam-left-paint:var(--offday-lock-transition-line,var(--offday-lock-tile-line))!important;
+}
+
+/* At a true top-left junction, the vertical starts immediately below the
+   horizontal 1px seam. This keeps the corner optically square and single-line. */
+html #tab-offday .offday-day-cell.lock-edge-top.lock-edge-left::before,
+html #tab-offday .offday-day-cell.is-section-first-row.lock-edge-left::before,
+html #tab-offday .offday-day-cell.lock-edge-top.is-first-day::before,
+html #tab-offday .offday-day-cell.is-section-first-row.is-first-day::before{
+    background:
+        linear-gradient(var(--offday-seam-top-paint),var(--offday-seam-top-paint)) 0 0 / 100% 1px no-repeat,
+        linear-gradient(var(--offday-seam-left-paint),var(--offday-seam-left-paint)) 0 1px / 1px calc(100% - 1px) no-repeat!important;
+}
+</style>
+
+
+
+<script id="offday-production-realtime-v2-js" data-offday-build="v33-seam-grid-alignment">
 (function(){
     'use strict';
 
