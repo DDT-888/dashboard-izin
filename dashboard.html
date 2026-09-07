@@ -135728,10 +135728,210 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     --offday-lock-tile-line:color-mix(in srgb,#6f7a77 19%,var(--border-color));
 }
 
+
+
+/* ============================================================
+   OFFDAY R36 — SEALED WORKSPACE STATE
+   ------------------------------------------------------------
+   Closed is visually final, not globally disabled:
+   - existing OFF stamps remain dominant;
+   - Leader lock material remains untouched;
+   - Leader controls remain fully operable;
+   - normal users lose interactive hover language.
+   ============================================================ */
+#tab-offday{
+    --offday-sealed-surface:color-mix(in srgb,var(--text-muted) 5%,var(--offday-available-surface,var(--bg-card)));
+    --offday-sealed-role-surface:color-mix(in srgb,var(--text-muted) 9%,var(--offday-available-surface,var(--bg-card)));
+    --offday-sealed-self-surface:color-mix(in srgb,var(--accent) 3%,var(--offday-sealed-surface));
+    --offday-sealed-line:color-mix(in srgb,var(--text-muted) 22%,var(--border-color));
+    --offday-sealed-accent:color-mix(in srgb,var(--text-muted) 68%,var(--text-secondary));
+    --offday-sealed-toolbar:color-mix(in srgb,var(--text-muted) 3%,var(--bg-card));
+}
+
+/* State is announced at the operational header, not by a page-wide opacity mask. */
+#tab-offday .offday-selection-control,
+#tab-offday .offday-matrix-tools,
+#tab-offday .offday-shell{
+    transition:background-color .20s ease,border-color .20s ease,box-shadow .20s ease;
+}
+#tab-offday.offday-sealed .offday-selection-control{
+    background:var(--offday-sealed-toolbar)!important;
+    box-shadow:inset 3px 0 0 var(--offday-sealed-accent)!important;
+}
+#tab-offday.offday-sealed .offday-selection-title::after{
+    content:"FINAL";
+    display:inline-flex;
+    align-items:center;
+    height:14px;
+    margin-left:7px;
+    padding:0 6px;
+    border:1px solid color-mix(in srgb,var(--offday-sealed-accent) 42%,var(--border-color));
+    border-radius:999px;
+    background:color-mix(in srgb,var(--offday-sealed-accent) 8%,var(--bg-card));
+    color:var(--offday-sealed-accent);
+    font-size:6.1px;
+    font-weight:850;
+    letter-spacing:.075em;
+    line-height:1;
+    vertical-align:1px;
+}
+#tab-offday.offday-sealed .offday-selection-desc{
+    color:color-mix(in srgb,var(--offday-sealed-accent) 76%,var(--text-muted))!important;
+}
+#tab-offday.offday-sealed .offday-matrix-tools{
+    background:color-mix(in srgb,var(--offday-sealed-toolbar) 84%,var(--bg-hover))!important;
+    border-bottom-color:var(--offday-sealed-line)!important;
+}
+
+/* Sealed matrix: calm the decision plane while preserving all operational data. */
+#tab-offday.offday-sealed .offday-day-cell:not(.is-locked):not(.is-role-taken){
+    background:var(--offday-sealed-surface)!important;
+}
+#tab-offday.offday-sealed .offday-day-cell.is-role-taken:not(.is-locked):not(.has-choice){
+    background:var(--offday-sealed-role-surface)!important;
+}
+#tab-offday.offday-sealed .offday-day-cell.is-self-row:not(.is-locked){
+    background:var(--offday-sealed-self-surface)!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,var(--offday-sealed-line) 42%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-sealed-line) 42%,transparent)!important;
+}
+#tab-offday.offday-sealed .offday-roster-cell.is-self{
+    background:var(--offday-sealed-self-surface)!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,var(--offday-sealed-line) 42%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-sealed-line) 42%,transparent),
+        6px 0 10px rgba(14,45,52,.012)!important;
+}
+#tab-offday.offday-sealed .offday-roster-cell.is-self::before{
+    background:var(--offday-sealed-accent)!important;
+    opacity:.72;
+}
+
+/* Header remains readable but loses the active-selection energy. */
+#tab-offday.offday-sealed .offday-day-head:not(.is-locked){
+    filter:saturate(.84) brightness(.985);
+}
+
+/* OFF is a final decision: never dim it in the sealed state. */
+#tab-offday.offday-sealed .offday-day-cell .offday-stamp{
+    opacity:1!important;
+    filter:none!important;
+}
+
+/* Normal users see a final/read-only workspace. Leader retains operation cues. */
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-day-cell:hover,
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-day-cell.is-axis-hover{
+    outline:none!important;
+    filter:none!important;
+}
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-day-head:hover,
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-day-head.is-axis-hover{
+    filter:saturate(.84) brightness(.985)!important;
+    box-shadow:none!important;
+}
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-roster-cell:hover,
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-roster-cell.is-axis-hover{
+    background:inherit!important;
+}
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-roster-cell:hover .offday-user-card.user-card-shift,
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-roster-cell.is-axis-hover .offday-user-card.user-card-shift{
+    transform:none!important;
+    filter:none!important;
+    box-shadow:inherit!important;
+}
+
+/* Closed toggle becomes the visual seal; open state remains unchanged. */
+#tab-offday.offday-sealed .offday-toggle:not(.is-open){
+    border-color:color-mix(in srgb,var(--offday-sealed-accent) 44%,var(--border-input))!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--offday-sealed-accent) 13%,var(--bg-hover)) 0%,
+        color-mix(in srgb,var(--offday-sealed-accent) 8%,var(--bg-card)) 100%)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 1px 3px rgba(17,42,48,.08)!important;
+}
+#tab-offday.offday-sealed .offday-toggle:not(.is-open)::before{
+    color:color-mix(in srgb,var(--offday-sealed-accent) 82%,var(--text-primary))!important;
+}
+
+/* DDT Original — sealed steel-jade, clearly calmer than available and lighter than lock. */
+html[data-selected-theme="light"] #tab-offday{
+    --offday-sealed-surface:#eaf0ee;
+    --offday-sealed-role-surface:#e3e9e7;
+    --offday-sealed-self-surface:#e7eeeb;
+    --offday-sealed-line:#b9c8c4;
+    --offday-sealed-accent:#667f76;
+    --offday-sealed-toolbar:#f2f6f5;
+}
+
+/* Venom — graphite/moss seal, no Cyber blue. */
+html[data-selected-theme="venom"] #tab-offday,
+html[data-selected-theme="venom-green"] #tab-offday,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
+    --offday-sealed-surface:#141a14;
+    --offday-sealed-role-surface:#192119;
+    --offday-sealed-self-surface:#172017;
+    --offday-sealed-line:#334433;
+    --offday-sealed-accent:#7a9a6e;
+    --offday-sealed-toolbar:#101510;
+}
+html[data-selected-theme="venom"] #tab-offday.offday-sealed .offday-toggle:not(.is-open),
+html[data-selected-theme="venom-green"] #tab-offday.offday-sealed .offday-toggle:not(.is-open),
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-sealed .offday-toggle:not(.is-open){
+    border-color:#415640!important;
+    background:linear-gradient(180deg,#1a211a 0%,#121712 100%)!important;
+}
+html[data-selected-theme="venom"] #tab-offday.offday-sealed .offday-toggle:not(.is-open)::before,
+html[data-selected-theme="venom-green"] #tab-offday.offday-sealed .offday-toggle:not(.is-open)::before,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-sealed .offday-toggle:not(.is-open)::before{
+    color:#a6b99f!important;
+}
+
+/* Legacy light families inherit their own accent only as a restrained undertone. */
+html[data-selected-theme="pink"] #tab-offday,
+html[data-selected-theme="pastel-pink"] #tab-offday,
+html[data-selected-theme="purple"] #tab-offday,
+html[data-selected-theme="royal-purple"] #tab-offday,
+html[data-selected-theme="emerald"] #tab-offday,
+html[data-selected-theme="ocean"] #tab-offday,
+html[data-selected-theme="ocean-blue"] #tab-offday,
+html[data-selected-theme="rose-gold"] #tab-offday{
+    --offday-sealed-surface:color-mix(in srgb,var(--accent) 3%,var(--bg-hover));
+    --offday-sealed-role-surface:color-mix(in srgb,var(--text-muted) 9%,var(--bg-hover));
+    --offday-sealed-self-surface:color-mix(in srgb,var(--accent) 5%,var(--bg-hover));
+    --offday-sealed-line:color-mix(in srgb,var(--accent) 14%,var(--border-color));
+    --offday-sealed-accent:color-mix(in srgb,var(--accent) 28%,var(--text-secondary));
+    --offday-sealed-toolbar:color-mix(in srgb,var(--accent) 2%,var(--bg-card));
+}
+
+/* Dark/Cyber keeps a neutral seal; Venom override above remains last among dark variants. */
+html[data-selected-theme="dark"] #tab-offday,
+html[data-theme="dark"] #tab-offday{
+    --offday-sealed-surface:color-mix(in srgb,var(--text-muted) 5%,var(--bg-hover));
+    --offday-sealed-role-surface:color-mix(in srgb,var(--text-muted) 10%,var(--bg-hover));
+    --offday-sealed-self-surface:color-mix(in srgb,var(--accent) 3%,var(--bg-hover));
+    --offday-sealed-line:color-mix(in srgb,var(--text-muted) 18%,var(--border-color));
+    --offday-sealed-accent:color-mix(in srgb,var(--text-muted) 72%,var(--text-secondary));
+    --offday-sealed-toolbar:color-mix(in srgb,var(--text-muted) 3%,var(--bg-card));
+}
+/* Re-assert Venom after generic dark so it cannot inherit Cyber material. */
+html[data-selected-theme="venom"] #tab-offday,
+html[data-selected-theme="venom-green"] #tab-offday,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
+    --offday-sealed-surface:#141a14;
+    --offday-sealed-role-surface:#192119;
+    --offday-sealed-self-surface:#172017;
+    --offday-sealed-line:#334433;
+    --offday-sealed-accent:#7a9a6e;
+    --offday-sealed-toolbar:#101510;
+}
+
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday.offday-sealed .offday-selection-title::after{
+    border-radius:0!important;
+}
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v35-canonical-cascade-cleanup">
+<script id="offday-production-realtime-v2-js" data-offday-build="v36-sealed-workspace-state">
 (function(){
     'use strict';
 
@@ -135890,6 +136090,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             leaderModeLock:document.getElementById('offdayLeaderModeLock'),
             leaderModeAssign:document.getElementById('offdayLeaderModeAssign'),
             summary:document.getElementById('offdaySummaryLine'),
+            selectionDesc:document.querySelector('#tab-offday .offday-selection-desc'),
             scroll:document.getElementById('offdayMatrixScroll'),
             grid:document.getElementById('offdayGrid'),
             selfLegend:document.getElementById('offdaySelfLegend'),
@@ -136005,6 +136206,14 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const leader=isLeader();
         n.tab.classList.toggle('offday-leader-mode',leader);
         n.tab.classList.toggle('offday-leader-assign-mode',leader&&state.leaderActionMode==='assign');
+        n.tab.classList.toggle('offday-sealed',!state.isOpen);
+        if(n.selectionDesc){
+            n.selectionDesc.textContent=state.isOpen
+                ? 'Tanggal yang dikunci Leader tidak tersedia untuk pemilihan.'
+                : (leader
+                    ? 'Pemilihan OFFDAY ditutup. Keputusan user dikunci; Leader tetap dapat mengelola OFFDAY.'
+                    : 'Pemilihan OFFDAY telah ditutup — keputusan Anda sudah dikunci.');
+        }
         if(n.leaderAction)n.leaderAction.hidden=!leader;
         if(n.leaderModeLock){
             const active=state.leaderActionMode!=='assign';
