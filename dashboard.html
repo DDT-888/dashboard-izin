@@ -135914,14 +135914,16 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     --offday-self-highlight:color-mix(in srgb,#ffffff 24%,transparent);
     --offday-self-shadow:color-mix(in srgb,var(--accent) 16%,transparent);
 
-    /* Global selected-choice tile: role tint is resolved per roster row below.
-       This is a material state, not a second badge/overlay. */
+    /* Global selected-choice tile: EXACT crest-role palette authority.
+       The bright role color owns the committed surface; its deep companion keeps
+       the tile visually tied to the corresponding WEBP crest without adding a badge. */
     --offday-choice-role-accent:var(--accent);
-    --offday-choice-fill-strong:color-mix(in srgb,var(--offday-choice-role-accent) 19%,var(--offday-tile-surface));
-    --offday-choice-fill:color-mix(in srgb,var(--offday-choice-role-accent) 13%,var(--offday-tile-surface));
-    --offday-choice-fill-soft:color-mix(in srgb,var(--offday-choice-role-accent) 8%,var(--offday-tile-surface));
-    --offday-choice-line:color-mix(in srgb,var(--offday-choice-role-accent) 26%,var(--offday-board-grid));
-    --offday-choice-shadow:color-mix(in srgb,var(--offday-choice-role-accent) 32%,transparent);
+    --offday-choice-role-deep:var(--accent-strong);
+    --offday-choice-fill-strong:color-mix(in srgb,var(--offday-choice-role-accent) 27%,var(--offday-tile-surface));
+    --offday-choice-fill:color-mix(in srgb,var(--offday-choice-role-accent) 19%,var(--offday-tile-surface));
+    --offday-choice-fill-soft:color-mix(in srgb,var(--offday-choice-role-deep) 7%,var(--offday-tile-surface));
+    --offday-choice-line:color-mix(in srgb,var(--offday-choice-role-accent) 36%,var(--offday-board-grid));
+    --offday-choice-shadow:color-mix(in srgb,var(--offday-choice-role-accent) 34%,transparent);
 
     --offday-role-hole:color-mix(in srgb,var(--offday-content-surface) 94%,#000000);
     --offday-role-hole-edge:color-mix(in srgb,var(--offday-board-line) 42%,var(--offday-content-surface));
@@ -136139,11 +136141,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
 /* Global role authority for a committed OFFDAY choice. Unlike self-row tint,
    these selectors intentionally do not depend on the current viewer. */
-#tab-offday .offday-day-cell.has-choice[data-role="leader"]{--offday-choice-role-accent:#b58c34;}
-#tab-offday .offday-day-cell.has-choice[data-role="csline"]{--offday-choice-role-accent:#2f9b59;}
-#tab-offday .offday-day-cell.has-choice[data-role="cs"]{--offday-choice-role-accent:#557fbd;}
-#tab-offday .offday-day-cell.has-choice[data-role="kapten"]{--offday-choice-role-accent:#b77d2e;}
-#tab-offday .offday-day-cell.has-choice[data-role="kasir"]{--offday-choice-role-accent:#795fac;}
+#tab-offday .offday-day-cell.has-choice[data-role="leader"]{--offday-choice-role-accent:#C39A3B;--offday-choice-role-deep:#172A49;}
+#tab-offday .offday-day-cell.has-choice[data-role="csline"]{--offday-choice-role-accent:#31A95F;--offday-choice-role-deep:#174E31;}
+#tab-offday .offday-day-cell.has-choice[data-role="cs"]{--offday-choice-role-accent:#5B84C7;--offday-choice-role-deep:#294A78;}
+#tab-offday .offday-day-cell.has-choice[data-role="kapten"]{--offday-choice-role-accent:#C58A35;--offday-choice-role-deep:#704817;}
+#tab-offday .offday-day-cell.has-choice[data-role="kasir"]{--offday-choice-role-accent:#8468BD;--offday-choice-role-deep:#4F3978;}
 
 #tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken){
     background:linear-gradient(
@@ -136203,6 +136205,31 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         0 3px 8px -5px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 34%,transparent),
         inset 0 1px 0 color-mix(in srgb,#fff 24%,transparent)!important;
 }
+/* Picked staff = committed roster tile. Unpicked cards stay on their existing
+   role-card material so the roster can be scanned instantly without a new badge. */
+#tab-offday .offday-roster-cell.has-offday-choice .offday-user-card.user-card-shift{
+    background:linear-gradient(
+        118deg,
+        color-mix(in srgb,var(--shift-role-accent,var(--accent)) 18%,var(--bg-card)) 0%,
+        color-mix(in srgb,var(--shift-role-accent,var(--accent)) 9%,var(--bg-card)) 58%,
+        color-mix(in srgb,var(--shift-role-accent,var(--accent)) 3%,var(--bg-card)) 100%
+    )!important;
+    border-color:color-mix(in srgb,var(--shift-role-accent,var(--accent)) 43%,var(--border-color))!important;
+    border-left-color:var(--shift-role-accent,var(--accent))!important;
+    box-shadow:
+        0 3px 8px -5px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 42%,transparent),
+        inset 0 1px 0 color-mix(in srgb,#fff 30%,transparent)!important;
+}
+#tab-offday .offday-roster-cell.has-offday-choice .offday-user-card.user-card-shift.role-leader{
+    background:linear-gradient(
+        118deg,
+        color-mix(in srgb,#C39A3B 16%,var(--bg-card)) 0%,
+        color-mix(in srgb,#172A49 11%,var(--bg-card)) 58%,
+        color-mix(in srgb,#172A49 4%,var(--bg-card)) 100%
+    )!important;
+    border-color:color-mix(in srgb,#C39A3B 42%,var(--border-color))!important;
+    border-left-color:#C39A3B!important;
+}
 
 /* Input tile: flat at rest, then one light depth step on direct actionable hover.
    No full outline and no extra horizontal guide line. */
@@ -136245,9 +136272,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 #tab-offday.offday-leader-mode .offday-day-cell.has-choice:not(.is-locked):hover{
     background:linear-gradient(
         180deg,
-        color-mix(in srgb,var(--offday-choice-role-accent) 22%,var(--offday-tile-surface)) 0%,
-        color-mix(in srgb,var(--offday-choice-role-accent) 15%,var(--offday-tile-surface)) 54%,
-        color-mix(in srgb,var(--offday-choice-role-accent) 9%,var(--offday-tile-surface)) 100%
+        color-mix(in srgb,var(--offday-choice-role-accent) 32%,var(--offday-tile-surface)) 0%,
+        color-mix(in srgb,var(--offday-choice-role-accent) 23%,var(--offday-tile-surface)) 54%,
+        color-mix(in srgb,var(--offday-choice-role-deep) 9%,var(--offday-tile-surface)) 100%
     )!important;
     box-shadow:
         inset 0 1px 0 color-mix(in srgb,#fff 34%,transparent),
@@ -136600,11 +136627,12 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v57-global-selected-tile-material">
+<script id="offday-production-realtime-v2-js" data-offday-build="v58-role-matched-choice-picked-staff-tooltip">
 (function(){
     'use strict';
 
     const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const MONTH_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     const DAY_NAMES = ['MIN','SEN','SEL','RAB','KAM','JUM','SAB'];
     const STORAGE_MONTH = 'ddt_offday_selected_month_v1';
     const CLIENT_STORAGE = 'ddt_offday_client_id_v1';
@@ -136675,6 +136703,14 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         if(!iso) return '';
         const [y,m,d] = iso.split('-').map(Number);
         return `${String(d).padStart(2,'0')} ${MONTH_NAMES[m-1]} ${y}`;
+    }
+    function shortChoiceDate(iso){
+        if(!iso)return '';
+        const [,m,d]=iso.split('-').map(Number);
+        return `${String(d).padStart(2,'0')} ${MONTH_SHORT[m-1]||''}`.trim();
+    }
+    function choiceTooltip(user,iso){
+        return `${String(user?.name||'User').trim()} · ${shortChoiceDate(iso)}`;
     }
     function isSunday(day){ const {year,monthIndex}=monthParts(); return new Date(year,monthIndex,day).getDay()===0; }
     function dayName(day){ const {year,monthIndex}=monthParts(); return DAY_NAMES[new Date(year,monthIndex,day).getDay()]; }
@@ -137031,7 +137067,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const nonLeader=!isLeader();
         const self=nonLeader && Number(user.id)===Number(state.currentUserId);
         const role=normRole(user.role);
-        const roster=add(`offday-roster-cell${self?' is-self':''}`,
+        const selected=state.choices.get(Number(user.id)) || null;
+        const roster=add(`offday-roster-cell${self?' is-self':''}${selected?' has-offday-choice':''}`,
             `<div class="user-card-shift offday-user-card role-${role}" data-offday-user-card="1">`+
                 `<div class="avatar">${escapeHtml(String(user.name || '').charAt(0).toUpperCase() || '?')}</div>`+
                 `<div class="user-info"><div class="user-name history-tooltip-target" data-tooltip="${escapeHtml(user.name)}" data-tooltip-icon="user" data-tooltip-overflow="true">${escapeHtml(user.name)}</div></div>`+
@@ -137043,7 +137080,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const visuallyUnassigned=!user.assigned&&role!=='leader';
         roster.classList.toggle('is-unassigned-user',visuallyUnassigned);
 
-        const selected=state.choices.get(Number(user.id)) || null;
         for(let day=1;day<=count;day++){
             const iso=dateISO(day);
             const dateLocked=state.dateLocks.has(iso);
@@ -137072,7 +137108,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 cell.appendChild(buildOffdayStamp(user));
             }
 
-            if(isLeader()){
+            if(hasChoice){
+                setThemeTooltip(cell,choiceTooltip(user,iso),'info');
+            }else if(isLeader()){
                 setThemeTooltip(cell,'');
             }else if(self){
                 setThemeTooltip(
@@ -137081,13 +137119,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                         ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
                         : !state.isOpen
                             ? 'Pemilihan OFFDAY dikunci oleh Leader'
-                            : hasChoice
-                                ? 'Klik OFF untuk membatalkan pilihan'
-                                : locked
-                                    ? 'Dikunci Leader'
-                                    : roleTaken
-                                        ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}`
-                                        : 'Klik untuk memilih OFFDAY',
+                            : locked
+                                ? 'Dikunci Leader'
+                                : roleTaken
+                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}`
+                                    : 'Klik untuk memilih OFFDAY',
                     locked?'lock':'info'
                 );
             }else{
@@ -137125,7 +137161,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         if(hasChoice){
             cell.appendChild(buildOffdayStamp(user));
         }
-        if(isLeader()){
+        if(hasChoice){
+            setThemeTooltip(cell,choiceTooltip(user,iso),'info');
+        }else if(isLeader()){
             setThemeTooltip(cell,'');
         }else if(self){
             setThemeTooltip(
@@ -137134,13 +137172,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                     ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
                     : !state.isOpen
                         ? 'Pemilihan OFFDAY dikunci oleh Leader'
-                        : hasChoice
-                            ? 'Klik OFF untuk membatalkan pilihan'
-                            : locked
-                                ? 'Dikunci Leader'
-                                : roleTaken
-                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
-                                    : 'Klik untuk memilih OFFDAY',
+                        : locked
+                            ? 'Dikunci Leader'
+                            : roleTaken
+                                ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
+                                : 'Klik untuk memilih OFFDAY',
                 locked?'lock':'info'
             );
         }else{
@@ -137219,9 +137255,17 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         }
     }
 
+    function syncRosterChoiceState(userId){
+        const n=nodes();if(!n.grid)return;
+        const uid=Number(userId);
+        const roster=n.grid.querySelector(`.offday-roster-cell[data-user-id="${uid}"]`);
+        roster?.classList.toggle('has-offday-choice',Boolean(state.choices.get(uid)));
+    }
+
     function paintUserCells(userId){
         const n=nodes();if(!n.grid)return;
         n.grid.querySelectorAll(`.offday-day-cell[data-user-id="${Number(userId)}"]`).forEach(paintCell);
+        syncRosterChoiceState(userId);
         syncLockBorderOwners();
     }
 
