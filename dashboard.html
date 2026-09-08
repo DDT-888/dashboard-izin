@@ -136127,20 +136127,27 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     --offday-self-grad-mid:color-mix(in srgb,#795fac 9%,var(--offday-tile-surface));
 }
 
-#tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken){
+#tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken),
+#tab-offday .offday-day-cell.is-self-row.is-self-selection-set.has-choice:not(.is-locked):not(.is-role-taken){
     background:linear-gradient(
         118deg,
         var(--offday-self-grad-start) 0%,
         var(--offday-self-grad-mid) 48%,
         var(--offday-self-grad-end) 100%
     )!important;
-    /* The matrix does NOT inherit the User Card's 3px left role datum.
-       Existing board seams remain the only geometry. */
-    border-right-color:var(--offday-board-grid)!important;
-    border-bottom-color:var(--offday-board-grid)!important;
+    /* Row tint never owns grid seams. This keeps Leader-lock junction lines
+       available to the single lock seam authority below. */
     box-shadow:
         inset 0 1px 0 color-mix(in srgb,#fff 14%,transparent),
         inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 4%,transparent)!important;
+}
+/* After the user has chosen OFFDAY, only the chosen tile keeps the role-tinted
+   self-row surface. Other actionable cells return to the neutral board tile. */
+#tab-offday .offday-day-cell.is-self-row.is-self-selection-set:not(.has-choice):not(.is-locked):not(.is-role-taken){
+    background:var(--offday-tile-surface)!important;
+    box-shadow:
+        inset 0 1px 0 var(--offday-tile-highlight),
+        inset 0 -1px 0 var(--offday-tile-shadow)!important;
 }
 /* The roster backplane stays board-neutral. The role-colored User Card is the
    visual anchor; no self-row stripe or copied left role datum is added. */
@@ -136176,7 +136183,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         0 3px 7px -4px var(--offday-input-glow)!important;
 }
 /* On self-row, direct hover rises one level while preserving the role hue. */
-#tab-offday .offday-day-cell.is-user-clickable.is-self-row:hover{
+#tab-offday .offday-day-cell.is-user-clickable.is-self-row:not(.is-self-selection-set):hover,
+#tab-offday .offday-day-cell.is-user-clickable.is-self-row.is-self-selection-set.has-choice:hover{
     background:linear-gradient(
         118deg,
         color-mix(in srgb,var(--offday-self-role-accent) 25%,var(--offday-input-surface)) 0%,
@@ -136187,6 +136195,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         inset 0 1px 0 color-mix(in srgb,#fff 20%,transparent),
         inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 7%,transparent),
         0 3px 7px -5px var(--offday-input-glow)!important;
+}
+#tab-offday .offday-day-cell.is-user-clickable.is-self-row.is-self-selection-set:not(.has-choice):hover{
+    background:var(--offday-input-surface)!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,#fff 22%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 28%,transparent),
+        0 3px 7px -4px var(--offday-input-glow)!important;
 }
 /* Cross-axis guidance is tonal only; it must never add another grid/rail line. */
 #tab-offday .offday-day-cell.is-axis-hover:not(.is-locked):not(.is-role-taken):not(.is-self-row){
@@ -136273,7 +136288,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 /* Existing-border ownership from v35 is retained; only its color token changes. */
 #tab-offday .offday-day-cell.lock-seam-owner-right,
-#tab-offday .offday-roster-cell.lock-seam-owner-right{
+#tab-offday .offday-roster-cell.lock-seam-owner-right,
+#tab-offday .offday-day-head.lock-seam-owner-right,
+#tab-offday .offday-corner-head.lock-seam-owner-right{
     border-right-color:var(--offday-lock-tile-line)!important;
 }
 #tab-offday .offday-day-cell.lock-seam-owner-bottom,
@@ -136353,7 +136370,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 #tab-offday.offday-sealed .offday-day-cell.is-role-taken:not(.is-locked):not(.has-choice){
     background:var(--offday-tile-surface)!important;
 }
-#tab-offday.offday-sealed .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken){
+#tab-offday.offday-sealed .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken),
+#tab-offday.offday-sealed .offday-day-cell.is-self-row.is-self-selection-set.has-choice:not(.is-locked):not(.is-role-taken){
     background:linear-gradient(
         118deg,
         color-mix(in srgb,var(--offday-self-role-accent) 9%,var(--offday-tile-surface)) 0%,
@@ -136363,6 +136381,12 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     box-shadow:
         inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent),
         inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 3%,transparent)!important;
+}
+#tab-offday.offday-sealed .offday-day-cell.is-self-row.is-self-selection-set:not(.has-choice):not(.is-locked):not(.is-role-taken){
+    background:var(--offday-tile-surface)!important;
+    box-shadow:
+        inset 0 1px 0 var(--offday-tile-highlight),
+        inset 0 -1px 0 var(--offday-tile-shadow)!important;
 }
 #tab-offday.offday-sealed .offday-roster-cell.is-self{
     background:var(--offday-board-surface)!important;
@@ -136453,9 +136477,12 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
 
 /* Venom User Cards use a denser 106deg role wash; self-row mirrors that language
    while retaining the OFFDAY tile surface and existing grid seams. */
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken),
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken),
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-self-row:not(.is-locked):not(.is-role-taken){
+html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken),
+html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-self-row.is-self-selection-set.has-choice:not(.is-locked):not(.is-role-taken),
+html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken),
+html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-self-row.is-self-selection-set.has-choice:not(.is-locked):not(.is-role-taken),
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken),
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-self-row.is-self-selection-set.has-choice:not(.is-locked):not(.is-role-taken){
     background:linear-gradient(
         106deg,
         color-mix(in srgb,var(--offday-self-role-accent) 30%,var(--offday-tile-surface)) 0%,
@@ -136526,7 +136553,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v55-stamp-legacy-cleanup-crest-36">
+<script id="offday-production-realtime-v2-js" data-offday-build="v56-tile-seam-self-choice-focus">
 (function(){
     'use strict';
 
@@ -136986,6 +137013,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             if(cellLocked)classes.push('is-cell-locked');
             if(!state.isOpen)classes.push('is-closed');
             if(self)classes.push('is-self-row');
+            if(self && selected)classes.push('is-self-selection-set');
             if(visuallyUnassigned)classes.push('is-unassigned-user');
             if(roleTaken)classes.push('is-role-taken');
             if(hasChoice)classes.push('has-choice');
@@ -137039,6 +137067,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         cell.classList.toggle('is-cell-locked',cellLocked);
         cell.classList.toggle('is-closed',!state.isOpen);
         cell.classList.toggle('is-self-row',self);
+        cell.classList.toggle('is-self-selection-set',Boolean(self&&state.choices.get(uid)));
         cell.classList.toggle('is-unassigned-user',Boolean(user&&!user.assigned&&normRole(user.role)!=='leader'));
         cell.classList.toggle('is-role-taken',roleTaken);
         cell.classList.toggle('has-choice',hasChoice);
@@ -137080,17 +137109,36 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const allCells=Array.from(n.grid.querySelectorAll('.offday-day-cell'));
         const groupDays=Array.from(n.grid.querySelectorAll('.offday-group-day'));
         const rosterCells=Array.from(n.grid.querySelectorAll('.offday-roster-cell'));
+        const dayHeads=Array.from(n.grid.querySelectorAll('.offday-day-head'));
+        const cornerHead=n.grid.querySelector('.offday-corner-head');
 
         for(const el of allCells)el.classList.remove('lock-seam-owner-right','lock-seam-owner-bottom');
         for(const el of groupDays)el.classList.remove('lock-seam-owner-bottom');
         for(const el of rosterCells)el.classList.remove('lock-seam-owner-right');
+        for(const el of dayHeads)el.classList.remove('lock-seam-owner-right');
+        cornerHead?.classList.remove('lock-seam-owner-right');
 
         const cellMap=new Map();
         const groupMap=new Map();
         const rosterMap=new Map();
+        const headMap=new Map();
         for(const cell of allCells)cellMap.set(`${cell.dataset.userId}|${cell.dataset.date}`,cell);
         for(const group of groupDays)groupMap.set(`${group.dataset.sectionIndex}|${group.dataset.date}`,group);
         for(const roster of rosterCells)rosterMap.set(String(roster.dataset.userId||''),roster);
+        for(const head of dayHeads)headMap.set(String(head.dataset.date||''),head);
+
+        /* Header lock start owns the existing right seam of the preceding tile.
+           This restores the missing left edge without drawing a second border. */
+        for(const head of dayHeads){
+            if(!head.classList.contains('is-locked'))continue;
+            const iso=String(head.dataset.date||'');
+            const dayNumber=Number(iso.slice(-2));
+            const previousIso=dayNumber>1?dateISO(dayNumber-1):null;
+            const previousHead=previousIso?headMap.get(previousIso):null;
+            if(!previousHead?.classList.contains('is-locked')){
+                (previousHead||cornerHead)?.classList.add('lock-seam-owner-right');
+            }
+        }
 
         const previousUserById=new Map();
         for(const section of state.sections){
