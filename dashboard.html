@@ -135731,7 +135731,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     
     
 }
-#tab-offday.offday-sealed .offday-roster-cell.is-self{
+#tab-offday.offday-sealed .offday-roster-cell.is-self:not(.has-offday-choice){
     
     
 }
@@ -135914,16 +135914,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     --offday-self-highlight:color-mix(in srgb,#ffffff 24%,transparent);
     --offday-self-shadow:color-mix(in srgb,var(--accent) 16%,transparent);
 
-    /* Global selected-choice tile: EXACT crest-role palette authority.
-       The bright role color owns the committed surface; its deep companion keeps
-       the tile visually tied to the corresponding WEBP crest without adding a badge. */
+    /* Global committed-choice fallback tokens. Per-role selectors below replace
+       these with the exact User Card role authority for every known role. */
     --offday-choice-role-accent:var(--accent);
     --offday-choice-role-deep:var(--accent-strong);
-    --offday-choice-fill-strong:color-mix(in srgb,var(--offday-choice-role-accent) 27%,var(--offday-tile-surface));
-    --offday-choice-fill:color-mix(in srgb,var(--offday-choice-role-accent) 19%,var(--offday-tile-surface));
-    --offday-choice-fill-soft:color-mix(in srgb,var(--offday-choice-role-deep) 7%,var(--offday-tile-surface));
-    --offday-choice-line:color-mix(in srgb,var(--offday-choice-role-accent) 36%,var(--offday-board-grid));
-    --offday-choice-shadow:color-mix(in srgb,var(--offday-choice-role-accent) 34%,transparent);
 
     --offday-role-hole:color-mix(in srgb,var(--offday-content-surface) 94%,#000000);
     --offday-role-hole-edge:color-mix(in srgb,var(--offday-board-line) 42%,var(--offday-content-surface));
@@ -136141,11 +136135,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
 /* Global role authority for a committed OFFDAY choice. Unlike self-row tint,
    these selectors intentionally do not depend on the current viewer. */
-#tab-offday .offday-day-cell.has-choice[data-role="leader"]{--offday-choice-role-accent:#C39A3B;--offday-choice-role-deep:#172A49;}
-#tab-offday .offday-day-cell.has-choice[data-role="csline"]{--offday-choice-role-accent:#31A95F;--offday-choice-role-deep:#174E31;}
-#tab-offday .offday-day-cell.has-choice[data-role="cs"]{--offday-choice-role-accent:#5B84C7;--offday-choice-role-deep:#294A78;}
-#tab-offday .offday-day-cell.has-choice[data-role="kapten"]{--offday-choice-role-accent:#C58A35;--offday-choice-role-deep:#704817;}
-#tab-offday .offday-day-cell.has-choice[data-role="kasir"]{--offday-choice-role-accent:#8468BD;--offday-choice-role-deep:#4F3978;}
+#tab-offday .offday-day-cell.has-choice[data-role="leader"]{--offday-choice-role-accent:#b58c34;--offday-choice-role-deep:#172A49;}
+#tab-offday .offday-day-cell.has-choice[data-role="csline"]{--offday-choice-role-accent:#2f9b59;--offday-choice-role-deep:#15753f;}
+#tab-offday .offday-day-cell.has-choice[data-role="cs"]{--offday-choice-role-accent:#557fbd;--offday-choice-role-deep:#345f9e;}
+#tab-offday .offday-day-cell.has-choice[data-role="kapten"]{--offday-choice-role-accent:#b77d2e;--offday-choice-role-deep:#895918;}
+#tab-offday .offday-day-cell.has-choice[data-role="kasir"]{--offday-choice-role-accent:#795fac;--offday-choice-role-deep:#63498f;}
 
 #tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken){
     background:linear-gradient(
@@ -136174,17 +136168,17 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
    Lock remains a separate higher-priority material when the same cell is locked. */
 #tab-offday .offday-day-cell.has-choice:not(.is-locked){
     background:linear-gradient(
-        180deg,
-        var(--offday-choice-fill-strong) 0%,
-        var(--offday-choice-fill) 54%,
-        var(--offday-choice-fill-soft) 100%
+        118deg,
+        color-mix(in srgb,var(--offday-choice-role-accent) 30%,var(--offday-tile-surface)) 0%,
+        color-mix(in srgb,var(--offday-choice-role-accent) 17%,var(--offday-tile-surface)) 52%,
+        color-mix(in srgb,var(--offday-choice-role-deep) 6%,var(--offday-tile-surface)) 100%
     )!important;
-    border-right-color:var(--offday-choice-line)!important;
-    border-bottom-color:var(--offday-choice-line)!important;
+    border-right-color:color-mix(in srgb,var(--offday-choice-role-accent) 48%,var(--offday-board-grid))!important;
+    border-bottom-color:color-mix(in srgb,var(--offday-choice-role-accent) 48%,var(--offday-board-grid))!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,#fff 30%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-choice-role-accent) 15%,transparent),
-        0 2px 5px -3px var(--offday-choice-shadow)!important;
+        inset 0 1px 0 color-mix(in srgb,#fff 31%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-choice-role-accent) 17%,transparent),
+        0 2px 5px -3px color-mix(in srgb,var(--offday-choice-role-accent) 34%,transparent)!important;
     outline:none!important;
     filter:none!important;
 }
@@ -136205,30 +136199,18 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         0 3px 8px -5px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 34%,transparent),
         inset 0 1px 0 color-mix(in srgb,#fff 24%,transparent)!important;
 }
-/* Picked staff = committed roster tile. Unpicked cards stay on their existing
-   role-card material so the roster can be scanned instantly without a new badge. */
-#tab-offday .offday-roster-cell.has-offday-choice .offday-user-card.user-card-shift{
-    background:linear-gradient(
-        118deg,
-        color-mix(in srgb,var(--shift-role-accent,var(--accent)) 18%,var(--bg-card)) 0%,
-        color-mix(in srgb,var(--shift-role-accent,var(--accent)) 9%,var(--bg-card)) 58%,
-        color-mix(in srgb,var(--shift-role-accent,var(--accent)) 3%,var(--bg-card)) 100%
-    )!important;
-    border-color:color-mix(in srgb,var(--shift-role-accent,var(--accent)) 43%,var(--border-color))!important;
-    border-left-color:var(--shift-role-accent,var(--accent))!important;
+/* Picked staff = committed roster RAIL, not a modified User Card.
+   The User Card remains the canonical role identity. The board backplane below it
+   reuses the already-PASS Lock Tile material so a completed choice reads as
+   "committed/locked" when scanning the staff column. */
+#tab-offday .offday-roster-cell.has-offday-choice{
+    background:var(--offday-lock-tile-center)!important;
+    border-right-color:var(--offday-lock-tile-line)!important;
+    border-bottom-color:var(--offday-lock-tile-line)!important;
     box-shadow:
-        0 3px 8px -5px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 42%,transparent),
-        inset 0 1px 0 color-mix(in srgb,#fff 30%,transparent)!important;
-}
-#tab-offday .offday-roster-cell.has-offday-choice .offday-user-card.user-card-shift.role-leader{
-    background:linear-gradient(
-        118deg,
-        color-mix(in srgb,#C39A3B 16%,var(--bg-card)) 0%,
-        color-mix(in srgb,#172A49 11%,var(--bg-card)) 58%,
-        color-mix(in srgb,#172A49 4%,var(--bg-card)) 100%
-    )!important;
-    border-color:color-mix(in srgb,#C39A3B 42%,var(--border-color))!important;
-    border-left-color:#C39A3B!important;
+        inset 0 1px 0 var(--offday-lock-highlight),
+        inset 0 -1px 0 var(--offday-lock-shadow)!important;
+    filter:none!important;
 }
 
 /* Input tile: flat at rest, then one light depth step on direct actionable hover.
@@ -136271,18 +136253,18 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 #tab-offday .offday-day-cell.has-choice.is-user-clickable:not(.is-locked):hover,
 #tab-offday.offday-leader-mode .offday-day-cell.has-choice:not(.is-locked):hover{
     background:linear-gradient(
-        180deg,
-        color-mix(in srgb,var(--offday-choice-role-accent) 32%,var(--offday-tile-surface)) 0%,
-        color-mix(in srgb,var(--offday-choice-role-accent) 23%,var(--offday-tile-surface)) 54%,
-        color-mix(in srgb,var(--offday-choice-role-deep) 9%,var(--offday-tile-surface)) 100%
+        118deg,
+        color-mix(in srgb,var(--offday-choice-role-accent) 35%,var(--offday-tile-surface)) 0%,
+        color-mix(in srgb,var(--offday-choice-role-accent) 21%,var(--offday-tile-surface)) 52%,
+        color-mix(in srgb,var(--offday-choice-role-deep) 8%,var(--offday-tile-surface)) 100%
     )!important;
     box-shadow:
         inset 0 1px 0 color-mix(in srgb,#fff 34%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-choice-role-accent) 18%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-choice-role-accent) 19%,transparent),
         0 3px 7px -4px color-mix(in srgb,var(--offday-choice-role-accent) 40%,transparent)!important;
 }
 /* Cross-axis guidance is tonal only; it must never add another grid/rail line. */
-#tab-offday .offday-day-cell.is-axis-hover:not(.is-locked):not(.is-role-taken):not(.is-self-row){
+#tab-offday .offday-day-cell.is-axis-hover:not(.has-choice):not(.is-locked):not(.is-role-taken):not(.is-self-row){
     outline:none!important;
     background:color-mix(in srgb,var(--offday-input-surface) 28%,var(--offday-tile-surface))!important;
     box-shadow:
@@ -136442,7 +136424,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 #tab-offday.offday-sealed{
     --offday-tile-surface:var(--offday-sealed-surface);
 }
-#tab-offday.offday-sealed .offday-day-cell:not(.is-locked):not(.is-role-taken){
+#tab-offday.offday-sealed .offday-day-cell:not(.has-choice):not(.is-locked):not(.is-role-taken){
     background:var(--offday-tile-surface)!important;
 }
 #tab-offday.offday-sealed .offday-day-cell.is-role-taken:not(.is-locked):not(.has-choice){
@@ -136627,7 +136609,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v58-role-matched-choice-picked-staff-tooltip">
+<script id="offday-production-realtime-v2-js" data-offday-build="v59-role-choice-picked-staff-rail-lock">
 (function(){
     'use strict';
 
