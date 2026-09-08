@@ -133939,7 +133939,7 @@ td.ddt-employee-office-cell:hover
 </style>
 
 
-<style id="offday-production-realtime-v51-consolidated">
+<style id="offday-production-realtime-v52-consolidated">
 
 
 /* ---- consolidated source: offday-production-realtime-v2 ---- */
@@ -135886,7 +135886,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 
 /* ============================================================
-   OFFDAY R51 — MINIMAL OFF + ANIMAL CREST SEAL
+   OFFDAY R52 — SIMPLIFIED VECTOR ANIMAL CREST SEAL
    ------------------------------------------------------------
    Visual authority only. Functional baseline remains frozen.
 
@@ -136313,16 +136313,15 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     border-bottom-color:var(--offday-lock-tile-line)!important;
 }
 
-/* OFF = final role seal with optional Animal Crest watermark.
-   R51 removes DAY entirely. The approved OFF authority remains dominant.
-   If the user has a canonical Animal Avatar, only its transparent head shape is
-   used as a monochrome role-ink crest in the lower field. No frame, no full-color
-   avatar, no animation, no generic/random fallback. Users without Animal render
-   as a compact OFF-only role seal. */
+/* OFF = final role seal with optional simplified Animal Crest.
+   R52 keeps OFF as the primary authority and replaces the failed WEBP-mask crop
+   with a tiny purpose-built vector crest. The crest uses only species-defining
+   geometry (ears / horns / beak / muzzle / body silhouette), one role ink color,
+   no frame, no animation and no image/filter pipeline. Users without Animal keep
+   the compact OFF-only seal with no fake/random identity. */
 #tab-offday .offday-stamp{
     --offday-seal-ink:var(--offday-stamp-border);
     --offday-seal-off-text:#ffffff;
-    --offday-animal-mask:none;
     width:31px!important;
     height:31px!important;
     position:relative!important;
@@ -136344,7 +136343,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     isolation:isolate!important;
     opacity:.99!important;
 }
-/* Quiet square seal frame; never becomes a white plate. */
 #tab-offday .offday-stamp::before{
     content:""!important;
     display:block!important;
@@ -136356,7 +136354,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     border-radius:1px!important;
     opacity:.84!important;
 }
-/* One ink divider separates authority text from the optional crest field. */
 #tab-offday .offday-stamp::after{
     content:""!important;
     display:block!important;
@@ -136389,37 +136386,42 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     letter-spacing:.035em!important;
     text-shadow:none!important;
 }
-/* Animal identity is a watermark/crest crop, not an avatar thumbnail.
-   The alpha channel of the existing transparent WEBP becomes the silhouette. */
 #tab-offday .offday-stamp .offday-animal-crest{
     position:relative!important;
-    z-index:2!important;
-    display:block!important;
+    z-index:4!important;
+    display:grid!important;
+    place-items:center!important;
     width:100%!important;
     height:13px!important;
     margin:0!important;
     padding:0!important;
-    overflow:hidden!important;
+    overflow:visible!important;
     background:transparent!important;
+    color:var(--offday-seal-ink)!important;
     pointer-events:none!important;
 }
-#tab-offday .offday-stamp.has-animal-crest .offday-animal-crest::before{
-    content:""!important;
-    position:absolute!important;
-    inset:-3px 1px -2px!important;
-    background:color-mix(in srgb,var(--offday-seal-ink) 82%,transparent)!important;
-    opacity:.54!important;
-    -webkit-mask-image:var(--offday-animal-mask)!important;
-    mask-image:var(--offday-animal-mask)!important;
-    -webkit-mask-repeat:no-repeat!important;
-    mask-repeat:no-repeat!important;
-    -webkit-mask-position:center 44%!important;
-    mask-position:center 44%!important;
-    -webkit-mask-size:19px 19px!important;
-    mask-size:19px 19px!important;
+#tab-offday .offday-stamp .offday-animal-crest svg{
+    display:block!important;
+    width:19px!important;
+    height:13px!important;
+    overflow:visible!important;
+    color:var(--offday-seal-ink)!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:1.55!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    vector-effect:non-scaling-stroke!important;
+    opacity:.96!important;
 }
-/* No Animal = no fake identity. Render a compact OFF-only seal with no empty
-   lower placeholder, random animal, generic icon or initials. */
+#tab-offday .offday-stamp .offday-animal-crest svg .crest-fill{
+    fill:currentColor!important;
+    stroke:none!important;
+}
+#tab-offday .offday-stamp .offday-animal-crest svg .crest-soft{
+    opacity:.62!important;
+}
+/* No Animal = no fake identity. */
 #tab-offday .offday-stamp.no-animal-crest{
     width:27px!important;
     height:23px!important;
@@ -136650,7 +136652,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v51-minimal-off-animal-crest-seal">
+<script id="offday-production-realtime-v2-js" data-offday-build="v52-simplified-vector-animal-crest-seal">
 (function(){
     'use strict';
 
@@ -136740,21 +136742,64 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             const catalog=Array.isArray(globalThis.DDTAnimalIntegrationV2?.catalog)
                 ? globalThis.DDTAnimalIntegrationV2.catalog
                 : [];
-            const meta=catalog.find(item=>item?.key===key)||null;
-            return meta?.src ? meta : null;
+            return catalog.find(item=>item?.key===key)||null;
         }catch(_){ return null; }
+    }
+    function offdayAnimalCrestMarkup(species){
+        const s=String(species||'').toLowerCase();
+        const open='<svg viewBox="0 0 24 18" aria-hidden="true" focusable="false">';
+        const close='</svg>';
+        const crest={
+            cat:'<path d="M5 7 6.5 2.5 10 5h4l3.5-2.5L19 7v4.2c0 2.8-3 4.8-7 4.8s-7-2-7-4.8Z"/><path d="M8.2 10h.1M15.7 10h.1M9.2 13c1.8 1 3.8 1 5.6 0"/>',
+            dog:'<path d="M7 5 3.5 3.5 4.5 9v2.5C4.5 14.2 7.8 16 12 16s7.5-1.8 7.5-4.5V9l1-5.5L17 5c-1.3-1.2-3-1.8-5-1.8S8.3 3.8 7 5Z"/><path d="M9 10h.1M15 10h.1M10 13h4"/>',
+            wolf:'<path d="M6.2 7 4 2l5 3 3-2 3 2 5-3-2.2 5v4.3C17.8 14 15.2 16 12 16s-5.8-2-5.8-4.7Z"/><path d="M8.5 9.8h.1M15.4 9.8h.1M9.5 13l2.5 1 2.5-1"/>',
+            fox:'<path d="M5 6 4 2l5 3 3-1.7L15 5l5-3-1 4-2 6-5 4-5-4Z"/><path d="M8.4 9.4h.1M15.5 9.4h.1M10 13h4"/>',
+            panda:'<circle cx="7" cy="4" r="2.2"/><circle cx="17" cy="4" r="2.2"/><path d="M5.5 7.5C6.8 4.8 9 3.5 12 3.5s5.2 1.3 6.5 4v4.2C18.5 14.4 15.7 16 12 16s-6.5-1.6-6.5-4.3Z"/><ellipse class="crest-fill" cx="9" cy="10" rx="1.4" ry="1.8"/><ellipse class="crest-fill" cx="15" cy="10" rx="1.4" ry="1.8"/><path d="M10.2 13h3.6"/>',
+            bear:'<circle cx="6.5" cy="4.5" r="2.1"/><circle cx="17.5" cy="4.5" r="2.1"/><path d="M5.5 8c1-3 3.2-4.5 6.5-4.5S17.5 5 18.5 8v4c0 2.4-2.8 4-6.5 4s-6.5-1.6-6.5-4Z"/><path d="M9 10h.1M15 10h.1M10.5 13h3"/>',
+            koala:'<circle cx="5.7" cy="7" r="3"/><circle cx="18.3" cy="7" r="3"/><path d="M7 6.5c1-2 2.7-3 5-3s4 1 5 3v5.2c0 2.6-2.2 4.3-5 4.3s-5-1.7-5-4.3Z"/><ellipse class="crest-fill" cx="12" cy="11" rx="1.5" ry="2.2"/>',
+            lion:'<circle cx="12" cy="9.5" r="7"/><path d="M8 7.5c1-2 2.3-3 4-3s3 1 4 3v4c0 2.6-1.8 4.2-4 4.2s-4-1.6-4-4.2Z"/><path d="M9.5 10h.1M14.4 10h.1M10 13h4"/>',
+            tiger:'<path d="M5 7 6 3l4 2h4l4-2 1 4v4.2c0 2.8-3 4.8-7 4.8s-7-2-7-4.8Z"/><path d="m9 5 1.2 2M15 5l-1.2 2M7.5 8.5l2 .8M16.5 8.5l-2 .8M10 13h4"/>',
+            rabbit:'<path d="M8.5 6C6.5 2 7 0 8.5 1c1.3 1 2.1 3.1 2.3 5M15.5 6C17.5 2 17 0 15.5 1c-1.3 1-2.1 3.1-2.3 5"/><path d="M6 9c0-2.5 2.6-4 6-4s6 1.5 6 4v3c0 2.5-2.6 4-6 4s-6-1.5-6-4Z"/><path d="M9 10h.1M15 10h.1M10.5 13h3"/>',
+            rat:'<circle cx="7" cy="5" r="2"/><circle cx="17" cy="5" r="2"/><path d="M6 8c1.5-2.5 3.5-3.5 6-3.5s4.5 1 6 3.5l-2 5-4 3-4-3Z"/><path d="M12 11h.1M7.5 12 3 11M16.5 12l4.5-1"/>',
+            pig:'<path d="M5 7 7 4l3 1h4l3-1 2 3v4c0 3-3 5-7 5s-7-2-7-5Z"/><ellipse cx="12" cy="12" rx="3" ry="2"/><path d="M11 12h.1M13 12h.1M8.5 9h.1M15.5 9h.1"/>',
+            monkey:'<circle cx="5.5" cy="10" r="2.5"/><circle cx="18.5" cy="10" r="2.5"/><path d="M7 7c1-2.2 2.7-3.5 5-3.5S16 4.8 17 7v5c0 2.5-2.2 4-5 4s-5-1.5-5-4Z"/><ellipse cx="12" cy="11" rx="3" ry="2.5"/>',
+            goat:'<path d="M7 6C4 3 5 1 8 3l2 2h4l2-2c3-2 4 0 1 3"/><path d="M6.5 7.5c1-2 3-3 5.5-3s4.5 1 5.5 3v4c0 2.7-2.5 4.5-5.5 4.5s-5.5-1.8-5.5-4.5Z"/><path d="M10 13h4M12 16v1"/>',
+            ox:'<path d="M8 5C3 4 2 1 4 1c2 0 4 1 6 3M16 5c5-1 6-4 4-4-2 0-4 1-6 3"/><path d="M6 7c1.2-2 3.2-3 6-3s4.8 1 6 3v4.5c0 2.7-2.5 4.5-6 4.5s-6-1.8-6-4.5Z"/><path d="M9.5 12h5"/>',
+            deer:'<path d="M8 5 5 2M8 5 8 1M16 5l3-3M16 5V1M6 3 4 3M18 3h2"/><path d="M7 7c1-2 2.7-3 5-3s4 1 5 3v4.5c0 2.7-2.2 4.5-5 4.5s-5-1.8-5-4.5Z"/><path d="M10 12h4"/>',
+            horse:'<path d="M8 5 7 2l3 2h4l3-2-1 3"/><path d="M7 6c1-1.5 3-2.5 5-2.5s4 1 5 2.5l-1 7-4 3-4-3Z"/><path d="M9 9h.1M15 9h.1M10 13h4"/>',
+            zebra:'<path d="M8 5 7 2l3 2h4l3-2-1 3M7 6c1-1.5 3-2.5 5-2.5s4 1 5 2.5l-1 7-4 3-4-3Z"/><path d="m9 5 1.5 2M13 4l1.5 2M8.5 9l2 1M15.5 9l-2 1M10 13h4"/>',
+            giraffe:'<path d="M9 5V2M15 5V2M8 2h2M14 2h2"/><path d="M7 6c1-1.7 2.7-2.5 5-2.5s4 .8 5 2.5l-1 7-4 3-4-3Z"/><circle class="crest-fill crest-soft" cx="9" cy="8" r=".7"/><circle class="crest-fill crest-soft" cx="15" cy="10" r=".7"/>',
+            elephant:'<path d="M8 6C5 3 2.5 5 4 9c.8 2.3 2.2 3.4 4 3.5M16 6c3-3 5.5-1 4 3-.8 2.3-2.2 3.4-4 3.5"/><path d="M8 7c1-2 2.5-3 4-3s3 1 4 3v5c0 2.5-1.7 4-4 4s-4-1.5-4-4Z"/><path d="M12 11v6c0 1.2 1 1.5 2 1"/>',
+            hippo:'<path d="M5 8c0-2.7 3-4.5 7-4.5S19 5.3 19 8v4c0 2.5-3 4-7 4s-7-1.5-7-4Z"/><circle cx="8" cy="5" r="1.4"/><circle cx="16" cy="5" r="1.4"/><ellipse cx="12" cy="12" rx="4" ry="2.2"/>',
+            raccoon:'<path d="M5 7 6 3l4 2h4l4-2 1 4v4.5c0 2.7-3 4.5-7 4.5s-7-1.8-7-4.5Z"/><path d="M7.5 9c2-1 7-1 9 0l-1 3c-2 1-5 1-7 0Z"/><path d="M9.3 10h.1M14.6 10h.1"/>',
+            owl:'<circle cx="8" cy="9" r="4"/><circle cx="16" cy="9" r="4"/><path d="M5 6 8 2l4 3 4-3 3 4M12 9l-1.5 2h3Z"/><circle class="crest-fill" cx="8" cy="9" r="1"/><circle class="crest-fill" cx="16" cy="9" r="1"/>',
+            eagle:'<path d="M5 7c2-3 4.3-4.5 7-4.5S17 4 19 7l-3 2-4 7-4-7Z"/><path d="M12 8 9 10h3l2 2"/><path d="M8.5 7h.1M15.5 7h.1"/>',
+            rooster:'<path d="M8 6c0-3 2-5 4-5l1 2 2-1v3c2 1 3 3 3 5 0 3-2.5 5-6 5s-6-2-6-5c0-2 1-3 2-4Z"/><path d="M16 7h4l-3 2M9 10h.1"/>',
+            penguin:'<path d="M8 5c1-2 2.3-3 4-3s3 1 4 3l2 7-3 4H9l-3-4Z"/><path d="M10 6h4l-2 3Z"/><path d="M8 16 6 17M16 16l2 1"/>',
+            bat:'<path d="M12 6 9 3 7 5 3 4l2 4-3 2 5 2 2 4 3-3 3 3 2-4 5-2-3-2 2-4-4 1-2-2Z"/><path d="M10 8h.1M14 8h.1"/>',
+            frog:'<circle cx="8" cy="6" r="2.3"/><circle cx="16" cy="6" r="2.3"/><path d="M5 9c1-2 3.5-3 7-3s6 1 7 3v3c0 2.5-3 4-7 4s-7-1.5-7-4Z"/><path d="M9 12c2 1 4 1 6 0"/>',
+            hedgehog:'<path d="M4 11 3 8l2-1-1-3 3 1 1-3 2 2 2-2 2 2 3-1v3l3 1-2 2"/><path d="M7 8c1.5-2 3.2-3 5.5-3 3.5 0 6.5 2.5 6.5 5.5S16.5 16 12.5 16 6 14 6 11Z"/><path d="M9 10h.1"/>',
+            squirrel:'<path d="M8 6 7 3l3 2h3c3-3 7-2 7 1 0 2-2 3-4 3 2 1 3 2.5 2 4-1 2-4 3-7 3-4 0-6-2-6-5 0-2 1-3 3-4Z"/><path d="M9 10h.1"/>',
+            otter:'<path d="M6 8c1-2.7 3-4 6-4s5 1.3 6 4v3.5c0 2.7-2.5 4.5-6 4.5s-6-1.8-6-4.5Z"/><circle cx="7" cy="6" r="1.5"/><circle cx="17" cy="6" r="1.5"/><path d="M9 10h.1M15 10h.1M10 13h4"/>',
+            turtle:'<path d="M5 11c0-4 3-7 7-7s7 3 7 7H5Z"/><path d="M8 11 6 15M16 11l2 4M12 4v7M5 11H2M19 11h3"/><circle cx="12" cy="8" r="2"/>',
+            snake:'<path d="M17 3c-6-2-9 1-7 4 1.5 2 5 1 6.5 3 2 3-1 6-5 5-2-.5-3.5-2-3.5-3.5"/><path d="M17 3h3l-1.5 2Z"/>',
+            dragon:'<path d="M6 7 4 3l4 2 2-3 2 3 3-3 1 3 4-2-2 5 1 4-4 4H9l-4-4Z"/><path d="M9 9h.1M15 9h.1M10 13h4"/>',
+            dolphin:'<path d="M3 11c4-5 9-7 15-5l3-2-1 4 2 2-4 1c-3 4-9 5-15 2l3-1Z"/><path d="M10 8h.1"/>',
+            shark:'<path d="M2 11c5-4 10-5 15-3l3-4 1 5 2 2-3 2-2 4-2-3c-5 2-10 1-14-1l4-1Z"/><path d="M10 10h.1"/>'
+        };
+        return crest[s] ? open+crest[s]+close : '';
     }
     function buildOffdayStamp(user){
         const stampRole=normRole(user?.role);
         const stamp=document.createElement('div');
         stamp.className=`offday-stamp role-${stampRole}`;
         const animal=offdayAnimalMeta(user);
-        stamp.innerHTML='<span class="offday-seal-kicker" aria-hidden="true">OFFDAY</span><strong class="offday-seal-off">OFF</strong><span class="offday-animal-crest" aria-hidden="true"></span>';
-        if(animal){
+        const crest=animal?.species ? offdayAnimalCrestMarkup(animal.species) : '';
+        stamp.innerHTML=`<span class="offday-seal-kicker" aria-hidden="true">OFFDAY</span><strong class="offday-seal-off">OFF</strong><span class="offday-animal-crest" aria-hidden="true">${crest}</span>`;
+        if(animal&&crest){
             stamp.classList.add('has-animal-crest');
-            const src=String(animal.src||'').replace(/["\\]/g,'\\$&');
-            stamp.style.setProperty('--offday-animal-mask',`url("${src}")`);
             stamp.dataset.animalKey=String(animal.key||'');
+            stamp.dataset.animalSpecies=String(animal.species||'');
             stamp.setAttribute('aria-label',`OFFDAY — ${animal.label||'Animal'}`);
         }else{
             stamp.classList.add('no-animal-crest');
