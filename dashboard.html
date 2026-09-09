@@ -136923,39 +136923,40 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
 
 
 /* ============================================================
-   V93 — SINGLE SHELL / STATEFUL INNER FACE
-   DIRECT REPLACEMENT OF V92 — NO CASCADE PATCH
+   V94 — INVARIANT SHELL READABILITY
+   DIRECT REPLACEMENT OF V93 — NO CASCADE PATCH
    ------------------------------------------------------------
    ROOT CAUSE:
-   V92 fixed the numeric OUTER footprint, but CLOSED still looked
-   optically smaller because the role-hole wall shadow spread too far
-   across the small 64×20 control. The eye therefore read a smaller
-   active face even though the CSS box was identical.
+   V93 fixed geometry and CLOSED depth, but the shared outer seam
+   remained too faint in OPEN. CLOSED therefore read as a physical
+   object while OPEN could still dissolve into the board plane.
 
-   V93 AUTHORITY:
-   - one immutable OUTER shell for both states,
-   - one immutable INNER face rectangle for both states,
-   - OPEN = that face is coplanar TILE-SURFACE,
-   - CLOSED = that exact face becomes ROLE-HOLE,
-   - CLOSED depth uses a tighter wall shadow so it does not consume
-     the apparent face width/height,
-   - state never changes shell/face size, radius or position,
-   - hover changes readability only, never geometry or depth.
+   V94 AUTHORITY:
+   - exactly one OUTER shell rule owns both states and hover,
+   - shell width/height/radius/background/seam/shadow never change,
+   - shell seam is raised optically just enough to remain readable,
+     while staying coplanar and neutral,
+   - exactly one INNER face rectangle is shared by both states,
+   - OPEN = TILE-SURFACE inner face / no depth,
+   - CLOSED = same face rectangle / ROLE-HOLE pressed depth,
+   - hover changes text readability only; shell and depth are invariant.
 
    No slider/thumb. Closed-board treatment remains HOLD.
    ============================================================ */
 
-/* ---------- ONE IMMUTABLE OUTER SHELL ---------- */
-#tab-offday .offday-toggle{
+/* ---------- ONE INVARIANT OUTER SHELL FOR ALL STATES ---------- */
+#tab-offday .offday-toggle,
+#tab-offday .offday-toggle:not(:disabled):hover,
+#tab-offday.offday-sealed .offday-toggle:not(:disabled):hover{
     width:64px!important;
     height:20px!important;
     flex:0 0 64px!important;
-    border:1px solid color-mix(in srgb,var(--offday-tile-surface) 84%,var(--offday-board-grid) 16%)!important;
+    border:1px solid color-mix(in srgb,var(--offday-tile-surface) 70%,var(--offday-board-grid) 30%)!important;
     border-radius:6px!important;
     background:var(--offday-tile-surface)!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 66%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 58%,transparent)!important;
+        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 64%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 60%,transparent)!important;
     box-sizing:border-box!important;
     transform:none!important;
 }
@@ -136964,7 +136965,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
     display:none!important;
 }
 
-/* ---------- ONE IMMUTABLE INNER FACE RECTANGLE ---------- */
+/* ---------- ONE INVARIANT INNER FACE RECTANGLE ---------- */
 #tab-offday .offday-toggle::before{
     position:absolute!important;
     inset:1px!important;
@@ -136982,16 +136983,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
     pointer-events:none!important;
 }
 
-/* ---------- OPEN / DIBUKA — FACE COPLANAR ---------- */
-#tab-offday .offday-toggle.is-open,
-#tab-offday .offday-toggle.is-open:not(:disabled):hover{
-    border-color:color-mix(in srgb,var(--offday-tile-surface) 84%,var(--offday-board-grid) 16%)!important;
-    background:var(--offday-tile-surface)!important;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 66%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 58%,transparent)!important;
-    transform:none!important;
-}
+/* ---------- OPEN / DIBUKA — SAME SHELL, FACE COPLANAR ---------- */
 #tab-offday .offday-toggle.is-open::before{
     content:"DIBUKA"!important;
     background:var(--offday-tile-surface)!important;
@@ -137009,7 +137001,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
     color:color-mix(in srgb,var(--accent-strong) 72%,var(--offday-board-text,var(--text-primary)))!important;
 }
 
-/* DDT Original: jade remains lettering-only; shell/face stay shared. */
+/* DDT Original: jade remains lettering-only; shared shell remains neutral. */
 html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open::before{
     color:#416f60!important;
     text-shadow:0 -1px 0 rgba(255,255,255,.70),0 1px 1px rgba(32,69,58,.20)!important;
@@ -137018,7 +137010,7 @@ html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open:not(:disabl
     color:#355f52!important;
 }
 
-/* Venom: green remains lettering-only; footprint/material topology is shared. */
+/* Venom: green remains lettering-only; shared shell remains neutral. */
 html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open::before,
 html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open::before,
 html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open::before{
@@ -137026,22 +137018,10 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.i
     text-shadow:0 -1px 0 rgba(183,255,170,.09),0 1px 1px rgba(0,0,0,.52)!important;
 }
 
-/* ---------- CLOSED / DITUTUP — SAME FACE, PRESSED IN ---------- */
-#tab-offday .offday-toggle:not(.is-open),
-#tab-offday .offday-toggle:not(.is-open):not(:disabled):hover,
-#tab-offday.offday-sealed .offday-toggle:not(.is-open):not(:disabled):hover{
-    border-color:color-mix(in srgb,var(--offday-tile-surface) 84%,var(--offday-board-grid) 16%)!important;
-    background:var(--offday-tile-surface)!important;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 66%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 58%,transparent)!important;
-    transform:none!important;
-}
+/* ---------- CLOSED / DITUTUP — SAME SHELL, SAME FACE PRESSED IN ---------- */
 #tab-offday .offday-toggle:not(.is-open)::before{
     content:"DITUTUP"!important;
     background:var(--offday-role-hole)!important;
-    /* Same ROLE-TAKEN material tokens, scaled to the much smaller control.
-       Tight walls preserve depth without making the inner face look smaller. */
     box-shadow:
         inset 2px 2px 3px -2px var(--offday-role-hole-shadow),
         inset 1px 1px 0 color-mix(in srgb,var(--offday-role-hole-shadow) 32%,transparent),
@@ -137070,13 +137050,13 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     border-radius:1px!important;
 }
 
-/* END V93 SINGLE SHELL / STATEFUL INNER FACE — single material authority */
+/* END V94 INVARIANT SHELL READABILITY — single material authority */
 
 /* END OFFDAY R51 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v93-single-shell-stateful-inner-face">
+<script id="offday-production-realtime-v2-js" data-offday-build="v94-invariant-shell-readability">
 (function(){
     'use strict';
 
