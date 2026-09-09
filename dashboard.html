@@ -136667,7 +136667,10 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     background:var(--offday-board-surface)!important;
     box-shadow:none!important;
 }
-#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-day-cell:not(.has-choice):hover{
+/* V80 — LOCK-STATE HOVER SUPPRESSION
+   Root cause: sealed non-Leader hover was allowed to repaint .is-locked cells.
+   Lock material is authoritative and therefore excluded from generic hover. */
+#tab-offday.offday-sealed:not(.offday-leader-mode) .offday-day-cell:not(.has-choice):not(.is-locked):hover{
     background:var(--offday-tile-surface)!important;
     outline:none!important;
     filter:none!important;
@@ -137522,7 +137525,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle.is-open::afte
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v79-flush-toggle-authority-balance">
+<script id="offday-production-realtime-v2-js" data-offday-build="v80-lock-state-hover-suppression">
 (function(){
     'use strict';
 
