@@ -137110,11 +137110,159 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
     #tab-offday.offday-leader-mode .offday-period{min-width:90px!important;}
 }
 
+/* ============================================================
+   V77 — FLUSH OPEN PLATE + PERSISTENT CLOSED RECESS
+   Root-Cause Correction over V76
+   ------------------------------------------------------------
+   STRICT SCOPE: toggle presentation only.
+   - OPEN becomes visually flush with the board plane; only DIBUKA
+     carries a restrained embossed/raised-material cue.
+   - CLOSED retains the V76 recessed cavity at rest AND on hover.
+   - CLOSED slider piece is micro-refined smaller / quieter.
+   - Board sealed treatment is explicitly HOLD and untouched here.
+   - Leader controls, FINAL, matrix, locks, tiles and backend remain frozen.
+   ============================================================ */
+
+/* Base CLOSED state: preserve a shallow mechanical cavity. */
+#tab-offday .offday-toggle:not(.is-open){
+    border-color:color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 40%,var(--offday-board-line,var(--border-input)))!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 7%,var(--offday-board-surface,var(--bg-card))) 0%,
+        color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 12%,var(--offday-board-surface,var(--bg-card))) 100%)!important;
+    box-shadow:
+        inset 0 2px 4px -1px color-mix(in srgb,#000 24%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,#fff 13%,transparent),
+        0 1px 2px color-mix(in srgb,#000 5%,transparent)!important;
+    transform:none!important;
+}
+#tab-offday .offday-toggle:not(.is-open)::after{
+    left:3px!important;
+    top:3px!important;
+    width:12px!important;
+    height:12px!important;
+    border-radius:3.5px!important;
+    border-color:color-mix(in srgb,var(--offday-board-line,var(--border-color)) 58%,#f3f0e8)!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,#f4f1e9 88%,var(--offday-board-surface,var(--bg-card))),
+        color-mix(in srgb,#dddcd5 72%,var(--offday-board-surface,var(--bg-card))))!important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.58),
+        inset 0 -1px 0 rgba(64,80,78,.07),
+        0 1px 1.5px rgba(0,0,0,.17)!important;
+    opacity:.92!important;
+    transform:none!important;
+}
+#tab-offday .offday-toggle:not(.is-open)::before{
+    inset:0 4px 0 18px!important;
+}
+
+/* CLOSED hover MUST preserve topology/depth. Feedback is limited to a
+   slightly clearer rim and label; the cavity itself never flattens. */
+#tab-offday .offday-toggle:not(.is-open):not(:disabled):hover,
+#tab-offday.offday-sealed .offday-toggle:not(.is-open):not(:disabled):hover{
+    transform:none!important;
+    border-color:color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 49%,var(--offday-board-line,var(--border-input)))!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 7%,var(--offday-board-surface,var(--bg-card))) 0%,
+        color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 12%,var(--offday-board-surface,var(--bg-card))) 100%)!important;
+    box-shadow:
+        inset 0 2px 4px -1px color-mix(in srgb,#000 25%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,#fff 14%,transparent),
+        0 0 0 1px color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 5%,transparent),
+        0 1px 2px color-mix(in srgb,#000 5%,transparent)!important;
+}
+#tab-offday .offday-toggle:not(.is-open):not(:disabled):hover::before{
+    color:color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 84%,var(--offday-board-text,var(--text-primary)))!important;
+}
+
+/* OPEN state: the control disappears into the board plane. There is no
+   raised track, cavity or visible slider piece; only the DIBUKA lettering
+   remains as a subtle embossed board marking. */
+#tab-offday .offday-toggle.is-open{
+    border-color:transparent!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    transform:none!important;
+}
+#tab-offday .offday-toggle.is-open::before{
+    content:"DIBUKA"!important;
+    inset:0!important;
+    color:color-mix(in srgb,var(--accent-strong) 58%,var(--offday-board-text,var(--text-primary)))!important;
+    font-weight:840!important;
+    letter-spacing:.055em!important;
+    text-shadow:
+        0 -1px 0 color-mix(in srgb,#fff 72%,transparent),
+        0 1px 1px color-mix(in srgb,var(--offday-board-text,var(--text-primary)) 22%,transparent)!important;
+}
+#tab-offday .offday-toggle.is-open::after{
+    left:47px!important;
+    width:12px!important;
+    height:12px!important;
+    opacity:0!important;
+    transform:scale(.72)!important;
+    box-shadow:none!important;
+}
+#tab-offday .offday-toggle.is-open:not(:disabled):hover{
+    border-color:transparent!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    transform:none!important;
+}
+#tab-offday .offday-toggle.is-open:not(:disabled):hover::before{
+    color:color-mix(in srgb,var(--accent-strong) 68%,var(--offday-board-text,var(--text-primary)))!important;
+    text-shadow:
+        0 -1px 0 color-mix(in srgb,#fff 76%,transparent),
+        0 1px 1px color-mix(in srgb,var(--offday-board-text,var(--text-primary)) 25%,transparent)!important;
+}
+
+/* DDT Original: restrained jade embossed authority on the same flat board. */
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open{
+    border-color:transparent!important;
+    background:transparent!important;
+    box-shadow:none!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open::before{
+    color:#416f60!important;
+    text-shadow:0 -1px 0 rgba(255,255,255,.72),0 1px 1px rgba(32,69,58,.22)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open:not(:disabled):hover::before{
+    color:#355f52!important;
+}
+
+/* Venom: OPEN is still flush; green lives in the embossed lettering only. */
+html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open{
+    border-color:transparent!important;
+    background:transparent!important;
+    box-shadow:none!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open::before,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open::before,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open::before{
+    color:#58d844!important;
+    text-shadow:0 -1px 0 rgba(183,255,170,.13),0 1px 1px rgba(0,0,0,.58)!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-toggle:not(.is-open)::after,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle:not(.is-open)::after,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle:not(.is-open)::after{
+    background:linear-gradient(180deg,#e7ece4,#c6d0c3)!important;
+    border-color:#5f6b5d!important;
+}
+
+/* Mecha keeps its square dialect while adopting the same topology semantics. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-toggle:not(.is-open)::after,
+html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle:not(.is-open)::after{
+    border-radius:1px!important;
+}
+
+/* END V77 TOGGLE REFINEMENT — closed-board visual treatment intentionally HOLD */
+
 /* END OFFDAY R51 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v76-premium-soft-rect-toggle-refinement">
+<script id="offday-production-realtime-v2-js" data-offday-build="v77-flush-open-persistent-closed-recess">
 (function(){
     'use strict';
 
