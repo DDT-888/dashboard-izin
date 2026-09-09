@@ -136821,11 +136821,284 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     border-color:var(--offday-board-grid)!important;
     box-shadow:inset 0 1px 0 color-mix(in srgb,var(--offday-self-highlight) 42%,transparent)!important;
 }
+
+
+/* ============================================================
+   V75 — FAMILIAR TOGGLE + UNIFIED BOARD CONTROL RAIL
+   Root-Cause Correction over V74
+   ------------------------------------------------------------
+   Scope is presentation-only:
+   - restore the familiar switch silhouette and thumb;
+   - retain V74 raised OPEN / recessed CLOSED material semantics;
+   - flatten Leader-only control containers onto the same board plane;
+   - keep Leader action modes functional without badge/card stacking;
+   - preserve V74 closed-board seal, FINAL cue, matrix, locks and backend.
+   ============================================================ */
+
+/* Familiar switch geometry. CLOSED is a shallow cavity; OPEN lifts back out
+   of the board. The physical thumb remains visible in both states. */
+#tab-offday .offday-toggle{
+    position:relative!important;
+    flex:0 0 64px!important;
+    width:64px!important;
+    height:20px!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border:1px solid color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 42%,var(--offday-board-line,var(--border-input)))!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 8%,var(--offday-board-surface,var(--bg-card))) 0%,
+        color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 13%,var(--offday-board-surface,var(--bg-card))) 100%)!important;
+    box-shadow:
+        inset 0 2px 4px -1px color-mix(in srgb,#000 26%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,#fff 15%,transparent),
+        0 1px 1px color-mix(in srgb,#000 4%,transparent)!important;
+    cursor:pointer!important;
+    transform:none!important;
+    transition:background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease!important;
+}
+#tab-offday .offday-toggle::before{
+    content:"DITUTUP"!important;
+    position:absolute!important;
+    inset:0 4px 0 20px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+    color:color-mix(in srgb,var(--offday-sealed-accent,var(--text-muted)) 80%,var(--offday-board-text,var(--text-primary)))!important;
+    font-size:6.8px!important;
+    font-weight:820!important;
+    line-height:1!important;
+    letter-spacing:.055em!important;
+    text-transform:uppercase!important;
+    text-shadow:
+        0 1px 0 color-mix(in srgb,#fff 22%,transparent),
+        0 -1px 1px color-mix(in srgb,#000 18%,transparent)!important;
+    pointer-events:none!important;
+}
+#tab-offday .offday-toggle::after{
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    left:2px!important;
+    top:2px!important;
+    width:14px!important;
+    height:14px!important;
+    border:1px solid color-mix(in srgb,var(--offday-board-line,var(--border-color)) 70%,#fff)!important;
+    border-radius:50%!important;
+    box-sizing:border-box!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,#fff 92%,var(--offday-board-surface,var(--bg-card))),
+        color-mix(in srgb,#fff 62%,var(--offday-board-surface,var(--bg-card))))!important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.72),
+        0 1px 3px rgba(0,0,0,.23)!important;
+    pointer-events:none!important;
+    transition:left .16s cubic-bezier(.22,.61,.36,1),background .16s ease,box-shadow .16s ease!important;
+}
+#tab-offday .offday-toggle.is-open{
+    border-color:color-mix(in srgb,var(--accent) 60%,var(--offday-board-line,var(--border-color)))!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--accent) 76%,var(--offday-board-surface,var(--bg-card))) 0%,
+        color-mix(in srgb,var(--accent-strong) 72%,var(--offday-board-surface,var(--bg-card))) 100%)!important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.30),
+        0 2px 4px color-mix(in srgb,var(--accent) 14%,transparent)!important;
+}
+#tab-offday .offday-toggle.is-open::before{
+    content:"DIBUKA"!important;
+    inset:0 20px 0 4px!important;
+    color:#f5fffc!important;
+    text-shadow:0 1px 1px color-mix(in srgb,var(--accent-strong) 30%,transparent)!important;
+}
+#tab-offday .offday-toggle.is-open::after{
+    left:47px!important;
+}
+#tab-offday .offday-toggle:disabled{
+    opacity:1!important;
+    filter:none!important;
+    cursor:not-allowed!important;
+}
+#tab-offday .offday-toggle:not(:disabled):hover{
+    transform:translateY(-1px)!important;
+}
+#tab-offday.offday-sealed .offday-toggle:not(:disabled):hover{
+    transform:none!important;
+    box-shadow:
+        inset 0 2px 5px -1px color-mix(in srgb,#000 30%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,#fff 17%,transparent),
+        0 1px 1px color-mix(in srgb,#000 4%,transparent)!important;
+}
+
+/* DDT Original keeps its approved muted jade OPEN authority. */
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open{
+    border-color:#446f60!important;
+    background:linear-gradient(180deg,#5d8978 0%,#477565 52%,#386353 100%)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 2px 4px rgba(32,69,58,.13)!important;
+}
+
+/* Venom retains the accepted black/green family while adopting the same
+   switch mechanics instead of the V74 rectangular status plate. */
+html[data-selected-theme="venom"] #tab-offday .offday-toggle,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle{
+    border-color:#344234!important;
+    background:linear-gradient(180deg,#111611 0%,#151b15 100%)!important;
+    box-shadow:inset 0 2px 5px -1px rgba(0,0,0,.58),inset 0 -1px 0 rgba(121,151,112,.08)!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-toggle::before,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle::before,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle::before{
+    color:#8fa18b!important;
+    text-shadow:0 1px 0 rgba(122,153,113,.08),0 -1px 1px rgba(0,0,0,.58)!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-toggle::after,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle::after,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle::after{
+    border-color:#657263!important;
+    background:linear-gradient(180deg,#eef3ec,#cdd8ca)!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open{
+    border-color:#5ce947!important;
+    background:linear-gradient(180deg,#48d632 0%,#2eae1d 100%)!important;
+    box-shadow:inset 0 1px 0 rgba(230,255,224,.20),0 2px 5px rgba(68,214,44,.16)!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open::before,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open::before,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open::before{
+    color:#071006!important;
+    text-shadow:0 1px 0 rgba(216,255,207,.18)!important;
+}
+
+/* Mecha keeps its established square mechanical dialect; behavior and
+   thumb movement remain identical to the other themes. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-toggle,
+html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle,
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-toggle::after,
+html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::after{
+    border-radius:1px!important;
+}
+
+/* Leader uses the same board-top control line as every other role.
+   Remove the outer Leader card and the inner segmented badge material;
+   only direct operational labels remain on the board plane. */
+#tab-offday.offday-leader-mode .offday-header-controls{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:9px!important;
+    min-width:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+}
+#tab-offday.offday-leader-mode .offday-toggle{
+    order:1!important;
+}
+#tab-offday.offday-leader-mode .offday-leader-action{
+    order:2!important;
+    display:flex!important;
+    align-items:center!important;
+    min-width:0!important;
+    gap:0!important;
+}
+#tab-offday.offday-leader-mode .offday-leader-action-label{
+    display:none!important;
+}
+#tab-offday.offday-leader-mode .offday-leader-action-segment{
+    display:flex!important;
+    align-items:center!important;
+    gap:2px!important;
+    height:20px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+}
+#tab-offday.offday-leader-mode .offday-leader-action-btn{
+    position:relative!important;
+    flex:0 0 auto!important;
+    height:20px!important;
+    padding:0 6px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    color:var(--offday-board-muted,var(--text-muted))!important;
+    box-shadow:none!important;
+    font-size:6.5px!important;
+    font-weight:800!important;
+    line-height:20px!important;
+    letter-spacing:.035em!important;
+    transition:color .14s ease,box-shadow .14s ease!important;
+}
+#tab-offday.offday-leader-mode .offday-leader-action-btn:first-child,
+#tab-offday.offday-leader-mode .offday-leader-action-btn:last-child{
+    flex-basis:auto!important;
+}
+#tab-offday.offday-leader-mode .offday-leader-action-btn:hover{
+    background:transparent!important;
+    color:var(--offday-board-text,var(--text-primary))!important;
+    box-shadow:inset 0 -1px 0 color-mix(in srgb,var(--offday-board-line,var(--border-color)) 78%,transparent)!important;
+}
+#tab-offday.offday-leader-mode .offday-leader-action-btn.is-active{
+    background:transparent!important;
+    color:var(--offday-board-text,var(--text-primary))!important;
+    box-shadow:inset 0 -1px 0 color-mix(in srgb,var(--accent) 48%,var(--offday-board-line,var(--border-color)))!important;
+}
+#tab-offday.offday-leader-assign-mode .offday-leader-action-btn[data-mode="assign"].is-active{
+    background:transparent!important;
+    color:color-mix(in srgb,var(--accent-strong) 70%,var(--offday-board-text,var(--text-primary)))!important;
+    box-shadow:inset 0 -1px 0 color-mix(in srgb,var(--accent) 66%,var(--offday-board-line,var(--border-color)))!important;
+}
+#tab-offday.offday-leader-mode .offday-control-divider{
+    order:3!important;
+    height:24px!important;
+    margin:0 1px!important;
+}
+#tab-offday.offday-leader-mode .offday-period{
+    order:4!important;
+    min-width:96px!important;
+    gap:2px!important;
+}
+
+/* Theme-specific Leader cluster overrides from earlier generations are
+   intentionally neutralized here; the board itself is now the container. */
+html[data-selected-theme="venom"] #tab-offday.offday-leader-mode .offday-header-controls,
+html[data-selected-theme="venom-green"] #tab-offday.offday-leader-mode .offday-header-controls,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-mode .offday-header-controls,
+html[data-selected-theme="venom"] #tab-offday .offday-leader-action-segment,
+html[data-selected-theme="venom-green"] #tab-offday .offday-leader-action-segment,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-leader-action-segment{
+    background:transparent!important;
+    border-color:transparent!important;
+    box-shadow:none!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-leader-action-btn.is-active,
+html[data-selected-theme="venom-green"] #tab-offday .offday-leader-action-btn.is-active,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-leader-action-btn.is-active,
+html[data-selected-theme="venom"] #tab-offday.offday-leader-assign-mode .offday-leader-action-btn[data-mode="assign"].is-active,
+html[data-selected-theme="venom-green"] #tab-offday.offday-leader-assign-mode .offday-leader-action-btn[data-mode="assign"].is-active,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-assign-mode .offday-leader-action-btn[data-mode="assign"].is-active{
+    background:transparent!important;
+}
+
+@media(max-width:1100px){
+    #tab-offday.offday-leader-mode .offday-header-controls{gap:7px!important;padding:0!important;}
+    #tab-offday.offday-leader-mode .offday-leader-action-btn{padding:0 5px!important;font-size:6.2px!important;}
+    #tab-offday.offday-leader-mode .offday-period{min-width:90px!important;}
+}
+
 /* END OFFDAY R51 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v74-existing-toggle-closed-board-seal">
+<script id="offday-production-realtime-v2-js" data-offday-build="v75-familiar-toggle-unified-board-control-rail">
 (function(){
     'use strict';
 
