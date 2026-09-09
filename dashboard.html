@@ -136709,7 +136709,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v71-dynamic-shift-time-grouping">
+<script id="offday-production-realtime-v2-js" data-offday-build="v72-dynamic-bucket-role-ordering">
 (function(){
     'use strict';
 
@@ -136874,6 +136874,20 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     function shiftContextLabel(bucket){
         return String(bucket||'').trim().toUpperCase();
     }
+    /* V72 — canonical OFFDAY role order inside every non-Leader section.
+       Stable sort preserves the existing Shift Kerja order among users of the
+       same role while merged KD/PP variants are regrouped by role. */
+    const OFFDAY_ROLE_ORDER=Object.freeze({csline:0,cs:1,kapten:2,kasir:3});
+    function offdayRoleRank(role){
+        const key=normRole(role);
+        return Object.prototype.hasOwnProperty.call(OFFDAY_ROLE_ORDER,key)?OFFDAY_ROLE_ORDER[key]:99;
+    }
+    function sortRowsByRole(rows){
+        return (Array.isArray(rows)?rows:[])
+            .map((row,index)=>({row,index}))
+            .sort((a,b)=>offdayRoleRank(a.row?.role)-offdayRoleRank(b.row?.role)||a.index-b.index)
+            .map(item=>item.row);
+    }
     function competitionKey(row,iso){
         if(!row?.assigned||!row?.shiftBucket||normRole(row.role)==='leader')return '';
         return `${row.shiftBucket}|${normRole(row.role)}|${iso}`;
@@ -136998,10 +137012,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         }
 
         const columns = Array.isArray(state.shiftData?.columns) ? state.shiftData.columns : [];
-        /* V71 — merge exact Shift Kerja variants into one dynamic OFFDAY time group.
+        /* V71/V72 — merge exact Shift Kerja variants into one dynamic OFFDAY time
+           group, then render each merged group in canonical role order.
            Example: SHIFT PAGI · KD + SHIFT PAGI · PP => SHIFT PAGI. The first
-           appearance controls group order; user order inside each source column
-           remains intact. */
+           appearance still controls section order; same-role user order stays stable. */
         const groupedShiftSections=new Map();
         columns.forEach((column,index)=>{
             const sourceName=String(column?.name || `SHIFT ${index+1}`).trim() || `SHIFT ${index+1}`;
@@ -137031,7 +137045,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             });
         });
         for(const section of groupedShiftSections.values()){
-            if(section.rows.length)sections.push(section);
+            if(!section.rows.length)continue;
+            section.rows=sortRowsByRole(section.rows);
+            sections.push(section);
         }
 
         // Active users that are not present in any Shift Aktif column remain visible
@@ -137057,12 +137073,15 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 roster.push(row);
             });
         if(unassignedRows.length){
-            sections.push({id:'unassigned',name:'UNASSIGNED',kind:'unassigned',rows:unassignedRows});
+            sections.push({id:'unassigned',name:'UNASSIGNED',kind:'unassigned',rows:sortRowsByRole(unassignedRows)});
         }
 
+        /* Roster authority follows the actual rendered section order after role
+           sorting, keeping focus/summary/realtime lookups aligned with the board. */
+        const orderedRoster=sections.flatMap(section=>Array.isArray(section.rows)?section.rows:[]);
         state.sections=sections;
-        state.roster=roster;
-        state.rosterById=new Map(roster.map(row=>[Number(row.id),row]));
+        state.roster=orderedRoster;
+        state.rosterById=new Map(orderedRoster.map(row=>[Number(row.id),row]));
         rebuildCompetition();
         state.rosterLoaded=true;
     }
