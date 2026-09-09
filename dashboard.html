@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v69-leader-selected-tile-authority-material">
+    <meta name="dashboard-build" content="v70-multi-offday-architecture">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -136709,7 +136709,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v69-leader-selected-tile-authority-material">
+<script id="offday-production-realtime-v2-js" data-offday-build="v70-multi-offday-architecture">
 (function(){
     'use strict';
 
@@ -136879,11 +136879,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     }
     function rebuildCompetition(){
         const map=new Map();
-        for(const [uid,iso] of state.choices.entries()){
+        for(const [uid,dates] of state.choices.entries()){
             const row=state.rosterById.get(Number(uid));
-            const key=competitionKey(row,String(iso));
-            if(!key)continue;
-            if(!map.has(key))map.set(key,{userId:Number(uid),name:row?.name||'User'});
+            for(const iso of (dates instanceof Set?dates:[])){
+                const key=competitionKey(row,String(iso));
+                if(!key)continue;
+                if(!map.has(key))map.set(key,{userId:Number(uid),name:row?.name||'User'});
+            }
         }
         state.competition=map;
     }
@@ -136898,6 +136900,24 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         return ((parts[0]?.[0]||'')+(parts.length>1?parts[parts.length-1][0]:'')).toUpperCase() || 'U';
     }
     function keyCell(userId,iso){ return `${Number(userId)}|${iso}`; }
+    function choiceSet(userId,create=false){
+        const uid=Number(userId);
+        if(!uid)return new Set();
+        let set=state.choices.get(uid);
+        if(!set&&create){set=new Set();state.choices.set(uid,set);}
+        return set instanceof Set?set:new Set();
+    }
+    function hasChoiceDate(userId,iso){ return choiceSet(userId).has(String(iso||'')); }
+    function hasAnyChoice(userId){ return choiceSet(userId).size>0; }
+    function addChoiceLocal(userId,iso){
+        const value=String(iso||'');if(!value)return;
+        choiceSet(userId,true).add(value);
+    }
+    function removeChoiceLocal(userId,iso){
+        const uid=Number(userId);const set=choiceSet(uid);const value=String(iso||'');
+        if(!uid||!value||!set.size)return;
+        set.delete(value);if(!set.size)state.choices.delete(uid);
+    }
     function escapeHtml(value){ return String(value ?? '').replace(/[&<>'"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':'&quot;'})[ch]); }
     function isLeader(){ return String(typeof currentUserRole !== 'undefined' ? currentUserRole : '').toLowerCase()==='leader'; }
     function currentEmail(){ return String(typeof currentUser !== 'undefined' ? currentUser?.email || '' : '').trim().toLowerCase(); }
@@ -137035,7 +137055,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     function renderSummary(){
         const n=nodes(); if(!n.summary)return;
         const rosterIds=new Set(state.roster.map(row=>Number(row.id)));
-        const picked=[...state.choices.keys()].filter(id=>rosterIds.has(Number(id))).length;
+        const picked=[...state.choices.entries()].filter(([id,dates])=>rosterIds.has(Number(id))&&dates instanceof Set&&dates.size>0).length;
         n.summary.innerHTML=
             `<div class="offday-summary-metric"><span>TOTAL STAFF</span><strong>${state.roster.length}</strong></div>`+
             `<div class="offday-summary-metric"><span>SUDAH PILIH</span><strong>${picked}</strong></div>`;
@@ -137149,8 +137169,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const nonLeader=!isLeader();
         const self=nonLeader && Number(user.id)===Number(state.currentUserId);
         const role=normRole(user.role);
-        const selected=state.choices.get(Number(user.id)) || null;
-        const roster=add(`offday-roster-cell${self?' is-self':''}${selected?' has-offday-choice':''}`,
+        const selectedDates=choiceSet(user.id);
+        const hasAnySelected=selectedDates.size>0;
+        const roster=add(`offday-roster-cell${self?' is-self':''}${hasAnySelected?' has-offday-choice':''}`,
             `<div class="user-card-shift offday-user-card role-${role}" data-offday-user-card="1">`+
                 `<div class="avatar">${escapeHtml(String(user.name || '').charAt(0).toUpperCase() || '?')}</div>`+
                 `<div class="user-info"><div class="user-name history-tooltip-target" data-tooltip="${escapeHtml(user.name)}" data-tooltip-icon="user" data-tooltip-overflow="true">${escapeHtml(user.name)}</div></div>`+
@@ -137167,7 +137188,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             const dateLocked=state.dateLocks.has(iso);
             const cellLocked=state.cellLocks.has(keyCell(user.id,iso));
             const locked=dateLocked||cellLocked;
-            const hasChoice=selected===iso;
+            const hasChoice=selectedDates.has(iso);
             const takenOwner=roleTakenOwner(user,iso);
             const roleTaken=Boolean(takenOwner&&!hasChoice&&!locked);
             const classes=['offday-day-cell'];
@@ -137178,7 +137199,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             if(cellLocked)classes.push('is-cell-locked');
             if(!state.isOpen)classes.push('is-closed');
             if(self)classes.push('is-self-row');
-            if(self && selected)classes.push('is-self-selection-set');
+            if(self && hasAnySelected)classes.push('is-self-selection-set');
             if(visuallyUnassigned)classes.push('is-unassigned-user');
             if(roleTaken)classes.push('is-role-taken');
             if(hasChoice)classes.push('has-choice');
@@ -137225,7 +137246,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const dateLocked=state.dateLocks.has(iso);
         const cellLocked=state.cellLocks.has(keyCell(uid,iso));
         const locked=dateLocked||cellLocked;
-        const hasChoice=state.choices.get(uid)===iso;
+        const hasChoice=hasChoiceDate(uid,iso);
         const takenOwner=roleTakenOwner(user,iso);
         const roleTaken=Boolean(takenOwner&&!hasChoice&&!locked);
         cell.classList.toggle('is-locked',locked);
@@ -137233,7 +137254,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         cell.classList.toggle('is-cell-locked',cellLocked);
         cell.classList.toggle('is-closed',!state.isOpen);
         cell.classList.toggle('is-self-row',self);
-        cell.classList.toggle('is-self-selection-set',Boolean(self&&state.choices.get(uid)));
+        cell.classList.toggle('is-self-selection-set',Boolean(self&&hasAnyChoice(uid)));
         cell.classList.toggle('is-unassigned-user',Boolean(user&&!user.assigned&&normRole(user.role)!=='leader'));
         cell.classList.toggle('is-role-taken',roleTaken);
         cell.classList.toggle('has-choice',hasChoice);
@@ -137350,7 +137371,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const n=nodes();if(!n.grid)return;
         const uid=Number(userId);
         const roster=n.grid.querySelector(`.offday-roster-cell[data-user-id="${uid}"]`);
-        roster?.classList.toggle('has-offday-choice',Boolean(state.choices.get(uid)));
+        roster?.classList.toggle('has-offday-choice',hasAnyChoice(uid));
     }
 
     function paintUserCells(userId){
@@ -137475,7 +137496,11 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             }
             state.isOpen=Boolean(periodRes?.data?.is_open);
             state.loadedMonth=state.month;
-            state.choices=new Map((choiceRes?.data||[]).map(row=>[Number(row.user_id),String(row.off_date)]));
+            state.choices=new Map();
+            for(const row of (choiceRes?.data||[])){
+                const uid=Number(row?.user_id);const iso=String(row?.off_date||'');
+                if(uid&&iso)addChoiceLocal(uid,iso);
+            }
             state.dateLocks=new Set((dateLockRes?.data||[]).map(row=>String(row.off_date)));
             state.cellLocks=new Set((cellLockRes?.data||[]).map(row=>keyCell(row.user_id,String(row.off_date))));
             if(includeRoster){
@@ -137537,27 +137562,25 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
     async function chooseOrCancel(iso){
         const userId=Number(state.currentUserId);
-        const before=state.choices.get(userId)||null;
+        const existed=hasChoiceDate(userId,iso);
         await callRpc('offday_choose_or_cancel',{
             p_period_month:monthDate(),p_off_date:iso
         },{
             applyLocal:data=>{
-                const action=data?.action;
-                const oldIso=String(data?.old_off_date||before||'');
-                if(action==='cancelled') state.choices.delete(userId);
-                else if(action==='selected'||action==='moved') state.choices.set(userId,String(data?.off_date||iso));
+                const action=String(data?.action||'');
+                if(action==='cancelled')removeChoiceLocal(userId,iso);
+                else if(action==='selected')addChoiceLocal(userId,String(data?.off_date||iso));
                 rebuildCompetition();
-                if(oldIso)paintDate(oldIso);
-                if(String(data?.off_date||iso)!==oldIso)paintDate(String(data?.off_date||iso));
-                paintUserCells(userId);renderSummary();
+                paintDate(iso);
+                paintUserCells(userId);
+                renderSummary();
             },
             render:false,
             successMessage:data=>{
-                const action=data?.action;
+                const action=String(data?.action||'');
                 if(action==='cancelled')return `Offday ${dateLabel(iso)} dibatalkan.`;
-                if(action==='moved')return `Offday dipindahkan ke ${dateLabel(iso)}.`;
-                if(action==='selected')return `Offday dipilih: ${dateLabel(iso)}.`;
-                return before===iso?'Offday dibatalkan.':'Offday diperbarui.';
+                if(action==='selected')return `Offday ditambahkan: ${dateLabel(iso)}.`;
+                return existed?'Offday dibatalkan.':'Offday diperbarui.';
             }
         });
     }
@@ -137598,28 +137621,19 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const uid=Number(user.id);
         if(!uid)return;
         const targetRole=normRole(user.role);
-        /* Leader rows are intentionally outside Shift Kerja, but remain valid
-           OFFDAY assignment targets for Leader mode. Other UNASSIGNED users stay blocked. */
         if(targetRole!=='leader'&&!user.assigned){
             notify(`${user.name} belum ditempatkan ke Shift Aktif.`,'warning',2400);
             return;
         }
-        /* In ASSIGN mode an existing Leader lock is not a hard block.
-           The RPC returns confirm_required for date/cell locks and/or role conflict;
-           the second confirmed call performs the explicit Leader override. */
-        const before=state.choices.get(uid)||null;
         const data=await callRpc('offday_leader_assign_choice_v2',{
             p_period_month:monthDate(),p_user_id:uid,p_off_date:iso,p_force_conflict:Boolean(forceConflict)
         },{
             applyLocal:data=>{
                 const action=String(data?.action||'');
                 if(action==='confirm_required')return;
-                const oldIso=String(data?.old_off_date||before||'');
-                const newIso=String(data?.off_date||iso);
-                if(action==='selected'||action==='moved'||action==='unchanged')state.choices.set(uid,newIso);
+                if(action==='selected'||action==='unchanged')addChoiceLocal(uid,String(data?.off_date||iso));
                 rebuildCompetition();
-                if(oldIso)paintDate(oldIso);
-                if(newIso!==oldIso)paintDate(newIso);
+                paintDate(iso);
                 paintUserCells(uid);
                 renderSummary();
             },
@@ -137634,14 +137648,22 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
     async function cancelLeaderChoice(){
         const target=state.popoverTarget;if(!target)return;
-        const {user}=target;closeLeaderPopover();
+        const {user,iso}=target;closeLeaderPopover();
         const uid=Number(user.id);
         await callRpc('offday_leader_cancel_choice',{
-            p_period_month:monthDate(),p_user_id:uid
+            p_period_month:monthDate(),p_user_id:uid,p_off_date:iso
         },{
-            applyLocal:data=>{if(data?.cancelled){const oldIso=state.choices.get(uid)||'';state.choices.delete(uid);rebuildCompetition();if(oldIso)paintDate(oldIso);paintUserCells(uid);renderSummary();}},
+            applyLocal:data=>{
+                if(data?.cancelled){
+                    removeChoiceLocal(uid,iso);
+                    rebuildCompetition();
+                    paintDate(iso);
+                    paintUserCells(uid);
+                    renderSummary();
+                }
+            },
             render:false,
-            successMessage:data=>data?.cancelled?`Offday ${user.name} dibatalkan.`:null
+            successMessage:data=>data?.cancelled?`Offday ${user.name} · ${shortChoiceDate(iso)} dibatalkan.`:null
         });
     }
 
@@ -137852,7 +137874,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             const uid=Number(cell.dataset.userId||0);
             const iso=String(cell.dataset.date||'');
             if(!uid||!iso)return;
-            const hasChoice=state.choices.get(uid)===iso;
+            const hasChoice=hasChoiceDate(uid,iso);
             const locked=state.dateLocks.has(iso)||state.cellLocks.has(keyCell(uid,iso));
             if(isLeader()){
                 const user=state.roster.find(row=>Number(row.id)===uid);
@@ -137876,7 +137898,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                 return;
             }
             if(hasChoice){chooseOrCancel(iso);return;}
-            /* Closed period freezes choose, move, and cancel for normal users.
+            /* Closed period freezes add and cancel for normal users.
                Backend remains the final authority and enforces the same rule. */
             if(locked){notify('Tanggal tersebut sedang dikunci oleh Leader.','warning',2200);return;}
             const takenOwner=roleTakenOwner(user,iso);
