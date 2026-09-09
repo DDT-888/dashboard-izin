@@ -136167,20 +136167,19 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
    Geometry stays frozen; depth comes only from near-flat role tint + micro lift.
    Lock remains a separate higher-priority material when the same cell is locked. */
 #tab-offday .offday-day-cell.has-choice:not(.is-locked){
+    --offday-choice-seam-color:color-mix(in srgb,var(--offday-choice-role-accent) 48%,var(--offday-board-grid));
     background:linear-gradient(
         118deg,
         color-mix(in srgb,var(--offday-choice-role-accent) 30%,var(--offday-tile-surface)) 0%,
         color-mix(in srgb,var(--offday-choice-role-accent) 17%,var(--offday-tile-surface)) 52%,
         color-mix(in srgb,var(--offday-choice-role-deep) 6%,var(--offday-tile-surface)) 100%
     )!important;
-    border-right-color:color-mix(in srgb,var(--offday-choice-role-accent) 48%,var(--offday-board-grid))!important;
-    border-bottom-color:color-mix(in srgb,var(--offday-choice-role-accent) 48%,var(--offday-board-grid))!important;
-    /* V61: micro inner contour only. It reinforces the selected tile's top/left
-       face without taking ownership of the shared grid seam or adding geometry. */
+    border-right-color:var(--offday-choice-seam-color)!important;
+    border-bottom-color:var(--offday-choice-seam-color)!important;
+    /* V62: all four visible seams use the same role seam material. Left/top
+       remain owned by the neighboring existing grid edge via syncTileBorderOwners();
+       no inset contour is allowed to create a second material language. */
     box-shadow:
-        inset 1px 0 0 color-mix(in srgb,var(--offday-choice-role-accent) 22%,var(--offday-board-grid)),
-        inset 0 1px 0 color-mix(in srgb,var(--offday-choice-role-accent) 22%,var(--offday-board-grid)),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-choice-role-accent) 17%,transparent),
         0 2px 5px -3px color-mix(in srgb,var(--offday-choice-role-accent) 34%,transparent)!important;
     outline:none!important;
     filter:none!important;
@@ -136207,15 +136206,26 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
    reuses the already-PASS Lock Tile material so a completed choice reads as
    "committed/locked" when scanning the staff column. */
 #tab-offday .offday-roster-cell.has-offday-choice{
-    /* V61: the exposed roster rail is one near-flat Lock Tile material. The
-       previous inset bands/highlight leaked through the rounded card corners
-       as white wedges. A single backplane fill removes that artifact while the
-       User Card itself remains completely untouched above it. */
-    background:var(--offday-lock-tile-center)!important;
+    /* V62: keep the roster-cell backplane canonical/neutral so translucent
+       User Card material cannot inherit the Lock hue. Commitment is shown only
+       on the exposed 6px side / 4px top-bottom rail around the card. */
+    background:var(--offday-board-surface)!important;
     border-right-color:var(--offday-lock-tile-line)!important;
     border-bottom-color:var(--offday-lock-tile-line)!important;
     box-shadow:none!important;
     filter:none!important;
+}
+#tab-offday .offday-roster-cell.has-offday-choice::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+        linear-gradient(var(--offday-lock-tile-center),var(--offday-lock-tile-center)) top/100% 4px no-repeat,
+        linear-gradient(var(--offday-lock-tile-center),var(--offday-lock-tile-center)) bottom/100% 4px no-repeat,
+        linear-gradient(var(--offday-lock-tile-center),var(--offday-lock-tile-center)) left/6px 100% no-repeat,
+        linear-gradient(var(--offday-lock-tile-center),var(--offday-lock-tile-center)) right/6px 100% no-repeat;
 }
 #tab-offday .offday-roster-cell.has-offday-choice .offday-user-card.user-card-shift{
     position:relative!important;
@@ -136269,9 +136279,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         color-mix(in srgb,var(--offday-choice-role-deep) 8%,var(--offday-tile-surface)) 100%
     )!important;
     box-shadow:
-        inset 1px 0 0 color-mix(in srgb,var(--offday-choice-role-accent) 26%,var(--offday-board-grid)),
-        inset 0 1px 0 color-mix(in srgb,var(--offday-choice-role-accent) 26%,var(--offday-board-grid)),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-choice-role-accent) 19%,transparent),
         0 3px 7px -4px color-mix(in srgb,var(--offday-choice-role-accent) 40%,transparent)!important;
 }
 /* Cross-axis guidance is tonal only; it must never add another grid/rail line. */
@@ -136632,7 +136639,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v61-selected-inner-seam-picked-rail-corner-cleanup">
+<script id="offday-production-realtime-v2-js" data-offday-build="v62-unified-choice-seam-true-isolated-picked-rail">
 (function(){
     'use strict';
 
@@ -137280,7 +137287,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             const sectionIndex=Number(cell.dataset.sectionIndex||-1);
             if(!uid||!iso)continue;
 
-            const seamColor=getComputedStyle(cell).getPropertyValue('--offday-choice-role-accent').trim();
+            /* V62: sample the selected tile's actual rendered right seam so
+               left/top owners use the exact same material after all theme/role
+               resolution. This prevents a second seam formula from drifting. */
+            const seamColor=getComputedStyle(cell).borderRightColor.trim();
             if(!seamColor)continue;
 
             const dayNumber=Number(iso.slice(-2));
@@ -137289,7 +137299,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             if(leftOwner&&!leftOwner.classList.contains('is-locked')){
                 leftOwner.classList.add('choice-seam-owner-right');
                 leftOwner.style.setProperty('--offday-choice-seam-right',
-                    `color-mix(in srgb, ${seamColor} 48%, var(--offday-board-grid))`);
+                    seamColor);
             }
 
             const previousUid=previousUserById.get(uid);
@@ -137297,7 +137307,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             if(topOwner&&!topOwner.classList.contains('is-locked')){
                 topOwner.classList.add('choice-seam-owner-bottom');
                 topOwner.style.setProperty('--offday-choice-seam-bottom',
-                    `color-mix(in srgb, ${seamColor} 48%, var(--offday-board-grid))`);
+                    seamColor);
             }
         }
     }
