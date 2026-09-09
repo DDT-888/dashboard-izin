@@ -136174,15 +136174,31 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         color-mix(in srgb,var(--offday-choice-role-accent) 17%,var(--offday-tile-surface)) 52%,
         color-mix(in srgb,var(--offday-choice-role-deep) 6%,var(--offday-tile-surface)) 100%
     )!important;
-    border-right-color:var(--offday-choice-seam-color)!important;
-    border-bottom-color:var(--offday-choice-seam-color)!important;
-    /* V62: all four visible seams use the same role seam material. Left/top
-       remain owned by the neighboring existing grid edge via syncTileBorderOwners();
-       no inset contour is allowed to create a second material language. */
+    /* V63: the committed choice owns one continuous four-side frame itself.
+       Base right/bottom borders stay geometry-only and transparent; the frame
+       extends 1px left/top to paint directly over the existing neighboring grid
+       seam, so all four visible edges come from exactly one material authority. */
+    border-right-color:transparent!important;
+    border-bottom-color:transparent!important;
     box-shadow:
         0 2px 5px -3px color-mix(in srgb,var(--offday-choice-role-accent) 34%,transparent)!important;
     outline:none!important;
     filter:none!important;
+}
+#tab-offday .offday-day-cell.has-choice:not(.is-locked)::before{
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    top:-1px!important;
+    left:-1px!important;
+    right:0!important;
+    bottom:0!important;
+    box-sizing:border-box!important;
+    border:1px solid var(--offday-choice-seam-color)!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    pointer-events:none!important;
+    z-index:2!important;
 }
 /* The roster backplane stays board-neutral. The role-colored User Card is the
    visual anchor; no self-row stripe or copied left role datum is added. */
@@ -136382,18 +136398,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 }
 #tab-offday .offday-day-cell.is-role-taken.lock-seam-owner-bottom:not(.is-locked):not(.has-choice){
     border-bottom-color:var(--offday-lock-tile-line)!important;
-}
-
-/* Committed-choice seams use the same single-owner model as Leader Lock.
-   The preceding/upper tile owns the shared 1px edge, so selected tiles keep
-   a complete left/top contour without introducing double borders. */
-#tab-offday .offday-day-cell.choice-seam-owner-right,
-#tab-offday .offday-roster-cell.choice-seam-owner-right{
-    border-right-color:var(--offday-choice-seam-right,var(--offday-board-grid))!important;
-}
-#tab-offday .offday-day-cell.choice-seam-owner-bottom,
-#tab-offday .offday-group-day.choice-seam-owner-bottom{
-    border-bottom-color:var(--offday-choice-seam-bottom,var(--offday-board-grid))!important;
 }
 
 /* OFF = canonical role-colored WEBP crest authority.
@@ -136639,7 +136643,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v62-unified-choice-seam-true-isolated-picked-rail">
+<script id="offday-production-realtime-v2-js" data-offday-build="v63-single-piece-choice-frame">
 (function(){
     'use strict';
 
@@ -137197,8 +137201,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     }
 
     /* Existing-border seam ownership, single-pass / map-backed.
-       Lock and committed-choice tiles both use the existing neighboring edge;
-       no synthetic top/left border is drawn on the raised tile itself. */
+       Leader Lock keeps the shared-edge ownership model. Committed OFFDAY
+       choices own their four-side frame locally in CSS (V63), so no choice
+       seam mutation is needed here. */
     function syncTileBorderOwners(){
         const n=nodes();
         if(!n.grid)return;
@@ -137210,17 +137215,13 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const cornerHead=n.grid.querySelector('.offday-corner-head');
 
         for(const el of allCells){
-            el.classList.remove('lock-seam-owner-right','lock-seam-owner-bottom','choice-seam-owner-right','choice-seam-owner-bottom');
-            el.style.removeProperty('--offday-choice-seam-right');
-            el.style.removeProperty('--offday-choice-seam-bottom');
+            el.classList.remove('lock-seam-owner-right','lock-seam-owner-bottom');
         }
         for(const el of groupDays){
-            el.classList.remove('lock-seam-owner-bottom','choice-seam-owner-bottom');
-            el.style.removeProperty('--offday-choice-seam-bottom');
+            el.classList.remove('lock-seam-owner-bottom');
         }
         for(const el of rosterCells){
-            el.classList.remove('lock-seam-owner-right','choice-seam-owner-right');
-            el.style.removeProperty('--offday-choice-seam-right');
+            el.classList.remove('lock-seam-owner-right');
         }
         for(const el of dayHeads)el.classList.remove('lock-seam-owner-right');
         cornerHead?.classList.remove('lock-seam-owner-right');
@@ -137277,39 +137278,6 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             }
         }
 
-        /* Committed OFFDAY choice seam authority. Selected tiles retain the
-           role-colored contour on their left/top edges by coloring the existing
-           neighboring seam. A neighboring Leader Lock keeps priority. */
-        for(const cell of allCells){
-            if(!cell.classList.contains('has-choice')||cell.classList.contains('is-locked'))continue;
-            const uid=Number(cell.dataset.userId||0);
-            const iso=String(cell.dataset.date||'');
-            const sectionIndex=Number(cell.dataset.sectionIndex||-1);
-            if(!uid||!iso)continue;
-
-            /* V62: sample the selected tile's actual rendered right seam so
-               left/top owners use the exact same material after all theme/role
-               resolution. This prevents a second seam formula from drifting. */
-            const seamColor=getComputedStyle(cell).borderRightColor.trim();
-            if(!seamColor)continue;
-
-            const dayNumber=Number(iso.slice(-2));
-            const previousDayIso=dayNumber>1?dateISO(dayNumber-1):null;
-            const leftOwner=previousDayIso?cellMap.get(`${uid}|${previousDayIso}`):rosterMap.get(String(uid));
-            if(leftOwner&&!leftOwner.classList.contains('is-locked')){
-                leftOwner.classList.add('choice-seam-owner-right');
-                leftOwner.style.setProperty('--offday-choice-seam-right',
-                    seamColor);
-            }
-
-            const previousUid=previousUserById.get(uid);
-            const topOwner=previousUid?cellMap.get(`${previousUid}|${iso}`):groupMap.get(`${sectionIndex}|${iso}`);
-            if(topOwner&&!topOwner.classList.contains('is-locked')){
-                topOwner.classList.add('choice-seam-owner-bottom');
-                topOwner.style.setProperty('--offday-choice-seam-bottom',
-                    seamColor);
-            }
-        }
     }
 
     function syncRosterChoiceState(userId){
