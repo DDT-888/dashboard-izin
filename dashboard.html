@@ -44749,6 +44749,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
             <div class="menu-item sidebar-standard-row" data-tab="offday" data-tooltip="Offday" id="menuOffday" onclick="switchTab('offday')">
 <span class="icon"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="16" rx="2" width="18" x="3" y="5"></rect><path d="M16 3v4"></path><path d="M8 3v4"></path><path d="M3 11h18"></path><path d="m8 16 2 2 4-5"></path></svg></span>
 <span class="menu-label">Offday</span>
+<span class="offday-sidebar-lock-indicator" id="offdaySidebarLockIndicator" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span>
 </div>
             <div class="menu-item sidebar-standard-row" data-tab="historyshift" data-tooltip="Riwayat Shift" id="menuHistoryShift" onclick="switchTab('historyshift')">
 <span class="icon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M9 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path><path d="M16 3h5v5"></path><path d="m21 3-8 8"></path><path d="M8 13h3"></path><path d="M8 17h6"></path></svg></span>
@@ -45840,6 +45841,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                             <div class="offday-selection-copy">
                                 <div class="offday-selection-title">PEMILIHAN TANGGAL</div>
                                 <div class="offday-selection-desc">Tanggal yang dikunci Leader tidak tersedia untuk pemilihan.</div>
+                            </div>
+                            <div class="offday-board-state" id="offdayBoardState" role="status" aria-live="polite" aria-label="Status pemilihan OFFDAY">
+                                <span>DIBUKA</span>
                             </div>
                             <div class="offday-header-controls">
                                 <button
@@ -133940,6 +133944,32 @@ td.ddt-employee-office-cell:hover
 
 
 <style id="offday-production-realtime-v54-consolidated">
+/* V73 — sidebar OFFDAY closed-state indicator. No tooltip/badge container. */
+#menuOffday .offday-sidebar-lock-indicator{
+    display:none;
+    width:15px;
+    height:15px;
+    margin-left:auto;
+    flex:0 0 15px;
+    place-items:center;
+    color:color-mix(in srgb,var(--accent) 54%,var(--text-muted));
+    opacity:.86;
+    pointer-events:none;
+}
+#menuOffday .offday-sidebar-lock-indicator svg{
+    width:13px;
+    height:13px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+#menuOffday.is-offday-closed .offday-sidebar-lock-indicator{display:grid;}
+.sidebar.collapsed #menuOffday .offday-sidebar-lock-indicator{display:none!important;}
+html[data-theme="dark"][data-theme-variant="venom"] #menuOffday.is-offday-closed .offday-sidebar-lock-indicator{
+    color:#78a86e;
+}
 
 
 /* ---- consolidated source: offday-production-realtime-v2 ---- */
@@ -135693,39 +135723,94 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
     --offday-sealed-toolbar:color-mix(in srgb,var(--text-muted) 3%,var(--bg-card));
 }
 
-/* State is announced at the operational header, not by a page-wide opacity mask. */
+/* V73 — one physical board-status bay; no overlay and no duplicate FINAL badge.
+   OPEN = restored/raised activation plate. CLOSED = recessed cavity in the same
+   footprint. Toggle remains the control; this bay is the board-state material. */
 #tab-offday .offday-selection-control,
 #tab-offday .offday-matrix-tools,
 #tab-offday .offday-shell{
     transition:background-color .20s ease,border-color .20s ease,box-shadow .20s ease;
 }
-#tab-offday.offday-sealed .offday-selection-control{
-    
-    
+#tab-offday .offday-selection-control{
+    gap:12px!important;
 }
-#tab-offday.offday-sealed .offday-selection-title::after{
-    content:"FINAL";
-    display:inline-flex;
-    align-items:center;
-    height:14px;
-    margin-left:7px;
-    padding:0 6px;
-    
-    border-radius:999px;
-    
-    
-    font-size:6.1px;
-    font-weight:850;
-    letter-spacing:.075em;
+#tab-offday .offday-selection-copy{
+    flex:1 1 auto;
+}
+#tab-offday .offday-board-state{
+    --offday-state-surface:color-mix(in srgb,var(--accent) 6%,var(--offday-board-surface,var(--bg-card)));
+    --offday-state-line:color-mix(in srgb,var(--accent) 18%,var(--offday-board-line,var(--border-color)));
+    --offday-state-text:color-mix(in srgb,var(--accent-strong) 42%,var(--offday-board-text,var(--text-secondary)));
+    position:relative;
+    flex:0 0 82px;
+    width:82px;
+    height:28px;
+    display:grid;
+    place-items:center;
+    box-sizing:border-box;
+    overflow:hidden;
+    border:1px solid var(--offday-state-line);
+    border-radius:4px;
+    background:var(--offday-state-surface);
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,#fff 30%,var(--offday-state-surface)),
+        inset 0 -1px 0 color-mix(in srgb,#000 8%,transparent),
+        0 2px 5px -4px color-mix(in srgb,var(--accent) 26%,transparent);
+    color:var(--offday-state-text);
+    transition:background .20s ease,border-color .20s ease,box-shadow .20s ease,color .20s ease;
+}
+#tab-offday .offday-board-state::before{
+    content:"";
+    position:absolute;
+    left:8px;
+    right:8px;
+    top:0;
+    height:1px;
+    background:color-mix(in srgb,var(--accent) 24%,transparent);
+    opacity:.72;
+    pointer-events:none;
+}
+#tab-offday .offday-board-state span{
+    position:relative;
+    z-index:1;
+    font-size:7.2px;
     line-height:1;
-    vertical-align:1px;
+    font-weight:900;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    text-shadow:
+        0 -1px 0 color-mix(in srgb,#fff 68%,transparent),
+        0 1px 1px color-mix(in srgb,#000 18%,transparent);
 }
-#tab-offday.offday-sealed .offday-selection-desc{
-    
+#tab-offday.offday-sealed .offday-board-state{
+    --offday-state-cavity:color-mix(in srgb,var(--offday-sealed-accent) 10%,var(--offday-board-surface,var(--bg-card)));
+    --offday-state-cavity-line:color-mix(in srgb,var(--offday-sealed-line) 76%,var(--offday-board-line,var(--border-color)));
+    --offday-state-cavity-text:color-mix(in srgb,var(--offday-sealed-accent) 76%,var(--offday-board-text,var(--text-secondary)));
+    border-color:var(--offday-state-cavity-line);
+    background:var(--offday-state-cavity);
+    color:var(--offday-state-cavity-text);
+    box-shadow:
+        inset 0 3px 7px -2px color-mix(in srgb,#000 30%,transparent),
+        inset 1px 1px 0 color-mix(in srgb,#000 13%,transparent),
+        inset -1px -1px 0 color-mix(in srgb,#fff 16%,transparent);
 }
+#tab-offday.offday-sealed .offday-board-state::before{
+    left:1px;right:1px;top:1px;height:1px;
+    background:color-mix(in srgb,#000 12%,transparent);
+    opacity:1;
+}
+#tab-offday.offday-sealed .offday-board-state span{
+    text-shadow:
+        0 -1px 0 color-mix(in srgb,#fff 24%,transparent),
+        0 1px 1px color-mix(in srgb,#000 34%,transparent);
+}
+#tab-offday.offday-sealed .offday-selection-control,
 #tab-offday.offday-sealed .offday-matrix-tools{
-    
-    
+    background:var(--offday-board-surface)!important;
+}
+@media(max-width:900px){
+    #tab-offday .offday-board-state{flex-basis:76px;width:76px;height:26px;}
+    #tab-offday .offday-board-state span{font-size:6.7px;}
 }
 
 /* Sealed matrix: calm the decision plane while preserving all operational data. */
@@ -135865,7 +135950,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     --offday-sealed-toolbar:#101510;
 }
 
-html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday.offday-sealed .offday-selection-title::after{
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-board-state{
     border-radius:0!important;
 }
 
@@ -136709,7 +136794,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v72-dynamic-bucket-role-ordering">
+<script id="offday-production-realtime-v2-js" data-offday-build="v73-open-closed-board-state-system">
 (function(){
     'use strict';
 
@@ -136970,6 +137055,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             period:document.getElementById('offdayPeriodDisplay'),
             picker:document.getElementById('offdayMonthPicker'),
             toggle:document.getElementById('offdayGlobalToggle'),
+            boardState:document.getElementById('offdayBoardState'),
+            menuOffday:document.getElementById('menuOffday'),
             leaderAction:document.getElementById('offdayLeaderAction'),
             leaderModeLock:document.getElementById('offdayLeaderModeLock'),
             leaderModeAssign:document.getElementById('offdayLeaderModeAssign'),
@@ -137110,6 +137197,17 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         n.tab.classList.toggle('offday-leader-mode',leader);
         n.tab.classList.toggle('offday-leader-assign-mode',leader&&state.leaderActionMode==='assign');
         n.tab.classList.toggle('offday-sealed',!state.isOpen);
+        if(n.boardState){
+            const label=state.isOpen?'DIBUKA':'DITUTUP';
+            const span=n.boardState.querySelector('span');
+            if(span)span.textContent=label;
+            n.boardState.classList.toggle('is-open',state.isOpen);
+            n.boardState.classList.toggle('is-closed',!state.isOpen);
+            n.boardState.setAttribute('aria-label',`Status pemilihan OFFDAY: ${label}`);
+        }
+        if(n.menuOffday){
+            n.menuOffday.classList.toggle('is-offday-closed',!state.isOpen);
+        }
         if(n.selectionDesc){
             n.selectionDesc.textContent=state.isOpen
                 ? 'Tanggal yang dikunci Leader tidak tersedia untuk pemilihan.'
