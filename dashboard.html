@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v67-leader-color-separation">
+    <meta name="dashboard-build" content="v68-leader-selected-tile-navy-material">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -136143,9 +136143,9 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 
 /* Global role authority for a committed OFFDAY choice. Unlike self-row tint,
    these selectors intentionally do not depend on the current viewer.
-   V67 separates Leader into a navy-led surface + gold trim so it cannot scan
-   as Kapten while preserving the same V66 relief geometry. */
-#tab-offday .offday-day-cell.has-choice[data-role="leader"]{--offday-choice-role-accent:#33476d;--offday-choice-role-deep:#172A49;--offday-choice-role-trim:#b58c34;}
+   V68 keeps the V67 navy + gold separation and increases only the Leader
+   selected-tile center navy presence. V66 relief geometry remains frozen. */
+#tab-offday .offday-day-cell.has-choice[data-role="leader"]{--offday-choice-role-accent:#33476d;--offday-choice-role-deep:#172A49;--offday-choice-role-trim:#b58c34;--offday-choice-surface-weight:32%;--offday-choice-hover-weight:35%;}
 #tab-offday .offday-day-cell.has-choice[data-role="csline"]{--offday-choice-role-accent:#2f9b59;--offday-choice-role-deep:#15753f;}
 #tab-offday .offday-day-cell.has-choice[data-role="cs"]{--offday-choice-role-accent:#557fbd;--offday-choice-role-deep:#345f9e;}
 #tab-offday .offday-day-cell.has-choice[data-role="kapten"]{--offday-choice-role-accent:#b77d2e;--offday-choice-role-deep:#895918;}
@@ -136180,7 +136180,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
    and Lock remains the higher-priority material on overlap. */
 #tab-offday .offday-day-cell.has-choice:not(.is-locked){
     --offday-choice-seam-color:color-mix(in srgb,var(--offday-choice-role-trim,var(--offday-choice-role-accent)) 48%,var(--offday-board-grid));
-    --offday-choice-surface:color-mix(in srgb,var(--offday-choice-role-accent) 24%,var(--offday-tile-surface));
+    --offday-choice-surface:color-mix(in srgb,var(--offday-choice-role-accent) var(--offday-choice-surface-weight,24%),var(--offday-tile-surface));
     --offday-choice-relief-highlight:color-mix(in srgb,#ffffff 19%,var(--offday-choice-surface));
     --offday-choice-relief-shadow:color-mix(in srgb,#000000 15%,transparent);
     --offday-choice-relief-left:color-mix(in srgb,#ffffff 14%,var(--offday-choice-surface));
@@ -136325,6 +136325,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
    only one micro elevation step and never falls back to the generic input tile. */
 #tab-offday .offday-day-cell.has-choice.is-user-clickable:not(.is-locked):hover,
 #tab-offday.offday-leader-mode .offday-day-cell.has-choice:not(.is-locked):hover{
+    --offday-choice-hover-surface:color-mix(in srgb,var(--offday-choice-role-accent) var(--offday-choice-hover-weight,27%),var(--offday-tile-surface));
     background:
         linear-gradient(
             90deg,
@@ -136335,10 +136336,10 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         ),
         linear-gradient(
             180deg,
-            color-mix(in srgb,#ffffff 6%,color-mix(in srgb,var(--offday-choice-role-accent) 27%,var(--offday-tile-surface))) 0%,
-            color-mix(in srgb,var(--offday-choice-role-accent) 27%,var(--offday-tile-surface)) 22%,
-            color-mix(in srgb,var(--offday-choice-role-accent) 27%,var(--offday-tile-surface)) 74%,
-            color-mix(in srgb,var(--offday-choice-role-deep) 6%,color-mix(in srgb,var(--offday-choice-role-accent) 27%,var(--offday-tile-surface))) 100%
+            color-mix(in srgb,#ffffff 6%,var(--offday-choice-hover-surface)) 0%,
+            var(--offday-choice-hover-surface) 22%,
+            var(--offday-choice-hover-surface) 74%,
+            color-mix(in srgb,var(--offday-choice-role-deep) 6%,var(--offday-choice-hover-surface)) 100%
         )!important;
     box-shadow:
         inset 0 1px 0 color-mix(in srgb,#ffffff 21%,var(--offday-choice-surface)),
@@ -136693,7 +136694,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v67-leader-color-separation">
+<script id="offday-production-realtime-v2-js" data-offday-build="v68-leader-selected-tile-navy-material">
 (function(){
     'use strict';
 
