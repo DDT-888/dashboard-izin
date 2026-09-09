@@ -137258,11 +137258,134 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle:not(.is-open)
 
 /* END V77 TOGGLE REFINEMENT — closed-board visual treatment intentionally HOLD */
 
+/* ============================================================
+   V78 — FLUSH-SURFACE TOGGLE SILHOUETTE
+   Root-Cause Correction over V77
+   ------------------------------------------------------------
+   STRICT SCOPE: OPEN toggle presentation only.
+   - Keep the familiar toggle silhouette visible in OPEN.
+   - Keep track + thumb coplanar with the board surface: no raised plate,
+     no cavity, no floating shadow.
+   - DIBUKA remains embossed/board-marked inside the track.
+   - CLOSED V77 recess + persistent hover depth are frozen.
+   - Closed-board visual treatment remains HOLD and untouched.
+   ============================================================ */
+
+/* OPEN: visible mechanical switch silhouette, but completely coplanar with
+   the board plane. The outline is a material seam, not a raised button. */
+#tab-offday .offday-toggle.is-open{
+    border-color:color-mix(in srgb,var(--accent-strong) 34%,var(--offday-board-line,var(--border-color)))!important;
+    background:color-mix(in srgb,var(--accent) 2.5%,var(--offday-board-surface,var(--bg-card)))!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,#fff 13%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-board-line,var(--border-color)) 16%,transparent)!important;
+    transform:none!important;
+}
+#tab-offday .offday-toggle.is-open::before{
+    content:"DIBUKA"!important;
+    inset:0 18px 0 4px!important;
+    color:color-mix(in srgb,var(--accent-strong) 62%,var(--offday-board-text,var(--text-primary)))!important;
+    font-weight:840!important;
+    letter-spacing:.055em!important;
+    text-shadow:
+        0 -1px 0 color-mix(in srgb,#fff 68%,transparent),
+        0 1px 1px color-mix(in srgb,var(--offday-board-text,var(--text-primary)) 20%,transparent)!important;
+}
+/* OPEN thumb remains visible to preserve switch recognition, but is made
+   from the same board material and has no floating/drop-shadow cue. */
+#tab-offday .offday-toggle.is-open::after{
+    left:48px!important;
+    top:3px!important;
+    width:12px!important;
+    height:12px!important;
+    opacity:1!important;
+    border-radius:3.5px!important;
+    border-color:color-mix(in srgb,var(--accent-strong) 27%,var(--offday-board-line,var(--border-color)))!important;
+    background:color-mix(in srgb,var(--accent) 4%,var(--offday-board-surface,var(--bg-card)))!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,#fff 18%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-board-line,var(--border-color)) 18%,transparent)!important;
+    transform:none!important;
+}
+/* OPEN hover must not lift the control. Only the material seam and label
+   gain a fraction more definition while topology stays flat. */
+#tab-offday .offday-toggle.is-open:not(:disabled):hover{
+    border-color:color-mix(in srgb,var(--accent-strong) 42%,var(--offday-board-line,var(--border-color)))!important;
+    background:color-mix(in srgb,var(--accent) 3.5%,var(--offday-board-surface,var(--bg-card)))!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,#fff 14%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-board-line,var(--border-color)) 18%,transparent)!important;
+    transform:none!important;
+}
+#tab-offday .offday-toggle.is-open:not(:disabled):hover::before{
+    color:color-mix(in srgb,var(--accent-strong) 70%,var(--offday-board-text,var(--text-primary)))!important;
+}
+#tab-offday .offday-toggle.is-open:not(:disabled):hover::after{
+    border-color:color-mix(in srgb,var(--accent-strong) 34%,var(--offday-board-line,var(--border-color)))!important;
+    background:color-mix(in srgb,var(--accent) 5%,var(--offday-board-surface,var(--bg-card)))!important;
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb,#fff 19%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-board-line,var(--border-color)) 19%,transparent)!important;
+}
+
+/* DDT Original: restrained jade seam; surface remains the board itself. */
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open{
+    border-color:rgba(65,111,96,.34)!important;
+    background:color-mix(in srgb,#416f60 2.5%,var(--offday-board-surface,var(--bg-card)))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(32,69,58,.08)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open::before{
+    color:#416f60!important;
+    text-shadow:0 -1px 0 rgba(255,255,255,.70),0 1px 1px rgba(32,69,58,.20)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open::after{
+    border-color:rgba(65,111,96,.28)!important;
+    background:color-mix(in srgb,#416f60 3%,var(--offday-board-surface,var(--bg-card)))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(32,69,58,.08)!important;
+}
+html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open:not(:disabled):hover{
+    border-color:rgba(65,111,96,.42)!important;
+    background:color-mix(in srgb,#416f60 3.5%,var(--offday-board-surface,var(--bg-card)))!important;
+}
+
+/* Venom: retain the same flat geometry; green is a restrained seam/marking,
+   never a raised neon switch plate. */
+html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open{
+    border-color:rgba(68,214,44,.32)!important;
+    background:color-mix(in srgb,#44d62c 2.8%,var(--offday-board-surface,var(--bg-card)))!important;
+    box-shadow:inset 0 1px 0 rgba(151,231,139,.045),inset 0 -1px 0 rgba(0,0,0,.24)!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open::before,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open::before,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open::before{
+    color:#58d844!important;
+    text-shadow:0 -1px 0 rgba(183,255,170,.10),0 1px 1px rgba(0,0,0,.52)!important;
+}
+html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open::after,
+html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open::after,
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open::after{
+    border-color:rgba(68,214,44,.27)!important;
+    background:color-mix(in srgb,#44d62c 3%,var(--offday-board-surface,var(--bg-card)))!important;
+    box-shadow:inset 0 1px 0 rgba(151,231,139,.05),inset 0 -1px 0 rgba(0,0,0,.26)!important;
+}
+
+/* Mecha keeps its square dialect while remaining coplanar in OPEN. */
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-toggle.is-open,
+html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle.is-open,
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-toggle.is-open::after,
+html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle.is-open::after{
+    border-radius:1px!important;
+}
+
+/* END V78 TOGGLE REFINEMENT — closed-board visual treatment remains HOLD */
+
 /* END OFFDAY R51 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v77-flush-open-persistent-closed-recess">
+<script id="offday-production-realtime-v2-js" data-offday-build="v78-flush-surface-toggle-silhouette">
 (function(){
     'use strict';
 
