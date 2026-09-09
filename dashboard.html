@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light" class="boot-pending">
 <head>
-    <meta name="dashboard-build" content="v70-multi-offday-architecture">
+    <meta name="dashboard-build" content="v71-dynamic-shift-time-grouping">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#031821" />
@@ -136709,7 +136709,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v70-multi-offday-architecture">
+<script id="offday-production-realtime-v2-js" data-offday-build="v71-dynamic-shift-time-grouping">
 (function(){
     'use strict';
 
@@ -136860,18 +136860,19 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         stamp.setAttribute('aria-label',meta.hasAnimal?`OFFDAY — ${meta.label}`:'OFFDAY');
         return stamp;
     }
+    /* Dynamic Shift-Time authority.
+       OFFDAY groups by the canonical time/name before a variant separator, never
+       by a hardcoded PAGI/MALAM list. Future SHIFT SIANG / SHIFT SORE / custom
+       time groups therefore work automatically as long as Shift Kerja keeps the
+       existing `SHIFT NAME · CODE` naming grammar. */
     function shiftBucket(name){
-        const text=String(name||'').trim();
-        const upper=text.toUpperCase();
-        if(upper.includes('PAGI'))return 'PAGI';
-        if(upper.includes('MALAM'))return 'MALAM';
-        if(upper.includes('CUTI'))return 'CUTI';
-        return String(text.split('·')[0]||text).trim().toUpperCase();
+        const text=String(name||'').replace(/\s+/g,' ').trim();
+        if(!text)return '';
+        const main=String(text.split(/\s*(?:·|•|\||–|—)\s*|\s+-\s+/)[0]||text).trim();
+        return main.toUpperCase();
     }
-    function shiftDisplayParts(name){
-        const text=String(name||'').trim();
-        const parts=text.split('·').map(v=>v.trim()).filter(Boolean);
-        return {main:parts[0]||text,variant:parts.slice(1).join(' · ')};
+    function shiftContextLabel(bucket){
+        return String(bucket||'').trim().toUpperCase();
     }
     function competitionKey(row,iso){
         if(!row?.assigned||!row?.shiftBucket||normRole(row.role)==='leader')return '';
@@ -136997,27 +136998,41 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         }
 
         const columns = Array.isArray(state.shiftData?.columns) ? state.shiftData.columns : [];
+        /* V71 — merge exact Shift Kerja variants into one dynamic OFFDAY time group.
+           Example: SHIFT PAGI · KD + SHIFT PAGI · PP => SHIFT PAGI. The first
+           appearance controls group order; user order inside each source column
+           remains intact. */
+        const groupedShiftSections=new Map();
         columns.forEach((column,index)=>{
-            const rows=[];
+            const sourceName=String(column?.name || `SHIFT ${index+1}`).trim() || `SHIFT ${index+1}`;
+            const groupName=shiftBucket(sourceName) || sourceName.toUpperCase();
+            let section=groupedShiftSections.get(groupName);
+            if(!section){
+                section={id:`shift-time-${groupedShiftSections.size}`,name:groupName,kind:'shift',rows:[]};
+                groupedShiftSections.set(groupName,section);
+            }
             (Array.isArray(column?.users)?column.users:[]).forEach(saved=>{
                 const id=Number(saved?.id);
                 if(!id||seen.has(id))return;
                 const live=userMap.get(id);
                 if(live && String(live.status||'active').toLowerCase()!=='active')return;
                 seen.add(id);
-                const sectionName=String(column?.name || `SHIFT ${index+1}`).trim() || `SHIFT ${index+1}`;
                 const row={
                     id,
                     name:live?.name || saved?.name || `USER ${id}`,
                     role:live?.role || saved?.role || 'cs',
-                    section:sectionName,
-                    shiftBucket:shiftBucket(sectionName),
+                    section:groupName,
+                    sourceSection:sourceName,
+                    shiftBucket:groupName,
                     assigned:true
                 };
-                rows.push(row);roster.push(row);
+                section.rows.push(row);
+                roster.push(row);
             });
-            if(rows.length) sections.push({id:String(column?.id||`shift-${index}`),name:String(column?.name||`SHIFT ${index+1}`).trim(),kind:'shift',rows});
         });
+        for(const section of groupedShiftSections.values()){
+            if(section.rows.length)sections.push(section);
+        }
 
         // Active users that are not present in any Shift Aktif column remain visible
         // at the bottom as UNASSIGNED. OFFDAY identity follows user_id, so moving a
@@ -137225,7 +137240,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                             : locked
                                 ? 'Dikunci Leader'
                                 : roleTaken
-                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}`
+                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di ${shiftContextLabel(user.shiftBucket)}`
                                     : 'Klik untuk memilih OFFDAY',
                     locked?'lock':'info'
                 );
@@ -137278,7 +137293,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
                         : locked
                             ? 'Dikunci Leader'
                             : roleTaken
-                                ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di Shift ${user?.shiftBucket||''}`
+                                ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di ${shiftContextLabel(user?.shiftBucket)}`
                                 : 'Klik untuk memilih OFFDAY',
                 locked?'lock':'info'
             );
@@ -137714,7 +137729,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         const isLocked=Boolean(conflict?.date_locked||conflict?.cell_locked);
         const hasConflict=Boolean(conflictName);
         const bucket=String(conflict?.shift_bucket||user.shiftBucket||'').trim();
-        const bucketText=bucket&&bucket!=='LEADER'?` di Shift ${bucket}`:'';
+        const bucketText=bucket&&bucket!=='LEADER'?` di ${shiftContextLabel(bucket)}`:'';
         let copy='';
         if(isLocked&&hasConflict){
             copy=`${dateLabel(iso)} sedang dikunci dan sudah dipilih ${conflictName} untuk role ${roleLabel(user.role)}${bucketText}. Tetap assign untuk ${user.name}?`;
@@ -137903,7 +137918,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
             if(locked){notify('Tanggal tersebut sedang dikunci oleh Leader.','warning',2200);return;}
             const takenOwner=roleTakenOwner(user,iso);
             if(takenOwner){
-                notify(`Tanggal ${dateLabel(iso)} telah dipilih oleh User ${takenOwner.name} untuk role ${roleLabel(user.role)} di Shift ${user.shiftBucket}.`,'warning',3000);
+                notify(`Tanggal ${dateLabel(iso)} telah dipilih oleh User ${takenOwner.name} untuk role ${roleLabel(user.role)} di ${shiftContextLabel(user.shiftBucket)}.`,'warning',3000);
                 return;
             }
             chooseOrCancel(iso);
