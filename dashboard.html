@@ -136923,33 +136923,37 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
 
 
 /* ============================================================
-   V91 — STATE PLATE OPTICAL FINALIZATION
-   SINGLE MATERIAL AUTHORITY / DIRECT REPLACEMENT OF V90
+   V92 — FIXED PLATE FOOTPRINT
+   SINGLE MATERIAL AUTHORITY / DIRECT REPLACEMENT OF V91
    ------------------------------------------------------------
-   FINAL OPTICAL-POLISH SCOPE ONLY. The state-plate concept is retained unchanged:
-   one physical plate, OPEN flush with the board and CLOSED pressed in.
+   ROOT CAUSE:
+   V91 used the same CSS dimensions for OPEN and CLOSED, but each state
+   still changed the OUTER shell border/shadow. That made the physical
+   footprint read as two different-sized controls.
 
-   DIBUKA / OPEN
-   - geometry, fill, emboss and depth remain V89 authority;
-   - outer seam is softened a final ~8–10% so the plate reads fully coplanar.
+   V92 RULE:
+   - the OUTER plate shell is immutable across states,
+   - width / height / radius / border / shell shadow are identical,
+   - the INNER face uses the exact same inset/radius in both states,
+   - OPEN changes only the inner face to a flush TILE-SURFACE,
+   - CLOSED changes only the same inner face into ROLE-HOLE depth,
+   - hover never changes shell geometry, footprint or depth.
 
-   DITUTUP / CLOSED
-   - cavity geometry/depth and canonical ROLE-HOLE material remain frozen;
-   - outer TILE-SURFACE lip is quieted one final step so it reads only as
-     remaining board material, never as a frame around the cavity;
-   - the cavity edge, rather than color contrast, carries the depth cue.
-
-   No slider/thumb exists in either state. Hover never changes depth.
-   Closed-board treatment remains HOLD and untouched.
+   No slider/thumb exists. Closed-board treatment remains HOLD.
    ============================================================ */
 
-/* Shared plate shell: same geometry in both states. */
+/* ---------- IMMUTABLE OUTER PLATE FOOTPRINT ---------- */
 #tab-offday .offday-toggle{
-    border-color:color-mix(in srgb,var(--offday-tile-surface) 76%,var(--offday-board-grid) 24%)!important;
+    width:64px!important;
+    height:20px!important;
+    flex:0 0 64px!important;
+    border:1px solid color-mix(in srgb,var(--offday-tile-surface) 82%,var(--offday-board-grid) 18%)!important;
+    border-radius:6px!important;
     background:var(--offday-tile-surface)!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 78%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 74%,transparent)!important;
+        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 70%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 64%,transparent)!important;
+    box-sizing:border-box!important;
     transform:none!important;
 }
 #tab-offday .offday-toggle::after{
@@ -136957,25 +136961,38 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
     display:none!important;
 }
 
-/* ---------- OPEN / DIBUKA — FLUSH PLATE ---------- */
+/* The INNER face footprint is also immutable. Only material/depth changes. */
+#tab-offday .offday-toggle::before{
+    position:absolute!important;
+    inset:1px!important;
+    z-index:2!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:4px!important;
+    box-sizing:border-box!important;
+    font-size:6.55px!important;
+    line-height:1!important;
+    text-transform:uppercase!important;
+    pointer-events:none!important;
+}
+
+/* ---------- OPEN / DIBUKA — SAME PLATE, FACE FLUSH ---------- */
 #tab-offday .offday-toggle.is-open{
-    border-color:color-mix(in srgb,var(--accent-strong) 27%,var(--offday-board-grid))!important;
+    border-color:color-mix(in srgb,var(--offday-tile-surface) 82%,var(--offday-board-grid) 18%)!important;
     background:var(--offday-tile-surface)!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 84%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 82%,transparent)!important;
+        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 70%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 64%,transparent)!important;
+    transform:none!important;
 }
 #tab-offday .offday-toggle.is-open::before{
     content:"DIBUKA"!important;
-    inset:1px!important;
-    z-index:2!important;
-    border-radius:4px!important;
     background:var(--offday-tile-surface)!important;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 56%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 46%,transparent)!important;
+    box-shadow:none!important;
     color:color-mix(in srgb,var(--accent-strong) 66%,var(--offday-board-text,var(--text-primary)))!important;
-    font-size:6.55px!important;
     font-weight:850!important;
     letter-spacing:.05em!important;
     text-shadow:
@@ -136983,42 +137000,29 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
         0 1px 1px color-mix(in srgb,var(--offday-board-text,var(--text-primary)) 20%,transparent)!important;
 }
 #tab-offday .offday-toggle.is-open:not(:disabled):hover{
-    border-color:color-mix(in srgb,var(--accent-strong) 34%,var(--offday-board-grid))!important;
+    border-color:color-mix(in srgb,var(--offday-tile-surface) 82%,var(--offday-board-grid) 18%)!important;
     background:var(--offday-tile-surface)!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 84%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 82%,transparent)!important;
+        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 70%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 64%,transparent)!important;
     transform:none!important;
 }
 #tab-offday .offday-toggle.is-open:not(:disabled):hover::before{
     background:var(--offday-tile-surface)!important;
+    box-shadow:none!important;
     color:color-mix(in srgb,var(--accent-strong) 72%,var(--offday-board-text,var(--text-primary)))!important;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 56%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 46%,transparent)!important;
 }
 
-/* DDT Original: same approved jade emboss, quieter coplanar seam. */
-html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open{
-    border-color:rgba(65,111,96,.32)!important;
-}
+/* DDT Original: approved jade embossed lettering only; shell remains shared. */
 html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open::before{
     color:#416f60!important;
     text-shadow:0 -1px 0 rgba(255,255,255,.70),0 1px 1px rgba(32,69,58,.20)!important;
-}
-html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open:not(:disabled):hover{
-    border-color:rgba(65,111,96,.38)!important;
 }
 html[data-selected-theme="light"] #tab-offday .offday-toggle.is-open:not(:disabled):hover::before{
     color:#355f52!important;
 }
 
-/* Venom: topology unchanged; state seam is softened, not removed. */
-html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open,
-html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open,
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open{
-    border-color:rgba(68,214,44,.245)!important;
-}
+/* Venom: same fixed footprint; green exists only in the embossed marking. */
 html[data-selected-theme="venom"] #tab-offday .offday-toggle.is-open::before,
 html[data-selected-theme="venom-green"] #tab-offday .offday-toggle.is-open::before,
 html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.is-open::before{
@@ -137026,28 +137030,23 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.i
     text-shadow:0 -1px 0 rgba(183,255,170,.09),0 1px 1px rgba(0,0,0,.52)!important;
 }
 
-/* ---------- CLOSED / DITUTUP — PRESSED-IN PLATE ---------- */
+/* ---------- CLOSED / DITUTUP — SAME PLATE, SAME FACE PRESSED IN ---------- */
 #tab-offday .offday-toggle:not(.is-open){
-    /* The shell is intentionally almost pure tile material. The visible lip
-       should read as board left behind around a pressed opening, not a frame. */
-    border-color:color-mix(in srgb,var(--offday-tile-surface) 88%,var(--offday-board-grid) 12%)!important;
+    border-color:color-mix(in srgb,var(--offday-tile-surface) 82%,var(--offday-board-grid) 18%)!important;
     background:var(--offday-tile-surface)!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 64%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 58%,transparent)!important;
+        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 70%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 64%,transparent)!important;
+    transform:none!important;
 }
 #tab-offday .offday-toggle:not(.is-open)::before{
     content:"DITUTUP"!important;
-    inset:1px!important;
-    z-index:2!important;
-    border-radius:4px!important;
     background:var(--offday-role-hole)!important;
     box-shadow:
         inset 3px 3px 7px -2px var(--offday-role-hole-shadow),
         inset 1px 1px 0 color-mix(in srgb,var(--offday-role-hole-shadow) 36%,transparent),
         inset -1px -1px 0 color-mix(in srgb,var(--offday-role-hole-highlight) 36%,transparent)!important;
     color:color-mix(in srgb,var(--offday-board-muted,var(--text-muted)) 76%,var(--offday-board-text,var(--text-primary)))!important;
-    font-size:6.55px!important;
     font-weight:820!important;
     letter-spacing:.045em!important;
     text-shadow:
@@ -137056,11 +137055,11 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.i
 }
 #tab-offday .offday-toggle:not(.is-open):not(:disabled):hover,
 #tab-offday.offday-sealed .offday-toggle:not(.is-open):not(:disabled):hover{
-    border-color:color-mix(in srgb,var(--offday-tile-surface) 88%,var(--offday-board-grid) 12%)!important;
+    border-color:color-mix(in srgb,var(--offday-tile-surface) 82%,var(--offday-board-grid) 18%)!important;
     background:var(--offday-tile-surface)!important;
     box-shadow:
-        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 64%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 58%,transparent)!important;
+        inset 0 1px 0 color-mix(in srgb,var(--offday-tile-highlight) 70%,transparent),
+        inset 0 -1px 0 color-mix(in srgb,var(--offday-tile-shadow) 64%,transparent)!important;
     transform:none!important;
 }
 #tab-offday .offday-toggle:not(.is-open):not(:disabled):hover::before{
@@ -137072,7 +137071,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-toggle.i
     color:color-mix(in srgb,var(--offday-board-muted,var(--text-muted)) 70%,var(--offday-board-text,var(--text-primary)))!important;
 }
 
-/* Mecha keeps its established square mechanical dialect. */
+/* Mecha keeps its established square mechanical dialect; footprint stays fixed. */
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-toggle,
 html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle,
 html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-toggle::before,
@@ -137080,13 +137079,13 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     border-radius:1px!important;
 }
 
-/* END V91 STATE PLATE OPTICAL FINALIZATION — single material authority */
+/* END V92 FIXED PLATE FOOTPRINT — single material authority */
 
 /* END OFFDAY R51 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v91-state-plate-optical-finalization">
+<script id="offday-production-realtime-v2-js" data-offday-build="v92-fixed-plate-footprint">
 (function(){
     'use strict';
 
