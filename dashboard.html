@@ -137734,11 +137734,44 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle:not(.is-open)
 }
 /* END V83 CLOSED CAVITY DEPTH RECONSTRUCTION — DIBUKA remains PASS/LOCKED */
 
+/* ============================================================
+   V84 — CLOSED CAVITY MATERIAL MATCH
+   ------------------------------------------------------------
+   FINAL MATERIAL MICRO-CORRECTION over V83.
+   DIBUKA / OPEN is PASS + LOCKED and intentionally absent.
+
+   ROOT CAUSE:
+   ROLE-TAKEN exposes the canonical hole inside a 1px TILE-SURFACE lip.
+   V83 matched the hole center and wall direction, but the CLOSED toggle
+   still cut directly from the header/board plane, so its perimeter read
+   as a separate control capsule.
+
+   CORRECTION:
+   - keep V83 wall/depth stack byte-for-byte in visual geometry,
+   - move the shallow center only 4% toward TILE-SURFACE (depth cue only),
+   - use a near-TILE-SURFACE 1px cut-line/lip instead of an edge-colored rim,
+   - hover preserves the exact same material topology.
+
+   Slider, label, radius, size, position and closed-board treatment remain frozen.
+   ============================================================ */
+#tab-offday .offday-toggle:not(.is-open){
+    border-color:color-mix(in srgb,var(--offday-tile-surface) 94%,var(--offday-role-hole-edge) 6%)!important;
+    background:color-mix(in srgb,var(--offday-role-hole) 96%,var(--offday-tile-surface) 4%)!important;
+    background-clip:padding-box!important;
+}
+#tab-offday .offday-toggle:not(.is-open):not(:disabled):hover,
+#tab-offday.offday-sealed .offday-toggle:not(.is-open):not(:disabled):hover{
+    border-color:color-mix(in srgb,var(--offday-tile-surface) 94%,var(--offday-role-hole-edge) 6%)!important;
+    background:color-mix(in srgb,var(--offday-role-hole) 96%,var(--offday-tile-surface) 4%)!important;
+    background-clip:padding-box!important;
+}
+/* END V84 CLOSED CAVITY MATERIAL MATCH — DIBUKA remains PASS/LOCKED */
+
 /* END OFFDAY R51 */
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v83-closed-cavity-depth-reconstruction">
+<script id="offday-production-realtime-v2-js" data-offday-build="v84-closed-cavity-material-match">
 (function(){
     'use strict';
 
