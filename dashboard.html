@@ -136163,24 +136163,30 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         inset 0 -1px 0 var(--offday-tile-shadow)!important;
 }
 
-/* Committed OFFDAY choice = one raised tile state visible to EVERY viewer.
-   Geometry stays frozen; depth comes only from near-flat role tint + micro lift.
-   Lock remains a separate higher-priority material when the same cell is locked. */
+/* Committed OFFDAY choice = one role-colored raised tile state visible to EVERY viewer.
+   V64 keeps the single-piece V63 frame, then gives the tile the SAME depth grammar
+   as the already-PASS Lock Tile: one quiet top highlight + one quiet bottom shadow.
+   Geometry stays frozen and Lock remains the higher-priority material on overlap. */
 #tab-offday .offday-day-cell.has-choice:not(.is-locked){
     --offday-choice-seam-color:color-mix(in srgb,var(--offday-choice-role-accent) 48%,var(--offday-board-grid));
+    --offday-choice-relief-highlight:color-mix(
+        in srgb,#ffffff 14%,
+        color-mix(in srgb,var(--offday-choice-role-accent) 24%,var(--offday-tile-surface))
+    );
+    --offday-choice-relief-shadow:color-mix(in srgb,#000000 11%,transparent);
     background:linear-gradient(
         118deg,
         color-mix(in srgb,var(--offday-choice-role-accent) 30%,var(--offday-tile-surface)) 0%,
         color-mix(in srgb,var(--offday-choice-role-accent) 17%,var(--offday-tile-surface)) 52%,
         color-mix(in srgb,var(--offday-choice-role-deep) 6%,var(--offday-tile-surface)) 100%
     )!important;
-    /* V63: the committed choice owns one continuous four-side frame itself.
-       Base right/bottom borders stay geometry-only and transparent; the frame
-       extends 1px left/top to paint directly over the existing neighboring grid
-       seam, so all four visible edges come from exactly one material authority. */
+    /* One element still owns all four visible seams. Relief is internal only, so
+       it cannot reintroduce the mixed-material edge defect closed in V63. */
     border-right-color:transparent!important;
     border-bottom-color:transparent!important;
     box-shadow:
+        inset 0 1px 0 var(--offday-choice-relief-highlight),
+        inset 0 -1px 0 var(--offday-choice-relief-shadow),
         0 2px 5px -3px color-mix(in srgb,var(--offday-choice-role-accent) 34%,transparent)!important;
     outline:none!important;
     filter:none!important;
@@ -136217,31 +136223,39 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         0 3px 8px -5px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 34%,transparent),
         inset 0 1px 0 color-mix(in srgb,#fff 24%,transparent)!important;
 }
-/* Picked staff = committed roster RAIL, not a modified User Card.
-   The User Card remains the canonical role identity. The board backplane below it
-   reuses the already-PASS Lock Tile material so a completed choice reads as
-   "committed/locked" when scanning the staff column. */
+/* Picked staff = committed roster RAIL, never a modified User Card.
+   V64 uses one full Lock-material backplane, then places a board-neutral rounded
+   card bed at the exact User Card footprint. The bed preserves the canonical
+   translucent User Card color while the Lock material remains visible only
+   outside its rounded silhouette — eliminating the residual white corner wedges. */
 #tab-offday .offday-roster-cell.has-offday-choice{
-    /* V62: keep the roster-cell backplane canonical/neutral so translucent
-       User Card material cannot inherit the Lock hue. Commitment is shown only
-       on the exposed 6px side / 4px top-bottom rail around the card. */
-    background:var(--offday-board-surface)!important;
+    background:var(--offday-lock-tile-center)!important;
     border-right-color:var(--offday-lock-tile-line)!important;
     border-bottom-color:var(--offday-lock-tile-line)!important;
-    box-shadow:none!important;
+    box-shadow:
+        inset 0 1px 0 var(--offday-lock-highlight),
+        inset 0 -1px 0 var(--offday-lock-shadow)!important;
     filter:none!important;
 }
+/* Neutral rounded bed = exact 6px horizontal / 4px vertical roster padding and
+   the same 8px radius as .user-card-shift. This is UNDER the card, not a new card. */
+#tab-offday .offday-roster-cell.has-offday-choice::before{
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    inset:4px 6px!important;
+    width:auto!important;
+    border-radius:8px!important;
+    background:var(--offday-board-surface)!important;
+    opacity:1!important;
+    box-shadow:none!important;
+    pointer-events:none!important;
+    z-index:0!important;
+}
+/* Retire the V62/V63 strip-only rail painter. */
 #tab-offday .offday-roster-cell.has-offday-choice::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    z-index:0;
-    pointer-events:none;
-    background:
-        linear-gradient(var(--offday-lock-tile-center),var(--offday-lock-tile-center)) top/100% 4px no-repeat,
-        linear-gradient(var(--offday-lock-tile-center),var(--offday-lock-tile-center)) bottom/100% 4px no-repeat,
-        linear-gradient(var(--offday-lock-tile-center),var(--offday-lock-tile-center)) left/6px 100% no-repeat,
-        linear-gradient(var(--offday-lock-tile-center),var(--offday-lock-tile-center)) right/6px 100% no-repeat;
+    content:none!important;
+    display:none!important;
 }
 #tab-offday .offday-roster-cell.has-offday-choice .offday-user-card.user-card-shift{
     position:relative!important;
@@ -136295,6 +136309,8 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
         color-mix(in srgb,var(--offday-choice-role-deep) 8%,var(--offday-tile-surface)) 100%
     )!important;
     box-shadow:
+        inset 0 1px 0 var(--offday-choice-relief-highlight),
+        inset 0 -1px 0 var(--offday-choice-relief-shadow),
         0 3px 7px -4px color-mix(in srgb,var(--offday-choice-role-accent) 40%,transparent)!important;
 }
 /* Cross-axis guidance is tonal only; it must never add another grid/rail line. */
@@ -136643,7 +136659,7 @@ html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v63-single-piece-choice-frame">
+<script id="offday-production-realtime-v2-js" data-offday-build="v64-role-raised-choice-rounded-rail-bed">
 (function(){
     'use strict';
 
