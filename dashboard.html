@@ -136239,44 +136239,22 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
         0 3px 8px -5px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 34%,transparent),
         inset 0 1px 0 color-mix(in srgb,#fff 24%,transparent)!important;
 }
-/* V104 — UserCard Role Light Strip.
-   Preserve the canonical 3px role border and card geometry. A short local
-   emissive layer makes only the left role datum read as softly illuminated;
-   it never becomes a card-wide glow and never animates on hover. */
-#tab-offday .offday-user-card.user-card-shift{
-    --offday-role-light:var(--shift-role-accent,var(--accent));
-    position:relative!important;
-}
+/* V104.1 — Owner Role Strip Color Correction.
+   Retire the V104 pseudo-strip completely. The canonical left border remains
+   the single geometry owner at its original thickness; only the CURRENT USER's
+   card receives a brighter version of the same role hue. No extra strip, halo,
+   glow, background, radius, or hover geometry is introduced. */
 #tab-offday .offday-user-card.user-card-shift::before{
-    content:""!important;
-    position:absolute!important;
-    left:-2px!important;
-    top:5px!important;
-    bottom:5px!important;
-    width:3px!important;
-    border-radius:2px!important;
-    background:var(--offday-role-light)!important;
-    box-shadow:
-        0 0 3px color-mix(in srgb,var(--offday-role-light) 36%,transparent),
-        1px 0 4px color-mix(in srgb,var(--offday-role-light) 24%,transparent)!important;
-    opacity:.88!important;
-    pointer-events:none!important;
-    z-index:2!important;
-    filter:none!important;
+    content:none!important;
+    display:none!important;
 }
-#tab-offday .offday-user-card.user-card-shift:hover::before{
-    opacity:.88!important;
-    box-shadow:
-        0 0 3px color-mix(in srgb,var(--offday-role-light) 36%,transparent),
-        1px 0 4px color-mix(in srgb,var(--offday-role-light) 24%,transparent)!important;
+#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift{
+    --offday-owner-role-light:color-mix(in srgb,var(--shift-role-accent,var(--accent)) 74%,#ffffff 26%);
+    border-left-color:var(--offday-owner-role-light)!important;
 }
-/* Leader uses contextual border colors that intentionally differ by theme;
-   keep the light strip on that exact authority rather than generic gold. */
-#tab-offday .offday-user-card.user-card-shift.role-leader{--offday-role-light:#33476d;}
-html[data-theme="dark"] #tab-offday .offday-user-card.user-card-shift.role-leader{--offday-role-light:#52678f;}
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-user-card.user-card-shift.role-leader{--offday-role-light:#59677f;}
-html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-user-card.user-card-shift.role-leader,
-html[data-selected-theme="mecha-ivory"] #tab-offday .offday-user-card.user-card-shift.role-leader{--offday-role-light:#52617a;}
+#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift:hover{
+    border-left-color:var(--offday-owner-role-light)!important;
+}
 /* V102 — Lock Backplane Cleanup.
    `has-offday-choice` now remains a logic hook only. The previous picked-staff
    lock-material roster rail is retired because it is no longer semantically
@@ -137035,7 +137013,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v104-usercard-role-light-strip">
+<script id="offday-production-realtime-v2-js" data-offday-build="v104-1-owner-role-strip-color-correction">
 (function(){
     'use strict';
 
@@ -137602,11 +137580,12 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 
     function renderUserRow(user,calendar,add,previousUser=null,isSectionFirstRow=false,sectionIndex=-1){
         const nonLeader=!isLeader();
-        const self=nonLeader && Number(user.id)===Number(state.currentUserId);
+        const owner=Number(user.id)===Number(state.currentUserId);
+        const self=nonLeader && owner;
         const role=normRole(user.role);
         const selectedDates=choiceSet(user.id);
         const hasAnySelected=selectedDates.size>0;
-        const roster=add(`offday-roster-cell${self?' is-self':''}${hasAnySelected?' has-offday-choice':''}`,
+        const roster=add(`offday-roster-cell${owner?' is-owner':''}${self?' is-self':''}${hasAnySelected?' has-offday-choice':''}`,
             `<div class="user-card-shift offday-user-card role-${role}" data-offday-user-card="1">`+
                 `<div class="avatar">${escapeHtml(String(user.name || '').charAt(0).toUpperCase() || '?')}</div>`+
                 `<div class="user-info"><div class="user-name history-tooltip-target" data-tooltip="${escapeHtml(user.name)}" data-tooltip-icon="user" data-tooltip-overflow="true">${escapeHtml(user.name)}</div></div>`+
