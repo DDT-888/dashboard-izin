@@ -134070,7 +134070,6 @@ body:has(#tab-offday.active) .main-content{min-width:0;overflow-x:hidden;}
 #tab-offday .offday-user-card.user-card-shift:active{cursor:default!important;}
 #tab-offday .offday-user-card.user-card-shift .user-name{max-width:none!important;}
 #tab-offday .offday-user-card.user-card-shift .role-tag-shift{margin-left:auto!important;}
-#tab-offday .offday-roster-cell.is-self .offday-user-card.user-card-shift{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent)!important;}
 
 #tab-offday .offday-day-cell{position:relative;height:var(--offday-row-h);display:grid;place-items:center;}
 
@@ -134417,7 +134416,6 @@ html[data-selected-theme="light"] #tab-offday{--offday-stamp-border:#31594b;
 html[data-selected-theme="light"] #tab-offday .offday-roster-cell.is-self::before{}
 html[data-selected-theme="light"] #tab-offday .offday-roster-cell.is-self{}
 html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-self-row{}
-html[data-selected-theme="light"] #tab-offday .offday-roster-cell.is-self .offday-user-card.user-card-shift{box-shadow:inset 0 0 0 1px rgba(73,119,102,.22)!important;}
 html[data-selected-theme="light"] #tab-offday .offday-day-cell.is-user-clickable:hover{}
 html[data-selected-theme="light"] #tab-offday .offday-legend-swatch.selfrow{border-color:#78978b!important;
     box-shadow:inset 0 1px rgba(73,119,102,.34),inset 0 -1px rgba(73,119,102,.34)!important;}
@@ -134496,7 +134494,6 @@ html[data-selected-theme="light"] #tab-offday{--offday-axis-hover:#557d70;}
 #tab-offday .offday-roster-cell.is-self{}
 #tab-offday .offday-day-cell.is-self-row{}
 #tab-offday .offday-roster-cell.is-self::before{}
-#tab-offday .offday-roster-cell.is-self .offday-user-card.user-card-shift{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--offday-self-line) 34%,transparent)!important;}
 
 
 /* Locked / closed / role-taken states each get a distinct but calm language. */
@@ -136234,28 +136231,17 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     opacity:0!important;
     box-shadow:none!important;
 }
-/* V104.4 — Owner Strip Isolation + Emissive Left Rail.
-   Root cause correction: legacy self-card inset shadows were still winning the
-   cascade and visually brightening the full perimeter. Restore the owner card
-   to the SAME canonical card shadow as every other roster card. Then change
-   color only on the existing 3px left role border — no pseudo rail, no bloom,
-   no halo, no geometry change. Bright role variants make the owner strip read
-   like a powered indicator while all four border dimensions remain identical. */
-#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift{
-    --offday-owner-strip:var(--shift-role-accent,var(--accent));
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.055),
-        0 5px 14px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 6%,transparent)!important;
-}
-#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-leader{--offday-owner-strip:#f1c84b;}
-#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-csline{--offday-owner-strip:#20e878;}
-#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-cs{--offday-owner-strip:#4e9fff;}
-#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-kapten{--offday-owner-strip:#f4a92f;}
-#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-kasir{--offday-owner-strip:#a77cff;}
-#tab-offday .offday-user-card.user-card-shift::before{
-    content:none!important;
-    display:none!important;
-}
+/* V104.5 — TRUE CANONICAL CARD RESTORE.
+   Owner is no longer given any special perimeter painter. The card inherits the
+   exact same canonical border/shadow/background authority as every other User
+   Card. Only the EXISTING 3px left role border changes color for the owner.
+   No halo, no pseudo rail, no outline, no extra shadow, no geometry change. */
+#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift{--offday-owner-strip:var(--shift-role-accent,var(--accent));}
+#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-leader{--offday-owner-strip:#ffe04d;}
+#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-csline{--offday-owner-strip:#00ff68;}
+#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-cs{--offday-owner-strip:#2f9fff;}
+#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-kapten{--offday-owner-strip:#ffb21f;}
+#tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift.role-kasir{--offday-owner-strip:#a064ff;}
 #tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift,
 #tab-offday .offday-roster-cell.is-owner .offday-user-card.user-card-shift:hover{
     border-left-color:var(--offday-owner-strip)!important;
@@ -137018,7 +137004,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v104-4-owner-strip-isolation-emissive-rail">
+<script id="offday-production-realtime-v2-js" data-offday-build="v104-5-true-canonical-card-restore">
 (function(){
     'use strict';
 
