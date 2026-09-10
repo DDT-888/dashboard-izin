@@ -137072,7 +137072,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v99-two-month-window-history-authority">
+<script id="offday-production-realtime-v2-js" data-offday-build="v100-interaction-semantics-cleanup">
 (function(){
     'use strict';
 
@@ -137599,7 +137599,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             const head=add(`offday-day-head history-tooltip-target${info.isSunday?' is-sunday':''}${locked?' is-locked':''}${past?' is-past-date':''}${info.isMonthStart?' is-window-month-start':''}`,`<span class="num">${String(info.day).padStart(2,'0')}</span><span class="dow">${info.dayName}</span>`);
             head.dataset.date=info.iso;
             head.dataset.month=info.monthKey;
-            setThemeTooltip(head,isLeader()?'':(past?'Tanggal telah lewat':locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
+            setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':past?'Tanggal telah lewat':'Tanggal tersedia'),locked?'lock':'info');
         }
 
         const appendGroup=(section,sectionIndex)=>{
@@ -137691,12 +137691,12 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
                     cell,
                     !user.assigned
                         ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
-                        : past
-                            ? 'Tanggal telah lewat. Hanya Leader yang dapat mengubah OFFDAY.'
-                            : !state.isOpen
-                                ? 'Pemilihan OFFDAY dikunci oleh Leader'
-                                : locked
-                                    ? 'Dikunci Leader'
+                        : locked
+                            ? 'Dikunci Leader'
+                            : past
+                                ? 'Tanggal telah lewat. Hanya Leader yang dapat mengubah OFFDAY.'
+                                : !state.isOpen
+                                    ? 'Pemilihan OFFDAY dikunci oleh Leader'
                                     : roleTaken
                                         ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di ${shiftContextLabel(user.shiftBucket)}`
                                         : 'Klik untuk memilih OFFDAY',
@@ -137748,12 +137748,12 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
                 cell,
                 !user?.assigned
                     ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
-                    : past
-                        ? 'Tanggal telah lewat. Hanya Leader yang dapat mengubah OFFDAY.'
-                        : !state.isOpen
-                            ? 'Pemilihan OFFDAY dikunci oleh Leader'
-                            : locked
-                                ? 'Dikunci Leader'
+                    : locked
+                        ? 'Dikunci Leader'
+                        : past
+                            ? 'Tanggal telah lewat. Hanya Leader yang dapat mengubah OFFDAY.'
+                            : !state.isOpen
+                                ? 'Pemilihan OFFDAY dikunci oleh Leader'
                                 : roleTaken
                                     ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di ${shiftContextLabel(user?.shiftBucket)}`
                                     : 'Klik untuk memilih OFFDAY',
@@ -137860,7 +137860,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             const past=isPastDate(iso);
             head.classList.toggle('is-locked',locked);
             head.classList.toggle('is-past-date',past);
-            setThemeTooltip(head,isLeader()?'':(past?'Tanggal telah lewat':locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
+            setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':past?'Tanggal telah lewat':'Tanggal tersedia'),locked?'lock':'info');
         }
         n.grid.querySelectorAll(`.offday-day-cell[data-date="${iso}"]`).forEach(paintCell);
         syncTileBorderOwners();
