@@ -45832,9 +45832,9 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                     <div class="offday-board-toolbar">
                         <div class="offday-roster-summary">
                             <div class="offday-toolbar-eyebrow">SUSUNAN STAFF</div>
+                            <span class="offday-history-badge" id="offdayHistoryBadge" hidden>HISTORY</span>
                             <div class="offday-summary-line" id="offdaySummaryLine">
                                 <div class="offday-summary-metric"><span>TOTAL STAFF</span><strong>—</strong></div>
-                                <div class="offday-summary-metric"><span>SUDAH PILIH</span><strong>—</strong></div>
                             </div>
                         </div>
                         <div class="offday-selection-control">
@@ -45868,7 +45868,7 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                                         data-tooltip="Double-click untuk memilih periode bulan OFFDAY"
                                         data-tooltip-icon="edit"
                                         aria-label="Periode OFFDAY. Double-click untuk pilih bulan"
-                                    >September 2026</button>
+                                    >Sep - Okt 2026</button>
                                     <input
                                         class="offday-month-picker"
                                         id="offdayMonthPicker"
@@ -45881,17 +45881,6 @@ html[data-selected-theme="light"]:not([data-mi-native-presentation="mecha-ivory"
                         </div>
                     </div>
 
-                    <div class="offday-matrix-tools">
-                        <div class="offday-matrix-tools-left">
-                            <strong>TIMELINE TANGGAL</strong>
-                            <span>Gunakan scrollbar untuk melihat tanggal berikutnya.</span>
-                        </div>
-                        <div class="offday-matrix-legend" aria-label="Keterangan">
-                            <span class="offday-legend-item"><span class="offday-legend-swatch stamped"></span>OFFDAY</span>
-                            <span class="offday-legend-item"><span class="offday-legend-swatch locked"></span>Terkunci</span>
-                            <span class="offday-legend-item offday-self-legend" id="offdaySelfLegend"><span class="offday-legend-swatch selfrow"></span>Baris Anda</span>
-                        </div>
-                    </div>
 
                     <div class="offday-matrix-scroll" id="offdayMatrixScroll" aria-live="polite">
                         <div class="offday-grid" id="offdayGrid">
@@ -136923,6 +136912,37 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday.offday-leader-as
 
 
 /* ============================================================
+   V99 — TWO-MONTH WINDOW / HISTORY CONTEXT
+   New presentation semantics only. V98 toggle material remains frozen.
+   ============================================================ */
+#tab-offday .offday-history-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    height:15px;
+    padding:0 5px;
+    border:1px solid color-mix(in srgb,var(--offday-board-line) 78%,transparent);
+    border-radius:4px;
+    background:color-mix(in srgb,var(--offday-board-surface) 88%,var(--offday-tile-surface));
+    color:var(--offday-board-muted);
+    font-size:6.4px;
+    font-weight:820;
+    line-height:1;
+    letter-spacing:.075em;
+    text-transform:uppercase;
+    box-shadow:inset 0 1px 0 color-mix(in srgb,var(--offday-board-text-highlight) 44%,transparent);
+}
+#tab-offday .offday-history-badge[hidden]{display:none!important;}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-history-badge{border-radius:0;}
+
+/* One quiet seam marks the rollover into month two without splitting the board. */
+#tab-offday .offday-day-head.is-window-month-start,
+#tab-offday .offday-group-day.is-window-month-start,
+#tab-offday .offday-day-cell.is-window-month-start{
+    border-left:1px solid color-mix(in srgb,var(--offday-board-line) 72%,var(--offday-board-grid))!important;
+}
+
+/* ============================================================
    V98 — OPEN OPTICAL BALANCE / PERFECTION PASS
    DIRECT REPLACEMENT OF V97 — NO CASCADE PATCH
    ------------------------------------------------------------
@@ -137052,7 +137072,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v98-open-optical-balance-perfection-pass">
+<script id="offday-production-realtime-v2-js" data-offday-build="v99-two-month-window-history-authority">
 (function(){
     'use strict';
 
@@ -137065,6 +137085,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         month: initialMonth(),
         loadedMonth: null,
         isOpen: false,
+        periodOpen: new Map(),
         users: [],
         shiftData: null,
         sections: [],
@@ -137110,20 +137131,71 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
     }
 
+    function localTodayISO(){
+        const now=new Date();
+        return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    }
+
+    function monthOffset(monthKey,delta=0){
+        const [year,month]=String(monthKey||currentCalendarMonth()).split('-').map(Number);
+        const date=new Date(year,month-1+Number(delta||0),1);
+        return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+    }
+
     function initialMonth(){
-        // OFFDAY always opens on the current calendar month. Historical months
-        // remain available through the month picker for the active OFFDAY visit.
+        // Operational OFFDAY always enters the rolling current + next-month window.
+        // Past months remain selectable as single-month HISTORY views.
         return currentCalendarMonth();
     }
 
-    function monthDate(){ return `${state.month}-01`; }
-    function monthParts(){
-        const [year,month] = state.month.split('-').map(Number);
+    function isHistoryView(){ return String(state.month)<currentCalendarMonth(); }
+    function visibleMonths(){
+        const current=currentCalendarMonth();
+        return state.month===current?[current,monthOffset(current,1)]:[state.month];
+    }
+    function visibleWindowKey(){ return visibleMonths().join('|'); }
+    function monthDate(monthKey=state.month){ return `${monthKey}-01`; }
+    function monthForISO(iso){ return /^\d{4}-\d{2}-\d{2}$/.test(String(iso||''))?String(iso).slice(0,7):state.month; }
+    function periodMonthDateForISO(iso){ return monthDate(monthForISO(iso)); }
+    function monthParts(monthKey=state.month){
+        const [year,month] = String(monthKey).split('-').map(Number);
         return { year, monthIndex: month - 1 };
     }
-    function daysInMonth(){ const {year,monthIndex}=monthParts(); return new Date(year,monthIndex+1,0).getDate(); }
-    function dateISO(day){ return `${state.month}-${String(day).padStart(2,'0')}`; }
-    function formatMonth(){ const {year,monthIndex}=monthParts(); return `${MONTH_NAMES[monthIndex]} ${year}`; }
+    function daysInMonthFor(monthKey){
+        const {year,monthIndex}=monthParts(monthKey);
+        return new Date(year,monthIndex+1,0).getDate();
+    }
+    function dateISOFor(monthKey,day){ return `${monthKey}-${String(day).padStart(2,'0')}`; }
+    function formatMonthKey(monthKey,longName=true){
+        const {year,monthIndex}=monthParts(monthKey);
+        return `${(longName?MONTH_NAMES:MONTH_SHORT)[monthIndex]} ${year}`;
+    }
+    function formatPeriod(){
+        const months=visibleMonths();
+        if(months.length===1)return formatMonthKey(months[0],true);
+        const a=monthParts(months[0]),b=monthParts(months[1]);
+        if(a.year===b.year)return `${MONTH_SHORT[a.monthIndex]} - ${MONTH_SHORT[b.monthIndex]} ${a.year}`;
+        return `${MONTH_SHORT[a.monthIndex]} ${a.year} - ${MONTH_SHORT[b.monthIndex]} ${b.year}`;
+    }
+    function visibleCalendarDays(){
+        const months=visibleMonths();
+        const result=[];
+        months.forEach((monthKey,monthPosition)=>{
+            const {year,monthIndex}=monthParts(monthKey);
+            const count=daysInMonthFor(monthKey);
+            for(let day=1;day<=count;day++){
+                const iso=dateISOFor(monthKey,day);
+                const weekday=new Date(year,monthIndex,day).getDay();
+                result.push({
+                    monthKey,monthPosition,day,iso,
+                    isMonthStart:monthPosition>0&&day===1,
+                    isSunday:weekday===0,
+                    dayName:DAY_NAMES[weekday]
+                });
+            }
+        });
+        return result;
+    }
     function dateLabel(iso){
         if(!iso) return '';
         const [y,m,d] = iso.split('-').map(Number);
@@ -137137,8 +137209,14 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     function choiceTooltip(user,iso){
         return `${String(user?.name||'User').trim()} · ${shortChoiceDate(iso)}`;
     }
-    function isSunday(day){ const {year,monthIndex}=monthParts(); return new Date(year,monthIndex,day).getDay()===0; }
-    function dayName(day){ const {year,monthIndex}=monthParts(); return DAY_NAMES[new Date(year,monthIndex,day).getDay()]; }
+    function isPastDate(iso){ return /^\d{4}-\d{2}-\d{2}$/.test(String(iso||'')) && String(iso)<localTodayISO(); }
+    function previousDateISO(iso){
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||'')))return null;
+        const [year,month,day]=String(iso).split('-').map(Number);
+        const date=new Date(year,month-1,day);
+        date.setDate(date.getDate()-1);
+        return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    }
     function normRole(role){ return String(role || 'cs').trim().toLowerCase().replace(/[^a-z]/g,''); }
     function roleLabel(role){ return ({leader:'Leader',csline:'CS Line',cs:'CS',kapten:'Kapten',kasir:'Kasir'})[normRole(role)] || String(role || 'CS'); }
     const OFFDAY_CREST_ROOT='assets/animal/crest/';
@@ -137318,10 +137396,10 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             leaderModeLock:document.getElementById('offdayLeaderModeLock'),
             leaderModeAssign:document.getElementById('offdayLeaderModeAssign'),
             summary:document.getElementById('offdaySummaryLine'),
+            historyBadge:document.getElementById('offdayHistoryBadge'),
             selectionDesc:document.querySelector('#tab-offday .offday-selection-desc'),
             scroll:document.getElementById('offdayMatrixScroll'),
             grid:document.getElementById('offdayGrid'),
-            selfLegend:document.getElementById('offdaySelfLegend'),
             popover:document.getElementById('offdayLeaderPopover'),
             popTitle:document.getElementById('offdayLeaderPopoverTitle'),
             popCopy:document.getElementById('offdayLeaderPopoverCopy'),
@@ -137432,11 +137510,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 
     function renderSummary(){
         const n=nodes(); if(!n.summary)return;
-        const rosterIds=new Set(state.roster.map(row=>Number(row.id)));
-        const picked=[...state.choices.entries()].filter(([id,dates])=>rosterIds.has(Number(id))&&dates instanceof Set&&dates.size>0).length;
-        n.summary.innerHTML=
-            `<div class="offday-summary-metric"><span>TOTAL STAFF</span><strong>${state.roster.length}</strong></div>`+
-            `<div class="offday-summary-metric"><span>SUDAH PILIH</span><strong>${picked}</strong></div>`;
+        n.summary.innerHTML=`<div class="offday-summary-metric"><span>TOTAL STAFF</span><strong>${state.roster.length}</strong></div>`;
     }
 
     function setLeaderActionMode(mode){
@@ -137451,9 +137525,11 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     function renderControls(){
         const n=nodes(); if(!n.tab)return;
         const leader=isLeader();
+        const history=isHistoryView();
         n.tab.classList.toggle('offday-leader-mode',leader);
         n.tab.classList.toggle('offday-leader-assign-mode',leader&&state.leaderActionMode==='assign');
         n.tab.classList.toggle('offday-sealed',!state.isOpen);
+        n.tab.classList.toggle('offday-history-view',history);
         if(n.menuOffday){
             n.menuOffday.classList.toggle('is-offday-closed',!state.isOpen);
         }
@@ -137463,6 +137539,10 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
                 : (leader
                     ? 'Pemilihan OFFDAY ditutup. Keputusan user dikunci; Leader tetap dapat mengelola OFFDAY.'
                     : 'Pemilihan OFFDAY telah ditutup — keputusan Anda sudah dikunci.');
+        }
+        if(n.historyBadge){
+            n.historyBadge.hidden=!history;
+            n.historyBadge.setAttribute('aria-hidden',String(!history));
         }
         if(n.leaderAction)n.leaderAction.hidden=!leader;
         if(n.leaderModeLock){
@@ -137477,8 +137557,11 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             n.leaderModeAssign.setAttribute('aria-pressed',String(active));
             setThemeTooltip(n.leaderModeAssign,'Klik cell user untuk assign OFFDAY','calendar');
         }
-        if(n.period) n.period.textContent=formatMonth();
-        if(n.picker) n.picker.value=state.month;
+        if(n.period) n.period.textContent=formatPeriod();
+        if(n.picker){
+            n.picker.value=state.month;
+            n.picker.max=currentCalendarMonth();
+        }
         if(n.toggle){
             n.toggle.classList.toggle('is-open',state.isOpen);
             n.toggle.disabled=!isLeader();
@@ -137492,14 +137575,14 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             );
         }
         if(n.period){
-            setThemeTooltip(n.period,'Double-click untuk memilih periode bulan OFFDAY','edit');
+            setThemeTooltip(n.period,'Double-click untuk memilih periode OFFDAY','edit');
         }
-        if(n.selfLegend) n.selfLegend.style.display=isLeader()?'none':'';
     }
 
     function renderGrid(){
         const n=nodes(); if(!n.grid)return;
-        const count=daysInMonth();
+        const calendar=visibleCalendarDays();
+        const count=calendar.length;
         n.grid.innerHTML='';
         n.grid.style.gridTemplateColumns=`var(--offday-name-w) repeat(${count},var(--offday-day-w))`;
 
@@ -137510,12 +137593,13 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         const corner=add('offday-corner-head',`<span>STAFF / SHIFT</span><small>${state.roster.length} USER</small>`);
         corner.setAttribute('aria-label',`${state.roster.length} user pada susunan OFFDAY`);
 
-        for(let day=1;day<=count;day++){
-            const iso=dateISO(day);
-            const locked=state.dateLocks.has(iso);
-            const head=add(`offday-day-head history-tooltip-target${isSunday(day)?' is-sunday':''}${locked?' is-locked':''}`,`<span class="num">${String(day).padStart(2,'0')}</span><span class="dow">${dayName(day)}</span>`);
-            head.dataset.date=iso;
-            setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
+        for(const info of calendar){
+            const locked=state.dateLocks.has(info.iso);
+            const past=isPastDate(info.iso);
+            const head=add(`offday-day-head history-tooltip-target${info.isSunday?' is-sunday':''}${locked?' is-locked':''}${past?' is-past-date':''}${info.isMonthStart?' is-window-month-start':''}`,`<span class="num">${String(info.day).padStart(2,'0')}</span><span class="dow">${info.dayName}</span>`);
+            head.dataset.date=info.iso;
+            head.dataset.month=info.monthKey;
+            setThemeTooltip(head,isLeader()?'':(past?'Tanggal telah lewat':locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
         }
 
         const appendGroup=(section,sectionIndex)=>{
@@ -137526,27 +137610,30 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
                 `<span>${section.rows.length} STAFF</span>`
             );
             groupName.dataset.sectionIndex=String(sectionIndex);
-            for(let day=1;day<=count;day++){
-                const groupDay=add(`offday-group-day${groupClass}`);
+            for(const info of calendar){
+                const groupDay=add(`offday-group-day${groupClass}${info.isMonthStart?' is-window-month-start':''}`);
                 groupDay.dataset.sectionIndex=String(sectionIndex);
-                groupDay.dataset.date=dateISO(day);
+                groupDay.dataset.date=info.iso;
+                groupDay.dataset.month=info.monthKey;
             }
         };
 
         state.sections.forEach((section,sectionIndex)=>{
             appendGroup(section,sectionIndex);
-            section.rows.forEach((user,rowIndex)=>renderUserRow(user,count,add,rowIndex>0?section.rows[rowIndex-1]:null,rowIndex===0,sectionIndex));
+            section.rows.forEach((user,rowIndex)=>renderUserRow(user,calendar,add,rowIndex>0?section.rows[rowIndex-1]:null,rowIndex===0,sectionIndex));
         });
 
         syncTileBorderOwners();
 
-        // Calendar footprint: one sticky name column + actual days in the selected month only.
+        // UI footprint may be a rolling current+next window or one historical month.
         n.grid.dataset.days=String(count);
         n.grid.dataset.expectedColumns=String(count+1);
+        n.grid.dataset.visibleMonths=visibleMonths().join(',');
+        n.grid.dataset.viewMode=isHistoryView()?'history':'current-window';
         renderSummary();
     }
 
-    function renderUserRow(user,count,add,previousUser=null,isSectionFirstRow=false,sectionIndex=-1){
+    function renderUserRow(user,calendar,add,previousUser=null,isSectionFirstRow=false,sectionIndex=-1){
         const nonLeader=!isLeader();
         const self=nonLeader && Number(user.id)===Number(state.currentUserId);
         const role=normRole(user.role);
@@ -137564,8 +137651,9 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         const visuallyUnassigned=!user.assigned&&role!=='leader';
         roster.classList.toggle('is-unassigned-user',visuallyUnassigned);
 
-        for(let day=1;day<=count;day++){
-            const iso=dateISO(day);
+        for(const info of calendar){
+            const iso=info.iso;
+            const past=isPastDate(iso);
             const dateLocked=state.dateLocks.has(iso);
             const cellLocked=state.cellLocks.has(keyCell(user.id,iso));
             const locked=dateLocked||cellLocked;
@@ -137574,7 +137662,9 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             const roleTaken=Boolean(takenOwner&&!hasChoice&&!locked);
             const classes=['offday-day-cell'];
             if(isSectionFirstRow)classes.push('is-section-first-row');
-            if(day===1)classes.push('is-first-day');
+            if(info.day===1)classes.push('is-first-day');
+            if(info.isMonthStart)classes.push('is-window-month-start');
+            if(past)classes.push('is-past-date');
             if(locked)classes.push('is-locked');
             if(dateLocked)classes.push('is-date-locked');
             if(cellLocked)classes.push('is-cell-locked');
@@ -137584,9 +137674,9 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             if(visuallyUnassigned)classes.push('is-unassigned-user');
             if(roleTaken)classes.push('is-role-taken');
             if(hasChoice)classes.push('has-choice');
-            if(self && user.assigned && state.isOpen && (hasChoice || !locked))classes.push('is-user-clickable');
+            if(self && user.assigned && state.isOpen && !past && (hasChoice || !locked))classes.push('is-user-clickable');
             const cell=add(classes.join(' '));
-            cell.dataset.userId=String(user.id);cell.dataset.date=iso;cell.dataset.sectionIndex=String(sectionIndex);cell.dataset.role=role;
+            cell.dataset.userId=String(user.id);cell.dataset.date=iso;cell.dataset.month=info.monthKey;cell.dataset.sectionIndex=String(sectionIndex);cell.dataset.role=role;
 
             if(hasChoice){
                 cell.appendChild(buildOffdayStamp(user));
@@ -137601,13 +137691,15 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
                     cell,
                     !user.assigned
                         ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
-                        : !state.isOpen
-                            ? 'Pemilihan OFFDAY dikunci oleh Leader'
-                            : locked
-                                ? 'Dikunci Leader'
-                                : roleTaken
-                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di ${shiftContextLabel(user.shiftBucket)}`
-                                    : 'Klik untuk memilih OFFDAY',
+                        : past
+                            ? 'Tanggal telah lewat. Hanya Leader yang dapat mengubah OFFDAY.'
+                            : !state.isOpen
+                                ? 'Pemilihan OFFDAY dikunci oleh Leader'
+                                : locked
+                                    ? 'Dikunci Leader'
+                                    : roleTaken
+                                        ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user.role)} di ${shiftContextLabel(user.shiftBucket)}`
+                                        : 'Klik untuk memilih OFFDAY',
                     locked?'lock':'info'
                 );
             }else{
@@ -137624,12 +137716,14 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         const self=!isLeader()&&uid===Number(state.currentUserId);
         const user=state.rosterById.get(uid)||state.roster.find(row=>Number(row.id)===uid);
         cell.dataset.role=normRole(user?.role);
+        const past=isPastDate(iso);
         const dateLocked=state.dateLocks.has(iso);
         const cellLocked=state.cellLocks.has(keyCell(uid,iso));
         const locked=dateLocked||cellLocked;
         const hasChoice=hasChoiceDate(uid,iso);
         const takenOwner=roleTakenOwner(user,iso);
         const roleTaken=Boolean(takenOwner&&!hasChoice&&!locked);
+        cell.classList.toggle('is-past-date',past);
         cell.classList.toggle('is-locked',locked);
         cell.classList.toggle('is-date-locked',dateLocked);
         cell.classList.toggle('is-cell-locked',cellLocked);
@@ -137639,7 +137733,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         cell.classList.toggle('is-unassigned-user',Boolean(user&&!user.assigned&&normRole(user.role)!=='leader'));
         cell.classList.toggle('is-role-taken',roleTaken);
         cell.classList.toggle('has-choice',hasChoice);
-        cell.classList.toggle('is-user-clickable',Boolean(self&&user?.assigned&&state.isOpen&&(hasChoice||!locked)));
+        cell.classList.toggle('is-user-clickable',Boolean(self&&user?.assigned&&state.isOpen&&!past&&(hasChoice||!locked)));
 
         cell.replaceChildren();
         if(hasChoice){
@@ -137654,13 +137748,15 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
                 cell,
                 !user?.assigned
                     ? 'OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.'
-                    : !state.isOpen
-                        ? 'Pemilihan OFFDAY dikunci oleh Leader'
-                        : locked
-                            ? 'Dikunci Leader'
-                            : roleTaken
-                                ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di ${shiftContextLabel(user?.shiftBucket)}`
-                                : 'Klik untuk memilih OFFDAY',
+                    : past
+                        ? 'Tanggal telah lewat. Hanya Leader yang dapat mengubah OFFDAY.'
+                        : !state.isOpen
+                            ? 'Pemilihan OFFDAY dikunci oleh Leader'
+                            : locked
+                                ? 'Dikunci Leader'
+                                : roleTaken
+                                    ? `Tanggal telah dipilih oleh ${takenOwner?.name||'user lain'} untuk role ${roleLabel(user?.role)} di ${shiftContextLabel(user?.shiftBucket)}`
+                                    : 'Klik untuk memilih OFFDAY',
                 locked?'lock':'info'
             );
         }else{
@@ -137668,10 +137764,6 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         }
     }
 
-    /* Existing-border seam ownership, single-pass / map-backed.
-       Leader Lock keeps the shared-edge ownership model. Committed OFFDAY
-       choices own their four-side frame locally in CSS (V63), so no choice
-       seam mutation is needed here. */
     function syncTileBorderOwners(){
         const n=nodes();
         if(!n.grid)return;
@@ -137707,8 +137799,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         for(const head of dayHeads){
             if(!head.classList.contains('is-locked'))continue;
             const iso=String(head.dataset.date||'');
-            const dayNumber=Number(iso.slice(-2));
-            const previousIso=dayNumber>1?dateISO(dayNumber-1):null;
+            const previousIso=previousDateISO(iso);
             const previousHead=previousIso?headMap.get(previousIso):null;
             if(!previousHead?.classList.contains('is-locked')){
                 (previousHead||cornerHead)?.classList.add('lock-seam-owner-right');
@@ -137732,8 +137823,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             const sectionIndex=Number(cell.dataset.sectionIndex||-1);
             if(!uid||!iso)continue;
 
-            const dayNumber=Number(iso.slice(-2));
-            const previousDayIso=dayNumber>1?dateISO(dayNumber-1):null;
+            const previousDayIso=previousDateISO(iso);
             const leftCell=previousDayIso?cellMap.get(`${uid}|${previousDayIso}`):null;
             if(!leftCell?.classList.contains('is-locked')){
                 (leftCell||rosterMap.get(String(uid)))?.classList.add('lock-seam-owner-right');
@@ -137767,8 +137857,10 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         const head=n.grid.querySelector(`.offday-day-head[data-date="${iso}"]`);
         if(head){
             const locked=state.dateLocks.has(iso);
+            const past=isPastDate(iso);
             head.classList.toggle('is-locked',locked);
-            setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
+            head.classList.toggle('is-past-date',past);
+            setThemeTooltip(head,isLeader()?'':(past?'Tanggal telah lewat':locked?'Tanggal dikunci Leader':'Tanggal tersedia'),locked?'lock':'info');
         }
         n.grid.querySelectorAll(`.offday-day-cell[data-date="${iso}"]`).forEach(paintCell);
         syncTileBorderOwners();
@@ -137784,17 +137876,32 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 
     function focusCurrentUser(options={}){
         const n=nodes();
-        if(!n.scroll||!n.grid||!state.currentUserId)return false;
-        const target=n.grid.querySelector(`.offday-roster-cell[data-user-id="${Number(state.currentUserId)}"]`);
-        if(!target)return false;
+        if(!n.scroll||!n.grid)return false;
+        const target=state.currentUserId?n.grid.querySelector(`.offday-roster-cell[data-user-id="${Number(state.currentUserId)}"]`):null;
         const maxTop=Math.max(0,n.scroll.scrollHeight-n.scroll.clientHeight);
-        const targetTop=Math.max(0,Math.min(maxTop,target.offsetTop-(n.scroll.clientHeight-target.offsetHeight)/2));
+        const targetTop=target
+            ? Math.max(0,Math.min(maxTop,target.offsetTop-(n.scroll.clientHeight-target.offsetHeight)/2))
+            : n.scroll.scrollTop;
+
+        let targetLeft=Number.isFinite(options.left)?Number(options.left):n.scroll.scrollLeft;
+        if(options.centerToday&&!isHistoryView()){
+            const todayHead=n.grid.querySelector(`.offday-day-head[data-date="${localTodayISO()}"]`);
+            if(todayHead){
+                const corner=n.grid.querySelector('.offday-corner-head');
+                const stickyWidth=corner?.offsetWidth||0;
+                const dateViewportWidth=Math.max(0,n.scroll.clientWidth-stickyWidth);
+                const viewportCenter=stickyWidth+(dateViewportWidth/2);
+                const desired=todayHead.offsetLeft+(todayHead.offsetWidth/2)-viewportCenter;
+                const maxLeft=Math.max(0,n.scroll.scrollWidth-n.scroll.clientWidth);
+                targetLeft=Math.max(0,Math.min(maxLeft,desired));
+            }
+        }
         n.scroll.scrollTo({
             top:targetTop,
-            left:Number.isFinite(options.left)?options.left:n.scroll.scrollLeft,
+            left:targetLeft,
             behavior:options.smooth===false?'auto':'smooth'
         });
-        return true;
+        return Boolean(target)||Boolean(n.grid.querySelector(`.offday-day-head[data-date="${localTodayISO()}"]`));
     }
 
     function scheduleCurrentUserFocus(options={}){
@@ -137805,27 +137912,50 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 
     function prepareOpen(){
         const current=currentCalendarMonth();
-        const monthChanged=state.month!==current;
+        const previousWindow=visibleWindowKey();
         state.month=current;
+        const currentWindow=visibleWindowKey();
+        const windowChanged=previousWindow!==currentWindow;
         closeLeaderPopover();
         const n=nodes();
 
-        /*
-         * Keep a warm current-month snapshot intact across route opens.
-         * Only invalidate month-specific state when the previous visible visit
-         * was intentionally browsing a different historical month.
-         */
-        if(monthChanged){
+        /* Route entry always returns to the rolling operational window. A warm
+           current+next snapshot survives route switches; HISTORY never does. */
+        if(windowChanged){
             state.loadedMonth=null;
             state.isOpen=false;
+            state.periodOpen=new Map();
             renderControls();
         }
 
         if(n.scroll){
             n.scroll.scrollLeft=0;
-            if(!(state.rosterLoaded&&state.loadedMonth===current))n.scroll.scrollTop=0;
+            if(!(state.rosterLoaded&&state.loadedMonth===currentWindow))n.scroll.scrollTop=0;
         }
         return current;
+    }
+
+    async function normalizeCurrentWindowOpenState(openMap,serial){
+        const months=visibleMonths();
+        if(months.length!==2||isHistoryView()||!isLeader())return;
+        const anchor=months[0];
+        const follower=months[1];
+        const target=Boolean(openMap.get(anchor));
+        const followerExists=openMap.has(follower);
+        const followerValue=Boolean(openMap.get(follower));
+        // Current month is the authority. Only write when the next month is
+        // actually mixed, or when an OPEN current month needs a missing next record.
+        if(followerValue===target && (target===false||followerExists))return;
+        try{
+            const {data,error}=await supabaseDashboard.rpc('offday_set_open',{
+                p_period_month:monthDate(follower),p_is_open:target,p_client_id:clientId
+            });
+            if(error)throw error;
+            if(serial!==state.loadSerial)return;
+            openMap.set(follower,Boolean(data?.is_open ?? target));
+        }catch(error){
+            console.warn('OFFDAY 2-month state normalization gagal:',error);
+        }
     }
 
     async function loadSnapshot(options={}){
@@ -137837,33 +137967,31 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         const n=nodes();
         if(!n.grid || typeof supabaseDashboard==='undefined' || !supabaseDashboard)return false;
 
+        const windowKey=visibleWindowKey();
+        const windowMonths=visibleMonths();
+        const periodDates=windowMonths.map(monthDate);
         const warmVisibleSnapshot=Boolean(
             state.rosterLoaded &&
-            state.loadedMonth===state.month &&
+            state.loadedMonth===windowKey &&
             state.roster.length &&
             n.grid.querySelector('.offday-roster-cell')
         );
 
-        /* If a warm snapshot already exists, move to the current user immediately
-           while the background reconciliation runs. */
+        /* Warm current window: orient immediately while reconciliation runs. */
         if(focusSelf&&warmVisibleSnapshot){
-            scheduleCurrentUserFocus({smooth:true,left:0});
+            scheduleCurrentUserFocus({smooth:true,centerToday:!isHistoryView(),left:isHistoryView()?0:undefined});
         }
 
-        /* Boot prefetch is intentionally silent. Even in the unlikely race where
-           the user opens OFFDAY before warm-up completes, keep the shell stable
-           instead of replacing it with a visible loading message. */
         if(!silent&&!state.rosterLoaded&&n.grid.children.length<=1){
             n.grid.innerHTML='<div class="offday-loading" aria-hidden="true"></div>';
         }
 
-        const month=monthDate();
         try{
             const monthJobs=[
-                supabaseDashboard.from('offday_periods').select('period_month,is_open,updated_at,updated_by').eq('period_month',month).maybeSingle(),
-                supabaseDashboard.from('offday_choices').select('period_month,user_id,off_date,updated_at,updated_by').eq('period_month',month),
-                supabaseDashboard.from('offday_date_locks').select('period_month,off_date').eq('period_month',month),
-                supabaseDashboard.from('offday_cell_locks').select('period_month,user_id,off_date').eq('period_month',month)
+                supabaseDashboard.from('offday_periods').select('period_month,is_open,updated_at,updated_by').in('period_month',periodDates),
+                supabaseDashboard.from('offday_choices').select('period_month,user_id,off_date,updated_at,updated_by').in('period_month',periodDates),
+                supabaseDashboard.from('offday_date_locks').select('period_month,off_date').in('period_month',periodDates),
+                supabaseDashboard.from('offday_cell_locks').select('period_month,user_id,off_date').in('period_month',periodDates)
             ];
             const rosterJobs=includeRoster?[
                 supabaseDashboard.from('users').select('id,name,email,role,status').eq('status','active').order('name',{ascending:true}).limit(250),
@@ -137875,8 +138003,18 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             for(const res of [periodRes,choiceRes,dateLockRes,cellLockRes,...(includeRoster?[userRes,shiftRes]:[])]){
                 if(res?.error)throw res.error;
             }
-            state.isOpen=Boolean(periodRes?.data?.is_open);
-            state.loadedMonth=state.month;
+
+            const openMap=new Map();
+            for(const row of (periodRes?.data||[])){
+                const key=String(row?.period_month||'').slice(0,7);
+                if(key)openMap.set(key,Boolean(row?.is_open));
+            }
+            await normalizeCurrentWindowOpenState(openMap,serial);
+            if(serial!==state.loadSerial)return false;
+            state.periodOpen=openMap;
+            state.isOpen=Boolean(openMap.get(state.month));
+            state.loadedMonth=windowKey;
+
             state.choices=new Map();
             for(const row of (choiceRes?.data||[])){
                 const uid=Number(row?.user_id);const iso=String(row?.off_date||'');
@@ -137893,7 +138031,9 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             }
             renderAll();
             if(reason==='boot-prefetch')state.warmPrefetchDone=true;
-            if(focusSelf&&!warmVisibleSnapshot)scheduleCurrentUserFocus({smooth:true,left:0});
+            if(focusSelf&&!warmVisibleSnapshot){
+                scheduleCurrentUserFocus({smooth:true,centerToday:!isHistoryView(),left:isHistoryView()?0:undefined});
+            }
             return true;
         }catch(error){
             console.error(`OFFDAY snapshot gagal (${reason}):`,error);
@@ -137945,7 +138085,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         const userId=Number(state.currentUserId);
         const existed=hasChoiceDate(userId,iso);
         await callRpc('offday_choose_or_cancel',{
-            p_period_month:monthDate(),p_off_date:iso
+            p_period_month:periodMonthDateForISO(iso),p_off_date:iso
         },{
             applyLocal:data=>{
                 const action=String(data?.action||'');
@@ -137969,7 +138109,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     async function toggleDateLock(iso){
         if(!isLeader())return;
         await callRpc('offday_toggle_date_lock',{
-            p_period_month:monthDate(),p_off_date:iso
+            p_period_month:periodMonthDateForISO(iso),p_off_date:iso
         },{
             applyLocal:data=>{
                 if(data?.locked)state.dateLocks.add(iso);else state.dateLocks.delete(iso);
@@ -137984,7 +138124,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         closeLeaderPopover();
         const uid=Number(userId);
         await callRpc('offday_toggle_cell_lock',{
-            p_period_month:monthDate(),p_user_id:uid,p_off_date:iso
+            p_period_month:periodMonthDateForISO(iso),p_user_id:uid,p_off_date:iso
         },{
             applyLocal:data=>{
                 const key=keyCell(uid,iso);
@@ -138007,7 +138147,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             return;
         }
         const data=await callRpc('offday_leader_assign_choice_v2',{
-            p_period_month:monthDate(),p_user_id:uid,p_off_date:iso,p_force_conflict:Boolean(forceConflict)
+            p_period_month:periodMonthDateForISO(iso),p_user_id:uid,p_off_date:iso,p_force_conflict:Boolean(forceConflict)
         },{
             applyLocal:data=>{
                 const action=String(data?.action||'');
@@ -138032,7 +138172,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         const {user,iso}=target;closeLeaderPopover();
         const uid=Number(user.id);
         await callRpc('offday_leader_cancel_choice',{
-            p_period_month:monthDate(),p_user_id:uid,p_off_date:iso
+            p_period_month:periodMonthDateForISO(iso),p_user_id:uid,p_off_date:iso
         },{
             applyLocal:data=>{
                 if(data?.cancelled){
@@ -138049,14 +138189,30 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     }
 
     async function setOpen(next){
-        if(!isLeader())return;
-        await callRpc('offday_set_open',{
-            p_period_month:monthDate(),p_is_open:Boolean(next)
-        },{
-            applyLocal:data=>{state.isOpen=Boolean(data?.is_open);renderControls();paintAllCells();},
-            render:false,
-            successMessage:data=>data?.is_open?'Pemilihan Offday dibuka.':'Pemilihan Offday ditutup.'
-        });
+        if(!isLeader()||state.actionBusy)return;
+        if(typeof supabaseDashboard==='undefined'||!supabaseDashboard)return;
+        const months=visibleMonths();
+        const target=Boolean(next);
+        state.actionBusy=true;
+        try{
+            for(const monthKey of months){
+                const {data,error}=await supabaseDashboard.rpc('offday_set_open',{
+                    p_period_month:monthDate(monthKey),p_is_open:target,p_client_id:clientId
+                });
+                if(error)throw error;
+                state.periodOpen.set(monthKey,Boolean(data?.is_open ?? target));
+            }
+            state.isOpen=target;
+            renderControls();
+            paintAllCells();
+            notify(target?`Pemilihan Offday ${formatPeriod()} dibuka.`:`Pemilihan Offday ${formatPeriod()} ditutup.`,'success',1800);
+        }catch(error){
+            console.error('OFFDAY set open gagal:',error);
+            notify(rpcMessage(error),'warning',2800);
+            window.setTimeout(()=>loadSnapshot({reason:'open-state-reconcile',includeRoster:false}),0);
+        }finally{
+            state.actionBusy=false;
+        }
     }
 
     function positionLeaderPopover(anchor){
@@ -138138,19 +138294,26 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     }
 
     function setMonth(value){
-        if(!/^\d{4}-\d{2}$/.test(String(value||'')))return;
-        state.month=String(value);
+        const raw=String(value||'');
+        if(!/^\d{4}-\d{2}$/.test(raw))return;
+        const current=currentCalendarMonth();
+        // PERIODE is an operational-current selector plus past-month HISTORY.
+        // Future anchors are intentionally not exposed; current already includes next month.
+        const next=raw>current?current:raw;
+        state.month=next;
         state.loadedMonth=null;
         state.isOpen=false;
+        state.periodOpen=new Map();
         try{localStorage.setItem(STORAGE_MONTH,state.month);}catch(_){}
         closeLeaderPopover();
         renderControls();
         const n=nodes();if(n.scroll)n.scroll.scrollLeft=0;
-        loadSnapshot({reason:'month-change',includeRoster:!state.rosterLoaded});
+        loadSnapshot({reason:'month-change',includeRoster:!state.rosterLoaded,focusSelf:true});
     }
 
     function openMonthPicker(){
         const n=nodes();if(!n.picker)return;
+        n.picker.max=currentCalendarMonth();
         n.picker.value=state.month;
         try{
             if(typeof n.picker.showPicker==='function')n.picker.showPicker();
@@ -138206,7 +138369,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         state.realtimeRevision=revision;
         if(String(row.client_id||'')===String(clientId))return;
         const eventMonth=String(row.period_month||'').slice(0,7);
-        if(eventMonth && eventMonth!==state.month)return;
+        if(eventMonth && !visibleMonths().includes(eventMonth))return;
         scheduleSnapshot(`realtime-${row.change_type||'data'}`,false);
     }
 
@@ -138274,6 +138437,10 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             if(uid!==Number(state.currentUserId))return;
             const user=state.rosterById.get(uid)||state.roster.find(row=>Number(row.id)===uid);
             if(!user?.assigned){notify('OFFDAY belum dapat dipilih sebelum Anda ditempatkan ke Shift Aktif.','warning',2400);return;}
+            if(isPastDate(iso)){
+                notify('Tanggal yang sudah lewat tidak dapat diubah. Hanya Leader yang dapat melakukan koreksi.','warning',2500);
+                return;
+            }
             if(!state.isOpen){
                 notify('Pemilihan OFFDAY sudah ditutup oleh Leader. Keputusan Anda telah dikunci.','warning',2600);
                 return;
@@ -138375,7 +138542,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     window.startOffdayRealtime=startRealtime;
     window.stopOffdayRealtime=stopRealtime;
     window.prepareOffdayOpen=prepareOpen;
-    window.focusOffdayCurrentUser=()=>scheduleCurrentUserFocus({smooth:true,left:0});
+    window.focusOffdayCurrentUser=()=>scheduleCurrentUserFocus({smooth:true,centerToday:!isHistoryView(),left:isHistoryView()?0:undefined});
     window.DDTOffdayRealtime={state,load:loadSnapshot,start:startRealtime,stop:stopRealtime,setMonth,prepareOpen,focusCurrentUser,startWarmPrefetch};
 
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
