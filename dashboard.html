@@ -136262,39 +136262,39 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     isolation:auto!important;
 }
 
-/* V103 — Selectable Tile Emboss.
-   An actionable empty tile carries one small muted keycap cue. No row path,
-   no extra top/bottom guide line, and no dependency on prior OFFDAY count. */
+/* V103.1 — Role-Muted Recessed Dot.
+   Actionable empty tiles keep the persistent V103 per-cell semantics, but the
+   keycap is replaced by one small recessed dot. The dot follows the user's role
+   color at low saturation and never becomes a row path, glow, or extra grid line. */
 #tab-offday .offday-day-cell.is-user-clickable,
 #tab-offday.offday-leader-mode .offday-day-cell:not(.is-locked){
     transition:background-color .12s ease,box-shadow .12s ease;
 }
+#tab-offday .offday-day-cell{--offday-selectable-role:var(--accent);}
+#tab-offday .offday-day-cell[data-role="leader"]{--offday-selectable-role:#b58c34;}
+#tab-offday .offday-day-cell[data-role="csline"]{--offday-selectable-role:#2f9b59;}
+#tab-offday .offday-day-cell[data-role="cs"]{--offday-selectable-role:#557fbd;}
+#tab-offday .offday-day-cell[data-role="kapten"]{--offday-selectable-role:#b77d2e;}
+#tab-offday .offday-day-cell[data-role="kasir"]{--offday-selectable-role:#795fac;}
 #tab-offday .offday-selectable-cue{
     position:absolute!important;
     left:50%!important;
     top:50%!important;
-    width:13px!important;
-    height:10px!important;
+    width:7px!important;
+    height:7px!important;
     transform:translate(-50%,-50%)!important;
-    display:grid!important;
-    place-items:center!important;
-    color:color-mix(in srgb,var(--offday-board-muted) 56%,var(--offday-tile-surface))!important;
-    opacity:.42!important;
+    display:block!important;
+    border:1px solid color-mix(in srgb,var(--offday-selectable-role) 28%,var(--offday-board-grid))!important;
+    border-radius:50%!important;
+    background:color-mix(in srgb,var(--offday-selectable-role) 24%,var(--offday-tile-surface))!important;
+    box-shadow:
+        inset 1px 1px 2px color-mix(in srgb,#000 18%,transparent),
+        inset -1px -1px 1px color-mix(in srgb,#fff 34%,transparent)!important;
+    opacity:.62!important;
     pointer-events:none!important;
     z-index:1!important;
-    filter:
-        drop-shadow(0 -1px 0 color-mix(in srgb,#fff 34%,transparent))
-        drop-shadow(0 1px 0 color-mix(in srgb,var(--offday-board-text) 18%,transparent))!important;
-}
-#tab-offday .offday-selectable-cue svg{
-    display:block!important;
-    width:100%!important;
-    height:100%!important;
-    fill:none!important;
-    stroke:currentColor!important;
-    stroke-width:1.15!important;
-    stroke-linecap:round!important;
-    stroke-linejoin:round!important;
+    filter:none!important;
+    box-sizing:border-box!important;
 }
 #tab-offday .offday-day-cell.is-user-clickable:not(.has-choice):hover,
 #tab-offday.offday-leader-mode .offday-day-cell:not(.has-choice):not(.is-locked):not(.is-role-taken):hover{
@@ -136306,8 +136306,9 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
         0 3px 7px -4px var(--offday-input-glow)!important;
 }
 #tab-offday .offday-day-cell.is-user-clickable:not(.has-choice):hover .offday-selectable-cue{
-    color:color-mix(in srgb,var(--offday-input-line) 60%,var(--offday-board-muted))!important;
-    opacity:.62!important;
+    border-color:color-mix(in srgb,var(--offday-selectable-role) 38%,var(--offday-board-grid))!important;
+    background:color-mix(in srgb,var(--offday-selectable-role) 31%,var(--offday-tile-surface))!important;
+    opacity:.78!important;
 }
 /* A committed choice may still be actionable for its owner/Leader. Hover adds
    only one micro elevation step and never falls back to the generic input tile. */
@@ -136995,7 +136996,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v103-selectable-tile-emboss">
+<script id="offday-production-realtime-v2-js" data-offday-build="v103-1-role-muted-recessed-dot">
 (function(){
     'use strict';
 
@@ -137004,7 +137005,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     const DAY_NAMES = ['MIN','SEN','SEL','RAB','KAM','JUM','SAB'];
     const OFFDAY_TODAY_MARKER_SVG = '<span class="offday-head-today-marker" aria-hidden="true"><svg viewBox="0 0 12 6" focusable="false"><path d="M2 4 6 1.5 10 4"></path></svg></span>';
     const OFFDAY_LOCK_BADGE_SVG = '<span class="offday-head-lock-icon" aria-hidden="true"><svg viewBox="0 0 12 12" focusable="false"><rect x="2.5" y="5.2" width="7" height="5" rx="1.45"></rect><path d="M3.9 5.2V4.2a2.1 2.1 0 0 1 4.2 0v1"></path></svg></span>';
-    const OFFDAY_SELECTABLE_KEY_SVG = '<span class="offday-selectable-cue" aria-hidden="true"><svg viewBox="0 0 14 11" focusable="false"><rect x="2" y="2" width="10" height="7" rx="1.6"></rect><path d="M4.2 5.5h5.6"></path></svg></span>';
+    const OFFDAY_SELECTABLE_DOT = '<span class="offday-selectable-cue" aria-hidden="true"></span>';
     const STORAGE_MONTH = 'ddt_offday_selected_month_v1';
     const CLIENT_STORAGE = 'ddt_offday_client_id_v1';
     const state = {
@@ -137606,7 +137607,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             const showSelectableCue=Boolean(self&&user.assigned&&state.isOpen&&!past&&!locked&&!roleTaken&&!hasChoice);
 
             if(showSelectableCue){
-                cell.insertAdjacentHTML('beforeend',OFFDAY_SELECTABLE_KEY_SVG);
+                cell.insertAdjacentHTML('beforeend',OFFDAY_SELECTABLE_DOT);
             }
             if(hasChoice){
                 cell.appendChild(buildOffdayStamp(user));
@@ -137667,7 +137668,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         cell.replaceChildren();
         const showSelectableCue=Boolean(self&&user?.assigned&&state.isOpen&&!past&&!locked&&!roleTaken&&!hasChoice);
         if(showSelectableCue){
-            cell.insertAdjacentHTML('beforeend',OFFDAY_SELECTABLE_KEY_SVG);
+            cell.insertAdjacentHTML('beforeend',OFFDAY_SELECTABLE_DOT);
         }
         if(hasChoice){
             cell.appendChild(buildOffdayStamp(user));
