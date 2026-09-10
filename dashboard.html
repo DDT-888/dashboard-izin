@@ -136239,6 +136239,44 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
         0 3px 8px -5px color-mix(in srgb,var(--shift-role-accent,var(--accent)) 34%,transparent),
         inset 0 1px 0 color-mix(in srgb,#fff 24%,transparent)!important;
 }
+/* V104 — UserCard Role Light Strip.
+   Preserve the canonical 3px role border and card geometry. A short local
+   emissive layer makes only the left role datum read as softly illuminated;
+   it never becomes a card-wide glow and never animates on hover. */
+#tab-offday .offday-user-card.user-card-shift{
+    --offday-role-light:var(--shift-role-accent,var(--accent));
+    position:relative!important;
+}
+#tab-offday .offday-user-card.user-card-shift::before{
+    content:""!important;
+    position:absolute!important;
+    left:-2px!important;
+    top:5px!important;
+    bottom:5px!important;
+    width:3px!important;
+    border-radius:2px!important;
+    background:var(--offday-role-light)!important;
+    box-shadow:
+        0 0 3px color-mix(in srgb,var(--offday-role-light) 36%,transparent),
+        1px 0 4px color-mix(in srgb,var(--offday-role-light) 24%,transparent)!important;
+    opacity:.88!important;
+    pointer-events:none!important;
+    z-index:2!important;
+    filter:none!important;
+}
+#tab-offday .offday-user-card.user-card-shift:hover::before{
+    opacity:.88!important;
+    box-shadow:
+        0 0 3px color-mix(in srgb,var(--offday-role-light) 36%,transparent),
+        1px 0 4px color-mix(in srgb,var(--offday-role-light) 24%,transparent)!important;
+}
+/* Leader uses contextual border colors that intentionally differ by theme;
+   keep the light strip on that exact authority rather than generic gold. */
+#tab-offday .offday-user-card.user-card-shift.role-leader{--offday-role-light:#33476d;}
+html[data-theme="dark"] #tab-offday .offday-user-card.user-card-shift.role-leader{--offday-role-light:#52678f;}
+html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-user-card.user-card-shift.role-leader{--offday-role-light:#59677f;}
+html[data-mi-frozen-presentation="mecha-ivory"] body[data-sys-stage="app"] #tab-offday .offday-user-card.user-card-shift.role-leader,
+html[data-selected-theme="mecha-ivory"] #tab-offday .offday-user-card.user-card-shift.role-leader{--offday-role-light:#52617a;}
 /* V102 — Lock Backplane Cleanup.
    `has-offday-choice` now remains a logic hook only. The previous picked-staff
    lock-material roster rail is retired because it is no longer semantically
@@ -136997,7 +137035,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v103-2-selectable-dot-optical-balance">
+<script id="offday-production-realtime-v2-js" data-offday-build="v104-usercard-role-light-strip">
 (function(){
     'use strict';
 
