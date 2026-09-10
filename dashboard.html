@@ -134040,11 +134040,19 @@ body:has(#tab-offday.active) .main-content{min-width:0;overflow-x:hidden;}
 #tab-offday .offday-day-head{position:sticky;top:0;z-index:7;height:var(--offday-head-h);min-height:var(--offday-head-h);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:default;}
 #tab-offday .offday-day-head .num{font-size:10.5px;font-weight:820;line-height:1;}
 #tab-offday .offday-day-head .dow{font-size:7px;line-height:1;text-transform:uppercase;}
+#tab-offday .offday-day-head .offday-head-today-marker,
+#tab-offday .offday-day-head .offday-head-lock-icon{position:absolute;display:grid;place-items:center;pointer-events:none;}
+#tab-offday .offday-day-head .offday-head-today-marker{left:50%;bottom:4px;width:10px;height:6px;transform:translateX(-50%);color:color-mix(in srgb,var(--accent) 72%,var(--offday-board-text));opacity:.92;}
+#tab-offday .offday-day-head .offday-head-today-marker svg,
+#tab-offday .offday-day-head .offday-head-lock-icon svg{display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}
+#tab-offday .offday-day-head .offday-head-today-marker svg{stroke-width:1.9;}
+#tab-offday .offday-day-head .offday-head-lock-icon{right:2px;top:2px;width:9px;height:9px;color:color-mix(in srgb,var(--offday-board-muted) 82%,var(--offday-board-text));opacity:.74;}
+#tab-offday .offday-day-head .offday-head-lock-icon svg{stroke-width:1.55;}
 #tab-offday .offday-day-head.is-sunday .num{}
 #tab-offday .offday-day-head.is-sunday .dow{}
 #tab-offday .offday-day-head.is-locked{}
 #tab-offday .offday-day-head.is-locked .dow{}
-#tab-offday .offday-day-head.is-locked::after{content:"🔒";position:absolute;right:2px;top:2px;font-size:6.5px;line-height:1;opacity:.62;}
+#tab-offday .offday-day-head.is-today .num{color:color-mix(in srgb,var(--accent) 76%,var(--offday-board-text));}
 #tab-offday.offday-leader-mode .offday-day-head{cursor:pointer;}
 #tab-offday.offday-leader-mode .offday-day-head:hover{}
 
@@ -137072,13 +137080,15 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v100-interaction-semantics-cleanup">
+<script id="offday-production-realtime-v2-js" data-offday-build="v101-today-marker-lock-svg">
 (function(){
     'use strict';
 
     const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     const MONTH_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     const DAY_NAMES = ['MIN','SEN','SEL','RAB','KAM','JUM','SAB'];
+    const OFFDAY_TODAY_MARKER_SVG = '<span class="offday-head-today-marker" aria-hidden="true"><svg viewBox="0 0 12 6" focusable="false"><path d="M2 4 6 1.5 10 4"></path></svg></span>';
+    const OFFDAY_LOCK_BADGE_SVG = '<span class="offday-head-lock-icon" aria-hidden="true"><svg viewBox="0 0 12 12" focusable="false"><rect x="2.5" y="5.2" width="7" height="5" rx="1.45"></rect><path d="M3.9 5.2V4.2a2.1 2.1 0 0 1 4.2 0v1"></path></svg></span>';
     const STORAGE_MONTH = 'ddt_offday_selected_month_v1';
     const CLIENT_STORAGE = 'ddt_offday_client_id_v1';
     const state = {
@@ -137593,10 +137603,12 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         const corner=add('offday-corner-head',`<span>STAFF / SHIFT</span><small>${state.roster.length} USER</small>`);
         corner.setAttribute('aria-label',`${state.roster.length} user pada susunan OFFDAY`);
 
+        const todayIso=localTodayISO();
         for(const info of calendar){
             const locked=state.dateLocks.has(info.iso);
             const past=isPastDate(info.iso);
-            const head=add(`offday-day-head history-tooltip-target${info.isSunday?' is-sunday':''}${locked?' is-locked':''}${past?' is-past-date':''}${info.isMonthStart?' is-window-month-start':''}`,`<span class="num">${String(info.day).padStart(2,'0')}</span><span class="dow">${info.dayName}</span>`);
+            const isToday=info.iso===todayIso;
+            const head=add(`offday-day-head history-tooltip-target${info.isSunday?' is-sunday':''}${locked?' is-locked':''}${past?' is-past-date':''}${info.isMonthStart?' is-window-month-start':''}${isToday?' is-today':''}`,`<span class="num">${String(info.day).padStart(2,'0')}</span><span class="dow">${info.dayName}</span>${isToday?OFFDAY_TODAY_MARKER_SVG:''}${locked?OFFDAY_LOCK_BADGE_SVG:''}`);
             head.dataset.date=info.iso;
             head.dataset.month=info.monthKey;
             setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':past?'Tanggal telah lewat':'Tanggal tersedia'),locked?'lock':'info');
@@ -137858,8 +137870,16 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         if(head){
             const locked=state.dateLocks.has(iso);
             const past=isPastDate(iso);
+            const isToday=iso===localTodayISO();
             head.classList.toggle('is-locked',locked);
             head.classList.toggle('is-past-date',past);
+            head.classList.toggle('is-today',isToday);
+            const marker=head.querySelector('.offday-head-today-marker');
+            const lockIcon=head.querySelector('.offday-head-lock-icon');
+            if(isToday&&!marker){head.insertAdjacentHTML('beforeend',OFFDAY_TODAY_MARKER_SVG);}
+            if(!isToday&&marker){marker.remove();}
+            if(locked&&!lockIcon){head.insertAdjacentHTML('beforeend',OFFDAY_LOCK_BADGE_SVG);}
+            if(!locked&&lockIcon){lockIcon.remove();}
             setThemeTooltip(head,isLeader()?'':(locked?'Tanggal dikunci Leader':past?'Tanggal telah lewat':'Tanggal tersedia'),locked?'lock':'info');
         }
         n.grid.querySelectorAll(`.offday-day-cell[data-date="${iso}"]`).forEach(paintCell);
