@@ -136101,11 +136101,10 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     color:color-mix(in srgb,var(--offday-board-muted) 84%,var(--text-muted))!important;
 }
 #tab-offday .offday-group-name.is-self-section strong{
-    color:color-mix(in srgb,var(--offday-self-line) 48%,var(--offday-board-text))!important;
+    color:var(--offday-board-text)!important;
     text-shadow:
         0 -1px 0 var(--offday-board-text-highlight),
-        0 1px 1px var(--offday-board-text-shadow),
-        0 0 5px var(--offday-self-glow)!important;
+        0 1px 1px var(--offday-board-text-shadow)!important;
 }
 
 /* ----- Roster backplane: same board; User Card remains the raised module ----- */
@@ -136131,43 +136130,9 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     filter:none!important;
 }
 
-/* Self row = role-tinted active board tiles.
-   The tile hue follows the semantic role color already used by the User Card,
-   but never copies the card's thick left datum, outline, or gradient.
-   Role Taken remains a hole; Lock and OFF remain above this surface. */
-#tab-offday{
-    /* Canonical Shift User Card language: 118deg, strongest role material on
-       the left, softer mid-tone, then the normal tile surface on the right. */
-    --offday-self-role-accent:var(--accent);
-    --offday-self-grad-start:color-mix(in srgb,var(--offday-self-role-accent) 18%,var(--offday-tile-surface));
-    --offday-self-grad-mid:color-mix(in srgb,var(--offday-self-role-accent) 7%,var(--offday-tile-surface));
-    --offday-self-grad-end:var(--offday-tile-surface);
-}
-#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-leader) ~ .offday-day-cell.is-self-row{
-    --offday-self-role-accent:#b58c34;
-    --offday-self-grad-start:color-mix(in srgb,#b58c34 22%,var(--offday-tile-surface));
-    --offday-self-grad-mid:color-mix(in srgb,#b58c34 9.5%,var(--offday-tile-surface));
-}
-#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-csline) ~ .offday-day-cell.is-self-row{
-    --offday-self-role-accent:#2f9b59;
-    --offday-self-grad-start:color-mix(in srgb,#2f9b59 21%,var(--offday-tile-surface));
-    --offday-self-grad-mid:color-mix(in srgb,#2f9b59 9%,var(--offday-tile-surface));
-}
-#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-cs) ~ .offday-day-cell.is-self-row{
-    --offday-self-role-accent:#557fbd;
-    --offday-self-grad-start:color-mix(in srgb,#557fbd 21%,var(--offday-tile-surface));
-    --offday-self-grad-mid:color-mix(in srgb,#557fbd 9%,var(--offday-tile-surface));
-}
-#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-kapten) ~ .offday-day-cell.is-self-row{
-    --offday-self-role-accent:#b77d2e;
-    --offday-self-grad-start:color-mix(in srgb,#b77d2e 22%,var(--offday-tile-surface));
-    --offday-self-grad-mid:color-mix(in srgb,#b77d2e 9.5%,var(--offday-tile-surface));
-}
-#tab-offday .offday-roster-cell.is-self:has(.offday-user-card.role-kasir) ~ .offday-day-cell.is-self-row{
-    --offday-self-role-accent:#795fac;
-    --offday-self-grad-start:color-mix(in srgb,#795fac 21%,var(--offday-tile-surface));
-    --offday-self-grad-mid:color-mix(in srgb,#795fac 9%,var(--offday-tile-surface));
-}
+/* V103 — Self-row path presentation retired.
+   `.is-self-row` remains an ownership/permission hook only. Selectability is now
+   communicated per actionable cell, never by a role-tinted row path. */
 
 /* Global role authority for a committed OFFDAY choice. Unlike self-row tint,
    these selectors intentionally do not depend on the current viewer.
@@ -136179,22 +136144,7 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
 #tab-offday .offday-day-cell.has-choice[data-role="kapten"]{--offday-choice-role-accent:#b77d2e;--offday-choice-role-deep:#895918;}
 #tab-offday .offday-day-cell.has-choice[data-role="kasir"]{--offday-choice-role-accent:#795fac;--offday-choice-role-deep:#63498f;}
 
-#tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken){
-    background:linear-gradient(
-        118deg,
-        var(--offday-self-grad-start) 0%,
-        var(--offday-self-grad-mid) 48%,
-        var(--offday-self-grad-end) 100%
-    )!important;
-    /* Row tint never owns grid seams. This keeps Leader-lock junction lines
-       available to the single lock seam authority below. */
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,#fff 14%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 4%,transparent)!important;
-}
-/* After the user has chosen OFFDAY, only the chosen tile keeps the role-tinted
-   self-row surface. Other actionable cells return to the neutral board tile. */
-#tab-offday .offday-day-cell.is-self-row.is-self-selection-set:not(.has-choice):not(.is-locked):not(.is-role-taken){
+#tab-offday .offday-day-cell.is-self-row:not(.has-choice):not(.is-locked):not(.is-role-taken){
     background:var(--offday-tile-surface)!important;
     box-shadow:
         inset 0 1px 0 var(--offday-tile-highlight),
@@ -136312,11 +136262,39 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     isolation:auto!important;
 }
 
-/* Input tile: flat at rest, then one light depth step on direct actionable hover.
-   No full outline and no extra horizontal guide line. */
+/* V103 — Selectable Tile Emboss.
+   An actionable empty tile carries one small muted keycap cue. No row path,
+   no extra top/bottom guide line, and no dependency on prior OFFDAY count. */
 #tab-offday .offday-day-cell.is-user-clickable,
 #tab-offday.offday-leader-mode .offday-day-cell:not(.is-locked){
     transition:background-color .12s ease,box-shadow .12s ease;
+}
+#tab-offday .offday-selectable-cue{
+    position:absolute!important;
+    left:50%!important;
+    top:50%!important;
+    width:13px!important;
+    height:10px!important;
+    transform:translate(-50%,-50%)!important;
+    display:grid!important;
+    place-items:center!important;
+    color:color-mix(in srgb,var(--offday-board-muted) 56%,var(--offday-tile-surface))!important;
+    opacity:.42!important;
+    pointer-events:none!important;
+    z-index:1!important;
+    filter:
+        drop-shadow(0 -1px 0 color-mix(in srgb,#fff 34%,transparent))
+        drop-shadow(0 1px 0 color-mix(in srgb,var(--offday-board-text) 18%,transparent))!important;
+}
+#tab-offday .offday-selectable-cue svg{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:1.15!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
 }
 #tab-offday .offday-day-cell.is-user-clickable:not(.has-choice):hover,
 #tab-offday.offday-leader-mode .offday-day-cell:not(.has-choice):not(.is-locked):not(.is-role-taken):hover{
@@ -136327,25 +136305,9 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
         inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 28%,transparent),
         0 3px 7px -4px var(--offday-input-glow)!important;
 }
-/* On self-row, direct hover rises one level while preserving the role hue. */
-#tab-offday .offday-day-cell.is-user-clickable.is-self-row:not(.is-self-selection-set):hover{
-    background:linear-gradient(
-        118deg,
-        color-mix(in srgb,var(--offday-self-role-accent) 25%,var(--offday-input-surface)) 0%,
-        color-mix(in srgb,var(--offday-self-role-accent) 11%,var(--offday-input-surface)) 48%,
-        var(--offday-input-surface) 100%
-    )!important;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,#fff 20%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 7%,transparent),
-        0 3px 7px -5px var(--offday-input-glow)!important;
-}
-#tab-offday .offday-day-cell.is-user-clickable.is-self-row.is-self-selection-set:not(.has-choice):hover{
-    background:var(--offday-input-surface)!important;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,#fff 22%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-input-line) 28%,transparent),
-        0 3px 7px -4px var(--offday-input-glow)!important;
+#tab-offday .offday-day-cell.is-user-clickable:not(.has-choice):hover .offday-selectable-cue{
+    color:color-mix(in srgb,var(--offday-input-line) 60%,var(--offday-board-muted))!important;
+    opacity:.62!important;
 }
 /* A committed choice may still be actionable for its owner/Leader. Hover adds
    only one micro elevation step and never falls back to the generic input tile. */
@@ -136541,23 +136503,6 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
 #tab-offday.offday-sealed .offday-day-cell.is-role-taken:not(.is-locked):not(.has-choice){
     background:var(--offday-tile-surface)!important;
 }
-#tab-offday.offday-sealed .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken){
-    background:linear-gradient(
-        118deg,
-        color-mix(in srgb,var(--offday-self-role-accent) 9%,var(--offday-tile-surface)) 0%,
-        color-mix(in srgb,var(--offday-self-role-accent) 4%,var(--offday-tile-surface)) 48%,
-        var(--offday-tile-surface) 100%
-    )!important;
-    box-shadow:
-        inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent),
-        inset 0 -1px 0 color-mix(in srgb,var(--offday-self-role-accent) 3%,transparent)!important;
-}
-#tab-offday.offday-sealed .offday-day-cell.is-self-row.is-self-selection-set:not(.has-choice):not(.is-locked):not(.is-role-taken){
-    background:var(--offday-tile-surface)!important;
-    box-shadow:
-        inset 0 1px 0 var(--offday-tile-highlight),
-        inset 0 -1px 0 var(--offday-tile-shadow)!important;
-}
 #tab-offday.offday-sealed .offday-roster-cell.is-self{
     background:var(--offday-board-surface)!important;
     box-shadow:none!important;
@@ -136648,19 +136593,6 @@ html[data-theme="dark"][data-theme-variant="venom"] #tab-offday{
     --offday-lock-shadow:rgba(0,0,0,.30);
 }
 
-/* Venom User Cards use a denser 106deg role wash; self-row mirrors that language
-   while retaining the OFFDAY tile surface and existing grid seams. */
-html[data-selected-theme="venom"] #tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken),
-html[data-selected-theme="venom-green"] #tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken),
-html[data-theme="dark"][data-theme-variant="venom"] #tab-offday .offday-day-cell.is-self-row:not(.is-self-selection-set):not(.is-locked):not(.is-role-taken){
-    background:linear-gradient(
-        106deg,
-        color-mix(in srgb,var(--offday-self-role-accent) 30%,var(--offday-tile-surface)) 0%,
-        color-mix(in srgb,var(--offday-self-role-accent) 16%,var(--offday-tile-surface)) 30%,
-        color-mix(in srgb,var(--offday-self-role-accent) 6%,var(--offday-tile-surface)) 60%,
-        var(--offday-tile-surface) 86%
-    )!important;
-}
 
 /* Alternate light themes: the board is a raised card above each theme canvas. */
 html[data-selected-theme="pink"] #tab-offday,
@@ -137063,7 +136995,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
 </style>
 
 
-<script id="offday-production-realtime-v2-js" data-offday-build="v102-lock-backplane-cleanup">
+<script id="offday-production-realtime-v2-js" data-offday-build="v103-selectable-tile-emboss">
 (function(){
     'use strict';
 
@@ -137072,6 +137004,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
     const DAY_NAMES = ['MIN','SEN','SEL','RAB','KAM','JUM','SAB'];
     const OFFDAY_TODAY_MARKER_SVG = '<span class="offday-head-today-marker" aria-hidden="true"><svg viewBox="0 0 12 6" focusable="false"><path d="M2 4 6 1.5 10 4"></path></svg></span>';
     const OFFDAY_LOCK_BADGE_SVG = '<span class="offday-head-lock-icon" aria-hidden="true"><svg viewBox="0 0 12 12" focusable="false"><rect x="2.5" y="5.2" width="7" height="5" rx="1.45"></rect><path d="M3.9 5.2V4.2a2.1 2.1 0 0 1 4.2 0v1"></path></svg></span>';
+    const OFFDAY_SELECTABLE_KEY_SVG = '<span class="offday-selectable-cue" aria-hidden="true"><svg viewBox="0 0 14 11" focusable="false"><rect x="2" y="2" width="10" height="7" rx="1.6"></rect><path d="M4.2 5.5h5.6"></path></svg></span>';
     const STORAGE_MONTH = 'ddt_offday_selected_month_v1';
     const CLIENT_STORAGE = 'ddt_offday_client_id_v1';
     const state = {
@@ -137598,8 +137531,7 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         }
 
         const appendGroup=(section,sectionIndex)=>{
-            const selfSection=!isLeader() && section.rows.some(row=>Number(row.id)===Number(state.currentUserId));
-            const groupClass=(section.kind==='leader'?' is-leader':(section.kind==='unassigned'?' is-unassigned':''))+(selfSection?' is-self-section':'');
+            const groupClass=(section.kind==='leader'?' is-leader':(section.kind==='unassigned'?' is-unassigned':''));
             const groupName=add(`offday-group-name${groupClass}`,
                 `<strong>${escapeHtml(section.name)}</strong>`+
                 `<span>${section.rows.length} STAFF</span>`
@@ -137665,14 +137597,17 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
             if(cellLocked)classes.push('is-cell-locked');
             if(!state.isOpen)classes.push('is-closed');
             if(self)classes.push('is-self-row');
-            if(self && hasAnySelected)classes.push('is-self-selection-set');
             if(visuallyUnassigned)classes.push('is-unassigned-user');
             if(roleTaken)classes.push('is-role-taken');
             if(hasChoice)classes.push('has-choice');
             if(self && user.assigned && state.isOpen && !past && (hasChoice || !locked))classes.push('is-user-clickable');
             const cell=add(classes.join(' '));
             cell.dataset.userId=String(user.id);cell.dataset.date=iso;cell.dataset.month=info.monthKey;cell.dataset.sectionIndex=String(sectionIndex);cell.dataset.role=role;
+            const showSelectableCue=Boolean(self&&user.assigned&&state.isOpen&&!past&&!locked&&!roleTaken&&!hasChoice);
 
+            if(showSelectableCue){
+                cell.insertAdjacentHTML('beforeend',OFFDAY_SELECTABLE_KEY_SVG);
+            }
             if(hasChoice){
                 cell.appendChild(buildOffdayStamp(user));
             }
@@ -137724,13 +137659,16 @@ html[data-selected-theme="mecha-ivory"] #tab-offday .offday-toggle::before{
         cell.classList.toggle('is-cell-locked',cellLocked);
         cell.classList.toggle('is-closed',!state.isOpen);
         cell.classList.toggle('is-self-row',self);
-        cell.classList.toggle('is-self-selection-set',Boolean(self&&hasAnyChoice(uid)));
         cell.classList.toggle('is-unassigned-user',Boolean(user&&!user.assigned&&normRole(user.role)!=='leader'));
         cell.classList.toggle('is-role-taken',roleTaken);
         cell.classList.toggle('has-choice',hasChoice);
         cell.classList.toggle('is-user-clickable',Boolean(self&&user?.assigned&&state.isOpen&&!past&&(hasChoice||!locked)));
 
         cell.replaceChildren();
+        const showSelectableCue=Boolean(self&&user?.assigned&&state.isOpen&&!past&&!locked&&!roleTaken&&!hasChoice);
+        if(showSelectableCue){
+            cell.insertAdjacentHTML('beforeend',OFFDAY_SELECTABLE_KEY_SVG);
+        }
         if(hasChoice){
             cell.appendChild(buildOffdayStamp(user));
         }
